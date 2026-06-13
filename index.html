@@ -486,8 +486,8 @@ const RANK_LABEL=['通常会員','シルバー会員','ゴールド会員'];
 const RANK_RATE=[0,0.05,0.10];
 function lastVisitDate(phone){const v=DATA.bookings.filter(b=>normPhone(b.phone)===normPhone(phone)&&b.status==='visited').map(b=>b.date).sort();return v.length?v[v.length-1]:null}
 function monthsBetween(d1,d2){const a=new Date(d1),b=new Date(d2);return (b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth())-(b.getDate()<a.getDate()?1:0)}
-function cadenceRank(c){const lv=lastVisitDate(c.phone);if(!lv)return 0;const vc=custBookings(c.phone).length;const days=(today-new Date(lv))/86400000;if(vc>=3&&days<=35)return 2;if(vc>=2&&days<=46)return 1;return 0;}
-function effectiveRank(c){const base=c.rank||0;if(!base)return 0;const anchor=[c.rankSet,lastVisitDate(c.phone),c.joined].filter(Boolean).sort().pop()||fmtDate(today);const drops=Math.max(0,Math.floor(monthsBetween(anchor,fmtDate(today))/3));return Math.max(0,base-drops)}
+function cadenceRank(c){const ph=normPhone(c.phone);const bks=DATA.bookings.filter(b=>normPhone(b.phone)===ph&&b.status!=='cancelled');if(!bks.length)return 0;const todayS=fmtDate(today);const past=bks.filter(b=>b.date<todayS).map(b=>b.date).sort();const upcoming=bks.filter(b=>b.date>=todayS).map(b=>b.date).sort();if(!upcoming.length||!past.length)return 0;const gap=(new Date(upcoming[0])-new Date(past[past.length-1]))/86400000;if(gap<=38)return 2;if(gap<=46)return 1;return 0;}
+function effectiveRank(c){const base=c.rank||0;let staffRank=0;if(base){const anchor=[c.rankSet,lastVisitDate(c.phone),c.joined].filter(Boolean).sort().pop()||fmtDate(today);const drops=Math.max(0,Math.floor(monthsBetween(anchor,fmtDate(today))/3));staffRank=Math.max(0,base-drops);}return Math.max(staffRank,cadenceRank(c))}
 function rankRate(c){return RANK_RATE[effectiveRank(c)]||0}
 function custDiscount(c){if(!c)return{rate:0,label:''};const fr=c.discount?CONFIG.discounts[c.discount]:0;const rr=rankRate(c);if(rr>0&&rr>=fr)return{rate:rr,label:RANK_LABEL[effectiveRank(c)]+' '+Math.round(rr*100)+'%OFF'};if(fr>0)return{rate:fr,label:DISC_LABEL[c.discount]};return{rate:0,label:''}}
 function couponVal(c){if(!c||!(c.couponYen>0))return 0;if(c.couponExpiry&&fmtDate(today)>c.couponExpiry)return 0;return c.couponYen}
@@ -512,15 +512,15 @@ const SEED_SERVICES=[
   {id:'br2',cat:'brow',name:'眉パーマ（スタイリング付）',min:60,price:7500,desc:'メンズ大歓迎・立体的な眉に',img:IMG+'mlist_2047411096.jpg',addons:['pm1']},
   {id:'le0',cat:'lash',name:'【リペア】まつげエクステ 60本〜',min:60,price:3500,desc:'付け足し・お直しに',img:IMG+'mlist_1478266236.jpg'},
   {id:'le1',cat:'lash',name:'【80本】まつげエクステ',min:45,price:5500,desc:'フラットラッシュでナチュラル',img:IMG+'mlist_1633793109.jpg',addons:['br1']},
-  {id:'le2',cat:'lash',name:'【100本】まつげエクステ',min:60,price:7000,desc:'ほどよいボリューム',img:IMG+'mlist_1682352350.jpg'},
-  {id:'le3',cat:'lash',name:'【120本】まつげエクステ',min:60,price:8500,desc:'華やかな目元に',img:IMG+'mlist_35097433.jpg',addons:['br1','pm3']},
-  {id:'le4',cat:'lash',name:'【140本】まつげエクステ',min:60,price:10000,desc:'上下振り分け自由',img:IMG+'mlist_793238422.jpg'},
-  {id:'le5',cat:'lash',name:'【つけ放題】まつげエクステ',min:90,price:12000,desc:'気が済むまでたっぷり',img:IMG+'mlist_1189445566.jpg'},
+  {id:'le2',cat:'lash',name:'【100本】まつげエクステ',min:60,price:6600,desc:'ほどよいボリューム',img:IMG+'mlist_1682352350.jpg'},
+  {id:'le3',cat:'lash',name:'【120本】まつげエクステ',min:60,price:7700,desc:'華やかな目元に',img:IMG+'mlist_35097433.jpg',addons:['br1','pm3']},
+  {id:'le4',cat:'lash',name:'【140本】まつげエクステ',min:60,price:8800,desc:'上下振り分け自由',img:IMG+'mlist_793238422.jpg'},
+  {id:'le5',cat:'lash',name:'【つけ放題】まつげエクステ',min:90,price:14900,desc:'気が済むまでたっぷり',img:IMG+'mlist_1189445566.jpg'},
   {id:'wl1',cat:'wlash',name:'【60束(120本)】Wエクステ',min:60,price:6000,desc:'付け足しメニュー',img:IMG+'mlist_1930070307.jpg'},
-  {id:'wl2',cat:'wlash',name:'【80束(160本)】Wエクステ',min:60,price:8800,desc:'フラットラッシュ',img:IMG+'mlist_1676620140.jpg'},
-  {id:'wl3',cat:'wlash',name:'【100束(200本)】Wエクステ',min:60,price:11000,desc:'ボリューム感アップ',img:IMG+'mlist_802627372.jpg'},
-  {id:'wl4',cat:'wlash',name:'【120束(240本)】Wエクステ',min:75,price:13000,desc:'しっかり濃密',img:IMG+'mlist_1892032897.jpg'},
-  {id:'wl5',cat:'wlash',name:'【つけ放題(無制限)】Wエクステ',min:90,price:16000,desc:'上限なしでたっぷり',img:IMG+'mlist_312362335.jpg'},
+  {id:'wl2',cat:'wlash',name:'【80束(160本)】Wエクステ',min:60,price:7900,desc:'フラットラッシュ',img:IMG+'mlist_1676620140.jpg'},
+  {id:'wl3',cat:'wlash',name:'【100束(200本)】Wエクステ',min:60,price:9900,desc:'ボリューム感アップ',img:IMG+'mlist_802627372.jpg'},
+  {id:'wl4',cat:'wlash',name:'【120束(240本)】Wエクステ',min:75,price:11900,desc:'しっかり濃密',img:IMG+'mlist_1892032897.jpg'},
+  {id:'wl5',cat:'wlash',name:'【つけ放題(無制限)】Wエクステ',min:90,price:15800,desc:'上限なしでたっぷり',img:IMG+'mlist_312362335.jpg'},
   {id:'pe1',cat:'peel',name:'漢方ハーブピーリング',min:60,price:12000,desc:'大人気・剥離無し',img:IMG+'mlist_2005296419.jpg',addons:['br1']},
   {id:'pe2',cat:'peel',name:'ニードルピーリング',min:60,price:16000,desc:'1度でハーブ3回分の効果',img:IMG+'mlist_860863471.jpg'},
   {id:'mk1',cat:'makeup',name:'ヘアセット',min:30,price:8000,desc:'',img:IMG+'mlist_1463500302.jpg'},
@@ -640,6 +640,7 @@ function getPost(id){return DATA.posts.find(p=>p.id===id)}
 function TX(k,d){return (DATA.settings&&DATA.settings.texts&&DATA.settings.texts[k])||d}
 function applyTheme(){const t=(DATA.settings&&DATA.settings.theme)||{};const r=document.documentElement;['navy','gold','sage','rose','paper'].forEach(k=>{if(t[k])r.style.setProperty('--'+k,t[k])});const tg=byId('tagline');if(tg)tg.textContent=TX('tagline','Eyelash · Brow · Beauty');}
 function gpad(n){return String(n).padStart(2,'0')}
+function nameInitial(n){const p=(n||'').split(' ');return (p[1]&&p[1][0])||(n&&n[0])||'?';}
 function gcalUrl(bk){const start=new Date(bk.date+'T'+bk.time+':00');const dur=bk.items.reduce((a,i)=>a+(i.min||0),0)||60;const end=new Date(start.getTime()+dur*60000);const f=d=>d.getFullYear()+gpad(d.getMonth()+1)+gpad(d.getDate())+'T'+gpad(d.getHours())+gpad(d.getMinutes())+'00';const text=encodeURIComponent('Vi5 ご予約：'+bk.items.map(i=>i.name).join('＋'));const det=encodeURIComponent('担当：'+stById(bk.staffId).name+' / '+bk.id);const loc=encodeURIComponent((DATA.settings&&DATA.settings.address)||'');return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${f(start)}/${f(end)}&details=${det}&location=${loc}&ctz=Asia/Tokyo`}
 function gcalShiftUrl(sid,ds,sh){if(!sh.on||!sh.ranges.length)return '';const rs=sh.ranges;const st=Math.min(...rs.map(r=>r.start)),en=Math.max(...rs.map(r=>r.end));const start=new Date(ds+'T'+gpad(st)+':00:00');const end=new Date(ds+'T'+gpad(en)+':00:00');const f=d=>d.getFullYear()+gpad(d.getMonth()+1)+gpad(d.getDate())+'T'+gpad(d.getHours())+gpad(d.getMinutes())+'00';const text=encodeURIComponent('出勤：'+stById(sid).name);const det=encodeURIComponent('受付 '+rs.map(r=>r.start+':00〜'+r.end+':00').join('、'));return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${f(start)}/${f(end)}&details=${det}&ctz=Asia/Tokyo`}
 function shiftFor(sid,dow){return (DATA.shifts&&DATA.shifts[sid]&&DATA.shifts[sid][dow])||null}
@@ -963,7 +964,7 @@ function stepBrowse(){
 function stepStaff(){
   const cartIds=state.cart.map(x=>x.id);
   const eligible=p=>p.id==='s0'||!(p.services||[]).length||cartIds.every(id=>(p.services||[]).includes(id));
-  const cards=staff.map((p,i)=>{const ok=eligible(p);const sel=ok&&state.b.staff&&state.b.staff.id===p.id;const initial=p.id==='s0'?'?':p.name.split(' ')[1][0];const bg=p.photo?`background-image:url('${p.photo}')`:`background:${p.color}`;
+  const cards=staff.map((p,i)=>{const ok=eligible(p);const sel=ok&&state.b.staff&&state.b.staff.id===p.id;const initial=p.id==='s0'?'?':nameInitial(p.name);const bg=p.photo?`background-image:url('${p.photo}')`:`background:${p.color}`;
     return `<div class="staff ${sel?'sel':''}" ${ok?`data-staff="${p.id}"`:''} style="${ok?'':'opacity:.45'};animation-delay:${i*.06}s"><div class="photo" style="${bg}">${p.photo?'':initial}<div class="staff-check"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div></div><div class="staff-body"><div class="staff-top"><span class="staff-name">${p.name}</span><span class="staff-role">${p.role}</span></div><div class="staff-intro">${ok?p.intro:'選択中のメニューは担当外です。'}</div>${(ok&&p.quals)?`<div class="quals">${p.quals.split(/[,、]/).map(q=>q.trim()).filter(Boolean).map(q=>`<span class="qual">🏅 ${q}</span>`).join('')}</div>`:''}${ok&&state.cart.length?`<div class="staff-intro" style="color:var(--gold);font-weight:700;margin-top:4px">この内容で ${yen(cartTotal(p.id))}</div>`:''}</div></div>`}).join('');
   app.innerHTML=stepsBar(1)+`<div class="fade"><div class="eyebrow">Step 02</div><div class="h-title">${t('selectStaff')}</div><div class="h-sub">${t('staffSub')}</div>${cards}</div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">${t('backBtn')}</button><button class="btn btn-primary" id="next" ${state.b.staff?'':'disabled'}>${t('ctaNextDate')}</button></div>`;
   app.querySelectorAll('[data-staff]').forEach(b=>b.onclick=()=>{state.b.staff=stById(b.dataset.staff);state.b.date=null;state.b.time=null;render()});
@@ -1069,7 +1070,7 @@ function stepBrowsePair(){
 }
 function stepStaffPair(){
   const cartA=state.cartA,cartB=state.cartB;
-  const card=(p,who,selStaff,cartIds,i)=>{const ok=p.id==='s0'||!(p.services||[]).length||cartIds.every(id=>(p.services||[]).includes(id));const sel=ok&&selStaff&&selStaff.id===p.id;const initial=p.id==='s0'?'?':p.name.split(' ')[1][0];const bg=p.photo?`background-image:url('${p.photo}')`:`background:${p.color}`;
+  const card=(p,who,selStaff,cartIds,i)=>{const ok=p.id==='s0'||!(p.services||[]).length||cartIds.every(id=>(p.services||[]).includes(id));const sel=ok&&selStaff&&selStaff.id===p.id;const initial=p.id==='s0'?'?':nameInitial(p.name);const bg=p.photo?`background-image:url('${p.photo}')`:`background:${p.color}`;
     return `<div class="staff ${sel?'sel':''}" ${ok?`data-staff${who}="${p.id}"`:''} style="${ok?'':'opacity:.45'};animation-delay:${i*.05}s"><div class="photo" style="${bg}">${p.photo?'':initial}<div class="staff-check"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div></div><div class="staff-body"><div class="staff-top"><span class="staff-name">${p.name}</span><span class="staff-role">${p.role}</span></div><div class="staff-intro">${ok?p.intro:'選択中のメニューは担当外です。'}</div>${(ok&&p.quals)?`<div class="quals">${p.quals.split(/[,、]/).map(q=>q.trim()).filter(Boolean).map(q=>`<span class="qual">🏅 ${q}</span>`).join('')}</div>`:''}</div></div>`};
   const idsA=cartA.map(x=>x.id),idsB=cartB.map(x=>x.id);
   const cardsA=staff.map((p,i)=>card(p,'a',state.staffA,idsA,i)).join('');
@@ -1270,8 +1271,8 @@ function renderMypage(){
   const lastBk=DATA.bookings.filter(b=>normPhone(b.phone)===normPhone(c.phone)&&b.status!=='cancelled'&&(b.items||[]).length).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time))[0];
   const rebookHtml=lastBk?`<button class="btn btn-ghost" id="mp-rebook" style="width:100%;margin:0 0 12px">🔁 前回と同じメニューで予約（${lastBk.items.map(x=>x.name).join('＋')}）</button>`:'';
   const er=effectiveRank(c);
-  const ladder=[[0,'通常会員','通常価格でご利用いただけます','どなたでも'],[1,'シルバー会員','毎回のお会計が 5%OFF','1.5ヶ月以内のご来店ペース'],[2,'ゴールド会員','毎回のお会計が 10%OFF','毎月のご来店']];
-  const rankLadderHtml=`<div class="subhead">会員ランクについて</div><div class="ranklad">${ladder.map(r=>`<div class="rank-tier ${er===r[0]?'cur':''}"><div class="rt-top"><span class="rt-name">${['🥉','🥈','🥇'][r[0]]} ${r[1]}</span>${er===r[0]?'<span class="rt-now">いまここ</span>':''}</div><div class="rt-ben">${r[2]}</div><div class="rt-cond">目安：${r[3]}</div></div>`).join('')}</div><div class="note" style="margin-top:8px">ご来店の頻度などをもとに、サロンがランクを設定します（目安：<b>1.5ヶ月以内</b>のご来店でシルバー＝5%OFF、<b>毎月</b>のご来店でゴールド＝10%OFF）。ランクが上がるほど、毎回のお会計がお得になります。</div>`;
+  const ladder=[[0,'通常会員','通常価格でご利用いただけます','どなたでも'],[1,'シルバー会員','毎回のお会計が 5%OFF','次のご予約が1.5ヶ月以内'],[2,'ゴールド会員','毎回のお会計が 10%OFF','次のご予約が1ヶ月＋1週間以内']];
+  const rankLadderHtml=`<div class="subhead">会員ランクについて</div><div class="ranklad">${ladder.map(r=>`<div class="rank-tier ${er===r[0]?'cur':''}"><div class="rt-top"><span class="rt-name">${['🥉','🥈','🥇'][r[0]]} ${r[1]}</span>${er===r[0]?'<span class="rt-now">いまここ</span>':''}</div><div class="rt-ben">${r[2]}</div><div class="rt-cond">条件：${r[3]}</div></div>`).join('')}</div><div class="note" style="margin-top:8px">前回のご来店から次のご予約までが<b>1.5ヶ月以内</b>でシルバー（5%OFF）、<b>1ヶ月＋1週間以内</b>でゴールド（10%OFF）になります。続けてご予約いただくほど、毎回のお会計がお得になります😊</div>`;
   const generosityHtml=`<div class="generosity">💛 物価高が続くいま、少しでも多くお客様に還元したいと思っています。貯まったポイントや会員ランクの割引は、<b>どうぞお気遣いなく、たくさんお使いください</b>。お客様に喜んでいただくことが、私たちのいちばんの願いです。</div>`;
   const expiryHtml=`<div class="subhead">ポイント・特典の有効期限</div><div class="earn"><div class="earn-row"><span>👥 お友達紹介のポイント</span><b>2年間</b></div><div class="earn-row"><span>🏠 ご近所シェアのポイント</span><b>3ヶ月間</b></div><div class="earn-row"><span>📷 ギャラリー投稿のポイント</span><b>3ヶ月間</b></div><div class="earn-row"><span>✉ ご意見箱のポイント</span><b>3ヶ月間</b></div><div class="earn-row"><span>🎂 お誕生日クーポン</span><b>前後1ヶ月</b></div></div><div class="note" style="margin-top:6px">お誕生日クーポンは、お誕生日の<b>前月・当月・翌月</b>の3ヶ月間ご利用いただけます（例：6月生まれの方は5月・6月・7月）。期限を過ぎた分は無効になりますので、ぜひお早めにお使いください😊</div>`;
   const previewBar=state.previewCust?`<div class="preview-bar"><span>👀 スタッフ確認用プレビュー（このお客様に表示される画面です）</span><button id="mp-preview-back">← 管理画面に戻る</button></div>`:'';
@@ -1466,7 +1467,7 @@ function adminSchedule(){
   const date=state.schedDate;const reals=staff.filter(s=>s.id!=='s0');
   const blocks=reals.map((s,si)=>{const off=isDayOff(s.id,date);let grid;
     if(off){grid=`<div class="sc-allday">本日は終日お休み（予約不可）</div>`}else{let cells='';for(let h=OPEN_HOUR;h<=LAST_RECEPTION;h++){const t=String(h).padStart(2,'0')+':00';const bk=DATA.bookings.find(x=>x.staffId===s.id&&x.date===date&&x.time===t&&x.status!=='cancelled');const blk=isBlocked(s.id,date,t);if(bk){const nm=DATA.customers[normPhone(bk.phone)]?DATA.customers[normPhone(bk.phone)].name.split(' ')[0]:bk.phone;cells+=`<div class="sc-cell booked"><span class="t">${t}</span><span class="nm">${nm}</span></div>`}else if(blk){cells+=`<div class="sc-cell blocked" data-block="${s.id}|${t}"><span class="t">${t}</span><span>不可</span></div>`}else{cells+=`<div class="sc-cell open" data-block="${s.id}|${t}"><span class="t">${t}</span><span>空き</span></div>`}}grid=`<div class="sc-grid">${cells}</div>`}
-    return `<div class="sc-staff" style="animation-delay:${si*.06}s"><div class="sc-head"><div class="sc-av" style="background:${s.color}">${s.name.split(' ')[1][0]}</div><div><div class="sc-name">${s.name}</div><div class="sc-role">${s.role}</div></div><button class="sc-off ${off?'on':''}" data-dayoff="${s.id}">${off?'休み解除':'終日休み'}</button></div>${grid}</div>`}).join('');
+    return `<div class="sc-staff" style="animation-delay:${si*.06}s"><div class="sc-head"><div class="sc-av" style="background:${s.color}">${nameInitial(s.name)}</div><div><div class="sc-name">${s.name}</div><div class="sc-role">${s.role}</div></div><button class="sc-off ${off?'on':''}" data-dayoff="${s.id}">${off?'休み解除':'終日休み'}</button></div>${grid}</div>`}).join('');
   return sw+`<div class="cal-head" style="margin-bottom:16px"><button class="cal-nav" id="sc-prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><div class="cal-title">${mdLabel(date)}</div><button class="cal-nav" id="sc-next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></div><div class="note">「空き」をタップで予約不可に、「不可」をタップで解除。終日休みは右上のボタンから。週間シフトは上の「週間シフト設定」から。</div>${blocks}`;
 }
 function shiftEditor(){
@@ -1475,7 +1476,7 @@ function shiftEditor(){
     const rows=DOW.map((d,i)=>{const closed=i===CLOSED_DOW;const dsp=normalizeShift(shiftFor(s.id,i));
       if(closed)return `<div class="shift-day"><span class="shift-dow" style="${i===0?'color:var(--gold)':''}">${d}</span><span class="note" style="margin:0;flex:1">定休日</span></div>`;
       return `<div style="padding:9px 0;border-bottom:1px solid var(--line)"><div style="display:flex;align-items:center;gap:9px;${dsp.on?'margin-bottom:8px':''}"><span class="shift-dow" style="${i===0?'color:var(--gold)':''}">${d}</span><button class="shift-toggle ${dsp.on?'on':''}" data-daytoggle="w|${s.id}|${i}">${dsp.on?'出勤':'休み'}</button>${dsp.on?'':'<span class="note" style="margin:0">受付なし</span>'}</div>${dsp.on?`<div style="padding-left:39px">${rangeRows('w',s.id,i)}</div>`:''}</div>`}).join('');
-    return `<div class="sc-staff"><div class="sc-head"><div class="sc-av" style="background:${s.color}">${s.name.split(' ')[1][0]}</div><div><div class="sc-name">${s.name}</div><div class="sc-role">${s.role}</div></div></div><button class="btn btn-ghost" data-shiftall="${s.id}" style="width:100%;margin:4px 0 6px">営業日すべてを 9:00〜21:00 出勤に一括設定</button>${rows}</div>`}).join('')+`<div class="note">曜日ごとの受付時間を設定します（火曜は定休）。ここで設定すれば、その曜日は<b>毎週・今月以降ずっと自動で反映</b>されるので、1日ずつ入れる必要はありません。特定の日だけ変えたいときは「シフト（月）」から個別に設定できます。</div>`;
+    return `<div class="sc-staff"><div class="sc-head"><div class="sc-av" style="background:${s.color}">${nameInitial(s.name)}</div><div><div class="sc-name">${s.name}</div><div class="sc-role">${s.role}</div></div></div><button class="btn btn-ghost" data-shiftall="${s.id}" style="width:100%;margin:4px 0 6px">営業日すべてを 9:00〜21:00 出勤に一括設定</button>${rows}</div>`}).join('')+`<div class="note">曜日ごとの受付時間を設定します（火曜は定休）。ここで設定すれば、その曜日は<b>毎週・今月以降ずっと自動で反映</b>されるので、1日ずつ入れる必要はありません。特定の日だけ変えたいときは「シフト（月）」から個別に設定できます。</div>`;
 }
 function shiftMonthList(){
   const sid=state.schedStaff||'s1';const reals=staff.filter(s=>s.id!=='s0');
@@ -1555,7 +1556,7 @@ function adminSales(){
   const periods=[['today','本日'],['month','今月'],['all','全期間']];const inP=ds=>{const d=new Date(ds);if(state.salesPeriod==='today')return ds===fmtDate(today);if(state.salesPeriod==='month')return d.getFullYear()===today.getFullYear()&&d.getMonth()===today.getMonth();return true};
   const conf=DATA.bookings.filter(b=>b.status==='visited'&&inP(b.date));const total=conf.reduce((s,b)=>s+bkPayment(b),0);
   const rows=staff.filter(s=>s.id!=='s0').map(s=>{const bs=conf.filter(b=>b.staffId===s.id);return {s,cnt:bs.length,amt:bs.reduce((a,b)=>a+bkPayment(b),0)}}).sort((a,b)=>b.amt-a.amt);
-  const list=rows.map((r,i)=>`<div class="sales-row" style="animation-delay:${i*.05}s"><div class="sales-av" style="background:${r.s.color}">${r.s.name.split(' ')[1][0]}</div><div class="sales-info"><div class="sales-name">${r.s.name}</div><div class="sales-cnt">${r.s.role} ・ ${r.cnt}件</div></div><div class="sales-amt">${yen(r.amt)}</div></div>`).join('');
+  const list=rows.map((r,i)=>`<div class="sales-row" style="animation-delay:${i*.05}s"><div class="sales-av" style="background:${r.s.color}">${nameInitial(r.s.name)}</div><div class="sales-info"><div class="sales-name">${r.s.name}</div><div class="sales-cnt">${r.s.role} ・ ${r.cnt}件</div></div><div class="sales-amt">${yen(r.amt)}</div></div>`).join('');
   return `<div class="adminfilter">${periods.map(p=>`<button data-sp="${p[0]}" class="${state.salesPeriod===p[0]?'active':''}">${p[1]}</button>`).join('')}</div><div class="stats" style="grid-template-columns:1fr 1fr"><div class="stat"><div class="n sage" style="font-size:22px">${yen(total)}</div><div class="l">売上合計(確定)</div></div><div class="stat"><div class="n">${conf.length}</div><div class="l">確定件数</div></div></div><div class="subhead">担当者別売上</div>${rows.length?list:'<div class="empty">来店済みの予約がありません</div>'}<div class="note" style="margin-top:14px">来店済みの予約から割引・クーポン・ポイントを差し引いた支払額で集計しています。</div>`;
 }
 function adminPosts(){
@@ -1669,7 +1670,7 @@ function adminMenu(){
       <div class="note" style="margin-top:0">オプションは施術中の空き時間に行うため、予約時間には加算されません。確認画面でお客様が追加できます。</div>
       <div style="display:flex;gap:9px">${editing?`<button class="btn btn-ghost" id="o-del" style="color:var(--rose);border-color:#D8B6BF">削除</button>`:''}<button class="btn btn-ghost" id="o-cancel">やめる</button><button class="btn btn-primary" id="o-save">保存する</button></div></div>`;
   }
-  let html=`<button class="postbtn" id="m-new">＋ 新しいメニューを追加</button>`;
+  let html=`<button class="postbtn" id="m-new">＋ 新しいメニューを追加</button><button class="btn btn-ghost" id="m-priceupd" style="width:100%;margin:0 0 12px">💴 まつげ・Wエクステの価格を最新に更新</button>`;
   categories.forEach(c=>{const items=services.filter(s=>s.cat===c.id);if(!items.length)return;html+=`<div class="subhead" style="margin-top:14px">${c.label}</div>`+items.map(s=>{const bg=s.img?`background-image:url('${s.img}');background-color:${c.ph}`:`background-color:${c.ph}`;const ad=(s.addons||[]).length?` ・ 追加:${(s.addons||[]).map(a=>svById(a)?svById(a).name:'').filter(Boolean).join('/')}`:'';return `<div class="menurow" data-medit="${s.id}"><div class="mthumb" style="${bg}"></div><div class="mb"><div class="mn">${s.name}</div><div class="mm">${s.price?yen(s.price):'無料'} ・ ${s.min}分${ad}</div></div><button class="iconbtn" data-mup="${s.id}" title="上へ移動"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button><button class="iconbtn" data-mdown="${s.id}" title="下へ移動"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><button class="iconbtn" data-medel="${s.id}"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button></div>`}).join('')});
   const opts=(S().options||[]);
   const optList=opts.length?opts.map(o=>`<div class="menurow"><div class="mb"><div class="mn">${o.name}</div><div class="mm">${o.price?yen(o.price):'無料'}${o.min?' ・ '+o.min+'分':''}</div></div><button class="iconbtn" data-optedit="${o.id}" title="編集"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L18 10l-4-4L4 16v4zM14 6l4 4"/></svg></button><button class="iconbtn" data-optdel="${o.id}" title="削除"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button></div>`).join(''):'<div class="note" style="margin-top:0">オプションはまだありません。</div>';
@@ -1825,6 +1826,7 @@ function bindAdmin(){
   const poai=byId('po-ai');if(poai)poai.onclick=()=>runAi('po-cap',poai,'message');
   // menu mgmt
   const mnew=byId('m-new');if(mnew)mnew.onclick=()=>{state.menuEdit='new';state.menuPhotos=[];render()};
+  const mpu=byId('m-priceupd');if(mpu)mpu.onclick=applyPriceUpdate;
   const optn=byId('opt-new');if(optn)optn.onclick=()=>{state.optEdit='new';render()};
   const ots=byId('opt-seed');if(ots)ots.onclick=seedOptions;
   const osave=byId('o-save');if(osave)osave.onclick=saveOption;
@@ -1888,6 +1890,25 @@ async function saveMenu(){const name=byId('m-name').value.trim();if(!name){alert
     if(checked){if(!hasAll&&!st.services.includes(id))st.services.push(id);}
     else{if(hasAll){st.services=allIds.filter(x=>x!==id);}else{st.services=st.services.filter(x=>x!==id);}}});
   services=DATA.services;staff=DATA.staff;state.menuEdit=null;state.menuPhotos=[];await saveData(DATA);render();}
+async function applyPriceUpdate(){
+  const plan=[
+    {ids:['le1'],cat:'lash',kw:['80本'],price:5500},
+    {ids:['le2'],cat:'lash',kw:['100本'],price:6600},
+    {ids:['le3'],cat:'lash',kw:['120本'],price:7700},
+    {ids:['le4'],cat:'lash',kw:['140本'],price:8800},
+    {ids:['le5'],cat:'lash',kw:['つけ放題','放題'],price:14900},
+    {ids:['wl1'],cat:'wlash',kw:['60束'],price:6000},
+    {ids:['wl2'],cat:'wlash',kw:['80束'],price:7900},
+    {ids:['wl3'],cat:'wlash',kw:['100束'],price:9900},
+    {ids:['wl4'],cat:'wlash',kw:['120束'],price:11900},
+    {ids:['wl5'],cat:'wlash',kw:['つけ放題','放題','無制限'],price:15800}
+  ];
+  let done=[],miss=[];
+  plan.forEach(p=>{let s=p.ids.map(id=>svById(id)).find(Boolean);if(!s)s=DATA.services.find(x=>x.cat===p.cat&&p.kw.some(k=>x.name.includes(k)));if(s){s.price=p.price;done.push(`${s.name}：${yen(p.price)}`);}else miss.push(p.kw[0]);});
+  if(!confirm('まつげエクステ・Wエクステの価格を、お伝えいただいた最新価格に更新します。よろしいですか？\n\n'+done.join('\n')))return;
+  await saveData(DATA);render();
+  alert(`${done.length}件の価格を更新しました。`+(miss.length?`\n\n見つからなかった項目：${miss.join('、')}\nメニュー名が変わっている可能性があります。お手数ですが個別に修正してください。`:''));
+}
 async function moveMenu(id,dir){const arr=DATA.services;const idx=arr.findIndex(s=>s.id===id);if(idx<0)return;const cat=arr[idx].cat;let sw=-1;if(dir<0){for(let i=idx-1;i>=0;i--){if(arr[i].cat===cat){sw=i;break;}}}else{for(let i=idx+1;i<arr.length;i++){if(arr[i].cat===cat){sw=i;break;}}}if(sw<0)return;const tmp=arr[idx];arr[idx]=arr[sw];arr[sw]=tmp;services=DATA.services;await saveData(DATA);render();}
 async function deleteMenu(id){if(!confirm('このメニューを削除しますか？'))return;DATA.services=DATA.services.filter(s=>s.id!==id);DATA.services.forEach(s=>{if(s.addons)s.addons=s.addons.filter(a=>a!==id)});services=DATA.services;state.menuEdit=null;await saveData(DATA);render();}
 async function saveOption(){const name=byId('o-name').value.trim();if(!name){alert('オプション名を入力してください。');return;}const price=parseInt(byId('o-price').value||'0')||0;const min=parseInt(byId('o-min').value||'0')||0;if(!DATA.settings.options)DATA.settings.options=[];if(state.optEdit==='new'){DATA.settings.options.push({id:'o'+Date.now(),name,price,min});}else{const o=DATA.settings.options.find(x=>x.id===state.optEdit);if(o){o.name=name;o.price=price;o.min=min;}}state.optEdit=null;await saveData(DATA);render();}
