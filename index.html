@@ -376,6 +376,17 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .generosity b{color:var(--rose)}
 .quals{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
 .qual{font-size:10.5px;font-weight:700;background:var(--gold-bg);color:var(--gold);border:1px solid var(--gold-soft);border-radius:999px;padding:3px 9px}
+.rank-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;margin-left:4px;display:inline-block;background:#E8EAEF;color:#3A3F4A}
+.rank-badge.r1{background:#CDD3DB;color:#2A2F38}
+.rank-badge.r2{background:var(--gold);color:#fff}
+.mlist{display:flex;flex-direction:column;gap:2px}
+.mlrow{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line);background:#fff;border-radius:8px}
+.mlrow.off{background:var(--paper-2)}
+.mlrow.closed{opacity:.55}
+.mld{width:74px;flex:0 0 auto;font-size:13px;font-weight:700;color:var(--navy)}
+.mlrow .shift-toggle.sm{padding:5px 12px;font-size:12px;flex:0 0 auto}
+.mlrow select{flex:1;min-width:0;font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:8px;padding:6px 4px;background:var(--paper)}
+.mlrow .tl{flex:0 0 auto;color:var(--ink-soft)}
 </style>
 </head>
 <body>
@@ -476,7 +487,7 @@ const RANK_RATE=[0,0.05,0.10];
 function lastVisitDate(phone){const v=DATA.bookings.filter(b=>normPhone(b.phone)===normPhone(phone)&&b.status==='visited').map(b=>b.date).sort();return v.length?v[v.length-1]:null}
 function monthsBetween(d1,d2){const a=new Date(d1),b=new Date(d2);return (b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth())-(b.getDate()<a.getDate()?1:0)}
 function cadenceRank(c){const lv=lastVisitDate(c.phone);if(!lv)return 0;const vc=custBookings(c.phone).length;const days=(today-new Date(lv))/86400000;if(vc>=3&&days<=35)return 2;if(vc>=2&&days<=46)return 1;return 0;}
-function effectiveRank(c){const base=c.rank||0;let staffRank=0;if(base){const anchor=[c.rankSet,lastVisitDate(c.phone),c.joined].filter(Boolean).sort().pop()||fmtDate(today);const drops=Math.max(0,Math.floor(monthsBetween(anchor,fmtDate(today))/3));staffRank=Math.max(0,base-drops);}return Math.max(staffRank,cadenceRank(c))}
+function effectiveRank(c){const base=c.rank||0;if(!base)return 0;const anchor=[c.rankSet,lastVisitDate(c.phone),c.joined].filter(Boolean).sort().pop()||fmtDate(today);const drops=Math.max(0,Math.floor(monthsBetween(anchor,fmtDate(today))/3));return Math.max(0,base-drops)}
 function rankRate(c){return RANK_RATE[effectiveRank(c)]||0}
 function custDiscount(c){if(!c)return{rate:0,label:''};const fr=c.discount?CONFIG.discounts[c.discount]:0;const rr=rankRate(c);if(rr>0&&rr>=fr)return{rate:rr,label:RANK_LABEL[effectiveRank(c)]+' '+Math.round(rr*100)+'%OFF'};if(fr>0)return{rate:fr,label:DISC_LABEL[c.discount]};return{rate:0,label:''}}
 function couponVal(c){if(!c||!(c.couponYen>0))return 0;if(c.couponExpiry&&fmtDate(today)>c.couponExpiry)return 0;return c.couponYen}
@@ -1260,7 +1271,7 @@ function renderMypage(){
   const rebookHtml=lastBk?`<button class="btn btn-ghost" id="mp-rebook" style="width:100%;margin:0 0 12px">🔁 前回と同じメニューで予約（${lastBk.items.map(x=>x.name).join('＋')}）</button>`:'';
   const er=effectiveRank(c);
   const ladder=[[0,'通常会員','通常価格でご利用いただけます','どなたでも'],[1,'シルバー会員','毎回のお会計が 5%OFF','1.5ヶ月以内のご来店ペース'],[2,'ゴールド会員','毎回のお会計が 10%OFF','毎月のご来店']];
-  const rankLadderHtml=`<div class="subhead">会員ランクについて</div><div class="ranklad">${ladder.map(r=>`<div class="rank-tier ${er===r[0]?'cur':''}"><div class="rt-top"><span class="rt-name">${['🥉','🥈','🥇'][r[0]]} ${r[1]}</span>${er===r[0]?'<span class="rt-now">いまここ</span>':''}</div><div class="rt-ben">${r[2]}</div><div class="rt-cond">条件：${r[3]}</div></div>`).join('')}</div><div class="note" style="margin-top:8px">ご来店のペースで自動的にランクが上がります。<b>1.5ヶ月以内</b>のご来店でシルバー（5%OFF）、<b>毎月</b>のご来店でゴールド（10%OFF）。ランクが上がるほど、毎回のお会計がお得になります。</div>`;
+  const rankLadderHtml=`<div class="subhead">会員ランクについて</div><div class="ranklad">${ladder.map(r=>`<div class="rank-tier ${er===r[0]?'cur':''}"><div class="rt-top"><span class="rt-name">${['🥉','🥈','🥇'][r[0]]} ${r[1]}</span>${er===r[0]?'<span class="rt-now">いまここ</span>':''}</div><div class="rt-ben">${r[2]}</div><div class="rt-cond">目安：${r[3]}</div></div>`).join('')}</div><div class="note" style="margin-top:8px">ご来店の頻度などをもとに、サロンがランクを設定します（目安：<b>1.5ヶ月以内</b>のご来店でシルバー＝5%OFF、<b>毎月</b>のご来店でゴールド＝10%OFF）。ランクが上がるほど、毎回のお会計がお得になります。</div>`;
   const generosityHtml=`<div class="generosity">💛 物価高が続くいま、少しでも多くお客様に還元したいと思っています。貯まったポイントや会員ランクの割引は、<b>どうぞお気遣いなく、たくさんお使いください</b>。お客様に喜んでいただくことが、私たちのいちばんの願いです。</div>`;
   const expiryHtml=`<div class="subhead">ポイント・特典の有効期限</div><div class="earn"><div class="earn-row"><span>👥 お友達紹介のポイント</span><b>2年間</b></div><div class="earn-row"><span>🏠 ご近所シェアのポイント</span><b>3ヶ月間</b></div><div class="earn-row"><span>📷 ギャラリー投稿のポイント</span><b>3ヶ月間</b></div><div class="earn-row"><span>✉ ご意見箱のポイント</span><b>3ヶ月間</b></div><div class="earn-row"><span>🎂 お誕生日クーポン</span><b>前後1ヶ月</b></div></div><div class="note" style="margin-top:6px">お誕生日クーポンは、お誕生日の<b>前月・当月・翌月</b>の3ヶ月間ご利用いただけます（例：6月生まれの方は5月・6月・7月）。期限を過ぎた分は無効になりますので、ぜひお早めにお使いください😊</div>`;
   const previewBar=state.previewCust?`<div class="preview-bar"><span>👀 スタッフ確認用プレビュー（このお客様に表示される画面です）</span><button id="mp-preview-back">← 管理画面に戻る</button></div>`:'';
@@ -1270,7 +1281,7 @@ function renderMypage(){
     const conf=Array.from({length:20}).map((_,i)=>`<i style="left:${Math.round(Math.random()*100)}%;background:${bcolors[i%bcolors.length]};animation-duration:${(2.4+Math.random()*1.8).toFixed(2)}s;animation-delay:${(Math.random()*1.3).toFixed(2)}s"></i>`).join('');
     bdayBanner=`<div class="bday-banner"><div class="confetti">${conf}</div><div class="bday-pop">🎉🎊🎉</div><div class="bday-msg">お誕生日おめでとうございます！</div><div class="bday-sub">${c.name} 様、すてきな一年になりますように🎂</div><div class="bday-coupon">🎁 お誕生日の特典として <b>1,000円クーポン</b> をご用意しています。お誕生日の<b>前月・当月・翌月（前後1ヶ月）</b>の間にご利用ください（例：6月生まれの方は5・6・7月）。ご来店時にスタッフへお伝えください。</div></div>`;
   }
-  app.innerHTML=`<div class="fade">${previewBar}${bdayBanner}<div class="mp-hero"><button class="mp-logout" id="mp-out">ログアウト</button><div class="mp-hello">${t('mpThanks')} ${c.birthday?`・ 🎂${bdayLabel(c.birthday)}`:''}</div><div class="mp-name">${c.name} 様 ${dlabel?`<span class="disc-badge">${dlabel}</span>`:''}</div><div class="mp-ptlabel">保有ポイント</div><div class="mp-pt">${bal.toLocaleString()}<small>pt</small></div><div class="mp-meta">来店 ${vc}回 ・ 今後のご予約 ${upcoming}件${coupon}</div></div>
+  app.innerHTML=`<div class="fade">${previewBar}${bdayBanner}<div class="mp-hero"><button class="mp-logout" id="mp-out">ログアウト</button><div class="mp-hello">${t('mpThanks')} ${c.birthday?`・ 🎂${bdayLabel(c.birthday)}`:''}</div><div class="mp-name">${c.name} 様 <span class="rank-badge r${effectiveRank(c)}">${RANK_LABEL[effectiveRank(c)]}</span>${c.discount?`<span class="disc-badge">${DISC_LABEL[c.discount]}</span>`:''}</div><div class="mp-ptlabel">保有ポイント</div><div class="mp-pt">${bal.toLocaleString()}<small>pt</small></div><div class="mp-meta">来店 ${vc}回 ・ 今後のご予約 ${upcoming}件${coupon}</div></div>
     <button class="btn btn-primary" id="mp-book" style="width:100%;margin:2px 0 12px">＋ ご予約はこちら（情報入力なしでOK）</button>
     ${rebookHtml}
     ${(!c.birthday)?`<div class="reco" style="border-color:var(--rose)"><div class="reco-m">🎂 お誕生日が未登録です。ご来店時にスタッフへお伝えください。お誕生日月に特典（1,000円クーポン）のご案内をお送りします。</div></div>`:''}
@@ -1448,7 +1459,8 @@ function bookingRow(x,i){
   return `<div class="booking" style="animation-delay:${i*.04}s"><div class="bk-time">${x.time}</div><div class="bk-body"><div class="bk-name">${nm} <span style="font-weight:400;color:var(--ink-soft);font-size:11px">様</span></div><div class="bk-svc">${svc} / ${stById(x.staffId).name}</div>${tags?`<div class="bk-tags">${tags}</div>`:''}${x.customerMemo?`<div class="bk-note">📝 ${x.customerMemo}</div>`:''}</div><span class="pill ${x.status}">${pillTxt}</span>${acts?`<div class="bk-actions">${acts}</div>`:''}</div>`;
 }
 function adminSchedule(){
-  const sw=`<div class="schedmode"><button data-sm="cal" class="${state.schedMode==='cal'?'on':''}">シフト（月）</button><button data-sm="shift" class="${state.schedMode==='shift'?'on':''}">週間シフト</button><button data-sm="day" class="${state.schedMode==='day'?'on':''}">日別状況</button></div>`;
+  const sw=`<div class="schedmode"><button data-sm="month" class="${state.schedMode==='month'?'on':''}">毎日の時間（月間）</button><button data-sm="cal" class="${state.schedMode==='cal'?'on':''}">シフト（月）</button><button data-sm="shift" class="${state.schedMode==='shift'?'on':''}">週間シフト</button><button data-sm="day" class="${state.schedMode==='day'?'on':''}">日別状況</button></div>`;
+  if(state.schedMode==='month')return sw+shiftMonthList();
   if(state.schedMode==='cal')return sw+shiftCalendar();
   if(state.schedMode==='shift')return sw+shiftEditor();
   const date=state.schedDate;const reals=staff.filter(s=>s.id!=='s0');
@@ -1464,6 +1476,21 @@ function shiftEditor(){
       if(closed)return `<div class="shift-day"><span class="shift-dow" style="${i===0?'color:var(--gold)':''}">${d}</span><span class="note" style="margin:0;flex:1">定休日</span></div>`;
       return `<div style="padding:9px 0;border-bottom:1px solid var(--line)"><div style="display:flex;align-items:center;gap:9px;${dsp.on?'margin-bottom:8px':''}"><span class="shift-dow" style="${i===0?'color:var(--gold)':''}">${d}</span><button class="shift-toggle ${dsp.on?'on':''}" data-daytoggle="w|${s.id}|${i}">${dsp.on?'出勤':'休み'}</button>${dsp.on?'':'<span class="note" style="margin:0">受付なし</span>'}</div>${dsp.on?`<div style="padding-left:39px">${rangeRows('w',s.id,i)}</div>`:''}</div>`}).join('');
     return `<div class="sc-staff"><div class="sc-head"><div class="sc-av" style="background:${s.color}">${s.name.split(' ')[1][0]}</div><div><div class="sc-name">${s.name}</div><div class="sc-role">${s.role}</div></div></div><button class="btn btn-ghost" data-shiftall="${s.id}" style="width:100%;margin:4px 0 6px">営業日すべてを 9:00〜21:00 出勤に一括設定</button>${rows}</div>`}).join('')+`<div class="note">曜日ごとの受付時間を設定します（火曜は定休）。ここで設定すれば、その曜日は<b>毎週・今月以降ずっと自動で反映</b>されるので、1日ずつ入れる必要はありません。特定の日だけ変えたいときは「シフト（月）」から個別に設定できます。</div>`;
+}
+function shiftMonthList(){
+  const sid=state.schedStaff||'s1';const reals=staff.filter(s=>s.id!=='s0');
+  const chips=reals.map(s=>`<button class="chip ${sid===s.id?'sel':''}" data-shstaff="${s.id}">${s.name}</button>`).join('');
+  const m=state.scM,y=m.getFullYear(),mo=m.getMonth(),days=new Date(y,mo+1,0).getDate();
+  const canPrev=!(y===today.getFullYear()&&mo===today.getMonth());
+  const hopts=v=>{let o='';for(let h=OPEN_HOUR;h<=LAST_RECEPTION;h++)o+=`<option value="${h}" ${h===v?'selected':''}>${gpad(h)}:00</option>`;return o};
+  let rows='';
+  for(let d=1;d<=days;d++){const dd=new Date(y,mo,d);const ds=fmtDate(dd);const dow=dd.getDay();
+    if(dow===CLOSED_DOW){rows+=`<div class="mlrow closed"><span class="mld">${d}日(火)</span><span class="note" style="margin:0">定休日</span></div>`;continue;}
+    const dsp=shiftDisplay('m',sid,ds);const on=dsp.on&&dsp.ranges.length;const r=on?dsp.ranges[0]:{start:9,end:21};const ov=(DATA.shiftOverrides[sid]||{})[ds];
+    rows+=`<div class="mlrow ${on?'':'off'}"><span class="mld">${d}日(${DOW[dow]})${ov?' ●':''}</span><button class="shift-toggle sm ${on?'on':''}" data-daytoggle="m|${sid}|${ds}">${on?'出勤':'休み'}</button>${on?`<select data-mset="${sid}|${ds}|start">${hopts(r.start)}</select><span class="tl">〜</span><select data-mset="${sid}|${ds}|end">${hopts(r.end)}</select>`:''}</div>`;
+  }
+  const nav=`<div class="cal-head" style="margin-bottom:12px"><button class="cal-nav" id="ml-prev" ${canPrev?'':'disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><div class="cal-title">${y}年 ${mo+1}月</div><button class="cal-nav" id="ml-next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></div>`;
+  return `<div class="chips" style="margin-bottom:12px">${chips}</div>${nav}<div class="note" style="margin-bottom:10px"><b>${stById(sid).name}</b> さんの毎日の受付時間を、この一覧でまとめて設定できます。各日の「出勤／休み」を押し、出勤の日は開始・終了の時刻を選ぶだけです（毎日違ってもOK）。●は個別設定済みの日です。設定はお客様の予約画面にすぐ反映されます。</div><div class="mlist">${rows}</div>`;
 }
 function shiftCalendar(){
   const sid=state.schedStaff||'s1';const reals=staff.filter(s=>s.id!=='s0');
@@ -1772,6 +1799,9 @@ function bindAdmin(){
   const blkon=byId('blk-on');if(blkon)blkon.onclick=()=>shiftBulkApply(false);
   const blkoff=byId('blk-off');if(blkoff)blkoff.onclick=()=>shiftBulkApply(true);
   const icsm=byId('ics-month');if(icsm)icsm.onclick=downloadMonthICS;
+  app.querySelectorAll('[data-mset]').forEach(s=>s.onchange=()=>shiftDaySet(s.dataset.mset,s.value));
+  const mlp=byId('ml-prev');if(mlp&&!mlp.disabled)mlp.onclick=()=>{state.scM=new Date(state.scM.getFullYear(),state.scM.getMonth()-1,1);render()};
+  const mln=byId('ml-next');if(mln)mln.onclick=()=>{state.scM=new Date(state.scM.getFullYear(),state.scM.getMonth()+1,1);render()};
   const cdo=byId('cd-off');if(cdo)cdo.onclick=()=>ovSet('off');
   // composer
   const mic=byId('cmp-mic');if(mic)mic.onclick=()=>startVoice('cmp-msg',mic);
@@ -1898,6 +1928,7 @@ async function addManualVisit(key){
 async function shiftFillAll(sid){if(!confirm('このスタッフの営業日（火曜以外）すべてを 9:00〜21:00 の出勤に設定します。よろしいですか？'))return;DATA.shifts[sid]=DATA.shifts[sid]||{};for(let d=0;d<7;d++){if(d===CLOSED_DOW){DATA.shifts[sid][d]={on:false,start:OPEN_HOUR,end:LAST_RECEPTION};}else{DATA.shifts[sid][d]={on:true,start:OPEN_HOUR,end:LAST_RECEPTION};}}await saveData(DATA);render();}
 async function shiftToggle(key){const[sid,d]=key.split('|');DATA.shifts[sid]=DATA.shifts[sid]||{};const sh=DATA.shifts[sid][d]||{on:false,start:9,end:21};sh.on=!sh.on;DATA.shifts[sid][d]=sh;await saveData(DATA);render();}
 async function shiftSet(key,field,val){const[sid,d]=key.split('|');const sh=DATA.shifts[sid][d];sh[field]=parseInt(val);if(sh.start>=sh.end)sh.end=Math.min(LAST_RECEPTION,sh.start+1);await saveData(DATA);render();}
+async function shiftDaySet(key,val){const[sid,ds,field]=key.split('|');const o=_matObj('m',sid,ds);if(!o.ranges||!o.ranges.length)o.ranges=[{start:9,end:21}];o.on=true;o.ranges[0][field]=parseInt(val);if(o.ranges[0].start>=o.ranges[0].end){if(field==='start')o.ranges[0].end=Math.min(LAST_RECEPTION,o.ranges[0].start+1);else o.ranges[0].start=Math.max(OPEN_HOUR,o.ranges[0].end-1);}await saveData(DATA);render();}
 async function shiftBulkApply(off){const sid=state.schedStaff||'s1';const from=byId('blk-from').value,to=byId('blk-to').value;if(!from||!to){alert('開始日と終了日を選んでください。');return;}const s=parseInt(byId('blk-s').value),e=parseInt(byId('blk-e').value);if(!off&&s>=e){alert('受付の終了は開始より後の時刻にしてください。');return;}const[fy,fm,fd]=from.split('-').map(Number),[ty,tm,td]=to.split('-').map(Number);let d=new Date(fy,fm-1,fd);const end=new Date(ty,tm-1,td);if(d>end){alert('終了日は開始日と同じか後の日にしてください。');return;}DATA.shiftOverrides[sid]=DATA.shiftOverrides[sid]||{};let cnt=0;while(d<=end){if(d.getDay()!==CLOSED_DOW){const ds=fmtDate(d);DATA.shiftOverrides[sid][ds]=off?{off:true}:{ranges:[{start:s,end:e}]};cnt++;}d.setDate(d.getDate()+1);}await saveData(DATA);render();alert(`${stById(sid).name}さんの${cnt}日分を${off?'終日休み':gpad(s)+':00〜'+gpad(e)+':00 の出勤'}に設定しました。`);}
 function buildMonthICS(){const m=state.scM,y=m.getFullYear(),mo=m.getMonth(),days=new Date(y,mo+1,0).getDate();const reals=staff.filter(s=>s.id!=='s0');let ics='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Vi5//Shift//JP\r\nCALSCALE:GREGORIAN\r\n';const dt=(ds,h)=>ds.replace(/-/g,'')+'T'+gpad(h)+'0000';for(const s of reals){for(let dnum=1;dnum<=days;dnum++){const dd=new Date(y,mo,dnum);if(dd.getDay()===CLOSED_DOW)continue;const ds=fmtDate(dd);if(!staffWorks(s.id,ds))continue;const sh=effectiveShift(s.id,ds);if(!sh.on||!sh.ranges.length)continue;for(const r of sh.ranges){ics+='BEGIN:VEVENT\r\n'+`UID:${s.id}-${ds}-${r.start}@vi5\r\n`+`DTSTART:${dt(ds,r.start)}\r\n`+`DTEND:${dt(ds,r.end)}\r\n`+`SUMMARY:出勤 ${s.name}\r\n`+'END:VEVENT\r\n';}}}ics+='END:VCALENDAR\r\n';return ics;}
 function downloadMonthICS(){const ics=buildMonthICS();const m=state.scM;const fname=`vi5-shift-${m.getFullYear()}-${gpad(m.getMonth()+1)}.ics`;try{const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=fname;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);}catch(e){alert('書き出しに失敗しました。');}}
