@@ -400,6 +400,11 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .bulk-acc{margin-top:14px;border:1px solid var(--line);border-radius:12px;padding:10px 13px;background:#fff}
 .bulk-acc summary{font-size:13px;font-weight:700;color:var(--navy);cursor:pointer}
 .scal-day{cursor:pointer}
+.mtgl{flex:0 0 auto;border:1.5px solid var(--sage);background:#fff;color:var(--sage);border-radius:999px;padding:6px 15px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer}
+.mtgl.on{background:var(--sage);color:#fff}
+.mtgl.off{border-color:var(--rose);color:var(--rose)}
+.mtime{display:flex;align-items:center;gap:6px;flex:1;min-width:0}
+.mtime select{flex:1;min-width:0}
 </style>
 </head>
 <body>
@@ -1493,22 +1498,19 @@ function shiftEditor(){
 function shiftMonthList(){
   const sid=state.schedStaff||'s1';const reals=staff.filter(s=>s.id!=='s0');
   const chips=reals.map(s=>`<button class="chip ${sid===s.id?'sel':''}" data-shstaff="${s.id}">${s.name}</button>`).join('');
-  const m=state.scM,y=m.getFullYear(),mo=m.getMonth();
-  const startDow=new Date(y,mo,1).getDay(),days=new Date(y,mo+1,0).getDate();
+  const m=state.scM,y=m.getFullYear(),mo=m.getMonth(),days=new Date(y,mo+1,0).getDate();
   const canPrev=!(y===today.getFullYear()&&mo===today.getMonth());
-  const bs=state.brushStart??10,be=state.brushEnd??19,bm=state.brushMode||'work';
+  const bs=state.brushStart??10,be=state.brushEnd??19;
   const hopts=v=>{let o='';for(let h=OPEN_HOUR;h<=LAST_RECEPTION;h++)o+=`<option value="${h}" ${h===v?'selected':''}>${gpad(h)}:00</option>`;return o};
-  const brush=`<div class="brush"><div class="brush-label">① タップで設定する内容を選ぶ</div><div class="brush-row"><button class="brush-btn ${bm==='work'?'on':''}" data-brush="work">出勤</button><select id="brush-s" ${bm!=='work'?'disabled':''}>${hopts(bs)}</select><span class="tl">〜</span><select id="brush-e" ${bm!=='work'?'disabled':''}>${hopts(be)}</select></div><div class="brush-row"><button class="brush-btn off ${bm==='off'?'on':''}" data-brush="off">休み</button><button class="brush-btn ${bm==='normal'?'on':''}" data-brush="normal">週間シフト通り</button></div><div class="note" style="margin:8px 0 0">② 下のカレンダーの日付を<b>タップ</b>すると、その日にすぐ反映されます。<br>同じ時間の日は続けてタップ、違う時間の日は上の時間を変えてタップ、休みの日は「休み」を選んでタップ。</div></div>`;
-  let cells='';['日','月','火','水','木','金','土'].forEach((d,i)=>cells+=`<div class="cal-dow ${i===0?'sun':''}">${d}</div>`);
-  for(let i=0;i<startDow;i++)cells+='<div></div>';
-  for(let d=1;d<=days;d++){const dd=new Date(y,mo,d);const ds=fmtDate(dd);const tue=dd.getDay()===CLOSED_DOW;const sh=effectiveShift(sid,ds);const ov=(DATA.shiftOverrides[sid]||{})[ds];
-    let cls='open',label='';if(tue){cls='closed';label='定休'}else if(!sh.on||!sh.ranges.length){cls='blocked';label='休'}else{label=`${sh.ranges[0].start}-${sh.ranges[0].end}`+(sh.ranges.length>1?'+':'')}
-    cells+=`<div class="scal-day ${cls}" ${tue?'':`data-paint="${ds}"`}>${d}<span class="scal-lb">${label}</span>${ov?'<span class="scal-ov">●</span>':''}</div>`}
-  const nav=`<div class="cal-head"><button class="cal-nav" id="ml-prev" ${canPrev?'':'disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><div class="cal-title">${y}年 ${mo+1}月</div><button class="cal-nav" id="ml-next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></div>`;
-  const monthStart=fmtDate(new Date(y,mo,1)),monthEnd=fmtDate(new Date(y,mo+1,0));
-  const bulk=`<details class="bulk-acc"><summary>📅 期間でまとめて設定（同じ時間が続くとき便利）</summary><div class="addform" style="margin:10px 0 0"><div class="field two"><div><label>開始日</label><input type="date" id="blk-from" value="${monthStart}"></div><div><label>終了日</label><input type="date" id="blk-to" value="${monthEnd}"></div></div><div class="field two"><div><label>受付 開始</label><select id="blk-s">${hopts(bs)}</select></div><div><label>受付 終了</label><select id="blk-e">${hopts(be)}</select></div></div><div style="display:flex;gap:8px"><button class="btn btn-primary" id="blk-on" style="flex:1">この期間を出勤に</button><button class="btn btn-ghost" id="blk-off" style="flex:1;color:var(--rose);border-color:#D8B6BF">この期間を休みに</button></div><div class="note" style="margin-top:8px">火曜の定休日は自動で除きます。</div></div></details>`;
-  const icsBtn=`<button class="btn btn-ghost" id="ics-month" style="width:100%;margin-top:10px">📅 今月（${mo+1}月）の全員のシフトをGoogleカレンダーへ一括出力</button><div class="note" style="margin-top:6px">押すとファイル（.ics）が保存されます。Googleカレンダー →「設定」→「インポート/エクスポート」から取り込むと、全員の今月分が一度に入ります。</div>`;
-  return `<div class="chips" style="margin-bottom:12px">${chips}</div>${brush}${nav}<div class="cal-grid scal-grid">${cells}</div>${bulk}${icsBtn}<div class="note">●が付いた日は個別設定済みです。火曜は定休日です。設定はお客様の予約画面にすぐ反映されます。</div>`;
+  const nav=`<div class="cal-head" style="margin-bottom:10px"><button class="cal-nav" id="ml-prev" ${canPrev?'':'disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><div class="cal-title">${y}年 ${mo+1}月</div><button class="cal-nav" id="ml-next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></div>`;
+  const qf=`<div class="addform" style="margin-bottom:12px;padding:12px 13px"><div class="brush-label">まず基本の時間をまとめて入れる（あとで違う日だけ直せます）</div><div style="display:flex;align-items:center;gap:6px;margin-top:8px"><select id="qf-s">${hopts(bs)}</select><span class="tl">〜</span><select id="qf-e">${hopts(be)}</select><button class="btn btn-primary" id="qf-fill" style="flex:1;white-space:nowrap">全営業日に入れる</button></div></div>`;
+  let rows='';
+  for(let d=1;d<=days;d++){const dd=new Date(y,mo,d);const ds=fmtDate(dd);const dow=dd.getDay();
+    if(dow===CLOSED_DOW){rows+=`<div class="mlrow closed"><span class="mld">${d}日(火)</span><span class="note" style="margin:0">定休日</span></div>`;continue;}
+    const sh=effectiveShift(sid,ds);const on=sh.on&&sh.ranges.length;const r=on?sh.ranges[0]:{start:bs,end:be};
+    rows+=`<div class="mlrow ${on?'':'off'}"><span class="mld">${d}日(${DOW[dow]})</span><button class="mtgl ${on?'on':'off'}" data-mtoggle="${ds}">${on?'出勤':'休み'}</button><span class="mtime" style="${on?'':'display:none'}"><select data-ms="${ds}">${hopts(r.start)}</select><span class="tl">〜</span><select data-me="${ds}">${hopts(r.end)}</select></span></div>`;
+  }
+  return `<div class="chips" style="margin-bottom:12px">${chips}</div>${nav}${qf}<div class="note" style="margin-bottom:8px">各日の「出勤／休み」を押し、出勤の日は時間を選ぶだけ。毎日違ってもOK、休みの日は「休み」を押してください。入力中に画面は動きません。</div><div class="mlist">${rows}</div><button class="btn btn-ghost" id="ics-month" style="width:100%;margin-top:14px">📅 今月（${mo+1}月）の全員のシフトをGoogleカレンダーへ出力</button><div class="note" style="margin-top:6px">押すとファイル（.ics）が保存されます。Googleカレンダー →「設定」→「インポート/エクスポート」から取り込めます。</div>`;
 }
 function shiftCalendar(){
   const sid=state.schedStaff||'s1';const reals=staff.filter(s=>s.id!=='s0');
@@ -1817,10 +1819,9 @@ function bindAdmin(){
   const blkon=byId('blk-on');if(blkon)blkon.onclick=()=>shiftBulkApply(false);
   const blkoff=byId('blk-off');if(blkoff)blkoff.onclick=()=>shiftBulkApply(true);
   const icsm=byId('ics-month');if(icsm)icsm.onclick=downloadMonthICS;
-  app.querySelectorAll('[data-paint]').forEach(b=>b.onclick=()=>applyBrush(b.dataset.paint));
-  app.querySelectorAll('[data-brush]').forEach(b=>b.onclick=()=>{state.brushMode=b.dataset.brush;render()});
-  const bsl=byId('brush-s');if(bsl)bsl.onchange=()=>{state.brushStart=parseInt(bsl.value);if(state.brushStart>=state.brushEnd)state.brushEnd=Math.min(LAST_RECEPTION,state.brushStart+1);render()};
-  const bel=byId('brush-e');if(bel)bel.onchange=()=>{state.brushEnd=parseInt(bel.value);if(state.brushStart>=state.brushEnd)state.brushStart=Math.max(OPEN_HOUR,state.brushEnd-1);render()};
+  app.querySelectorAll('[data-mtoggle]').forEach(b=>b.onclick=()=>mDayToggle(b));
+  app.querySelectorAll('[data-ms],[data-me]').forEach(s=>s.onchange=()=>mDayTime(s));
+  const qff=byId('qf-fill');if(qff)qff.onclick=qfFill;
   const mlp=byId('ml-prev');if(mlp&&!mlp.disabled)mlp.onclick=()=>{state.scM=new Date(state.scM.getFullYear(),state.scM.getMonth()-1,1);render()};
   const mln=byId('ml-next');if(mln)mln.onclick=()=>{state.scM=new Date(state.scM.getFullYear(),state.scM.getMonth()+1,1);render()};
   const cdo=byId('cd-off');if(cdo)cdo.onclick=()=>ovSet('off');
@@ -1969,11 +1970,14 @@ async function addManualVisit(key){
 async function shiftFillAll(sid){if(!confirm('このスタッフの営業日（火曜以外）すべてを 9:00〜21:00 の出勤に設定します。よろしいですか？'))return;DATA.shifts[sid]=DATA.shifts[sid]||{};for(let d=0;d<7;d++){if(d===CLOSED_DOW){DATA.shifts[sid][d]={on:false,start:OPEN_HOUR,end:LAST_RECEPTION};}else{DATA.shifts[sid][d]={on:true,start:OPEN_HOUR,end:LAST_RECEPTION};}}await saveData(DATA);render();}
 async function shiftToggle(key){const[sid,d]=key.split('|');DATA.shifts[sid]=DATA.shifts[sid]||{};const sh=DATA.shifts[sid][d]||{on:false,start:9,end:21};sh.on=!sh.on;DATA.shifts[sid][d]=sh;await saveData(DATA);render();}
 async function shiftSet(key,field,val){const[sid,d]=key.split('|');const sh=DATA.shifts[sid][d];sh[field]=parseInt(val);if(sh.start>=sh.end)sh.end=Math.min(LAST_RECEPTION,sh.start+1);await saveData(DATA);render();}
-async function applyBrush(ds){const sid=state.schedStaff||'s1';const bm=state.brushMode||'work';DATA.shiftOverrides[sid]=DATA.shiftOverrides[sid]||{};
-  if(bm==='normal'){delete DATA.shiftOverrides[sid][ds];}
-  else if(bm==='off'){DATA.shiftOverrides[sid][ds]={off:true};}
-  else{let s=state.brushStart??10,e=state.brushEnd??19;if(s>=e)e=Math.min(LAST_RECEPTION,s+1);DATA.shiftOverrides[sid][ds]={ranges:[{start:s,end:e}]};}
-  await saveData(DATA);render();}
+let _saveT=null;
+function saveSoon(){clearTimeout(_saveT);_saveT=setTimeout(()=>{saveData(DATA);},700);}
+function mDayToggle(b){const ds=b.dataset.mtoggle;const sid=state.schedStaff||'s1';DATA.shiftOverrides[sid]=DATA.shiftOverrides[sid]||{};const cur=effectiveShift(sid,ds);const isOn=cur.on&&cur.ranges.length;const row=b.closest('.mlrow');const tm=row.querySelector('.mtime');
+  if(isOn){DATA.shiftOverrides[sid][ds]={off:true};b.classList.remove('on');b.classList.add('off');b.textContent='休み';row.classList.add('off');if(tm)tm.style.display='none';}
+  else{const ssel=row.querySelector('[data-ms]'),esel=row.querySelector('[data-me]');let s=ssel?parseInt(ssel.value):(state.brushStart??10),e=esel?parseInt(esel.value):(state.brushEnd??19);if(s>=e)e=Math.min(LAST_RECEPTION,s+1);DATA.shiftOverrides[sid][ds]={ranges:[{start:s,end:e}]};b.classList.add('on');b.classList.remove('off');b.textContent='出勤';row.classList.remove('off');if(tm)tm.style.display='';}
+  saveSoon();}
+function mDayTime(sel){const ds=sel.dataset.ms||sel.dataset.me;const sid=state.schedStaff||'s1';const row=sel.closest('.mlrow');const ssel=row.querySelector('[data-ms]'),esel=row.querySelector('[data-me]');let s=parseInt(ssel.value),e=parseInt(esel.value);if(s>=e){e=Math.min(LAST_RECEPTION,s+1);if(esel)esel.value=e;}DATA.shiftOverrides[sid]=DATA.shiftOverrides[sid]||{};DATA.shiftOverrides[sid][ds]={ranges:[{start:s,end:e}]};saveSoon();}
+async function qfFill(){const sid=state.schedStaff||'s1';const ss=byId('qf-s'),ee=byId('qf-e');let s=parseInt(ss.value),e=parseInt(ee.value);if(s>=e){alert('終了は開始より後の時刻にしてください。');return;}if(!confirm(`${stById(sid).name}さんの今月の全営業日（火曜以外）を ${gpad(s)}:00〜${gpad(e)}:00 の出勤にします。よろしいですか？（このあと違う日だけ直せます）`))return;const m=state.scM,y=m.getFullYear(),mo=m.getMonth(),days=new Date(y,mo+1,0).getDate();DATA.shiftOverrides[sid]=DATA.shiftOverrides[sid]||{};for(let d=1;d<=days;d++){const dd=new Date(y,mo,d);if(dd.getDay()===CLOSED_DOW)continue;DATA.shiftOverrides[sid][fmtDate(dd)]={ranges:[{start:s,end:e}]};}state.brushStart=s;state.brushEnd=e;await saveData(DATA);render();}
 async function shiftDaySet(key,val){const[sid,ds,field]=key.split('|');const o=_matObj('m',sid,ds);if(!o.ranges||!o.ranges.length)o.ranges=[{start:9,end:21}];o.on=true;o.ranges[0][field]=parseInt(val);if(o.ranges[0].start>=o.ranges[0].end){if(field==='start')o.ranges[0].end=Math.min(LAST_RECEPTION,o.ranges[0].start+1);else o.ranges[0].start=Math.max(OPEN_HOUR,o.ranges[0].end-1);}await saveData(DATA);render();}
 async function shiftBulkApply(off){const sid=state.schedStaff||'s1';const from=byId('blk-from').value,to=byId('blk-to').value;if(!from||!to){alert('開始日と終了日を選んでください。');return;}const s=parseInt(byId('blk-s').value),e=parseInt(byId('blk-e').value);if(!off&&s>=e){alert('受付の終了は開始より後の時刻にしてください。');return;}const[fy,fm,fd]=from.split('-').map(Number),[ty,tm,td]=to.split('-').map(Number);let d=new Date(fy,fm-1,fd);const end=new Date(ty,tm-1,td);if(d>end){alert('終了日は開始日と同じか後の日にしてください。');return;}DATA.shiftOverrides[sid]=DATA.shiftOverrides[sid]||{};let cnt=0;while(d<=end){if(d.getDay()!==CLOSED_DOW){const ds=fmtDate(d);DATA.shiftOverrides[sid][ds]=off?{off:true}:{ranges:[{start:s,end:e}]};cnt++;}d.setDate(d.getDate()+1);}await saveData(DATA);render();alert(`${stById(sid).name}さんの${cnt}日分を${off?'終日休み':gpad(s)+':00〜'+gpad(e)+':00 の出勤'}に設定しました。`);}
 function buildMonthICS(){const m=state.scM,y=m.getFullYear(),mo=m.getMonth(),days=new Date(y,mo+1,0).getDate();const reals=staff.filter(s=>s.id!=='s0');let ics='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Vi5//Shift//JP\r\nCALSCALE:GREGORIAN\r\n';const dt=(ds,h)=>ds.replace(/-/g,'')+'T'+gpad(h)+'0000';for(const s of reals){for(let dnum=1;dnum<=days;dnum++){const dd=new Date(y,mo,dnum);if(dd.getDay()===CLOSED_DOW)continue;const ds=fmtDate(dd);if(!staffWorks(s.id,ds))continue;const sh=effectiveShift(s.id,ds);if(!sh.on||!sh.ranges.length)continue;for(const r of sh.ranges){ics+='BEGIN:VEVENT\r\n'+`UID:${s.id}-${ds}-${r.start}@vi5\r\n`+`DTSTART:${dt(ds,r.start)}\r\n`+`DTEND:${dt(ds,r.end)}\r\n`+`SUMMARY:出勤 ${s.name}\r\n`+'END:VEVENT\r\n';}}}ics+='END:VCALENDAR\r\n';return ics;}
