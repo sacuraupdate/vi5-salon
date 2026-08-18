@@ -405,6 +405,17 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .mtgl.off{border-color:var(--rose);color:var(--rose)}
 .mtime{display:flex;align-items:center;gap:6px;flex:1;min-width:0}
 .mtime select{flex:1;min-width:0}
+.pairhead{display:flex;gap:8px;margin-bottom:8px}
+.pairperson{flex:1;display:flex;align-items:center;gap:8px;text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:10px 11px;font-family:inherit;cursor:pointer;position:relative}
+.pairperson.active{border-color:var(--gold);background:var(--gold-bg);box-shadow:0 0 0 1px var(--gold)}
+.pairperson.done .pp-num{background:var(--sage)}
+.pp-num{flex:0 0 auto;width:24px;height:24px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.pp-txt{display:flex;flex-direction:column;min-width:0}
+.pp-txt b{font-size:13px;color:var(--navy)}
+.pp-txt small{font-size:10.5px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+.pp-check{position:absolute;top:6px;right:8px;color:var(--sage);font-weight:700;font-size:13px}
+.pairnow{font-size:12px;color:var(--ink-soft);margin-bottom:12px;text-align:center}
+.pairnow b{color:var(--gold)}
 </style>
 </head>
 <body>
@@ -1074,9 +1085,15 @@ function stepBrowsePair(){
   const selChips=active.length?`<div class="selbar">${active.map(it=>`<span class="selchip" data-rm="${it.id}">${it.name} <b>✕</b></span>`).join('')}</div>`:'';
   const chipHtml=`<div class="gfilter">${chips.map(x=>`<button data-fc="${x[0]}" class="${cur===x[0]?'active':''}">${x[1]}</button>`).join('')}</div>`;
   const modeBar=`<div class="bookmode"><button class="${state.bookMode==='single'?'on':''}" data-bookmode="single">お一人で予約</button><button class="${state.bookMode==='pair'?'on':''}" data-bookmode="pair">👥 おふたりで予約</button></div>`;
-  const tabs=`<div class="pairtabs"><button class="${state.pairEditing==='A'?'on':''}" data-pedit="A">お一人目<span>${state.cartA.length}点</span></button><button class="${state.pairEditing==='B'?'on':''}" data-pedit="B">お二人目<span>${state.cartB.length}点</span></button></div><div class="note" style="margin:0 0 10px">いま<b>「${state.pairEditing==='A'?'お一人目':'お二人目'}」</b>のメニューを選んでいます。タブで切り替えて、おふたり分を選んでください。</div>`;
-  const ready=state.cartA.length>0&&state.cartB.length>0;
-  app.innerHTML=`<div class="fade"><div class="eyebrow">Step 01</div><div class="h-title">${t('selectMenu')}</div><div class="h-sub">${t('menuSub')}</div>${modeBar}${tabs}${chipHtml}${selChips}${listHtml}${addHtml}</div>`+`<div class="cta-bar"><div class="cart-mini"><span class="ct-n">①${state.cartA.length}点・②${state.cartB.length}点</span><span class="ct-p">${yen(cartSum(state.cartA,state.staffA&&state.staffA.id)+cartSum(state.cartB,state.staffB&&state.staffB.id))}</span></div><button class="btn btn-primary" id="next" ${ready?'':'disabled'}>担当を選ぶ</button></div>`;
+  const doneA=state.cartA.length>0,doneB=state.cartB.length>0,ready=doneA&&doneB;
+  const pp=(who,lbl,num,done,cart)=>`<button class="pairperson ${state.pairEditing===who?'active':''} ${done?'done':''}" data-pedit="${who}"><span class="pp-num">${num}</span><span class="pp-txt"><b>${lbl}</b><small>${done?cart.map(x=>x.name).join('・'):'メニューを選んでください'}</small></span>${done?'<span class="pp-check">✓</span>':''}</button>`;
+  const pairHead=`<div class="pairhead">${pp('A','お一人目',1,doneA,state.cartA)}${pp('B','お二人目',2,doneB,state.cartB)}</div><div class="pairnow">いま <b>${state.pairEditing==='A'?'お一人目':'お二人目'}</b> のメニューを選んでいます（上の①②で切り替え）</div>`;
+  let ctaBtn;
+  if(ready)ctaBtn=`<button class="btn btn-primary" id="next">おふたりの担当を選ぶ →</button>`;
+  else if(state.pairEditing==='A'&&doneA&&!doneB)ctaBtn=`<button class="btn btn-primary" id="to-b">お二人目のメニューを選ぶ →</button>`;
+  else if(state.pairEditing==='B'&&doneB&&!doneA)ctaBtn=`<button class="btn btn-primary" id="to-a">← お一人目のメニューを選ぶ</button>`;
+  else ctaBtn=`<button class="btn btn-primary" id="next" disabled>${!doneA?'お一人目':'お二人目'}のメニューを選んでください</button>`;
+  app.innerHTML=`<div class="fade"><div class="eyebrow">Step 01</div><div class="h-title">${t('selectMenu')}</div><div class="h-sub">${t('menuSub')}</div>${modeBar}${pairHead}${chipHtml}${selChips}${listHtml}${addHtml}</div>`+`<div class="cta-bar"><div class="cart-mini"><span class="ct-n">①${state.cartA.length}点・②${state.cartB.length}点</span><span class="ct-p">${yen(cartSum(state.cartA,state.staffA&&state.staffA.id)+cartSum(state.cartB,state.staffB&&state.staffB.id))}</span></div>${ctaBtn}</div>`;
   app.querySelectorAll('[data-bookmode]').forEach(b=>b.onclick=()=>{const mode=b.dataset.bookmode;if(mode==='single'){state.bookMode='single';state.cart=[...state.cartA];}else{state.bookMode='pair';}render();window.scrollTo(0,0)});
   app.querySelectorAll('[data-pedit]').forEach(b=>b.onclick=()=>{state.pairEditing=b.dataset.pedit;state.openCat=null;render();window.scrollTo(0,0)});
   app.querySelectorAll('[data-fc]').forEach(b=>b.onclick=()=>{state.openCat=b.dataset.fc==='all'?null:b.dataset.fc;state.menuOpen=null;render();window.scrollTo(0,0)});
@@ -1085,6 +1102,8 @@ function stepBrowsePair(){
   app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>mut(b.dataset.rm));
   app.querySelectorAll('[data-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();mut(b.dataset.add)});
   const n=byId('next');if(n)n.onclick=()=>{state.step=1;render();window.scrollTo(0,0)};
+  const tb=byId('to-b');if(tb)tb.onclick=()=>{state.pairEditing='B';state.openCat=null;render();window.scrollTo(0,0)};
+  const ta=byId('to-a');if(ta)ta.onclick=()=>{state.pairEditing='A';state.openCat=null;render();window.scrollTo(0,0)};
 }
 function stepStaffPair(){
   const cartA=state.cartA,cartB=state.cartB;
