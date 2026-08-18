@@ -380,7 +380,14 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .rank-badge.r1{background:#CDD3DB;color:#2A2F38}
 .rank-badge.r2{background:var(--gold);color:#fff}
 .mlist{display:flex;flex-direction:column;gap:2px}
-.mlrow{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line);background:#fff;border-radius:8px}
+.mlrow{display:flex;flex-direction:column;gap:6px;padding:9px 10px;border-bottom:1px solid var(--line);background:#fff;border-radius:8px}
+.mlr-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mtimes{display:flex;flex-direction:column;gap:6px}
+.mtrow{display:flex;align-items:center;gap:6px}
+.mtrow select{flex:1;min-width:0;font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:8px;padding:6px 4px;background:var(--paper)}
+.addrng{flex:0 0 auto;border:1px dashed var(--gold);background:var(--gold-bg);color:var(--gold);border-radius:8px;padding:6px 8px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap}
+.rmrng{flex:0 0 auto;border:1px solid var(--line);background:#fff;color:var(--rose);border-radius:8px;padding:6px 9px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer}
+.mtgl.offb{border-color:var(--rose);color:var(--rose)}
 .mlrow.off{background:var(--paper-2)}
 .mlrow.closed{opacity:.55}
 .mld{width:74px;flex:0 0 auto;font-size:13px;font-weight:700;color:var(--navy)}
@@ -418,6 +425,18 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .pairnow b{color:var(--gold)}
 .pairguide{background:var(--navy);color:var(--paper);border-radius:12px;padding:11px 14px;font-size:12px;line-height:1.7;margin-bottom:10px}
 .pairguide b{color:#fff}
+.rankgoal{background:linear-gradient(135deg,#FFF6E9,#FCEEF2);border:1px solid var(--gold-soft);border-radius:12px;padding:11px 14px;font-size:13px;line-height:1.7;color:var(--ink);margin-bottom:10px}
+.rankgoal b{color:var(--rose)}
+.rankgoal.gold{background:linear-gradient(135deg,#FBEFC9,#FFF6E9);border-color:var(--gold)}
+.staffintro{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+.sicard{display:flex;gap:12px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px}
+.si-photo{flex:0 0 auto;width:64px;height:64px;border-radius:50%;background:var(--navy);background-size:cover;background-position:center;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px}
+.si-body{min-width:0;flex:1}
+.si-name{font-weight:700;color:var(--navy);font-size:15px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.si-role{font-size:11px;font-weight:600;color:var(--gold)}
+.si-intro{font-size:12.5px;color:var(--ink-soft);line-height:1.6;margin-top:4px}
+.si-biz{font-size:12.5px;color:var(--ink);line-height:1.6;margin-top:6px}
+.si-link{display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:var(--gold);text-decoration:none;border:1px solid var(--gold-soft);border-radius:999px;padding:5px 12px}
 </style>
 </head>
 <body>
@@ -773,10 +792,13 @@ function renderHome(){
   const mapAddr=s.address||'大阪府大阪市北区西天満1-2-25 スクエア北浜3階';
   const dirUrl=s.mapUrl||('https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(mapAddr));
   const mapHtml=`<a href="${dirUrl}" target="_blank" style="text-decoration:none;display:block"><div style="position:relative;border-radius:14px;overflow:hidden;margin-bottom:10px;border:1px solid var(--line)"><iframe class="mapembed" loading="lazy" src="https://maps.google.com/maps?q=34.6933,135.5088&z=16&hl=ja&output=embed"></iframe><div style="position:absolute;inset:0"></div></div></a><a class="linkbtn" href="${dirUrl}" target="_blank" style="margin-bottom:10px"><span class="ic">🧭</span>ここへ行く（Googleマップで道案内）</a>`;
+  const _reals=DATA.staff.filter(x=>x.id!=='s0');
+  const staffHtml=_reals.length?`<div class="sec-label"><span class="t">スタッフ紹介</span></div><div class="staffintro">${_reals.map(s=>{const q=(s.quals||'').split(/[,、]/).map(x=>x.trim()).filter(Boolean);return `<div class="sicard"><div class="si-photo"${s.photo?` style="background-image:url('${s.photo}')"`:''}>${s.photo?'':nameInitial(s.name)}</div><div class="si-body"><div class="si-name">${s.name}${s.role?`<span class="si-role">${s.role}</span>`:''}</div>${s.intro?`<div class="si-intro">${s.intro}</div>`:''}${q.length?`<div class="quals">${q.map(x=>`<span class="qual">🏅 ${x}</span>`).join('')}</div>`:''}${s.biz?`<div class="si-biz">💼 ${s.biz}</div>`:''}${s.bizUrl?`<a class="si-link" href="${s.bizUrl}" target="_blank">🔗 詳しく見る</a>`:''}</div></div>`}).join('')}</div>`:'';
   app.innerHTML=`<div class="fade">${bannerHtml}
     <div class="hero-home"${heroStyle}><div class="hh-tag">Vi5 北浜</div><h2>${TX('heroTitle','バイタリティ溢れる毎日を。')}</h2><p>${TX('heroSub','まつげ・眉・ピーリング・メイク。あなたに似合うを、ここから。')}</p><button class="btn" id="hbook">${t('bookNow')}</button></div>
     ${rankHtml}
     ${recsHtml}
+    ${staffHtml}
     ${socialHtml}
     <div class="sec-label"><span class="t">アクセス・店舗情報</span></div>${mapHtml}${links}
     <div class="addr">${TX('homeNote','ご予約はこの予約ページからのみ承っております。')}<br>${s.address||''}<br>${s.hours||''}</div></div>`;
@@ -1311,8 +1333,16 @@ function renderMypage(){
   const lastBk=DATA.bookings.filter(b=>normPhone(b.phone)===normPhone(c.phone)&&b.status!=='cancelled'&&(b.items||[]).length).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time))[0];
   const rebookHtml=lastBk?`<button class="btn btn-ghost" id="mp-rebook" style="width:100%;margin:0 0 12px">🔁 前回と同じメニューで予約（${lastBk.items.map(x=>x.name).join('＋')}）</button>`:'';
   const er=effectiveRank(c);
+  const _md=s=>{const p=s.split('-');return `${+p[1]}/${+p[2]}`};
+  let rankGuide='';const _lv=lastVisitDate(c.phone);
+  if(er===2){rankGuide=`<div class="rankgoal gold">🥇 いま<b>ゴールド会員（10%OFF）</b>です！次回も前回から<b>1ヶ月＋1週間以内</b>のご予約で、この特典が続きます😊</div>`;}
+  else if(_lv){const dsince=Math.floor((today-new Date(_lv))/86400000);const toG=38-dsince,toS=46-dsince;const gD=_md(fmtDate(new Date(new Date(_lv).getTime()+38*86400000)));const sD=_md(fmtDate(new Date(new Date(_lv).getTime()+46*86400000)));
+    if(er===1){rankGuide=toG>=0?`<div class="rankgoal">🥈 いま<b>シルバー会員（5%OFF）</b>。<b>あと${toG}日以内（${gD}まで）</b>に次回のご予約を入れると【ゴールド会員(10%OFF)】にアップ！`:`<div class="rankgoal">🥈 いま<b>シルバー会員（5%OFF）</b>です。次回もお早めのご予約でキープできます😊</div>`;}
+    else{rankGuide=toG>=0?`<div class="rankgoal">✨ <b>あと${toG}日以内（${gD}まで）</b>のご予約で【ゴールド(10%OFF)】、<b>${toS}日以内（${sD}まで）</b>で【シルバー(5%OFF)】になります！`:(toS>=0?`<div class="rankgoal">✨ <b>あと${toS}日以内（${sD}まで）</b>に次回のご予約を入れると【シルバー会員(5%OFF)】になります！`:`<div class="rankgoal">次回のご来店から続けてご予約いただくと、会員ランクがアップします😊</div>`);}
+  }
+  else{rankGuide=`<div class="rankgoal">初めてのご来店のあと、続けてご予約いただくと会員ランクがアップします（1.5ヶ月以内でシルバー、1ヶ月＋1週間以内でゴールド）。</div>`;}
   const ladder=[[0,'通常会員','通常価格でご利用いただけます','どなたでも'],[1,'シルバー会員','毎回のお会計が 5%OFF','次のご予約が1.5ヶ月以内'],[2,'ゴールド会員','毎回のお会計が 10%OFF','次のご予約が1ヶ月＋1週間以内']];
-  const rankLadderHtml=`<div class="subhead">会員ランクについて</div><div class="ranklad">${ladder.map(r=>`<div class="rank-tier ${er===r[0]?'cur':''}"><div class="rt-top"><span class="rt-name">${['🥉','🥈','🥇'][r[0]]} ${r[1]}</span>${er===r[0]?'<span class="rt-now">いまここ</span>':''}</div><div class="rt-ben">${r[2]}</div><div class="rt-cond">条件：${r[3]}</div></div>`).join('')}</div><div class="note" style="margin-top:8px">前回のご来店から次のご予約までが<b>1.5ヶ月以内</b>でシルバー（5%OFF）、<b>1ヶ月＋1週間以内</b>でゴールド（10%OFF）になります。続けてご予約いただくほど、毎回のお会計がお得になります😊</div>`;
+  const rankLadderHtml=`<div class="subhead">会員ランクについて</div>${rankGuide}<div class="ranklad">${ladder.map(r=>`<div class="rank-tier ${er===r[0]?'cur':''}"><div class="rt-top"><span class="rt-name">${['🥉','🥈','🥇'][r[0]]} ${r[1]}</span>${er===r[0]?'<span class="rt-now">いまここ</span>':''}</div><div class="rt-ben">${r[2]}</div><div class="rt-cond">条件：${r[3]}</div></div>`).join('')}</div><div class="note" style="margin-top:8px">前回のご来店から次のご予約までが<b>1.5ヶ月以内</b>でシルバー（5%OFF）、<b>1ヶ月＋1週間以内</b>でゴールド（10%OFF）になります。続けてご予約いただくほど、毎回のお会計がお得になります😊</div>`;
   const generosityHtml=`<div class="generosity">💛 物価高が続くいま、少しでも多くお客様に還元したいと思っています。貯まったポイントや会員ランクの割引は、<b>どうぞお気遣いなく、たくさんお使いください</b>。お客様に喜んでいただくことが、私たちのいちばんの願いです。</div>`;
   const expiryHtml=`<div class="subhead">ポイント・特典の有効期限</div><div class="earn"><div class="earn-row"><span>👥 お友達紹介のポイント</span><b>2年間</b></div><div class="earn-row"><span>🏠 ご近所シェアのポイント</span><b>3ヶ月間</b></div><div class="earn-row"><span>📷 ギャラリー投稿のポイント</span><b>3ヶ月間</b></div><div class="earn-row"><span>✉ ご意見箱のポイント</span><b>3ヶ月間</b></div><div class="earn-row"><span>🎂 お誕生日クーポン</span><b>前後1ヶ月</b></div></div><div class="note" style="margin-top:6px">お誕生日クーポンは、お誕生日の<b>前月・当月・翌月</b>の3ヶ月間ご利用いただけます（例：6月生まれの方は5月・6月・7月）。期限を過ぎた分は無効になりますので、ぜひお早めにお使いください😊</div>`;
   const previewBar=state.previewCust?`<div class="preview-bar"><span>👀 スタッフ確認用プレビュー（このお客様に表示される画面です）</span><button id="mp-preview-back">← 管理画面に戻る</button></div>`:'';
@@ -1531,11 +1561,12 @@ function shiftMonthList(){
   let rows='';
   for(let d=1;d<=days;d++){const dd=new Date(y,mo,d);const ds=fmtDate(dd);const dow=dd.getDay();
     if(dow===CLOSED_DOW){rows+=`<div class="mlrow closed"><span class="mld">${d}日(火)</span><span class="note" style="margin:0">定休日</span></div>`;continue;}
-    const sh=effectiveShift(sid,ds);const on=sh.on&&sh.ranges.length;const r=on?sh.ranges[0]:{start:bs,end:be};
-    let sopt='<option value="off" '+(on?'':'selected')+'>休み</option>';for(let h=OPEN_HOUR;h<=LAST_RECEPTION;h++)sopt+=`<option value="${h}" ${on&&r.start===h?'selected':''}>${gpad(h)}:00</option>`;
-    rows+=`<div class="mlrow ${on?'':'off'}"><span class="mld">${d}日(${DOW[dow]})</span><select data-dstart="${ds}" class="mst">${sopt}</select><span class="tl">〜</span><select data-dend="${ds}" class="met" ${on?'':'disabled'}>${hopts(r.end)}</select></div>`;
+    const sh=effectiveShift(sid,ds);const on=sh.on&&sh.ranges.length;const r0=on?sh.ranges[0]:{start:bs,end:be};const r1=on&&sh.ranges[1]?sh.ranges[1]:null;
+    const selT=(i,fld,val)=>{let o='';for(let h=OPEN_HOUR;h<=LAST_RECEPTION;h++)o+=`<option value="${h}" ${val===h?'selected':''}>${gpad(h)}:00</option>`;return `<select data-drng="${ds}|${i}|${fld}" class="${fld==='start'?'mst':'met'}">${o}</select>`;};
+    const times=on?`<div class="mtimes"><div class="mtrow">${selT(0,'start',r0.start)}<span class="tl">〜</span>${selT(0,'end',r0.end)}${r1?'':`<button class="addrng" data-addrng="${ds}" title="間で抜ける時間を作る">＋抜け</button>`}</div>${r1?`<div class="mtrow">${selT(1,'start',r1.start)}<span class="tl">〜</span>${selT(1,'end',r1.end)}<button class="rmrng" data-rmrng="${ds}">✕</button></div>`:''}</div>`:'';
+    rows+=`<div class="mlrow ${on?'':'off'}"><div class="mlr-top"><span class="mld">${d}日(${DOW[dow]})</span><button class="mtgl ${on?'':'offb'}" data-dayoff="${ds}">${on?'出勤':'休み'}</button></div>${times}</div>`;
   }
-  return `<div class="chips" style="margin-bottom:12px">${chips}</div>${nav}${qf}<div class="note" style="margin-bottom:8px">下の一覧で、各日の<b>時間を上から選ぶだけ</b>です（お休みの日は「休み」を選択）。1日から月末まで、この画面だけで完結します。毎月だいたい同じ流れなら、先に上の「📋 先月をコピー」か「全営業日に入れる」で土台を作ると、もっと速いです。入力中に画面は動きません。</div><div class="mlist">${rows}</div><button class="btn btn-ghost" id="ics-month" style="width:100%;margin-top:14px">📅 今月（${mo+1}月）の全員のシフトをGoogleカレンダーへ出力</button><div class="note" style="margin-top:6px">押すとファイル（.ics）が保存されます。Googleカレンダー →「設定」→「インポート/エクスポート」から取り込めます。</div>`;
+  return `<div class="chips" style="margin-bottom:12px">${chips}</div>${nav}${qf}<div class="note" style="margin-bottom:8px">各日の右の「<b>出勤／休み</b>」を押すとワンクリックで切り替わります。出勤の日は開始〜終了の時刻を選びます。お昼などで<b>間に抜ける時間</b>がある日は「<b>＋抜け</b>」を押すと、もう1つの時間帯（例：9-12と14-18）を作れます。1日から月末までこの画面で完結、入力中に画面は動きません。</div><div class="mlist">${rows}</div><button class="btn btn-ghost" id="ics-month" style="width:100%;margin-top:14px">📅 今月（${mo+1}月）の全員のシフトをGoogleカレンダーへ出力</button><div class="note" style="margin-top:6px">押すとファイル（.ics）が保存されます。Googleカレンダー →「設定」→「インポート/エクスポート」から取り込めます。</div>`;
 }
 function shiftCalendar(){
   const sid=state.schedStaff||'s1';const reals=staff.filter(s=>s.id!=='s0');
@@ -1666,6 +1697,8 @@ function adminStaff(){
       <div class="field"><label>役割</label><input id="st-role" value="${sv?(sv.role||'').replace(/"/g,'&quot;'):''}"></div>
       <div class="field"><label>紹介文</label><textarea id="st-intro">${sv?sv.intro||'':''}</textarea></div>
       <div class="field"><label>資格・バッジ <span class="opt">（カンマ区切り・予約画面に表示されます）</span></label><input id="st-quals" value="${sv?(sv.quals||'').replace(/"/g,'&quot;'):''}" placeholder="例：アイリスト検定1級, 眉スタイリスト, 衛生管理者"></div>
+      <div class="field"><label>事業・プロフィール <span class="opt">（ホームのスタッフ紹介に表示）</span></label><textarea id="st-biz" placeholder="例：まつげエクステ担当。インクメイク講習も行っています。">${sv?sv.biz||'':''}</textarea></div>
+      <div class="field"><label>リンク（URL） <span class="opt">（SNS・ご自身のページなど・任意）</span></label><input id="st-bizurl" value="${sv?(sv.bizUrl||'').replace(/"/g,'&quot;'):''}" placeholder="https://..."></div>
       <div class="colorrow"><label>テーマカラー</label><input type="color" id="st-color" value="${sv?sv.color:'#1E2A47'}"></div>
       <div class="field"><label>スタッフ写真（任意）</label>${(state.staffPhotoPending||(sv&&sv.photo))?`<div class="preview" style="background-image:url('${state.staffPhotoPending||sv.photo}')"></div>`:''}<label class="fileinput">📷 画像を選ぶ<input type="file" id="st-photo" accept="image/*"></label></div>
       <div class="field"><label>対応できるメニューと価格 <span class="opt">(チェック＝対応／金額欄は空欄なら通常価格)</span></label><div class="checkgrid">${checks}</div></div>
@@ -1844,8 +1877,10 @@ function bindAdmin(){
   const blkon=byId('blk-on');if(blkon)blkon.onclick=()=>shiftBulkApply(false);
   const blkoff=byId('blk-off');if(blkoff)blkoff.onclick=()=>shiftBulkApply(true);
   const icsm=byId('ics-month');if(icsm)icsm.onclick=downloadMonthICS;
-  app.querySelectorAll('[data-dstart]').forEach(s=>s.onchange=()=>dStartChange(s));
-  app.querySelectorAll('[data-dend]').forEach(s=>s.onchange=()=>dEndChange(s));
+  app.querySelectorAll('[data-drng]').forEach(s=>s.onchange=()=>dRngSet(s));
+  app.querySelectorAll('[data-dayoff]').forEach(b=>b.onclick=()=>dDayOff(b.dataset.dayoff));
+  app.querySelectorAll('[data-addrng]').forEach(b=>b.onclick=()=>dAddRng(b.dataset.addrng));
+  app.querySelectorAll('[data-rmrng]').forEach(b=>b.onclick=()=>dRmRng(b.dataset.rmrng));
   const qff=byId('qf-fill');if(qff)qff.onclick=qfFill;
   const cpv=byId('copy-prev');if(cpv)cpv.onclick=copyPrevMonth;
   const ot=byId('off-today');if(ot)ot.onclick=offToday;
@@ -1964,8 +1999,8 @@ async function delOption(id){if(!confirm('このオプションを削除しま�
 async function seedOptions(){const defs=[{name:'ヘッドマッサージ 10分',price:1000,min:10},{name:'ヘッドマッサージ 20分',price:2000,min:20},{name:'ヘッドマッサージ 30分',price:3000,min:30},{name:'電気バリブラシ（フェイス）15分',price:2500,min:15}];if(!DATA.settings.options)DATA.settings.options=[];const exist=new Set(DATA.settings.options.map(o=>o.name));let added=0,n=Date.now();defs.forEach(d=>{if(!exist.has(d.name)){DATA.settings.options.push({id:'o'+(n++),name:d.name,price:d.price,min:d.min});added++}});await saveData(DATA);alert(added?`${added}件のオプションを追加しました。`:'すでに登録済みです。');render();}
 async function saveStaff(){const name=byId('st-name').value.trim();if(!name){alert('お名前を入力してください。');return;}const role=byId('st-role').value.trim();const intro=byId('st-intro').value.trim();const color=byId('st-color').value;const svc=[...document.querySelectorAll('[data-stsvc]')].filter(c=>c.checked).map(c=>c.dataset.stsvc);
   const prices={};document.querySelectorAll('[data-stprice]').forEach(inp=>{const v=inp.value.trim();if(v!=='')prices[inp.dataset.stprice]=parseInt(v)||0});
-  if(state.staffEdit==='new'){DATA.staff.unshift({id:'st'+Date.now(),name,role,intro,quals:(byId('st-quals')?byId('st-quals').value.trim():''),color,photo:state.staffPhotoPending||'',services:svc,prices});}
-  else{const s=stById(state.staffEdit);s.name=name;s.role=role;s.intro=intro;if(byId('st-quals'))s.quals=byId('st-quals').value.trim();s.color=color;if(state.staffPhotoPending)s.photo=state.staffPhotoPending;s.services=svc;s.prices=prices;}
+  if(state.staffEdit==='new'){DATA.staff.unshift({id:'st'+Date.now(),name,role,intro,quals:(byId('st-quals')?byId('st-quals').value.trim():''),biz:(byId('st-biz')?byId('st-biz').value.trim():''),bizUrl:(byId('st-bizurl')?byId('st-bizurl').value.trim():''),color,photo:state.staffPhotoPending||'',services:svc,prices});}
+  else{const s=stById(state.staffEdit);s.name=name;s.role=role;s.intro=intro;if(byId('st-quals'))s.quals=byId('st-quals').value.trim();if(byId('st-biz'))s.biz=byId('st-biz').value.trim();if(byId('st-bizurl'))s.bizUrl=byId('st-bizurl').value.trim();s.color=color;if(state.staffPhotoPending)s.photo=state.staffPhotoPending;s.services=svc;s.prices=prices;}
   state.staffPhotoPending='';
   staff=DATA.staff;state.staffEdit=null;await saveData(DATA);render();}
 async function sendBc(){const c=DATA.customers[state.bcPhone];if(!c)return;const t=byId('bc-msg').value.trim();if(!t){alert('メッセージを入力してください。');return;}pushNotice(c,t);await saveData(DATA);alert(c.name+'様のマイページに送信しました。');render();}
@@ -1999,11 +2034,11 @@ async function shiftToggle(key){const[sid,d]=key.split('|');DATA.shifts[sid]=DAT
 async function shiftSet(key,field,val){const[sid,d]=key.split('|');const sh=DATA.shifts[sid][d];sh[field]=parseInt(val);if(sh.start>=sh.end)sh.end=Math.min(LAST_RECEPTION,sh.start+1);await saveData(DATA);render();}
 let _saveT=null;
 function saveSoon(){clearTimeout(_saveT);_saveT=setTimeout(()=>{saveData(DATA);},700);}
-function dStartChange(sel){const ds=sel.dataset.dstart;const sid=state.schedStaff||'s1';const row=sel.closest('.mlrow');const end=row.querySelector('[data-dend]');DATA.shiftOverrides[sid]=DATA.shiftOverrides[sid]||{};
-  if(sel.value==='off'){DATA.shiftOverrides[sid][ds]={off:true};if(end)end.disabled=true;row.classList.add('off');}
-  else{let s=parseInt(sel.value),e=end?parseInt(end.value):s+1;if(s>=e){e=Math.min(LAST_RECEPTION,s+1);if(end)end.value=e;}if(end)end.disabled=false;DATA.shiftOverrides[sid][ds]={ranges:[{start:s,end:e}]};row.classList.remove('off');}
-  saveSoon();}
-function dEndChange(sel){const ds=sel.dataset.dend;const sid=state.schedStaff||'s1';const row=sel.closest('.mlrow');const start=row.querySelector('[data-dstart]');if(!start||start.value==='off')return;let s=parseInt(start.value),e=parseInt(sel.value);if(s>=e){s=Math.max(OPEN_HOUR,e-1);start.value=String(s);}DATA.shiftOverrides[sid]=DATA.shiftOverrides[sid]||{};DATA.shiftOverrides[sid][ds]={ranges:[{start:s,end:e}]};saveSoon();}
+function _matRanges(sid,ds){DATA.shiftOverrides[sid]=DATA.shiftOverrides[sid]||{};let ov=DATA.shiftOverrides[sid][ds];const eff=effectiveShift(sid,ds);if(!ov||ov.off||!ov.ranges||!ov.ranges.length){ov={ranges:(eff.on&&eff.ranges.length?eff.ranges.map(r=>({start:r.start,end:r.end})):[{start:state.brushStart??10,end:state.brushEnd??19}])};DATA.shiftOverrides[sid][ds]=ov;}return ov;}
+function dRngSet(sel){const[ds,i,fld]=sel.dataset.drng.split('|');const sid=state.schedStaff||'s1';const ov=_matRanges(sid,ds);const idx=parseInt(i);if(!ov.ranges[idx])ov.ranges[idx]={start:OPEN_HOUR,end:LAST_RECEPTION};ov.ranges[idx][fld]=parseInt(sel.value);const rg=ov.ranges[idx];if(rg.start>=rg.end){if(fld==='start')rg.end=Math.min(LAST_RECEPTION,rg.start+1);else rg.start=Math.max(OPEN_HOUR,rg.end-1);const sib=sel.closest('.mtrow').querySelector(fld==='start'?'[data-drng$="end"]':'[data-drng$="start"]');if(sib)sib.value=String(fld==='start'?rg.end:rg.start);}saveSoon();}
+function dDayOff(ds){const sid=state.schedStaff||'s1';DATA.shiftOverrides[sid]=DATA.shiftOverrides[sid]||{};const eff=effectiveShift(sid,ds);const isOn=eff.on&&eff.ranges.length;if(isOn)DATA.shiftOverrides[sid][ds]={off:true};else DATA.shiftOverrides[sid][ds]={ranges:[{start:state.brushStart??10,end:state.brushEnd??19}]};saveSoon();render();}
+function dAddRng(ds){const sid=state.schedStaff||'s1';const ov=_matRanges(sid,ds);const last=ov.ranges[ov.ranges.length-1];const ns=Math.min(LAST_RECEPTION-1,(last?last.end:OPEN_HOUR)+1);ov.ranges.push({start:ns,end:Math.min(LAST_RECEPTION,ns+2)});saveSoon();render();}
+function dRmRng(ds){const sid=state.schedStaff||'s1';const ov=_matRanges(sid,ds);ov.ranges=ov.ranges.slice(0,1);saveSoon();render();}
 async function offToday(){const sid=state.schedStaff||'s1';const ds=fmtDate(today);const sh=effectiveShift(sid,ds);const isOff=!(sh.on&&sh.ranges.length);DATA.shiftOverrides[sid]=DATA.shiftOverrides[sid]||{};
   if(isOff){if(!confirm(`${stById(sid).name}さんの本日のお休みを取り消して、通常どおりのご予約受付に戻しますか？`))return;delete DATA.shiftOverrides[sid][ds];}
   else{if(!confirm(`${stById(sid).name}さんの本日（${today.getMonth()+1}/${today.getDate()}）を急きょお休みにします。\n\nこのあとの新しいご予約は受け付けなくなります。\n※すでに入っているご予約はそのまま残ります（お客様への連絡は別途お願いします）。\n\nよろしいですか？`))return;DATA.shiftOverrides[sid][ds]={off:true};}
