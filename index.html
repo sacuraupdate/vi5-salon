@@ -445,6 +445,18 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .nb-acts{display:flex;gap:8px;margin-top:12px}
 .nb-btn{flex:1;border:1.5px solid var(--navy);background:#fff;color:var(--navy);border-radius:999px;padding:9px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer}
 .nb-btn.cancel{border-color:var(--rose);color:var(--rose)}
+.sd-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.sd-day{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;aspect-ratio:1;border-radius:8px;font-size:12px;border:1px solid var(--line);padding:2px}
+.sd-day.sd-open{background:#fff;color:var(--navy)}
+.sd-day.sd-closed{background:var(--paper-2);color:var(--ink-soft)}
+.sd-n{font-weight:700;font-size:13px}
+.sd-tag{font-size:8px;line-height:1;color:var(--gold);font-weight:700;text-align:center}
+.sd-day.sd-closed .sd-tag{color:var(--rose)}
+[data-sdtoggle]{cursor:pointer}
+.cust.needrec{border:1.5px solid var(--rose);box-shadow:0 0 0 1px var(--rose)}
+.nr-flag{font-size:11.5px;font-weight:700;color:#fff;background:var(--rose);border-radius:8px;padding:5px 10px;margin-bottom:8px;display:inline-block}
+.nr-summary{background:#FCEEF2;border:1px solid #E3B9C4;border-radius:12px;padding:11px 14px;font-size:12.5px;line-height:1.6;color:var(--ink);margin-bottom:12px}
+.nr-summary b{color:var(--rose)}
 </style>
 </head>
 <body>
@@ -460,6 +472,7 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
       <button data-view="gallery">ギャラリー</button>
       <button data-view="shop">ショップ</button>
       <button data-view="board">紹介ボード</button>
+      <button data-view="staff">スタッフ紹介</button>
     </nav>
     <button class="topback" id="backbtn" style="display:none">← 戻る</button>
   </header>
@@ -703,7 +716,8 @@ function gcalShiftUrl(sid,ds,sh){if(!sh.on||!sh.ranges.length)return '';const rs
 function shiftFor(sid,dow){return (DATA.shifts&&DATA.shifts[sid]&&DATA.shifts[sid][dow])||null}
 function normalizeShift(sh){if(!sh)return{on:false,ranges:[]};if(sh.ranges)return{on:sh.on!==false,ranges:sh.ranges};if(sh.start!==undefined)return{on:sh.on!==false,ranges:[{start:sh.start,end:sh.end}]};return{on:sh.on!==false,ranges:[{start:9,end:21}]}}
 function effectiveShift(sid,dateStr){const ov=(DATA.shiftOverrides&&DATA.shiftOverrides[sid]&&DATA.shiftOverrides[sid][dateStr]);if(ov){if(ov.off)return{on:false,ranges:[]};if(ov.ranges)return{on:true,ranges:ov.ranges};return{on:true,ranges:[{start:ov.start,end:ov.end}]};}return normalizeShift(shiftFor(sid,new Date(dateStr).getDay()))}
-function staffWorks(sid,dateStr){const dow=new Date(dateStr).getDay();if(dow===CLOSED_DOW)return false;if(isDayOff(sid,dateStr))return false;const sh=effectiveShift(sid,dateStr);return !!(sh.on&&sh.ranges.length)}
+function salonClosed(ds){const ex=(S().openException||{})[ds];if(ex==='open')return false;if(ex==='closed')return true;return new Date(ds+'T00:00:00').getDay()===CLOSED_DOW;}
+function staffWorks(sid,dateStr){const dow=new Date(dateStr).getDay();if(salonClosed(dateStr))return false;if(isDayOff(sid,dateStr))return false;const sh=effectiveShift(sid,dateStr);return !!(sh.on&&sh.ranges.length)}
 function staffSlotOpen(sid,dateStr,hour){const sh=effectiveShift(sid,dateStr);if(!sh.on)return false;if(!sh.ranges.some(r=>hour>=r.start&&hour<=r.end))return false;const t=String(hour).padStart(2,'0')+':00';if(isBlocked(sid,dateStr,t))return false;return !DATA.bookings.some(b=>b.staffId===sid&&b.date===dateStr&&b.time===t&&b.status!=='cancelled')}
 function _hoursOpts(h){let o='';for(let x=OPEN_HOUR;x<=LAST_RECEPTION;x++)o+=`<option value="${x}" ${x===h?'selected':''}>${x}:00</option>`;return o}
 function _pk(key){const[scope,sid,k]=key.split('|');return{scope,sid,k}}
@@ -768,7 +782,7 @@ function updateNav(){const map={home:'nav_home',book:'nav_book',gallery:'nav_gal
   const ls=byId('langsel');if(ls){if(!ls.dataset.built){ls.innerHTML=LANGS.map(l=>`<option value="${l[0]}">${l[1]}</option>`).join('');ls.dataset.built='1';ls.onchange=()=>setLang(ls.value)}ls.value=state.lang}}
 async function setLang(v){state.lang=v;document.documentElement.lang=v;try{if(window.storage)await window.storage.set('salon:lang',v,false)}catch(e){}render()}
 async function loadLang(){try{if(window.storage){const r=await window.storage.get('salon:lang',false);if(r&&r.value)return r.value}}catch(e){}return 'ja'}
-function render(){updateNav();updateBack();if(state.view==='home')renderHome();else if(state.view==='book')renderCustomer();else if(state.view==='gallery')renderGallery();else if(state.view==='share')renderShare();else if(state.view==='board')renderBoard();else if(state.view==='mypage')renderMypage();else renderAdmin();}
+function render(){updateNav();updateBack();if(state.view==='home')renderHome();else if(state.view==='book')renderCustomer();else if(state.view==='gallery')renderGallery();else if(state.view==='share')renderShare();else if(state.view==='board')renderBoard();else if(state.view==='staff')renderStaffIntro();else if(state.view==='mypage')renderMypage();else renderAdmin();}
 function stepsBar(n){let h='<div class="steps">';for(let i=0;i<4;i++)h+=`<div class="s ${i<=n?'on':''}"></div>`;return h+'</div>'}
 function go(v){if(v!==state.view){state.navStack.push(state.view);if(state.navStack.length>30)state.navStack.shift();}state.view=v;render();window.scrollTo(0,0)}
 function goBack(){if(state.navStack.length){state.view=state.navStack.pop();render();window.scrollTo(0,0)}}
@@ -800,13 +814,12 @@ function renderHome(){
   const dirUrl=s.mapUrl||('https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(mapAddr));
   const mapHtml=`<a href="${dirUrl}" target="_blank" style="text-decoration:none;display:block"><div style="position:relative;border-radius:14px;overflow:hidden;margin-bottom:10px;border:1px solid var(--line)"><iframe class="mapembed" loading="lazy" src="https://maps.google.com/maps?q=34.6933,135.5088&z=16&hl=ja&output=embed"></iframe><div style="position:absolute;inset:0"></div></div></a><a class="linkbtn" href="${dirUrl}" target="_blank" style="margin-bottom:10px"><span class="ic">🧭</span>ここへ行く（Googleマップで道案内）</a>`;
   const _reals=DATA.staff.filter(x=>x.id!=='s0');
-  const staffHtml=_reals.length?`<div class="sec-label"><span class="t">スタッフ紹介</span></div><div class="staffintro">${_reals.map(s=>{const q=(s.quals||'').split(/[,、]/).map(x=>x.trim()).filter(Boolean);return `<div class="sicard"><div class="si-photo"${s.photo?` style="background-image:url('${s.photo}')"`:''}>${s.photo?'':nameInitial(s.name)}</div><div class="si-body"><div class="si-name">${s.name}${s.role?`<span class="si-role">${s.role}</span>`:''}</div>${s.intro?`<div class="si-intro">${s.intro}</div>`:''}${q.length?`<div class="quals">${q.map(x=>`<span class="qual">🏅 ${x}</span>`).join('')}</div>`:''}${s.biz?`<div class="si-biz">💼 ${s.biz}</div>`:''}${s.bizUrl?`<a class="si-link" href="${s.bizUrl}" target="_blank">🔗 詳しく見る</a>`:''}</div></div>`}).join('')}</div>`:'';
   app.innerHTML=`<div class="fade">${bannerHtml}
     <div class="hero-home"${heroStyle}><div class="hh-tag">Vi5 北浜</div><h2>${TX('heroTitle','バイタリティ溢れる毎日を。')}</h2><p>${TX('heroSub','まつげ・眉・ピーリング・メイク。あなたに似合うを、ここから。')}</p><button class="btn" id="hbook">${t('bookNow')}</button></div>
     ${rankHtml}
     ${recsHtml}
-    ${staffHtml}
     ${socialHtml}
+    <div class="sec-label"><span class="t">営業日カレンダー</span></div><div class="cal-grid sd-grid" style="margin-bottom:8px">${salonMonthCells(today.getFullYear(),today.getMonth(),false)}</div><div class="note" style="margin-bottom:14px">営業時間 9:00〜21:00（火曜定休）。「臨時営業」「臨時休」の日は上に表示されます。</div>
     <div class="sec-label"><span class="t">アクセス・店舗情報</span></div>${mapHtml}${links}
     <div class="addr">${TX('homeNote','ご予約はこの予約ページからのみ承っております。')}<br>${s.address||''}<br>${s.hours||''}</div></div>`;
   byId('hbook').onclick=()=>startBooking();const _hm=byId('hmore');if(_hm)_hm.onclick=()=>go('gallery');bindPosts();
@@ -909,6 +922,12 @@ async function addShare(){
   state.sharePostOpen=false;state.sharePhotos=[];await refresh();alert(`投稿しました。${CONFIG.sharePoints}ポイント差し上げました！`);render();
 }
 /* ===== お客様ビジネス掲示板 ===== */
+function renderStaffIntro(){
+  const reals=DATA.staff.filter(x=>x.id!=='s0');
+  const cards=reals.map(s=>{const q=(s.quals||'').split(/[,、]/).map(x=>x.trim()).filter(Boolean);return `<div class="sicard"><div class="si-photo"${s.photo?` style="background-image:url('${s.photo}')"`:''}>${s.photo?'':nameInitial(s.name)}</div><div class="si-body"><div class="si-name">${s.name}${s.role?`<span class="si-role">${s.role}</span>`:''}</div>${s.intro?`<div class="si-intro">${s.intro}</div>`:''}${q.length?`<div class="quals">${q.map(x=>`<span class="qual">🏅 ${x}</span>`).join('')}</div>`:''}${s.biz?`<div class="si-biz">💼 ${s.biz}</div>`:''}${s.bizUrl?`<a class="si-link" href="${s.bizUrl}" target="_blank">🔗 詳しく見る</a>`:''}</div></div>`}).join('');
+  app.innerHTML=`<div class="fade"><div class="eyebrow">Staff</div><div class="h-title">スタッフ紹介</div><div class="h-sub">Vi5のスタッフをご紹介します。それぞれの得意分野や活動もぜひご覧ください。</div><div class="staffintro">${cards||'<div class="empty">準備中です</div>'}</div><button class="btn btn-primary" id="si-book" style="width:100%;margin-top:8px">＋ ご予約はこちら</button></div>`;
+  const b=byId('si-book');if(b)b.onclick=()=>startBooking();
+}
 function renderBoard(){
   const boards=DATA.boards||[];
   const cats=[...new Set(boards.map(b=>b.cat))];
@@ -1037,7 +1056,7 @@ function stepDate(){
   if(state.bookMode==='pair')return stepDatePair();
   const sid=state.b.staff.id;const m=state.calMonth,y=m.getFullYear(),mo=m.getMonth();const startDow=new Date(y,mo,1).getDay(),days=new Date(y,mo+1,0).getDate();const canPrev=!(y===today.getFullYear()&&mo===today.getMonth());
   let cells='';['日','月','火','水','木','金','土'].forEach((d,i)=>cells+=`<div class="cal-dow ${i===0?'sun':''}">${d}</div>`);for(let i=0;i<startDow;i++)cells+='<div></div>';
-  for(let d=1;d<=days;d++){const dd=new Date(y,mo,d);const ds=fmtDate(dd);const closedDay=dd.getDay()===CLOSED_DOW||(sid!=='s0'?!staffWorks(sid,ds):!anyStaffWorks(ds));const dis=dd<today?'dis':(closedDay?'closed':'');const sel=state.b.date===ds?'sel':'';cells+=`<div class="cal-day ${dis} ${sel}" ${dis?'':`data-date="${ds}"`}>${d}</div>`}
+  for(let d=1;d<=days;d++){const dd=new Date(y,mo,d);const ds=fmtDate(dd);const closedDay=salonClosed(ds)||(sid!=='s0'?!staffWorks(sid,ds):!anyStaffWorks(ds));const dis=dd<today?'dis':(closedDay?'closed':'');const sel=state.b.date===ds?'sel':'';cells+=`<div class="cal-day ${dis} ${sel}" ${dis?'':`data-date="${ds}"`}>${d}</div>`}
   let slotHtml='';
   if(state.b.date){
     const totalMin=state.cart.reduce((s,x)=>s+(x.min||0),0);
@@ -1156,7 +1175,7 @@ function stepDatePair(){
   const sidA=state.staffA.id,sidB=state.staffB.id;const sameStaff=sidA===sidB;
   const m=state.calMonth,y=m.getFullYear(),mo=m.getMonth();const startDow=new Date(y,mo,1).getDay(),days=new Date(y,mo+1,0).getDate();const canPrev=!(y===today.getFullYear()&&mo===today.getMonth());
   let cells='';['日','月','火','水','木','金','土'].forEach((d,i)=>cells+=`<div class="cal-dow ${i===0?'sun':''}">${d}</div>`);for(let i=0;i<startDow;i++)cells+='<div></div>';
-  for(let d=1;d<=days;d++){const dd=new Date(y,mo,d);const ds=fmtDate(dd);const closedDay=dd.getDay()===CLOSED_DOW||!worksOn(sidA,ds)||!worksOn(sidB,ds);const dis=dd<today?'dis':(closedDay?'closed':'');const sel=state.b.date===ds?'sel':'';cells+=`<div class="cal-day ${dis} ${sel}" ${dis?'':`data-date="${ds}"`}>${d}</div>`}
+  for(let d=1;d<=days;d++){const dd=new Date(y,mo,d);const ds=fmtDate(dd);const closedDay=salonClosed(ds)||!worksOn(sidA,ds)||!worksOn(sidB,ds);const dis=dd<today?'dis':(closedDay?'closed':'');const sel=state.b.date===ds?'sel':'';cells+=`<div class="cal-day ${dis} ${sel}" ${dis?'':`data-date="${ds}"`}>${d}</div>`}
   let slotHtml='';
   if(state.b.date){const maxMin=Math.max(cartDur(state.cartA),cartDur(state.cartB));const closeMin=LAST_RECEPTION*60;const cutoff=Date.now()+3*60*60*1000;let opts='',shown=0;
     for(let mm=OPEN_HOUR*60;mm<=LAST_RECEPTION*60;mm+=30){const tt=minToTime(mm);if(mm+maxMin>closeMin)continue;const slotTime=new Date(state.b.date+'T'+tt+':00').getTime();const inTime=slotTime>=cutoff;const open=!sameStaff&&inTime&&slotOpenFor(sidA,state.b.date,mm)&&slotOpenFor(sidB,state.b.date,mm);const full=!open;const sel=state.b.time===tt?'sel':'';opts+=`<div class="slot ${full?'full':''} ${sel}" ${full?'':`data-slot="${tt}"`}>${tt}</div>`;shown++;}
@@ -1544,8 +1563,9 @@ function bookingRow(x,i){
   return `<div class="booking" style="animation-delay:${i*.04}s"><div class="bk-time">${x.time}</div><div class="bk-body"><div class="bk-name">${nm} <span style="font-weight:400;color:var(--ink-soft);font-size:11px">様</span></div><div class="bk-svc">${svc} / ${stById(x.staffId).name}</div>${tags?`<div class="bk-tags">${tags}</div>`:''}${x.customerMemo?`<div class="bk-note">📝 ${x.customerMemo}</div>`:''}</div><span class="pill ${x.status}">${pillTxt}</span>${acts?`<div class="bk-actions">${acts}</div>`:''}</div>`;
 }
 function adminSchedule(){
-  const sw=`<div class="schedmode"><button data-sm="month" class="${state.schedMode==='month'?'on':''}">月間シフト</button><button data-sm="shift" class="${state.schedMode==='shift'?'on':''}">週間シフト</button><button data-sm="day" class="${state.schedMode==='day'?'on':''}">日別状況</button></div>`;
+  const sw=`<div class="schedmode"><button data-sm="month" class="${state.schedMode==='month'?'on':''}">月間シフト</button><button data-sm="shift" class="${state.schedMode==='shift'?'on':''}">週間シフト</button><button data-sm="day" class="${state.schedMode==='day'?'on':''}">日別状況</button><button data-sm="salon" class="${state.schedMode==='salon'?'on':''}">営業日</button></div>`;
   if(state.schedMode==='month'||state.schedMode==='cal')return sw+shiftMonthList();
+  if(state.schedMode==='salon')return sw+salonDaysEditor();
   if(state.schedMode==='shift')return sw+shiftEditor();
   const date=state.schedDate;const reals=staff.filter(s=>s.id!=='s0');
   const blocks=reals.map((s,si)=>{const off=isDayOff(s.id,date);let grid;
@@ -1561,6 +1581,21 @@ function shiftEditor(){
       return `<div style="padding:9px 0;border-bottom:1px solid var(--line)"><div style="display:flex;align-items:center;gap:9px;${dsp.on?'margin-bottom:8px':''}"><span class="shift-dow" style="${i===0?'color:var(--gold)':''}">${d}</span><button class="shift-toggle ${dsp.on?'on':''}" data-daytoggle="w|${s.id}|${i}">${dsp.on?'出勤':'休み'}</button>${dsp.on?'':'<span class="note" style="margin:0">受付なし</span>'}</div>${dsp.on?`<div style="padding-left:39px">${rangeRows('w',s.id,i)}</div>`:''}</div>`}).join('');
     return `<div class="sc-staff"><div class="sc-head"><div class="sc-av" style="background:${s.color}">${nameInitial(s.name)}</div><div><div class="sc-name">${s.name}</div><div class="sc-role">${s.role}</div></div></div><button class="btn btn-ghost" data-shiftall="${s.id}" style="width:100%;margin:4px 0 6px">営業日すべてを 9:00〜21:00 出勤に一括設定</button>${rows}</div>`}).join('')+`<div class="note">曜日ごとの受付時間を設定します（火曜は定休）。ここで設定すれば、その曜日は<b>毎週・今月以降ずっと自動で反映</b>されるので、1日ずつ入れる必要はありません。特定の日だけ変えたいときは「シフト（月）」から個別に設定できます。</div>`;
 }
+function salonMonthCells(y,mo,editable){
+  const startDow=new Date(y,mo,1).getDay(),days=new Date(y,mo+1,0).getDate();
+  let cells='';['日','月','火','水','木','金','土'].forEach((d,i)=>cells+=`<div class="cal-dow ${i===0?'sun':''}">${d}</div>`);
+  for(let i=0;i<startDow;i++)cells+='<div></div>';
+  for(let d=1;d<=days;d++){const dd=new Date(y,mo,d);const ds=fmtDate(dd);const closed=salonClosed(ds);const ex=(DATA.settings.openException||{})[ds];
+    let cls=closed?'sd-closed':'sd-open';let tag=closed?'休':(OPEN_HOUR+':00-'+LAST_RECEPTION+':00');if(ex==='open')tag='臨時営業';if(ex==='closed')tag='臨時休';
+    cells+=`<div class="sd-day ${cls}" ${editable?`data-sdtoggle="${ds}"`:''}><span class="sd-n">${d}</span><span class="sd-tag">${tag}</span></div>`;}
+  return cells;
+}
+function salonDaysEditor(){
+  const m=state.scM,y=m.getFullYear(),mo=m.getMonth();const canPrev=!(y===today.getFullYear()&&mo===today.getMonth());
+  const nav=`<div class="cal-head" style="margin-bottom:10px"><button class="cal-nav" id="ml-prev" ${canPrev?'':'disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><div class="cal-title">${y}年 ${mo+1}月</div><button class="cal-nav" id="ml-next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></div>`;
+  return `${nav}<div class="note" style="margin-bottom:10px">日付をタップすると「営業 ↔ 休業」を切り替えできます。<b>火曜も営業する日</b>はタップして「臨時営業」に、臨時でお休みする日は「臨時休」にしてください。ここで営業にした火曜は、「月間シフト」でスタッフの受付時間も入れてください。この設定はホームの営業日カレンダーとお客様の予約画面に反映されます。</div><div class="cal-grid sd-grid">${salonMonthCells(y,mo,true)}</div>`;
+}
+async function salonDayToggle(ds){DATA.settings.openException=DATA.settings.openException||{};const ex=DATA.settings.openException;const cur=ex[ds];const normClosed=new Date(ds+'T00:00:00').getDay()===CLOSED_DOW;if(normClosed){if(cur==='open')delete ex[ds];else ex[ds]='open';}else{if(cur==='closed')delete ex[ds];else ex[ds]='closed';}await saveData(DATA);render();}
 function shiftMonthList(){
   const sid=state.schedStaff||'s1';const reals=staff.filter(s=>s.id!=='s0');
   const chips=reals.map(s=>`<button class="chip ${sid===s.id?'sel':''}" data-shstaff="${s.id}">${s.name}</button>`).join('');
@@ -1574,7 +1609,7 @@ function shiftMonthList(){
   const qf=`${offTodayBtn}<button class="btn btn-primary" id="copy-prev" style="width:100%;margin-bottom:10px">📋 先月のシフトをこの月にコピー</button><div class="addform" style="margin-bottom:12px;padding:12px 13px"><div class="brush-label">または、基本の時間をまとめて入れる</div><div style="display:flex;align-items:center;gap:6px;margin-top:8px"><select id="qf-s">${hopts(bs)}</select><span class="tl">〜</span><select id="qf-e">${hopts(be)}</select><button class="btn btn-ghost" id="qf-fill" style="flex:1;white-space:nowrap">全営業日に入れる</button></div></div>`;
   let rows='';
   for(let d=1;d<=days;d++){const dd=new Date(y,mo,d);const ds=fmtDate(dd);const dow=dd.getDay();
-    if(dow===CLOSED_DOW){rows+=`<div class="mlrow closed"><span class="mld">${d}日(火)</span><span class="note" style="margin:0">定休日</span></div>`;continue;}
+    if(salonClosed(ds)){rows+=`<div class="mlrow closed"><span class="mld">${d}日(${DOW[dow]})</span><span class="note" style="margin:0">休業</span></div>`;continue;}
     const sh=effectiveShift(sid,ds);const on=sh.on&&sh.ranges.length;const r0=on?sh.ranges[0]:{start:bs,end:be};const r1=on&&sh.ranges[1]?sh.ranges[1]:null;
     const selT=(i,fld,val)=>{let o='';for(let h=OPEN_HOUR;h<=LAST_RECEPTION;h++)o+=`<option value="${h}" ${val===h?'selected':''}>${gpad(h)}:00</option>`;return `<select data-drng="${ds}|${i}|${fld}" class="${fld==='start'?'mst':'met'}">${o}</select>`;};
     const times=on?`<div class="mtimes"><div class="mtrow">${selT(0,'start',r0.start)}<span class="tl">〜</span>${selT(0,'end',r0.end)}${r1?'':`<button class="addrng" data-addrng="${ds}" title="間で抜ける時間を作る">＋抜け</button>`}</div>${r1?`<div class="mtrow">${selT(1,'start',r1.start)}<span class="tl">〜</span>${selT(1,'end',r1.end)}<button class="rmrng" data-rmrng="${ds}">✕</button></div>`:''}</div>`:'';
@@ -1606,16 +1641,19 @@ function autoMapCsv(h){const find=keys=>{for(let i=0;i<h.length;i++){if(keys.som
 function normBirthday(s){if(!s)return '';const m=String(s).match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);if(m)return `${m[1]}-${('0'+m[2]).slice(-2)}-${('0'+m[3]).slice(-2)}`;return '';}
 function impMapUI(){const opt=sel=>`<option value="-1">（なし）</option>`+state.importHeaders.map((h,i)=>`<option value="${i}" ${state.importMap[sel]===i?'selected':''}>${h||('列'+(i+1))}</option>`).join('');return `<div class="note" style="margin:0 0 10px">読み込んだ列が、どの情報かを選んでください（自動で推測済み）。</div><div class="field"><label>お名前の列</label><select id="imp-name">${opt('name')}</select></div><div class="field"><label>電話番号の列（必須）</label><select id="imp-phone">${opt('phone')}</select></div><div class="field"><label>生年月日の列（任意）</label><select id="imp-bday">${opt('birthday')}</select></div><div class="field"><label>ポイントの列（任意）</label><select id="imp-pts">${opt('points')}</select></div><div class="note">読み込んだ行：約${state.importRows.length}件（電話番号がある行のみ登録されます）。仮パスワードは「電話番号の下4桁」に設定されます。</div><div style="display:flex;gap:9px"><button class="btn btn-ghost" id="imp-cancel" style="flex:1">やめる</button><button class="btn btn-primary" id="imp-go" style="flex:1">取り込む</button></div>`;}
 async function doImport(){const m={name:+byId('imp-name').value,phone:+byId('imp-phone').value,birthday:+byId('imp-bday').value,points:+byId('imp-pts').value};if(m.phone<0){alert('電話番号の列を選んでください。');return;}let added=0,updated=0;state.importRows.forEach(r=>{const phoneRaw=(r[m.phone]||'').trim();const phone=normPhone(phoneRaw);if(!phone)return;const name=(m.name>=0?(r[m.name]||'').trim():'')||'お客様';const bday=m.birthday>=0?normBirthday((r[m.birthday]||'').trim()):'';const pts=m.points>=0?(parseInt(String(r[m.points]||'0').replace(/[^0-9]/g,''))||0):0;if(DATA.customers[phone]){const c=DATA.customers[phone];if(name&&name!=='お客様')c.name=name;if(bday&&!c.birthday)c.birthday=bday;if(pts&&!c.bonusPoints)c.bonusPoints=pts;updated++;}else{DATA.customers[phone]={phone:phoneRaw||phone,name,password:phone.slice(-4),referredBy:null,bonusPoints:pts,joined:fmtDate(today),discount:null,birthday:bday,saved:[],couponYen:0,notices:[],salonNote:'RESERVAから移行',passes:[],bdayYear:0};added++;}});if(!added&&!updated){alert('登録できる行が見つかりませんでした。電話番号の列が正しいかご確認ください。');return;}await saveData(DATA);state.importStage='idle';state.importRows=[];state.importHeaders=[];alert(`取り込み完了：新規 ${added}件／更新 ${updated}件。\n仮パスワードは各お客様の「電話番号の下4桁」です（ログイン後にご自身で変更してもらってください）。`);render();}
+function needsRecord(c){const cutoff=fmtDate(new Date(today.getTime()-60*86400000));return DATA.bookings.some(b=>normPhone(b.phone)===normPhone(c.phone)&&b.status==='visited'&&b.date>=cutoff&&!(b.staffComment&&b.staffComment.trim()));}
 function adminCustomers(){
   if(state.custOpen)return custDetail(state.custOpen);
   const q=state.custQuery.trim();const nq=normPhone(q);let entries=Object.values(DATA.customers);if(q)entries=entries.filter(c=>c.name.includes(q)||normPhone(c.phone).includes(nq));
   const bdays=Object.values(DATA.customers).filter(c=>c.birthday&&c.birthday.slice(5,7)===curMonth.slice(5)).sort((a,b)=>a.birthday.slice(5).localeCompare(b.birthday.slice(5)));
   const bdayHtml=(!q&&bdays.length)?`<div class="subhead" style="margin-top:0">🎂 今月のお誕生日</div>${bdays.map(c=>`<div class="bday-row"><div class="bd"><div class="bn">${c.name} 様</div><div class="bdt">${bdayLabel(c.birthday)}</div></div><div class="ba"><button data-bpt="${normPhone(c.phone)}">${CONFIG.birthdayBonus}ptプレゼント</button><button data-bmsg="${normPhone(c.phone)}">メッセージ</button></div></div>`).join('')}<div class="note">お誕生日当日になると自動でメッセージ配信とポイント付与が行われます。手動でも配信できます。</div>`:'';
-  entries.sort((a,b)=>pointBalance(b.phone)-pointBalance(a.phone));
-  const cards=entries.map((c,i)=>{const fav=favMenus(c.phone).slice(0,3);const vc=custBookings(c.phone).length;let bdg='';const dl=custDiscount(c).label;if(dl)bdg+=`<span class="tag disc">${dl}</span>`;if(usedPoints(c.phone))bdg+=`<span class="tag">pt利用あり</span>`;if(c.referredBy&&DATA.customers[c.referredBy])bdg+=`<span class="tag">紹介入会：${DATA.customers[c.referredBy].name}様</span>`;if(couponVal(c)>0)bdg+=`<span class="tag disc">クーポン¥${couponVal(c)}</span>`;
-    return `<div class="cust" data-cust="${normPhone(c.phone)}" style="animation-delay:${i*.03}s"><div class="cust-top"><div><div class="cust-name">${c.name}</div><div class="cust-phone">${c.phone} ・ 来店${vc}回${c.birthday?` ・ 🎂${bdayLabel(c.birthday)}`:''}</div></div><div class="cust-pt"><div class="n">${pointBalance(c.phone).toLocaleString()}</div><div class="l">pt</div></div></div>${fav.length?`<div class="cust-fav">よく選ぶ：<b>${fav.join('、')}</b></div>`:''}${bdg?`<div class="cust-badges">${bdg}</div>`:''}</div>`}).join('');
+  entries.sort((a,b)=>{const na=needsRecord(a)?1:0,nb=needsRecord(b)?1:0;if(na!==nb)return nb-na;return pointBalance(b.phone)-pointBalance(a.phone);});
+  const nrCount=entries.filter(needsRecord).length;
+  const nrNote=(!q&&nrCount)?`<div class="nr-summary">📝 施術記録が未入力のお客様が <b>${nrCount}名</b> います（一覧の上に表示しています）。カルテを開いて「お客様へのコメント」を記録してください。</div>`:'';
+  const cards=entries.map((c,i)=>{const fav=favMenus(c.phone).slice(0,3);const vc=custBookings(c.phone).length;const nr=needsRecord(c);let bdg='';const dl=custDiscount(c).label;if(dl)bdg+=`<span class="tag disc">${dl}</span>`;if(usedPoints(c.phone))bdg+=`<span class="tag">pt利用あり</span>`;if(c.referredBy&&DATA.customers[c.referredBy])bdg+=`<span class="tag">紹介入会：${DATA.customers[c.referredBy].name}様</span>`;if(couponVal(c)>0)bdg+=`<span class="tag disc">クーポン¥${couponVal(c)}</span>`;
+    return `<div class="cust ${nr?'needrec':''}" data-cust="${normPhone(c.phone)}" style="animation-delay:${i*.03}s">${nr?'<div class="nr-flag">📝 施術記録が未入力です</div>':''}<div class="cust-top"><div><div class="cust-name">${c.name}</div><div class="cust-phone">${c.phone} ・ 来店${vc}回${c.birthday?` ・ 🎂${bdayLabel(c.birthday)}`:''}</div></div><div class="cust-pt"><div class="n">${pointBalance(c.phone).toLocaleString()}</div><div class="l">pt</div></div></div>${fav.length?`<div class="cust-fav">よく選ぶ：<b>${fav.join('、')}</b></div>`:''}${bdg?`<div class="cust-badges">${bdg}</div>`:''}</div>`}).join('');
   const importUI=`<div class="addform" style="margin-bottom:14px"><div class="subhead" style="margin:0 0 10px">📥 CSVから顧客を一括取り込み（RESERVA等）</div>${state.importStage==='map'?impMapUI():`<label class="fileinput">📄 CSVファイルを選ぶ<input type="file" id="imp-file" accept=".csv,text/csv"></label><div class="note" style="margin-top:8px">RESERVAの「顧客データCSV」または「予約一覧CSV」を選んでください。氏名・電話番号があれば取り込めます。（文字化けする場合も自動で調整します）</div>`}</div>`;
-  return `<div class="searchbar"><input id="cust-q" value="${state.custQuery}" placeholder="お名前・電話番号で検索"></div>${q?'':importUI}${bdayHtml}<div class="subhead">顧客一覧</div>${entries.length?cards:'<div class="empty">該当する顧客が見つかりません</div>'}`;
+  return `<div class="searchbar"><input id="cust-q" value="${state.custQuery}" placeholder="お名前・電話番号で検索"></div>${q?'':importUI}${nrNote}${bdayHtml}<div class="subhead">顧客一覧</div>${entries.length?cards:'<div class="empty">該当する顧客が見つかりません</div>'}`;
 }
 function custDetail(key){
   const c=DATA.customers[key];const bal=pointBalance(c.phone);const list=DATA.bookings.filter(b=>normPhone(b.phone)===key).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));const fav=favMenus(c.phone);
@@ -1893,6 +1931,7 @@ function bindAdmin(){
   const icsm=byId('ics-month');if(icsm)icsm.onclick=downloadMonthICS;
   app.querySelectorAll('[data-drng]').forEach(s=>s.onchange=()=>dRngSet(s));
   app.querySelectorAll('[data-dayoff]').forEach(b=>b.onclick=()=>dDayOff(b.dataset.dayoff));
+  app.querySelectorAll('[data-sdtoggle]').forEach(b=>b.onclick=()=>salonDayToggle(b.dataset.sdtoggle));
   app.querySelectorAll('[data-addrng]').forEach(b=>b.onclick=()=>dAddRng(b.dataset.addrng));
   app.querySelectorAll('[data-rmrng]').forEach(b=>b.onclick=()=>dRmRng(b.dataset.rmrng));
   const qff=byId('qf-fill');if(qff)qff.onclick=qfFill;
