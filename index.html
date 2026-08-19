@@ -539,6 +539,13 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .docfile-row .dflabel{flex:1;min-width:0;font-family:inherit;font-size:12px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:#fff}
 .docfile-row .dfdel{flex:0 0 auto;border:none;background:none;color:var(--rose);font-size:15px;cursor:pointer}
 .doc-lbl{font-size:12px;font-weight:700;color:var(--gold);margin-bottom:5px}
+.mtile-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px}
+.mtile{border:none;background:none;padding:0;text-align:left;cursor:pointer;font-family:inherit}
+.mtile-img{aspect-ratio:4/3;border-radius:16px;background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(30,42,71,.06);overflow:hidden}
+.mtile-mono{font-family:"Fraunces",serif;color:rgba(255,255,255,.45);font-size:26px;letter-spacing:.12em}
+.mtile-b{padding:9px 3px 0}
+.mtile-n{font-size:13px;font-weight:700;color:var(--navy);line-height:1.4}
+.mtile-p{font-size:12px;color:var(--gold);font-weight:700;margin-top:2px}
 </style>
 </head>
 <body>
@@ -899,8 +906,11 @@ function renderHome(){
   const dirUrl=s.mapUrl||('https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(mapAddr));
   const mapHtml=`<a href="${dirUrl}" target="_blank" style="text-decoration:none;display:block"><div style="position:relative;border-radius:14px;overflow:hidden;margin-bottom:10px;border:1px solid var(--line)"><iframe class="mapembed" loading="lazy" src="https://maps.google.com/maps?q=34.6933,135.5088&z=16&hl=ja&output=embed"></iframe><div style="position:absolute;inset:0"></div></div></a><a class="linkbtn" href="${dirUrl}" target="_blank" style="margin-bottom:10px"><span class="ic">🧭</span>ここへ行く（Googleマップで道案内）</a>`;
   const _reals=DATA.staff.filter(x=>x.id!=='s0');
+  const menuPics=DATA.services.filter(s2=>s2.cat!=='option').slice(0,6);
+  const menuTiles=menuPics.length?`<div class="sec-label"><span class="t">メニュー</span><button class="more" id="menumore">すべて見る →</button></div><div class="mtile-grid">${menuPics.map(s2=>`<button class="mtile" data-mtile="1"><div class="mtile-img" style="${s2.img?`background-image:url('${s2.img}')`:'background:linear-gradient(135deg,var(--navy),#33436b)'}">${s2.img?'':'<span class="mtile-mono">Vi5</span>'}</div><div class="mtile-b"><div class="mtile-n">${svcName(s2)}</div><div class="mtile-p">${s2.price?yen(s2.price):'—'}</div></div></button>`).join('')}</div>`:'';
   app.innerHTML=`<div class="fade">${bannerHtml}
     <div class="hero-home"${heroStyle}><div class="hh-tag">Vi5 北浜</div><h2>${TX('heroTitle','バイタリティ溢れる毎日を。')}</h2><p>${TX('heroSub','まつげ・眉・ピーリング・メイク。あなたに似合うを、ここから。')}</p><button class="btn" id="hbook">${t('bookNow')}</button></div>
+    ${menuTiles}
     ${rankHtml}
     ${recsHtml}
     ${socialHtml}
@@ -916,6 +926,7 @@ function renderHome(){
     <div class="sec-label"><span class="t">アクセス・店舗情報</span></div>${mapHtml}${links}
     <div class="addr">${TX('homeNote','ご予約はこの予約ページからのみ承っております。')}<br>${s.address||''}<br>${s.hours||''}</div></div>`;
   byId('hbook').onclick=()=>startBooking();const _hm=byId('hmore');if(_hm)_hm.onclick=()=>go('gallery');bindPosts();
+  app.querySelectorAll('[data-mtile]').forEach(b=>b.onclick=()=>startBooking());const _mm=byId('menumore');if(_mm)_mm.onclick=()=>startBooking();
   const _gs=byId('goshare');if(_gs)_gs.onclick=()=>go('share');
   const box=byId('bannerbox');if(box){const slides=[...box.querySelectorAll('.banner-slide')];const dots=[...box.querySelectorAll('.bn-dots i')];if(slides.length>1){clearInterval(window._bnr);let idx=0;window._bnr=setInterval(()=>{slides[idx].classList.remove('on');if(dots[idx])dots[idx].classList.remove('on');idx=(idx+1)%slides.length;slides[idx].classList.add('on');if(dots[idx])dots[idx].classList.add('on');},4500);}}
 }
