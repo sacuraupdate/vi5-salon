@@ -1470,15 +1470,16 @@ function seedChecklist(){let n=0;const it=(text,freq)=>({id:'ck'+(++n),text,freq
     {cat:'② 店内・入口・床',items:[it('入口ドア・ドアノブ・手すりを拭く'),it('階段のゴミ・汚れを掃除する'),it('掃除機をかける'),it('汚れ・ベタつきは水拭き／スチーム')]},
     {cat:'③ 鏡・ガラス・窓・洗面台',items:[it('店内の鏡・ガラス扉・窓を拭く'),it('窓枠・サッシの汚れを確認'),it('洗面台のボウルを洗う・蛇口を磨く'),it('排水口を確認し水滴を拭き上げる')]},
     {cat:'④ 商品・備品',items:[it('商品棚のホコリを取り棚を拭く'),it('商品を正面に整列させる'),it('サンプル・美容機器を拭く'),it('iPadの画面・指紋を拭く')]},
-    {cat:'⑤ 消耗品',items:[it('お水を補充する'),it('ショップバッグ補充・シール確認'),it('綿棒・パフ・コットン・ティッシュ補充')]},
+    {cat:'⑤ 消耗品',items:[it('在庫があっても毎日確認し、すべて満タン（ぱんぱん）に補充する'),it('お水を補充する'),it('ショップバッグ補充・シール確認'),it('綿棒・パフ・コットン・ティッシュ補充')]},
     {cat:'⑥ 在庫',items:[it('店販商品の在庫確認（残1で発注）'),it('消耗品・掃除用品の在庫確認')]},
     {cat:'⑦ タオル・施術ルーム',items:[it('使用済みタオルを洗濯・収納'),it('ベッド・枕・ワゴンを整える'),it('ライト・機械・手鏡を拭く'),it('コード類を整える')]},
     {cat:'⑧ 最終チェック',items:[it('髪の毛・ホコリ・指紋・水滴が残っていないか'),it('商品がきれいに並んでいるか'),it('照明・BGM・エアコンを確認')]},
     {cat:'⑨ SNS・報告',items:[it('Instagramストーリーズを1つ以上投稿'),it('就業時にアプリで安藤さくらへ1回報告')]},
     {cat:'⑩ 手が空いた時',items:[it('Squareメニュー：並び順・金額・新規・削除','weekly'),it('BASE：在庫・価格・新商品・クーポン配信','weekly'),it('口コミ・レビューへの返信','weekly'),it('消耗品・備品の見直し','monthly')]}
   ],home:[
-    {cat:'毎日',items:[it('Googleタスクで今日やることを確認'),it('Instagramストーリーズを1つ以上投稿'),it('就業時に安藤さくらへ1回だけ報告')]},
-    {cat:'在宅ワーク',items:[it('BASEを確認（在庫・価格・新商品）'),it('リールを1本以上作る（下書きも可）')]},
+    {cat:'毎日',items:[it('Googleタスクで今日やることを確認'),it('自分の完了していないタスクを完了させる'),it('Instagramストーリーズを1つ以上投稿'),it('就業時に安藤さくらへ1回だけ報告')]},
+    {cat:'在宅ワーク',items:[it('BASEに新商品を追加し、販売を開始する'),it('BASEを確認（在庫・価格・新商品）'),it('自分の担当メニューの集客を考え、何か1つ行動する'),it('リールを1本以上作る（下書きも可）'),it('SNS投稿はリール（動画）で行う'),it('「本日限定クーポン」などストーリーズで発信'),it('気づいた改善を1つ提案する')]},
+    {cat:'手が空いた時',items:[it('Squareメニュー：並び順・金額・新規・削除','weekly'),it('BASE：在庫・価格・新商品・クーポン配信','weekly'),it('口コミ・レビューへの返信','weekly'),it('商品棚・ディスプレイの改善','monthly'),it('消耗品・備品の見直し','monthly')]},
     {cat:'毎月やること',items:[it('Squareメニューの整理・更新','monthly'),it('今月のLINE配信を作成して配信','monthly'),it('商品棚・ディスプレイの更新','monthly'),it('口コミ・レビューに返信','monthly')]}
   ],log:[]};}
 function clItemDone(it){if(it.freq==='daily')return !!it.done;if(!it.lastDone)return false;if(it.freq==='monthly')return it.lastDone.slice(0,7)===fmtDate(today).slice(0,7);return (today-new Date(it.lastDone+'T00:00:00'))/86400000<7;}
@@ -1501,9 +1502,21 @@ function adminTasks(){checklistRollover();const mode=state.taskMode||'work';cons
   const logHtml=(cl.log&&cl.log.length)?`<details class="cllog"><summary>📝 更新履歴（${cl.log.length}件）</summary>${cl.log.slice(0,80).map(l=>`<div class="cllog-i">${l.text}</div>`).join('')}</details>`:'';
   return `<div class="note" style="margin-top:0;margin-bottom:12px">終わった項目にチェックを入れてください。<b>スタッフ全員の画面で共有</b>され、何が終わって何が残っているか一目で分かります。毎日リセットされ、履歴が残ります。週1・月1の項目は前回からの日数と残り日数が出ます。</div>${modeBar}${prog}${cats}${addCat}${logHtml}`;
 }
+function checklistMigrate(){const cl=DATA.checklist;if(!cl||!cl.work)return false;if((cl.ver||0)>=2)return false;const nid=()=>'ck'+Math.random().toString(36).slice(2,9);const mk=(text,freq)=>({id:nid(),text,freq:freq||'daily',done:false,lastDone:null});cl.home=cl.home||[];
+  const addItem=(cat,text,freq)=>{if(!cat.items.some(i=>i.text===text))cat.items.push(mk(text,freq));};
+  const getCat=(arr,name,make)=>{let c=arr.find(x=>x.cat===name||x.cat.includes(name));if(!c&&make){c={cat:name,items:[]};arr.push(c);}return c;};
+  // 消耗品ルール
+  const cons=getCat(cl.work,'消耗品');if(cons)addItem(cons,'在庫があっても毎日確認し、すべて満タン（ぱんぱん）に補充する');
+  // 在宅 毎日
+  const hDaily=getCat(cl.home,'毎日',true);addItem(hDaily,'自分の完了していないタスクを完了させる');
+  // 在宅ワーク
+  const hWork=getCat(cl.home,'在宅ワーク',true);['BASEに新商品を追加し、販売を開始する','自分の担当メニューの集客を考え、何か1つ行動する','SNS投稿はリール（動画）で行う','「本日限定クーポン」などストーリーズで発信','気づいた改善を1つ提案する'].forEach(t=>addItem(hWork,t));
+  // 手が空いた時 を在宅にも
+  if(!cl.home.some(c=>c.cat.includes('手が空いた'))){const ws=cl.work.find(c=>c.cat.includes('手が空いた'));const items=ws?ws.items.map(i=>mk(i.text,i.freq)):[mk('Squareメニュー：並び順・金額・新規・削除','weekly'),mk('BASE：在庫・価格・新商品・クーポン配信','weekly'),mk('口コミ・レビューへの返信','weekly'),mk('消耗品・備品の見直し','monthly')];cl.home.push({cat:'手が空いた時',items});}
+  cl.ver=2;return true;}
 function renderAdmin(){
   if(!state.adminAuthed)return renderStaffLogin();
-  if(checklistRollover())saveData(DATA);
+  let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(_clch)saveData(DATA);
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
   const tabs=[['tasks','毎日のタスク'],['bookings','予約'],['calendar','カレンダー'],['schedule','シフト'],['customers','顧客'],['homedisp','ホーム表示'],['menu','メニュー'],['staff','スタッフ'],['posts','投稿'],['broadcast','配信'+(unsent?`(${unsent})`:'')],['campaigns','告知'],['feedback','ご意見'],['sales','売上'],['settings','設定']];
   let inner=({tasks:adminTasks,bookings:adminBookings,calendar:adminCalendar,schedule:adminSchedule,customers:adminCustomers,homedisp:adminHomeDisplay,menu:adminMenu,staff:adminStaff,posts:adminPosts,broadcast:adminBroadcast,campaigns:adminCampaigns,feedback:adminFeedback,sales:adminSales,settings:adminSettings}[state.adminTab])();
