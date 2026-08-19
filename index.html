@@ -513,6 +513,24 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .sd-mini .sd-tag{font-size:7px}
 .reg-divider{display:flex;align-items:center;gap:12px;margin:16px 0 12px;color:var(--ink-soft);font-size:12px}
 .reg-divider::before,.reg-divider::after{content:'';flex:1;height:1px;background:var(--line)}
+.signup-promo{background:linear-gradient(135deg,#FCF3DF,#FBEEF2);border:1px solid var(--gold-soft);border-radius:14px;padding:14px 16px;margin-top:14px;font-size:13px;line-height:1.7;color:var(--ink)}
+.signup-promo b{color:var(--rose)}
+.histd{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.histd summary{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;list-style:none}
+.histd summary::-webkit-details-marker{display:none}
+.histd .hsd{flex:0 0 auto;font-weight:800;color:var(--navy);font-size:14px;min-width:52px}
+.histd .hsm{flex:1;font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.histd .hss{flex:0 0 auto;font-size:11px;font-weight:700;color:var(--ink-soft)}
+.histd .hss.s-visited{color:var(--sage)}
+.histd .hss.s-cancelled{color:var(--rose)}
+.histd .histd-b{padding:0 16px 16px;border-top:1px solid var(--line)}
+.doccard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+.doc-t{font-weight:700;color:var(--navy);margin-bottom:10px;font-size:14px}
+.langbar{background:var(--navy);border-radius:14px;padding:12px 14px;margin-bottom:14px}
+.langbar-ic{display:block;font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.05em;margin-bottom:8px}
+.langbtns{display:flex;flex-wrap:wrap;gap:6px}
+.langbtn{border:1px solid rgba(255,255,255,.25);background:transparent;color:var(--paper);border-radius:999px;padding:6px 13px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer}
+.langbtn.on{background:var(--gold);color:var(--navy);border-color:var(--gold)}
 </style>
 </head>
 <body>
@@ -529,6 +547,7 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
       <button data-view="shop">ショップ</button>
       <button data-view="board">紹介ボード</button>
       <button data-view="staff">スタッフ紹介</button>
+      <button data-view="care">ケア・同意書</button>
     </nav>
     <button class="topback" id="backbtn" style="display:none">← 戻る</button>
   </header>
@@ -838,7 +857,7 @@ function updateNav(){const map={home:'nav_home',book:'nav_book',gallery:'nav_gal
   const ls=byId('langsel');if(ls){if(!ls.dataset.built){ls.innerHTML=LANGS.map(l=>`<option value="${l[0]}">${l[1]}</option>`).join('');ls.dataset.built='1';ls.onchange=()=>setLang(ls.value)}ls.value=state.lang}}
 async function setLang(v){state.lang=v;document.documentElement.lang=v;try{if(window.storage)await window.storage.set('salon:lang',v,false)}catch(e){}render()}
 async function loadLang(){try{if(window.storage){const r=await window.storage.get('salon:lang',false);if(r&&r.value)return r.value}}catch(e){}return 'ja'}
-function render(){updateNav();updateBack();if(state.view==='home')renderHome();else if(state.view==='book')renderCustomer();else if(state.view==='gallery')renderGallery();else if(state.view==='share')renderShare();else if(state.view==='board')renderBoard();else if(state.view==='staff')renderStaffIntro();else if(state.view==='mypage')renderMypage();else renderAdmin();}
+function render(){updateNav();updateBack();if(state.view==='home')renderHome();else if(state.view==='book')renderCustomer();else if(state.view==='gallery')renderGallery();else if(state.view==='share')renderShare();else if(state.view==='board')renderBoard();else if(state.view==='staff')renderStaffIntro();else if(state.view==='care')renderCareDocs();else if(state.view==='mypage')renderMypage();else renderAdmin();}
 function stepsBar(n){let h='<div class="steps">';for(let i=0;i<4;i++)h+=`<div class="s ${i<=n?'on':''}"></div>`;return h+'</div>'}
 function go(v){if(v!==state.view){state.navStack.push(state.view);if(state.navStack.length>30)state.navStack.shift();}state.view=v;render();window.scrollTo(0,0)}
 function goBack(){if(state.navStack.length){state.view=state.navStack.pop();render();window.scrollTo(0,0)}}
@@ -870,17 +889,17 @@ function renderHome(){
   const dirUrl=s.mapUrl||('https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(mapAddr));
   const mapHtml=`<a href="${dirUrl}" target="_blank" style="text-decoration:none;display:block"><div style="position:relative;border-radius:14px;overflow:hidden;margin-bottom:10px;border:1px solid var(--line)"><iframe class="mapembed" loading="lazy" src="https://maps.google.com/maps?q=34.6933,135.5088&z=16&hl=ja&output=embed"></iframe><div style="position:absolute;inset:0"></div></div></a><a class="linkbtn" href="${dirUrl}" target="_blank" style="margin-bottom:10px"><span class="ic">🧭</span>ここへ行く（Googleマップで道案内）</a>`;
   const _reals=DATA.staff.filter(x=>x.id!=='s0');
-  app.innerHTML=`<div class="fade">${bannerHtml}
+  const langBar=`<div class="langbar"><span class="langbar-ic">🌐 言語 / Language</span><div class="langbtns">${LANGS.map(l=>`<button class="langbtn ${state.lang===l[0]?'on':''}" data-setlang="${l[0]}">${l[1]}</button>`).join('')}</div></div>`;
+  app.innerHTML=`<div class="fade">${langBar}${bannerHtml}
     <div class="hero-home"${heroStyle}><div class="hh-tag">Vi5 北浜</div><h2>${TX('heroTitle','バイタリティ溢れる毎日を。')}</h2><p>${TX('heroSub','まつげ・眉・ピーリング・メイク。あなたに似合うを、ここから。')}</p><button class="btn" id="hbook">${t('bookNow')}</button></div>
     ${rankHtml}
     ${recsHtml}
     ${socialHtml}
-    <div class="sec-label"><span class="t">営業日カレンダー</span></div><div class="cal-grid sd-grid sd-mini" style="margin-bottom:6px">${salonMonthCells(today.getFullYear(),today.getMonth(),false)}</div><div class="note" style="margin-bottom:14px;font-size:11px">「営」が営業日（火曜は基本お休み）。営業時間は日により異なります。「臨時営業」「臨時休」は上に表示。</div>
     <div class="sec-label"><span class="t">よくある質問（使い方）</span></div>
     <div class="faq">
       <details><summary>予約はどこからできますか？</summary><div class="faq-a">画面上部のメニュー「予約」から、24時間いつでもご予約いただけます。メニュー→担当→日時を選ぶだけ。情報の入力は初回のみです。</div></details>
       <details><summary>予約の変更・キャンセルは？</summary><div class="faq-a">マイページの「次回のご予約」から、<b>前日の21時まで</b>「🕐時間を変更」「キャンセル」ができます。それ以降は公式LINEへご連絡ください。</div></details>
-      <details><summary>マイページはどうやってログインしますか？</summary><div class="faq-a">電話番号と暗証番号でログインできます。はじめての方は、暗証番号に<b>電話番号の下4桁</b>をご入力ください（ログイン後にご自身の番号へ変更できます）。</div></details>
+      <details><summary>マイページはどうやってログインしますか？</summary><div class="faq-a">電話番号とパスワードでログインできます。はじめての方は「予約」または「マイページ」の<b>新規ご登録</b>から、お名前・電話番号・生年月日・パスワードをご登録ください。パスワードをお忘れの場合は公式LINEへご連絡ください。</div></details>
       <details><summary>ポイントはどうやって貯まりますか？</summary><div class="faq-a">ご来店ごと、お誕生日、お友達のご紹介などで貯まります。次回以降のお会計でお使いいただけます。残高はマイページでいつでも確認できます。</div></details>
       <details><summary>会員ランクとは？</summary><div class="faq-a">通常会員／シルバー会員（毎回5%OFF）／ゴールド会員（毎回10%OFF）があります。ランクはマイページに表示されます。</div></details>
       <details><summary>お問い合わせはどこへ？</summary><div class="faq-a">施術中はお電話に出られないため、<b>公式LINE</b>へお願いいたします。${s.lineUrl?`<a href="${s.lineUrl}" target="_blank" style="color:var(--gold);font-weight:700"> 公式LINEを開く</a>`:''}</div></details>
@@ -888,6 +907,7 @@ function renderHome(){
     <div class="sec-label"><span class="t">アクセス・店舗情報</span></div>${mapHtml}${links}
     <div class="addr">${TX('homeNote','ご予約はこの予約ページからのみ承っております。')}<br>${s.address||''}<br>${s.hours||''}</div></div>`;
   byId('hbook').onclick=()=>startBooking();const _hm=byId('hmore');if(_hm)_hm.onclick=()=>go('gallery');bindPosts();
+  app.querySelectorAll('[data-setlang]').forEach(b=>b.onclick=()=>setLang(b.dataset.setlang));
   const _gs=byId('goshare');if(_gs)_gs.onclick=()=>go('share');
   const box=byId('bannerbox');if(box){const slides=[...box.querySelectorAll('.banner-slide')];const dots=[...box.querySelectorAll('.bn-dots i')];if(slides.length>1){clearInterval(window._bnr);let idx=0;window._bnr=setInterval(()=>{slides[idx].classList.remove('on');if(dots[idx])dots[idx].classList.remove('on');idx=(idx+1)%slides.length;slides[idx].classList.add('on');if(dots[idx])dots[idx].classList.add('on');},4500);}}
 }
@@ -987,6 +1007,27 @@ async function addShare(){
   state.sharePostOpen=false;state.sharePhotos=[];await refresh();alert(`投稿しました。${CONFIG.sharePoints}ポイント差し上げました！`);render();
 }
 /* ===== お客様ビジネス掲示板 ===== */
+function adminDocs(){
+  const docs=(S().docs||[]);
+  const list=docs.map(x=>`<div class="menurow"><div class="sc-av" style="background:${x.cat==='consent'?'var(--rose)':'var(--sage)'};width:44px;height:44px;border-radius:9px;flex-shrink:0;font-size:20px">${x.kind==='pdf'?'📄':'🖼️'}</div><div class="mb"><div class="mn">${x.title}</div><div class="mm">${x.cat==='aftercare'?'アフターケア':'同意書'} ・ ${x.kind==='pdf'?'PDF':'画像'} ・ ${x.createdAt||''}</div></div><button class="cancelbtn" style="border-color:#D8B6BF;color:var(--rose);flex:0 0 auto" data-docdel="${x.id}">削除</button></div>`).join('');
+  return `<div class="note" style="margin-top:0">アフターケアや同意書を登録できます。<b>画像またはPDF</b>をアップロードすると、お客様の「ケア・同意書」ページで確認・保存できます。1ファイル4MBまで。</div>
+  <div class="addform"><div class="subhead" style="margin:0 0 10px">書類を追加</div>
+    <div class="field"><label>タイトル</label><input id="doc-title" placeholder="例：まつげエクステ アフターケア"></div>
+    <div class="field"><label>種類</label><select id="doc-cat"><option value="aftercare">アフターケア</option><option value="consent">同意書</option></select></div>
+    <div class="field"><label>ファイル（画像 または PDF）</label><label class="fileinput">📎 ファイルを選ぶ<input type="file" id="doc-file" accept="image/*,application/pdf"></label>${state.docPending?`<div class="note" style="color:var(--sage);margin-top:6px">選択済み：${state.docPendingName||''}</div>`:''}</div>
+    <button class="btn btn-primary" id="doc-save" style="width:100%">登録する</button>
+  </div>
+  <div class="subhead">登録済みの書類（${docs.length}）</div>${docs.length?list:'<div class="empty">まだありません</div>'}`;
+}
+function docCard(x){
+  const open=x.kind==='pdf'?`<a class="btn btn-ghost" href="${x.data}" target="_blank" rel="noopener" download="${x.title}.pdf" style="width:100%;display:block;text-align:center;text-decoration:none">📄 PDFを開く・保存する</a>`:`<a href="${x.data}" target="_blank" rel="noopener" style="display:block"><img src="${x.data}" alt="${x.title}" style="width:100%;border-radius:10px;display:block"></a>`;
+  return `<div class="doccard"><div class="doc-t">${x.kind==='pdf'?'📄':'🖼️'} ${x.title}</div>${open}</div>`;
+}
+function renderCareDocs(){
+  const docs=(S().docs||[]);
+  const grp=(cat,label,ic)=>{const d=docs.filter(x=>x.cat===cat);return `<div class="sec-label"><span class="t">${ic} ${label}</span></div>${d.length?d.map(docCard).join(''):'<div class="note" style="margin-bottom:16px">ただいま準備中です。</div>'}`;};
+  app.innerHTML=`<div class="fade"><div class="eyebrow">Care & Consent</div><div class="h-title">アフターケア・同意書</div><div class="h-sub">施術後のケアのご案内や、同意書をご確認いただけます。画像・PDFで開けます。</div>${grp('aftercare','アフターケアについて','🧴')}${grp('consent','同意書','📝')}<div class="note" style="margin-top:8px">ご不明な点は公式LINEよりお気軽にお問い合わせください。</div></div>`;
+}
 function renderStaffIntro(){
   const reals=DATA.staff.filter(x=>x.id!=='s0');
   const cards=reals.map(s=>{const q=(s.quals||'').split(/[,、]/).map(x=>x.trim()).filter(Boolean);return `<div class="sicard"><div class="si-photo"${s.photo?` style="background-image:url('${s.photo}')"`:''}>${s.photo?'':nameInitial(s.name)}</div><div class="si-body"><div class="si-name">${s.name}${s.role?`<span class="si-role">${s.role}</span>`:''}</div>${s.intro?`<div class="si-intro">${s.intro}</div>`:''}${q.length?`<div class="quals">${q.map(x=>`<span class="qual">🏅 ${x}</span>`).join('')}</div>`:''}${s.biz?`<div class="si-biz">💼 ${s.biz}</div>`:''}${s.bizUrl?`<a class="si-link" href="${s.bizUrl}" target="_blank">🔗 詳しく見る</a>`:''}</div></div>`}).join('');
@@ -1404,7 +1445,8 @@ function renderMypage(){
       <div class="reg-divider"><span>はじめての方</span></div>
       <button class="btn" id="mp-register" style="width:100%;background:var(--gold);border-color:var(--gold);color:#fff">＋ 新規ご登録（ご予約して登録・500pt進呈🎁）</button>
       ${knownP?`<button class="btn btn-ghost" id="mp-clearknown" style="width:100%;margin-top:10px">別の番号でログイン</button>`:''}
-      <div class="note" style="margin:14px 0 0">${knownN?'':'<b>ご来店されたことがある方：</b>電話番号とパスワードでログインできます（以前ご登録で暗証番号がはじめての方は<b>電話番号の下4桁</b>）。<br><b>はじめての方：</b>下の「予約」からご予約いただくと、その場で会員登録されます。<br><br>'}<b>パスワードをお忘れの方</b>は、下の公式LINEへご連絡ください。新しいパスワードをお渡しします。</div>
+      <div class="signup-promo">🎁 <b>新規ご登録で500ポイント</b>プレゼント！<br>さらに、これまでにご来店・ご紹介いただいているお客様には、<b>ご登録後1週間以内</b>に、これまでのご来店回数などをもとに<b>ポイントを追加で付与</b>いたします。</div>
+      <div class="note" style="margin:14px 0 0">${knownN?'':'マイページは<b>電話番号とパスワード</b>でログインできます。はじめての方は上の「新規ご登録」から、お名前・電話番号・生年月日・パスワードをご登録ください（登録は一度だけ）。<br><br>'}<b>パスワードをお忘れの方</b>は、下の公式LINEへご連絡ください。新しいパスワードをお渡しします。</div>
       ${lineU?`<a class="btn btn-ghost" href="${lineU}" target="_blank" style="width:100%;display:block;text-align:center;text-decoration:none;margin-top:10px">💬 パスワードをお忘れの方・お問い合わせ（公式LINE）</a>`:''}</div></div>`;
     const doLogin=async()=>{const phone=normPhone(byId('mp-phone').value);const pw=byId('mp-pw').value;if(!phone){alert('電話番号をご入力ください。');return;}if(!pw){alert('暗証番号（パスワード）をご入力ください。');return;}try{await doCustomerLogin(phone,pw);}catch(e){if(e.status===404)alert('この電話番号の登録が見つかりませんでした。番号をもう一度ご確認ください。');else if(e.status===401)alert('暗証番号（パスワード）が違います。もう一度お試しください。');else alert('ただいまサーバーに接続できませんでした。電波の良い場所で、少し時間をおいてからもう一度お試しください。');}};
     byId('mp-login').onclick=doLogin;
@@ -1417,7 +1459,7 @@ function renderMypage(){
   if((c.notices||[]).some(n=>!n.read)){c.notices.forEach(n=>n.read=true);saveData(DATA);}
   const list=DATA.bookings.filter(b=>normPhone(b.phone)===normPhone(c.phone)).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));
   const upcoming=list.filter(b=>b.date>=fmtDate(today)&&b.status!=='cancelled').length;const vc=custBookings(c.phone).length;
-  const notices=(c.notices||[]).map(n=>`<div class="ni">${n.text}<div class="nd">${n.date}</div></div>`).join('');
+  const notices=(c.notices||[]).map(n=>`<div class="ni">${n.text}${n.img?`<img src="${n.img}" alt="添付画像" style="width:100%;border-radius:10px;margin-top:8px;display:block">`:''}<div class="nd">${n.date}</div></div>`).join('');
   const nextBk=list.filter(b=>b.date>=fmtDate(today)&&b.status!=='cancelled').sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time))[0];
   const _lineU=(S().lineUrl)||'';const _lineBtn=_lineU?`<a class="btn btn-ghost" href="${_lineU}" target="_blank" style="width:100%;display:block;text-align:center;text-decoration:none;margin-top:8px">💬 公式LINEで連絡する</a>`:'';
   const nextCard=nextBk?`<div class="nextbk"><div class="nb-h">📅 次回のご予約</div><div class="nb-dt">${mdLabel(nextBk.date)}（${DOW[new Date(nextBk.date+'T00:00:00').getDay()]}）${nextBk.time}〜</div><div class="nb-menu">${nextBk.items.map(x=>x.name).join('＋')}</div><div class="nb-sub">担当：${stById(nextBk.staffId).name} ／ ${nextBk.status==='confirmed'?'✅ 予約確定':'⏳ 確認中'}</div>${canModifyBk(nextBk)?`<div class="nb-acts"><button class="nb-btn" data-resch="${nextBk.id}">🕐 時間を変更</button><button class="nb-btn cancel" data-cancelmy="${nextBk.id}">キャンセル</button></div>`:`<div class="note" style="margin-top:8px">前日の21時を過ぎているため、こちらからの変更・キャンセルはできません。<b>公式LINE</b>からご連絡ください。</div>${_lineBtn}`}</div>`:'';
@@ -1448,7 +1490,7 @@ function renderMypage(){
   const expiryHtml=`<div class="subhead">ポイント・特典の有効期限</div><div class="earn"><div class="earn-row"><span>👥 お友達紹介のポイント</span><b>2年間</b></div><div class="earn-row"><span>🏠 ご近所シェアのポイント</span><b>3ヶ月間</b></div><div class="earn-row"><span>📷 ギャラリー投稿のポイント</span><b>3ヶ月間</b></div><div class="earn-row"><span>✉ ご意見箱のポイント</span><b>3ヶ月間</b></div><div class="earn-row"><span>🎂 お誕生日クーポン</span><b>前後1ヶ月</b></div></div><div class="note" style="margin-top:6px">お誕生日クーポンは、お誕生日の<b>前月・当月・翌月</b>の3ヶ月間ご利用いただけます（例：6月生まれの方は5月・6月・7月）。期限を過ぎた分は無効になりますので、ぜひお早めにお使いください😊</div>`;
   const previewBar=state.previewCust?`<div class="preview-bar"><span>👀 スタッフ確認用プレビュー（このお客様に表示される画面です）</span><button id="mp-preview-back">← 管理画面に戻る</button></div>`:'';
   let bdayBanner='';
-  if(isBirthdayWeek(c)){
+  if(c.birthday&&c.birthday.slice(5,7)===fmtDate(today).slice(5,7)){
     const bcolors=['#B0894A','#9C5B6B','#5F7355','#1E2A47','#E0A96D'];
     const conf=Array.from({length:20}).map((_,i)=>`<i style="left:${Math.round(Math.random()*100)}%;background:${bcolors[i%bcolors.length]};animation-duration:${(2.4+Math.random()*1.8).toFixed(2)}s;animation-delay:${(Math.random()*1.3).toFixed(2)}s"></i>`).join('');
     bdayBanner=`<div class="bday-banner"><div class="confetti">${conf}</div><div class="bday-pop">🎉🎊🎉</div><div class="bday-msg">お誕生日おめでとうございます！</div><div class="bday-sub">${c.name} 様、すてきな一年になりますように🎂</div><div class="bday-coupon">🎁 お誕生日の特典として <b>1,000円クーポン</b> をご用意しています。お誕生日の<b>前月・当月・翌月（前後1ヶ月）</b>の間にご利用ください（例：6月生まれの方は5・6・7月）。ご来店時にスタッフへお伝えください。</div></div>`;
@@ -1559,8 +1601,8 @@ function renderAdmin(){
   if(!state.adminAuthed)return renderStaffLogin();
   let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(_clch)saveData(DATA);
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
-  const tabs=[['tasks','毎日のタスク'],['bookings','予約'],['schedule','シフト'],['customers','顧客'],['homedisp','ホーム表示'],['menu','メニュー'],['staff','スタッフ'],['posts','投稿'],['broadcast','配信'+(unsent?`(${unsent})`:'')],['campaigns','告知'],['feedback','ご意見'],['sales','売上'],['settings','設定']];
-  let inner=({tasks:adminTasks,bookings:adminBookings,calendar:adminCalendar,schedule:adminSchedule,customers:adminCustomers,homedisp:adminHomeDisplay,menu:adminMenu,staff:adminStaff,posts:adminPosts,broadcast:adminBroadcast,campaigns:adminCampaigns,feedback:adminFeedback,sales:adminSales,settings:adminSettings}[state.adminTab])();
+  const tabs=[['tasks','毎日のタスク'],['bookings','予約'],['schedule','シフト'],['customers','顧客'],['docs','ケア・同意書'],['homedisp','ホーム表示'],['menu','メニュー'],['staff','スタッフ'],['posts','投稿'],['broadcast','配信'+(unsent?`(${unsent})`:'')],['campaigns','告知'],['feedback','ご意見'],['sales','売上'],['settings','設定']];
+  let inner=({tasks:adminTasks,bookings:adminBookings,calendar:adminCalendar,schedule:adminSchedule,customers:adminCustomers,docs:adminDocs,homedisp:adminHomeDisplay,menu:adminMenu,staff:adminStaff,posts:adminPosts,broadcast:adminBroadcast,campaigns:adminCampaigns,feedback:adminFeedback,sales:adminSales,settings:adminSettings}[state.adminTab])();
   app.innerHTML=`<div class="fade"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div class="eyebrow" style="margin:0">Salon Admin</div><button class="switch" id="adm-out">ログアウト</button></div><div class="atabs">${tabs.map(t=>`<button data-at="${t[0]}" class="${state.adminTab===t[0]?'active':''}">${t[1]}</button>`).join('')}</div>${adminGuide(state.adminTab)}${inner}</div>`;
   byId('adm-out').onclick=()=>{state.adminAuthed=false;setStaffSession(false);go('home')};
   app.querySelectorAll('[data-at]').forEach(b=>b.onclick=()=>{state.adminTab=b.dataset.at;state.custOpen=null;render()});
@@ -1778,13 +1820,14 @@ function adminCustomers(){
   const cards=entries.map((c,i)=>{const fav=favMenus(c.phone).slice(0,3);const vc=custBookings(c.phone).length;const nr=needsRecord(c);let bdg='';const dl=custDiscount(c).label;if(dl)bdg+=`<span class="tag disc">${dl}</span>`;if(usedPoints(c.phone))bdg+=`<span class="tag">pt利用あり</span>`;if(c.referredBy&&DATA.customers[c.referredBy])bdg+=`<span class="tag">紹介入会：${DATA.customers[c.referredBy].name}様</span>`;if(couponVal(c)>0)bdg+=`<span class="tag disc">クーポン¥${couponVal(c)}</span>`;
     return `<div class="cust ${nr?'needrec':''}" data-cust="${normPhone(c.phone)}" style="animation-delay:${i*.03}s">${nr?'<div class="nr-flag">📝 施術記録が未入力です</div>':''}<div class="cust-top"><div><div class="cust-name">${c.name}</div><div class="cust-phone">${c.phone} ・ 来店${vc}回${c.birthday?` ・ 🎂${bdayLabel(c.birthday)}`:''}</div></div><div class="cust-pt"><div class="n">${pointBalance(c.phone).toLocaleString()}</div><div class="l">pt</div></div></div>${fav.length?`<div class="cust-fav">よく選ぶ：<b>${fav.join('、')}</b></div>`:''}${bdg?`<div class="cust-badges">${bdg}</div>`:''}</div>`}).join('');
   const importUI=`<div class="addform" style="margin-bottom:14px"><div class="subhead" style="margin:0 0 10px">📥 CSVから顧客を一括取り込み（RESERVA等）</div>${state.importStage==='map'?impMapUI():`<label class="fileinput">📄 CSVファイルを選ぶ<input type="file" id="imp-file" accept=".csv,text/csv"></label><div class="note" style="margin-top:8px">RESERVAの「顧客データCSV」または「予約一覧CSV」を選んでください。氏名・電話番号があれば取り込めます。（文字化けする場合も自動で調整します）</div>`}</div>`;
-  return `<div class="searchbar"><input id="cust-q" value="${state.custQuery}" placeholder="お名前・電話番号で検索"></div>${q?'':importUI}${nrNote}${bdayHtml}<div class="subhead">顧客一覧</div>${entries.length?cards:'<div class="empty">該当する顧客が見つかりません</div>'}`;
+  const newCustUI=`<button class="btn btn-primary" id="cust-newbtn" style="width:100%;margin:0 0 12px">＋ 新規のお客様を登録（予約なしでOK）</button>${state.custNew?`<div class="addform" style="margin-bottom:14px"><div class="subhead" style="margin:0 0 10px">新規のお客様を登録</div><div class="field"><label>お名前</label><input id="nc-name" placeholder="例：山田 花子"></div><div class="field"><label>電話番号</label><input id="nc-phone" inputmode="tel" placeholder="090-1234-5678"></div><div class="field"><label>生年月日 <span class="opt">(お誕生日特典に使います)</span></label><input id="nc-bday" type="date"></div><div class="field"><label>パスワード <span class="opt">(空欄なら電話番号の下4桁。お客様が後で変更できます)</span></label><input id="nc-pw" placeholder="任意"></div><div class="note" style="margin:0 0 10px">登録特典として <b>${CONFIG.signupBonus}pt</b> が自動で付きます。</div><div style="display:flex;gap:9px"><button class="btn btn-ghost" id="nc-cancel">やめる</button><button class="btn btn-primary" id="nc-save">登録する</button></div></div>`:''}`;
+  return `<div class="searchbar"><input id="cust-q" value="${state.custQuery}" placeholder="お名前・電話番号で検索"></div>${newCustUI}${q?'':importUI}${nrNote}${bdayHtml}<div class="subhead">顧客一覧</div>${entries.length?cards:'<div class="empty">該当する顧客が見つかりません</div>'}`;
 }
 function custDetail(key){
   const c=DATA.customers[key];const bal=pointBalance(c.phone);const list=DATA.bookings.filter(b=>normPhone(b.phone)===key).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));const fav=favMenus(c.phone);
   const ref=c.referredBy&&DATA.customers[c.referredBy]?DATA.customers[c.referredBy].name:null;
   const referred=Object.values(DATA.customers).filter(x=>x.referredBy===key).map(x=>x.name);
-  const rows=list.map(b=>{const st={pending:'予約中',confirmed:'予約確定',visited:'来店済み',cancelled:'キャンセル'}[b.status];return `<div class="hist"><div class="hist-head"><span class="hist-date">${mdLabel(b.date)} ${b.time}</span><span class="hist-staff">担当 ${stById(b.staffId).name} ・ ${st}${b.status==='visited'?` ・ +${b.awardedPoints||0}pt`:''}</span></div><div class="hist-menu">${b.items.map(x=>x.name).join(' + ')}</div><div class="hist-amount">${yen(bkPayment(b))}${b.pointsUsed?` ／ ${b.pointsUsed}pt利用`:''}${b.status==='visited'?` <button class="cancelbtn" style="border-color:var(--line);color:var(--navy);margin:6px 0 0;padding:5px 10px" data-editpts="${b.id}">ポイント調整</button>`:''}</div>${b.customerMemo?`<div class="msg-salon" style="border-color:var(--navy);background:#EBEDF2"><b style="color:var(--navy)">お客様メモ</b>${b.customerMemo}</div>`:''}${b.salonMessage?`<div class="msg-salon"><b>サロンより（送信済）</b>${b.salonMessage}</div>`:''}<div class="composer" style="margin-top:8px"><div class="note" style="margin:0 0 6px">📝 <b>社内メモ</b>（お客様には表示されません。施術記録・申し送りに）</div><textarea data-sc-input="${b.id}" placeholder="施術内容・お客様の好み・申し送りなど（社内用）">${b.staffComment||''}</textarea><div class="comp-tools"><button data-sc-save="${b.id}">メモを保存</button></div></div>${b.status==='visited'?`<button class="cancelbtn" style="border-color:var(--gold-soft);color:var(--gold);margin-top:8px" data-fin="${b.id}">✉ 仕上がり・感想メッセージ</button>`:''}${state.finOpen===b.id?`<div class="composer" style="margin-top:10px"><textarea id="fin-msg" placeholder="今日の仕上がりや感想を音声でどうぞ（AIで整えられます）">${b.salonMessage||''}</textarea><div class="comp-tools"><button class="mic" id="fin-mic">🎤 音声入力</button><button class="ai" id="fin-ai">✨ AIで整える</button></div><div class="field" style="margin:10px 0 8px"><label>付与ポイント（今回のご来店分・変更可）</label><input id="fin-pts" type="number" inputmode="numeric" value="${b.awardedPoints||suggestPoints(b)}"></div><div class="note" style="margin:0 0 10px">送信すると、メッセージに「今回のメニュー＋獲得ポイント」を添えて<b>お客様のマイページに「サロンより」として表示</b>され、同時にポイントが付与されます（アプリ内表示。SMS・LINEには届きません）。</div><button class="btn btn-primary" id="fin-send" style="width:100%">確認して送信＋ポイント付与</button></div>`:''}${(DATA.settings.gcal&&b.status!=='cancelled')?`<a class="share-url" href="${gcalUrl(b)}" target="_blank" style="margin-top:8px">📅 Googleカレンダーに追加</a>`:''}</div>`}).join('');
+  const rows=list.map(b=>{const st={pending:'予約中',confirmed:'予約確定',visited:'来店済み',cancelled:'キャンセル'}[b.status];const menu=b.items.map(x=>x.name).join('、');const hasMemo=b.staffComment&&b.staffComment.trim();const body=`<div class="hist-amount">${yen(bkPayment(b))}${b.pointsUsed?` ／ ${b.pointsUsed}pt利用`:''} ・ 担当 ${stById(b.staffId).name}${b.status==='visited'?` ・ +${b.awardedPoints||0}pt`:''}${b.status==='visited'?` <button class="cancelbtn" style="border-color:var(--line);color:var(--navy);margin:6px 0 0;padding:5px 10px" data-editpts="${b.id}">ポイント調整</button>`:''}</div>${b.customerMemo?`<div class="msg-salon" style="border-color:var(--navy);background:#EBEDF2"><b style="color:var(--navy)">お客様メモ</b>${b.customerMemo}</div>`:''}${b.salonMessage?`<div class="msg-salon"><b>サロンより（送信済）</b>${b.salonMessage}</div>`:''}<div class="composer" style="margin-top:8px"><div class="note" style="margin:0 0 6px">📝 <b>社内メモ</b>（お客様には表示されません）</div><textarea data-sc-input="${b.id}" placeholder="施術内容・好み・申し送りなど（社内用）">${b.staffComment||''}</textarea><div class="comp-tools"><button data-sc-save="${b.id}">メモを保存</button></div></div>${b.status==='visited'?`<button class="cancelbtn" style="border-color:var(--gold-soft);color:var(--gold);margin-top:8px" data-fin="${b.id}">✉ 仕上がり・感想メッセージ</button>`:''}${state.finOpen===b.id?`<div class="composer" style="margin-top:10px"><textarea id="fin-msg" placeholder="今日の仕上がりや感想を音声でどうぞ（AIで整えられます）">${b.salonMessage||''}</textarea><div class="comp-tools"><button class="mic" id="fin-mic">🎤 音声入力</button><button class="ai" id="fin-ai">✨ AIで整える</button></div><div class="field" style="margin:10px 0 8px"><label>付与ポイント（今回のご来店分・変更可）</label><input id="fin-pts" type="number" inputmode="numeric" value="${b.awardedPoints||suggestPoints(b)}"></div><div class="note" style="margin:0 0 10px">送信すると、メッセージに「今回のメニュー＋獲得ポイント」を添えて<b>お客様のマイページに「サロンより」として表示</b>され、同時にポイントが付与されます。</div><button class="btn btn-primary" id="fin-send" style="width:100%">確認して送信＋ポイント付与</button></div>`:''}${(DATA.settings.gcal&&b.status!=='cancelled')?`<a class="share-url" href="${gcalUrl(b)}" target="_blank" style="margin-top:8px">📅 Googleカレンダーに追加</a>`:''}`;return `<details class="histd" ${state.finOpen===b.id?'open':''}><summary><span class="hsd">${mdLabel(b.date)}</span><span class="hsm">${menu}</span><span class="hss s-${b.status}">${st}${hasMemo?' 📝':''}</span></summary><div class="histd-b">${body}</div></details>`;}).join('');
   const ds=['none','family','friend'].map(d=>`<button data-setdisc="${key}|${d}" class="${(c.discount||'none')===d?'on':''}">${d==='none'?'割引なし':DISC_LABEL[d]}</button>`).join('');
   const passes=(c.passes||[]).map((p,pi)=>`<div class="pass"><span class="pl">${p.label}</span><span class="pr">残り <b>${p.remaining}</b>/${p.total}</span><button class="iconbtn" data-passdec="${key}|${pi}" style="margin-left:8px" title="−1回">−</button><button class="iconbtn" data-passinc="${key}|${pi}" title="+1回">＋</button><button class="iconbtn" data-passdel="${key}|${pi}" title="削除"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button></div>`).join('');
   const ranks=[0,1,2].map(r=>`<button data-setrank="${key}|${r}" class="${(c.rank||0)===r?'on':''}">${RANK_LABEL[r]}${r?`・${Math.round(RANK_RATE[r]*100)}%OFF`:''}</button>`).join('');
@@ -1799,7 +1842,7 @@ function custDetail(key){
     ${rankSection}
     <div class="subhead">回数券・オプション残数</div>${passes||'<div class="note">保有なし</div>'}<div class="export"><button data-passadd="${key}">回数券／オプションを追加</button><button data-pw="${key}">パスワード変更</button><button data-adjpts="${key}">ポイント手動調整</button></div>
     <div class="note" style="margin:6px 0 0">回数券のほか、プレゼントのオプション（例：ヘッドマッサージ無料1回）も「回数券／オプションを追加」から登録できます。お客様のマイページに残数が表示されます。</div>
-    <div class="subhead">💬 お客様へメッセージ（いつでも送れます）</div><div class="composer"><div class="note" style="margin:0 0 8px">お客様のマイページの「サロンからのお知らせ」に表示されます。来店の有無に関わらず、いつでも送れます（アプリ内表示。SMS・LINEには届きません）。</div><textarea id="cust-msg" placeholder="メッセージを入力（例：先日はご来店ありがとうございました。次回のご案内です…）"></textarea><div class="comp-tools"><button data-custmsg="${key}">メッセージを送る</button></div></div>
+    <div class="subhead">💬 お客様へメッセージ（いつでも送れます）</div><div class="composer"><div class="note" style="margin:0 0 8px">お客様のマイページの「サロンからのお知らせ」に表示されます。来店の有無に関わらず、いつでも送れます（アプリ内表示。SMS・LINEには届きません）。画像も添付できます（アフターケアのご案内などに）。</div><textarea id="cust-msg" placeholder="メッセージを入力（例：先日はご来店ありがとうございました。次回のご案内です…）"></textarea>${state.custMsgImg?`<div class="preview" style="background-image:url('${state.custMsgImg}')"></div>`:''}<label class="fileinput" style="margin-top:8px">🖼️ 画像を添付${state.custMsgImg?'（変更）':''}<input type="file" id="cust-msg-img" accept="image/*"></label><div class="comp-tools"><button data-custmsg="${key}">メッセージを送る</button></div></div>
     <div class="subhead">ログイン情報・画面確認（社内用）</div><div class="addform" style="margin-bottom:0"><div class="note" style="margin:0 0 10px">電話番号：<b>${c.phone}</b>　／　暗証番号（パスワード）：<b>${c.password||'（未設定）'}</b><br>この暗証番号でお客様はマイページにログインできます。わからなくなったお客様には、これをお伝えするか「暗証番号を変更」で新しく設定してください。</div><div class="field" style="margin-bottom:8px"><label>お誕生日（未登録なら入力して保存）</label><div style="display:flex;gap:8px"><input id="cust-bday" type="date" value="${c.birthday||''}" style="flex:1"><button class="btn btn-ghost" data-bdaysave="${key}" style="flex:0 0 auto">保存</button></div></div><div class="export" style="margin:0"><button data-preview="${key}">📱 このお客様のマイページ画面を見る</button><button data-pw="${key}">暗証番号を変更</button></div></div>
     ${fav.length?`<div class="note">よく選ばれるメニュー：${fav.join('、')}</div>`:''}<div class="export"><button data-quick="${key}">前回のメニューで新規予約</button><button data-addvisit="${key}">来店履歴・ポイントを手動追加</button></div>
     <div class="note" style="margin:6px 0 0">「来店履歴・ポイントを手動追加」＝予約システムを通さず来店されたお客様や、過去の来店分を、来店日・内容・金額・付与ポイントを入力して登録できます（登録した分は履歴とポイントに反映されます）。</div>
@@ -2009,6 +2052,12 @@ function bindAdmin(){
   const impgo=byId('imp-go');if(impgo)impgo.onclick=()=>{if(confirm(`顧客データを取り込みます。よろしいですか？`))doImport();};
   const impc=byId('imp-cancel');if(impc)impc.onclick=()=>{state.importStage='idle';state.importRows=[];state.importHeaders=[];render();};
   app.querySelectorAll('[data-cust]').forEach(b=>b.onclick=()=>{state.custOpen=b.dataset.cust;render()});
+  const _cnb=byId('cust-newbtn');if(_cnb)_cnb.onclick=()=>{state.custNew=!state.custNew;render()};
+  const _ncc=byId('nc-cancel');if(_ncc)_ncc.onclick=()=>{state.custNew=false;render()};
+  const _df=byId('doc-file');if(_df)_df.onchange=e=>{const f=e.target.files[0];if(!f)return;if(f.size>4*1024*1024){alert('ファイルが大きすぎます（4MB以下にしてください）。');return;}const r=new FileReader();r.onload=()=>{state.docPending=r.result;state.docPendingKind=(f.type||'').includes('pdf')?'pdf':'image';state.docPendingName=f.name;render();};r.readAsDataURL(f);};
+  const _ds=byId('doc-save');if(_ds)_ds.onclick=async()=>{const t=byId('doc-title').value.trim();if(!t){alert('タイトルをご入力ください。');return;}if(!state.docPending){alert('ファイルを選んでください。');return;}DATA.settings.docs=DATA.settings.docs||[];DATA.settings.docs.push({id:'doc'+Date.now(),title:t,cat:byId('doc-cat').value,kind:state.docPendingKind,data:state.docPending,createdAt:fmtDate(today)});state.docPending='';state.docPendingName='';await saveData(DATA);alert('登録しました。お客様の「ケア・同意書」ページに表示されます。');render();};
+  app.querySelectorAll('[data-docdel]').forEach(b=>b.onclick=async()=>{if(!confirm('この書類を削除しますか？'))return;DATA.settings.docs=(DATA.settings.docs||[]).filter(x=>x.id!==b.dataset.docdel);await saveData(DATA);render();});
+  const _ncs=byId('nc-save');if(_ncs)_ncs.onclick=async()=>{const name=byId('nc-name').value.trim();const phone=byId('nc-phone').value.trim();if(!name||!phone){alert('お名前と電話番号をご入力ください。');return;}const key=normPhone(phone);if(DATA.customers[key]){alert('この電話番号は既に登録されています。');return;}const pw=(byId('nc-pw').value.trim())||key.slice(-4)||'0000';const bday=byId('nc-bday').value||'';DATA.customers[key]={phone,name,password:pw,referredBy:null,bonusPoints:CONFIG.signupBonus,joined:fmtDate(today),discount:null,birthday:bday,saved:[],couponYen:0,notices:[{text:`ご登録ありがとうございます🎁 会員登録特典として ${CONFIG.signupBonus}ポイント をプレゼントしました。`,date:fmtDate(today),read:false}],salonNote:'スタッフ登録',passes:[],bdayYear:0};await saveData(DATA);state.custNew=false;alert(`${name} 様を登録しました（${CONFIG.signupBonus}pt付与）。`);render();};
   const cb=byId('cust-back');if(cb)cb.onclick=()=>{state.custOpen=null;render()};
   app.querySelectorAll('[data-setdisc]').forEach(b=>b.onclick=async()=>{const[k,d]=b.dataset.setdisc.split('|');DATA.customers[k].discount=d==='none'?null:d;await saveData(DATA);render()});
   app.querySelectorAll('[data-quick]').forEach(b=>b.onclick=()=>{const key=b.dataset.quick;const c=DATA.customers[key];const last=DATA.bookings.filter(x=>normPhone(x.phone)===key&&x.status!=='cancelled').sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time))[0];state.bookMode='single';state.pairPerson=1;state.pairA=null;state.cartA=[];state.cartB=[];state.staffA=null;state.staffB=null;state.optA=[];state.optB=[];state.pairEditing='A';state.b.options=[];state.cart=last?last.items.map(it=>svById(it.id)).filter(Boolean):[];state.b={staff:null,date:null,time:null,name:c.name,phone:c.phone,companions:[],referrer:'',usePoints:0,haste:null,agreed:false,party2:false,p2name:'',p2phone:'',birthday:'',password:'',b2name:'',b2phone:'',b2birthday:'',b2password:'',options:[]};state.openCat=null;state.step=1;go('book')});
@@ -2081,7 +2130,8 @@ function bindAdmin(){
   const nsave=byId('note-save');if(nsave)nsave.onclick=saveNote;
   app.querySelectorAll('[data-preview]').forEach(b=>b.onclick=()=>{const k=b.dataset.preview;const cc=DATA.customers[k];if(!cc)return;state.previewCust=k;state.mpPhone=cc.phone;state.view='mypage';render();window.scrollTo(0,0)});
   app.querySelectorAll('[data-bdaysave]').forEach(b=>b.onclick=async()=>{const k=b.dataset.bdaysave;const el=byId('cust-bday');if(!el||!el.value){alert('日付を選んでください。');return;}DATA.customers[k].birthday=el.value;await saveData(DATA);alert('お誕生日を保存しました。');render();});
-  app.querySelectorAll('[data-custmsg]').forEach(b=>b.onclick=async()=>{const k=b.dataset.custmsg;const el=byId('cust-msg');if(!el||!el.value.trim()){alert('メッセージを入力してください。');return;}const cc=DATA.customers[k];cc.notices=cc.notices||[];cc.notices.unshift({text:el.value.trim(),date:fmtDate(today),read:false});await saveData(DATA);alert('メッセージを送りました。お客様のマイページ「サロンからのお知らせ」に表示されます。');render();});
+  app.querySelectorAll('[data-custmsg]').forEach(b=>b.onclick=async()=>{const k=b.dataset.custmsg;const el=byId('cust-msg');const txt=el?el.value.trim():'';if(!txt&&!state.custMsgImg){alert('メッセージまたは画像をご用意ください。');return;}const cc=DATA.customers[k];cc.notices=cc.notices||[];cc.notices.unshift({text:txt,date:fmtDate(today),read:false,img:state.custMsgImg||''});state.custMsgImg='';await saveData(DATA);alert('メッセージを送りました。お客様のマイページ「サロンからのお知らせ」に表示されます。');render();});
+  const _cmi=byId('cust-msg-img');if(_cmi)_cmi.onchange=e=>{const f=e.target.files[0];if(f)handlePhoto(f,d=>{state.custMsgImg=d;render();},1400);};
   app.querySelectorAll('[data-sc-save]').forEach(b=>b.onclick=async()=>{const id=b.dataset.scSave;const el=app.querySelector(`[data-sc-input="${id}"]`);if(!el)return;const bk=DATA.bookings.find(x=>x.id===id);if(!bk)return;bk.staffComment=el.value.trim();await saveData(DATA);alert('社内メモを保存しました（お客様には表示されません。スタッフのみ閲覧できます）。');});
   app.querySelectorAll('[data-passdec]').forEach(b=>b.onclick=()=>passDec(b.dataset.passdec));
   app.querySelectorAll('[data-passinc]').forEach(b=>b.onclick=()=>passInc(b.dataset.passinc));
