@@ -161,7 +161,7 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .mp-hello{font-size:13px;opacity:.85}.mp-name{font-family:"Fraunces",serif;font-size:24px;font-weight:500;margin:2px 0 16px}
 .mp-ptlabel{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-soft)}.mp-pt{font-family:"Fraunces",serif;font-size:40px;font-weight:500;line-height:1}.mp-pt small{font-size:16px;margin-left:4px}
 .mp-meta{font-size:12px;opacity:.8;margin-top:10px}
-.mp-logout{position:absolute;top:18px;right:18px;background:rgba(255,255,255,.12);border:none;color:var(--paper);font-family:inherit;font-size:11px;font-weight:600;padding:6px 12px;border-radius:100px;cursor:pointer}
+.mp-logout{position:absolute;top:16px;right:16px;z-index:6;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);color:var(--paper);font-family:inherit;font-size:13px;font-weight:700;padding:9px 16px;border-radius:100px;cursor:pointer}
 .subhead{font-family:"Fraunces",serif;font-size:17px;color:var(--navy);margin:24px 0 12px}
 .nlist .ni{background:var(--gold-bg);border:1px solid var(--gold-soft);border-radius:12px;padding:13px 15px;margin-bottom:9px;font-size:13px;line-height:1.7;animation:rise .4s both}
 .nlist .ni .nd{font-size:10.5px;color:var(--ink-soft);margin-top:7px}
@@ -547,7 +547,7 @@ function localSet(k,v){try{localStorage.setItem('vi5:'+k,v)}catch(e){}}
 function localDel(k){try{localStorage.removeItem('vi5:'+k)}catch(e){}}
 async function refresh(){try{let j;if(state.adminAuthed&&localGet('salon:staffpw')){j=await api({action:'full',pw:localGet('salon:staffpw')});}else if(state.mpPhone){j=await api({action:'customer',phone:state.mpPhone,password:localGet('salon:custpw')||''});}else{j=await api({action:'public'});}if(j&&j.data){DATA=j.data;services=DATA.services;staff=DATA.staff;}}catch(e){}}
 /* ===== 設定 ===== */
-const CONFIG={pointsPer1000:50,referralBonus:1000,birthdayBonus:1000,sharePoints:10,galleryPoints:5,feedbackPoints:10,newCustomerEarnsFrom:2,discounts:{family:0.5,friend:0.2}};
+const CONFIG={pointsPer1000:50,referralBonus:1000,birthdayBonus:1000,signupBonus:500,sharePoints:10,galleryPoints:5,feedbackPoints:10,newCustomerEarnsFrom:2,discounts:{family:0.5,friend:0.2}};
 const DEFAULT_POLICY=`■当日のキャンセル/無断キャンセルは施術料金の100%を頂戴いたします
 ※10分以上連絡無しでご来店がなかった場合、自動的に無断キャンセル扱いとなります
 ■ご予約時間より24時間前までは、マイページのご予約履歴よりお客様自身でキャンセルがおこなえます。
@@ -1159,7 +1159,7 @@ function stepInfo(){
   const chips=companionOpts.map(o=>{const sel=b.companions.includes(o.id);return `<button class="chip ${sel?'sel':''}" data-comp="${o.id}"><span>${o.ic}</span>${o.label}</button>`}).join('');
   const hchips=hasteOpts.map(o=>{const sel=b.haste===o.id;return `<button class="chip ${sel?'sel':''}" data-haste="${o.id}"><span>${o.ic}</span>${o.label}</button>`}).join('');
   const useField=(known&&useCap>0)?`<div class="field"><label>ポイントを使う <span class="opt">(保有 ${bal.toLocaleString()}pt・1pt=¥1)</span></label><input id="f-pt" type="number" min="0" max="${useCap}" value="${b.usePoints||0}" inputmode="numeric"></div>`:'';
-  const newFields=!known?`<div class="field two"><div><label>生年月日</label><input id="f-bday" type="date" value="${b.birthday}"></div><div><label>パスワード <span class="opt">(マイページ用)</span></label><input id="f-pw" type="password" value="${b.password}" placeholder="4文字以上"></div></div><div class="field"><label>ご紹介者の電話番号 <span class="opt">(任意・紹介でお互いに${CONFIG.referralBonus}pt)</span></label><input id="f-ref" value="${b.referrer}" inputmode="tel" placeholder="090-..."></div><div class="note" style="margin-top:-2px;color:var(--gold)">※ お名前・電話番号・生年月日・パスワード・ご紹介者の電話番号は<b>初回のみ</b>お伺いします。次回以降はログインしていただくだけで、ご来店ペース・同伴のご確認のみとなります。</div>`:'';
+  const newFields=!known?`<div class="field two"><div><label>生年月日</label><input id="f-bday" type="date" value="${b.birthday}"></div><div><label>パスワード <span class="opt">(マイページ用)</span></label><input id="f-pw" type="password" value="${b.password}" placeholder="4文字以上"></div></div><div class="field"><label>ご紹介者の電話番号 <span class="opt">(任意・紹介でお互いに${CONFIG.referralBonus}pt)</span></label><input id="f-ref" value="${b.referrer}" inputmode="tel" placeholder="090-..."></div><div class="note" style="margin-top:-2px;color:var(--gold)">※ 会員登録は<b>初回のみ</b>（お名前・電話番号・生年月日・パスワード）。ご登録で<b>${CONFIG.signupBonus}ポイント</b>プレゼント🎁 パスワードはマイページのログインに使います。お忘れの場合は公式LINEへご連絡ください。次回以降はログインするだけでOKです。</div>`:'';
   const party='';
   app.innerHTML=stepsBar(3)+`<div class="fade"><div class="eyebrow">Step 04</div><div class="h-title">${t('confirmT')}</div><div class="h-sub">${t('confirmSub')}</div>${recog}
     <div class="summary"><div class="sum-row"><span class="k">メニュー</span><span class="sum-list">${itemsLines(b.staff&&b.staff.id)}</span></div><div class="sum-row"><span class="k">所要時間</span><span class="v">約${cartMin()}分</span></div><div class="sum-row"><span class="k">担当</span><span class="v">${b.staff.name}</span></div><div class="sum-row"><span class="k">日時</span><span class="v">${dateLabel()}</span></div><div class="sum-row"><span class="k">小計</span><span class="v">${yen(gross)}</span></div>${rate>0?`<div class="sum-row"><span class="k">${dd.label}</span><span class="v disc">-${yen(gross-afterDisc)}</span></div>`:''}${coupon>0?`<div class="sum-row"><span class="k">クーポン</span><span class="v disc">-${yen(coupon)}</span></div>`:''}${use>0?`<div class="sum-row"><span class="k">ポイント利用</span><span class="v pt">-${yen(use)}</span></div>`:''}<div class="sum-row sum-total"><span class="k">お支払い</span><span class="v">${yen(payment)}</span></div></div>
@@ -1314,9 +1314,9 @@ async function confirmPair(){
   const knownA=DATA.customers[keyA],knownB=DATA.customers[keyB];
   let newA=null,referrerPhone=null,referrerNotice='';
   if(!knownA){if(!b.birthday){alert('お一人目の生年月日をご入力ください。');return;}if(!b.password||b.password.length<4){alert('お一人目のパスワードは4文字以上でご設定ください。');return;}
-    newA={phone:b.phone,name:b.name,password:b.password,referredBy:null,bonusPoints:0,joined:fmtDate(today),discount:null,birthday:b.birthday,saved:[],couponYen:0,notices:[],salonNote:'',passes:[],bdayYear:0};
+    newA={phone:b.phone,name:b.name,password:b.password,referredBy:null,bonusPoints:CONFIG.signupBonus,joined:fmtDate(today),discount:null,birthday:b.birthday,saved:[],couponYen:0,notices:[{text:`ご登録ありがとうございます🎁 会員登録特典として ${CONFIG.signupBonus}ポイント をプレゼントしました。`,date:fmtDate(today),read:false}],salonNote:'',passes:[],bdayYear:0};
     const rk=normPhone(b.referrer);if(rk&&rk!==keyA){newA.referredBy=rk;newA.bonusPoints+=CONFIG.referralBonus;referrerPhone=rk;referrerNotice=`お友達をご紹介いただきありがとうございます🎁 ${CONFIG.referralBonus}ポイントを差し上げました。`;}}
-  let newB=null;if(!knownB){newB={phone:b.b2phone,name:b.b2name,password:keyB.slice(-4),referredBy:null,bonusPoints:0,joined:fmtDate(today),discount:null,birthday:'',saved:[],couponYen:0,notices:[],salonNote:'おふたり予約で登録',passes:[],bdayYear:0};}
+  let newB=null;if(!knownB){newB={phone:b.b2phone,name:b.b2name,password:keyB.slice(-4),referredBy:null,bonusPoints:CONFIG.signupBonus,joined:fmtDate(today),discount:null,birthday:'',saved:[],couponYen:0,notices:[],salonNote:'おふたり予約で登録',passes:[],bdayYear:0};}
   const rateA=custDiscount(knownA).rate;const grossA=cartSum(state.cartA,state.staffA.id)+optTotal(state.optA);const afterA=Math.round(grossA*(1-rateA));
   const use=knownA?Math.min(b.usePoints||0,pointBalance(b.phone),afterA):0;const coupon=knownA?Math.min(couponVal(knownA),afterA-use):0;
   const pid='P'+Date.now();
@@ -1339,8 +1339,8 @@ async function confirmBooking(){
   if(b.date&&b.time){const slotTime=new Date(b.date+'T'+b.time+':00').getTime();if(slotTime<Date.now()+3*60*60*1000){alert('ご予約は開始時間の3時間前までにお願いいたします。別のお時間をお選びください。');return;}const totMin=state.cart.reduce((s,x)=>s+(x.min||0),0);if(timeToMin(b.time)+totMin>LAST_RECEPTION*60){alert('営業終了（21:00）までに施術が終わらないため、別のお時間をお選びください。');return;}}
   const key=normPhone(b.phone);const known=DATA.customers[key];const loggedIn=state.mpPhone&&normPhone(state.mpPhone)===key;
   let newCustObj=null,referrerPhone=null,referrerNotice='';
-  if(!known){if(!b.birthday){alert('生年月日をご入力ください。');return;}if(!b.password||b.password.length<4){alert('パスワードは4文字以上でご設定ください。');return;}
-    newCustObj={phone:b.phone,name:b.name,password:b.password,referredBy:null,bonusPoints:0,joined:fmtDate(today),discount:null,birthday:b.birthday,saved:[],couponYen:0,notices:[],salonNote:'',passes:[],bdayYear:0};
+  if(!known){if(!b.birthday){alert('生年月日をご入力ください。');return;}if(!b.password||b.password.length<4){alert('パスワード（マイページ用）を4文字以上でご設定ください。');return;}
+    newCustObj={phone:b.phone,name:b.name,password:b.password,referredBy:null,bonusPoints:CONFIG.signupBonus,joined:fmtDate(today),discount:null,birthday:b.birthday,saved:[],couponYen:0,notices:[{text:`ご登録ありがとうございます🎁 会員登録特典として ${CONFIG.signupBonus}ポイント をプレゼントしました。`,date:fmtDate(today),read:false}],salonNote:'',passes:[],bdayYear:0};
     const rk=normPhone(b.referrer);if(rk&&rk!==key){newCustObj.referredBy=rk;newCustObj.bonusPoints+=CONFIG.referralBonus;referrerPhone=rk;referrerNotice=`お友達をご紹介いただきありがとうございます🎁 ${CONFIG.referralBonus}ポイントを差し上げました。`;}
   }
   const rate=custDiscount(known).rate;const gross=cartTotal(b.staff.id)+optTotal(b.options);const afterDisc=Math.round(gross*(1-rate));
@@ -1396,8 +1396,8 @@ function renderMypage(){
     const knownP=localGet('salon:knownphone');const knownN=localGet('salon:knownname')||'';
     app.innerHTML=`<div class="fade"><div class="eyebrow">Member</div><div class="h-title">${knownN?'おかえりなさい':'マイページ'}</div><div class="h-sub">${knownN?`<b>${knownN}</b> 様、暗証番号（パスワード）を入れてログインしてください。`:'電話番号と暗証番号（パスワード）でログインできます。一度ログインすると、次回からは暗証番号を入れるだけで入れます。'}</div><div class="loginbox"><div class="field"><label>電話番号</label><input id="mp-phone" inputmode="tel" value="${knownP||''}" placeholder="090-1234-5678"></div><div class="field"><label>暗証番号（パスワード）</label><input id="mp-pw" type="password" inputmode="numeric" placeholder="暗証番号"></div><button class="btn btn-primary" id="mp-login" style="width:100%">ログイン</button>
       ${knownP?`<button class="btn btn-ghost" id="mp-clearknown" style="width:100%;margin-top:10px">別の番号でログイン</button>`:''}
-      <div class="note" style="margin:14px 0 0">${knownN?'':'<b>ご来店されたことがある方：</b>電話番号と暗証番号でログインできます。暗証番号がはじめての場合は、<b>電話番号の下4桁</b>でログインできます（ログイン後、ご自身の暗証番号に変更できます）。<br><b>はじめての方：</b>下の「予約」からご予約いただくと、その場で会員登録されます。<br><br>'}暗証番号がわからなくなった場合は、ご来店時にスタッフへお申し付けいただくか、公式LINEへご連絡ください。新しい暗証番号をお渡しします。</div>
-      ${lineU?`<a class="btn btn-ghost" href="${lineU}" target="_blank" style="width:100%;display:block;text-align:center;text-decoration:none;margin-top:10px">公式LINEで問い合わせる</a>`:''}</div></div>`;
+      <div class="note" style="margin:14px 0 0">${knownN?'':'<b>ご来店されたことがある方：</b>電話番号とパスワードでログインできます（以前ご登録で暗証番号がはじめての方は<b>電話番号の下4桁</b>）。<br><b>はじめての方：</b>下の「予約」からご予約いただくと、その場で会員登録されます。<br><br>'}<b>パスワードをお忘れの方</b>は、下の公式LINEへご連絡ください。新しいパスワードをお渡しします。</div>
+      ${lineU?`<a class="btn btn-ghost" href="${lineU}" target="_blank" style="width:100%;display:block;text-align:center;text-decoration:none;margin-top:10px">💬 パスワードをお忘れの方・お問い合わせ（公式LINE）</a>`:''}</div></div>`;
     const doLogin=async()=>{const phone=normPhone(byId('mp-phone').value);const pw=byId('mp-pw').value;if(!phone){alert('電話番号をご入力ください。');return;}if(!pw){alert('暗証番号（パスワード）をご入力ください。');return;}try{await doCustomerLogin(phone,pw);}catch(e){if(e.status===404)alert('この電話番号の登録が見つかりませんでした。番号をもう一度ご確認ください。');else if(e.status===401)alert('暗証番号（パスワード）が違います。もう一度お試しください。');else alert('ただいまサーバーに接続できませんでした。電波の良い場所で、少し時間をおいてからもう一度お試しください。');}};
     byId('mp-login').onclick=doLogin;
     const pwEl=byId('mp-pw');if(pwEl)pwEl.onkeydown=e=>{if(e.key==='Enter')doLogin()};
@@ -1455,9 +1455,11 @@ function renderMypage(){
     ${cpn?`<div class="subhead">🎁 クーポン</div><div class="pass"><span class="pl">🎁 ${cpn}</span></div><div class="note" style="margin-top:6px">クーポンは発行から<b>3ヶ月以内</b>にご利用ください。</div>`:''}
     <details class="mp-acc"><summary>💎 ポイント・会員ランクについて</summary><div class="mp-acc-b">${generosityHtml}<div class="earn"><div class="earn-t">💎 ポイントの貯め方</div><div class="earn-row"><span>💅 ご来店ごと（お会計に応じて）</span><b>貯まる</b></div><div class="earn-row"><span>🎂 お誕生日に</span><b>+${CONFIG.birthdayBonus.toLocaleString()}</b></div><div class="earn-row"><span>👥 お友達をご紹介</span><b>+${CONFIG.referralBonus}</b></div><div class="earn-row"><span>📷 ギャラリーに投稿</span><b>+${CONFIG.galleryPoints}</b></div><div class="earn-row"><span>✉ ご意見箱に投稿</span><b>+${CONFIG.feedbackPoints}</b></div></div>${rankLadderHtml}${expiryHtml}</div></details>
     <details class="mp-acc"><summary>⚙️ その他・設定（パスワード・ご意見箱）</summary><div class="mp-acc-b">${savedHtml}<div class="subhead" style="margin-top:0">パスワード変更</div><div class="composer"><div class="note" style="margin:0 0 10px">仮パスワードでログインした方は、こちらでご自身のパスワードに変更してください。</div><input id="mp-newpw" type="password" placeholder="新しいパスワード（4文字以上）" style="width:100%;font-family:inherit;font-size:14px;border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:var(--paper)"><button class="btn btn-primary" id="mp-pwsave" style="width:100%;margin-top:8px">パスワードを変更</button></div><div class="subhead">ご意見箱</div><div class="composer"><div class="note" style="margin:0 0 10px">気になった点など、小さなことでも構いません。お名前は不要・匿名で届きます。送ってくださった方には${CONFIG.feedbackPoints}ポイントを差し上げます。</div><textarea id="fb-text" placeholder="ご意見・ご感想（匿名で届きます）"></textarea><button class="btn btn-primary" id="fb-send" style="width:100%;margin-top:8px">送信して ${CONFIG.feedbackPoints}pt 受け取る</button></div></div></details>
-    <div class="subhead">🗓 来店履歴・ご予約</div>${list.length?hist:'<div class="empty">履歴はまだありません</div>'}</div>`;
+    <div class="subhead">🗓 来店履歴・ご予約</div>${list.length?hist:'<div class="empty">履歴はまだありません</div>'}
+    <button class="btn btn-ghost" id="mp-out2" style="width:100%;margin-top:24px">ログアウト</button></div>`;
   const _exitPreview=()=>{const k=state.previewCust;state.previewCust=null;state.mpPhone=null;state.view='admin';state.adminTab='customers';state.custOpen=k;render();};
   byId('mp-out').onclick=async()=>{if(state.previewCust){_exitPreview();return;}state.mpPhone=null;await clearSession();render()};
+  const _o2=byId('mp-out2');if(_o2)_o2.onclick=async()=>{if(state.previewCust){_exitPreview();return;}state.mpPhone=null;await clearSession();render()};
   const _pvb=byId('mp-preview-back');if(_pvb)_pvb.onclick=_exitPreview;
   const mpb=byId('mp-book');if(mpb)mpb.onclick=()=>startBooking();
   const mprb=byId('mp-rebook');if(mprb&&lastBk)mprb.onclick=()=>{startBooking();state.cart=(lastBk.items||[]).map(x=>svById(x&&x.id)).filter(Boolean);if(state.cart.length)state.step=1;render();};
