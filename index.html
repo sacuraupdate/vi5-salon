@@ -492,6 +492,12 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .mp-acc summary::after{content:'▾';color:var(--gold);transition:transform .2s}
 .mp-acc[open] summary::after{transform:rotate(180deg)}
 .mp-acc-b{padding:0 16px 16px}
+.stsec{font-size:13px;font-weight:800;color:var(--navy);margin:18px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--gold-bg)}
+.staffrow{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:8px;cursor:pointer}
+.staffrow .mb{flex:1;min-width:0}
+.staffrow .mn{font-weight:700;color:var(--navy);font-size:15px}
+.staffrow .mm{font-size:12px;color:var(--ink-soft);margin-top:2px}
+.strow-edit{flex:0 0 auto;font-size:12px;font-weight:700;color:var(--gold)}
 </style>
 </head>
 <body>
@@ -1835,21 +1841,25 @@ function adminStaff(){
     const editing=state.staffEdit!=='new';const sv=editing?stById(state.staffEdit):null;
     const checks=services.map(x=>{const pv=(sv&&sv.prices&&sv.prices[x.id]!=null)?sv.prices[x.id]:'';return `<label style="align-items:center"><input type="checkbox" data-stsvc="${x.id}" ${sv&&(sv.services||[]).includes(x.id)?'checked':''}><span style="flex:1">${x.name}</span><input type="number" inputmode="numeric" data-stprice="${x.id}" value="${pv}" placeholder="¥${x.price}" style="width:84px;font-size:12px;padding:5px 7px;margin-left:6px"></label>`}).join('');
     return `<button class="backlink" id="st-back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>スタッフ一覧</button>
-      <div class="addform"><div class="subhead" style="margin:0 0 12px">${editing?'スタッフを編集':'スタッフを追加'}</div>
-      <div class="field"><label>お名前</label><input id="st-name" value="${sv?sv.name.replace(/"/g,'&quot;'):''}"></div>
-      <div class="field"><label>役割</label><input id="st-role" value="${sv?(sv.role||'').replace(/"/g,'&quot;'):''}"></div>
-      <div class="field"><label>紹介文</label><textarea id="st-intro">${sv?sv.intro||'':''}</textarea></div>
-      <div class="field"><label>資格・バッジ <span class="opt">（カンマ区切り・予約画面に表示されます）</span></label><input id="st-quals" value="${sv?(sv.quals||'').replace(/"/g,'&quot;'):''}" placeholder="例：アイリスト検定1級, 眉スタイリスト, 衛生管理者"></div>
-      <div class="field"><label>事業・プロフィール <span class="opt">（ホームのスタッフ紹介に表示）</span></label><textarea id="st-biz" placeholder="例：まつげエクステ担当。インクメイク講習も行っています。">${sv?sv.biz||'':''}</textarea></div>
+      <div class="addform"><div class="subhead" style="margin:0 0 4px">${editing?'スタッフを編集':'スタッフを追加'}</div>
+      <div class="stsec">📸 基本情報</div>
+      <div class="field"><label>スタッフ写真 <span class="opt">（任意・丸く表示されます）</span></label>${(state.staffPhotoPending||(sv&&sv.photo))?`<div class="preview" style="background-image:url('${state.staffPhotoPending||sv.photo}')"></div>`:''}<label class="fileinput">📷 画像を選ぶ<input type="file" id="st-photo" accept="image/*"></label></div>
+      <div class="field"><label>お名前</label><input id="st-name" value="${sv?sv.name.replace(/"/g,'&quot;'):''}" placeholder="例：山田 花子"></div>
+      <div class="field"><label>役割 <span class="opt">（例：アイリスト／店長）</span></label><input id="st-role" value="${sv?(sv.role||'').replace(/"/g,'&quot;'):''}"></div>
+      <div class="colorrow"><label>テーマカラー <span class="opt">（写真がない時の色・カレンダー表示色）</span></label><input type="color" id="st-color" value="${sv?sv.color:'#1E2A47'}"></div>
+      <div class="stsec">💬 お客様向けの紹介 <span class="opt" style="font-weight:400">予約画面・スタッフ紹介ページに表示されます</span></div>
+      <div class="field"><label>紹介文</label><textarea id="st-intro" placeholder="お客様へのひとこと・得意な施術など">${sv?sv.intro||'':''}</textarea></div>
+      <div class="field"><label>資格・バッジ <span class="opt">（カンマ区切り。予約画面に🏅で表示）</span></label><input id="st-quals" value="${sv?(sv.quals||'').replace(/"/g,'&quot;'):''}" placeholder="例：アイリスト検定1級, 眉スタイリスト"></div>
+      <div class="field"><label>事業・プロフィール <span class="opt">（スタッフ紹介ページに表示）</span></label><textarea id="st-biz" placeholder="例：まつげエクステ担当。インクメイク講習も開催しています。">${sv?sv.biz||'':''}</textarea></div>
       <div class="field"><label>リンク（URL） <span class="opt">（SNS・ご自身のページなど・任意）</span></label><input id="st-bizurl" value="${sv?(sv.bizUrl||'').replace(/"/g,'&quot;'):''}" placeholder="https://..."></div>
-      <div class="colorrow"><label>テーマカラー</label><input type="color" id="st-color" value="${sv?sv.color:'#1E2A47'}"></div>
-      <div class="field"><label>スタッフ写真（任意）</label>${(state.staffPhotoPending||(sv&&sv.photo))?`<div class="preview" style="background-image:url('${state.staffPhotoPending||sv.photo}')"></div>`:''}<label class="fileinput">📷 画像を選ぶ<input type="file" id="st-photo" accept="image/*"></label></div>
-      <div class="field"><label>対応できるメニューと価格 <span class="opt">(チェック＝対応／金額欄は空欄なら通常価格)</span></label><div class="checkgrid">${checks}</div></div>
-      <div style="display:flex;gap:9px"><button class="btn btn-ghost" id="st-cancel">やめる</button><button class="btn btn-primary" id="st-save">保存する</button></div></div>`;
+      <div class="stsec">💅 対応できるメニューと価格</div>
+      <div class="note" style="margin:0 0 10px">チェックした<b>メニューだけ</b>、このスタッフを予約画面で選べます。金額は<b>空欄なら通常価格</b>。このスタッフだけ違う料金にしたい時だけ、金額を入れてください。</div>
+      <div class="checkgrid">${checks}</div>
+      <div style="display:flex;gap:9px;margin-top:16px"><button class="btn btn-ghost" id="st-cancel">やめる</button><button class="btn btn-primary" id="st-save">保存する</button></div>${editing?`<button class="cancelbtn" id="st-del" style="width:100%;margin-top:10px;border-color:#D8B6BF;color:var(--rose)">このスタッフを削除</button>`:''}</div>`;
   }
-  let html=`<button class="postbtn" id="st-new">＋ スタッフを追加</button>`;
-  html+=staff.filter(s=>s.id!=='s0').map(s=>{const svc=(s.services||[]).length?`対応：${(s.services||[]).map(id=>svById(id)?svById(id).name:'').filter(Boolean).slice(0,3).join('、')}${(s.services||[]).length>3?' 他':''}`:'全メニュー対応';return `<div class="menurow" data-stedit="${s.id}"><div class="sc-av" style="${s.photo?`background-image:url('${s.photo}');background-size:cover;background-position:center`:`background:${s.color}`};width:46px;height:46px;border-radius:9px;flex-shrink:0">${s.photo?'':(s.name.split(' ')[1]?s.name.split(' ')[1][0]:s.name[0])}</div><div class="mb"><div class="mn">${s.name}</div><div class="mm">${s.role} ・ ${svc}</div></div></div>`}).join('');
-  return `<div class="note">スタッフの追加・編集、対応できるメニューを設定できます。予約画面では、選んだメニューに対応できるスタッフのみ選択できます。</div>`+html;
+  let html=`<div class="note" style="margin-top:0">スタッフの登録・編集ができます。写真・紹介・資格・対応メニュー・料金を設定でき、予約画面には「選んだメニューに対応できるスタッフ」だけが表示されます。行をタップで編集できます。</div><button class="postbtn" id="st-new">＋ スタッフを追加</button>`;
+  html+=staff.filter(s=>s.id!=='s0').map(s=>{const q=(s.quals||'').split(/[,、]/).map(x=>x.trim()).filter(Boolean);const svc=(s.services||[]).length?`対応 ${(s.services||[]).length}メニュー`:'全メニュー対応';return `<div class="staffrow" data-stedit="${s.id}"><div class="sc-av" style="${s.photo?`background-image:url('${s.photo}');background-size:cover;background-position:center`:`background:${s.color}`};width:52px;height:52px;border-radius:50%;flex-shrink:0">${s.photo?'':nameInitial(s.name)}</div><div class="mb"><div class="mn">${s.name}</div><div class="mm">${s.role||'スタッフ'} ・ ${svc}</div>${q.length?`<div class="quals" style="margin-top:5px">${q.slice(0,3).map(x=>`<span class="qual">🏅 ${x}</span>`).join('')}</div>`:''}</div><span class="strow-edit">編集 ›</span></div>`}).join('');
+  return html;
 }
 function adminFeedback(){
   const list=DATA.feedback||[];
@@ -2000,6 +2010,7 @@ function bindAdmin(){
   const stb=byId('st-back');if(stb)stb.onclick=()=>{state.staffEdit=null;state.staffPhotoPending='';render()};
   const stc=byId('st-cancel');if(stc)stc.onclick=()=>{state.staffEdit=null;state.staffPhotoPending='';render()};
   const sts=byId('st-save');if(sts)sts.onclick=saveStaff;
+  const std=byId('st-del');if(std)std.onclick=async()=>{if(!confirm('このスタッフを削除しますか？（過去の予約データは残ります）'))return;DATA.staff=DATA.staff.filter(s=>s.id!==state.staffEdit);staff=DATA.staff;state.staffEdit=null;state.staffPhotoPending='';await saveData(DATA);render();};
   const stp=byId('st-photo');if(stp)stp.onchange=e=>{const f=e.target.files[0];if(!f)return;handlePhoto(f,d=>{state.staffPhotoPending=d;const fld=stp.closest('.field');if(fld){let pv=fld.querySelector('.preview');if(!pv){pv=document.createElement('div');pv.className='preview';fld.insertBefore(pv,fld.querySelector('.fileinput'));}pv.style.backgroundImage=`url('${d}')`;}},700)};
   app.querySelectorAll('[data-stedit]').forEach(b=>b.onclick=()=>{state.staffEdit=b.dataset.stedit;state.staffPhotoPending='';render()});
   const hds=byId('hd-save');if(hds)hds.onclick=saveHomeDisplay;
