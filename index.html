@@ -437,6 +437,14 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .si-intro{font-size:12.5px;color:var(--ink-soft);line-height:1.6;margin-top:4px}
 .si-biz{font-size:12.5px;color:var(--ink);line-height:1.6;margin-top:6px}
 .si-link{display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:var(--gold);text-decoration:none;border:1px solid var(--gold-soft);border-radius:999px;padding:5px 12px}
+.nextbk{background:var(--gold-bg);border:1.5px solid var(--gold);border-radius:16px;padding:14px 16px;margin-bottom:14px}
+.nb-h{font-size:11.5px;font-weight:700;color:var(--gold);letter-spacing:.05em;margin-bottom:5px}
+.nb-dt{font-size:19px;font-weight:800;color:var(--navy)}
+.nb-menu{font-size:13.5px;color:var(--ink);margin-top:4px}
+.nb-sub{font-size:12px;color:var(--ink-soft);margin-top:4px}
+.nb-acts{display:flex;gap:8px;margin-top:12px}
+.nb-btn{flex:1;border:1.5px solid var(--navy);background:#fff;color:var(--navy);border-radius:999px;padding:9px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer}
+.nb-btn.cancel{border-color:var(--rose);color:var(--rose)}
 </style>
 </head>
 <body>
@@ -452,7 +460,6 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
       <button data-view="gallery">ギャラリー</button>
       <button data-view="shop">ショップ</button>
       <button data-view="board">紹介ボード</button>
-      <button data-view="share">ご近所シェア</button>
     </nav>
     <button class="topback" id="backbtn" style="display:none">← 戻る</button>
   </header>
@@ -732,7 +739,7 @@ const state={view:'home',step:0,openCat:null,cart:[],
   bookMode:'single',pairPerson:1,pairA:null,cartA:[],cartB:[],staffA:null,staffB:null,pairEditing:'A',optA:[],optB:[],
   calMonth:new Date(today.getFullYear(),today.getMonth(),1),
   adminTab:'bookings',adminFilter:'all',custQuery:'',custOpen:null,salesPeriod:'month',schedDate:fmtDate(today),acM:new Date(today.getFullYear(),today.getMonth(),1),acDay:fmtDate(today),
-  galleryFilter:'all',boardFilter:'all',boardOpen:false,boardEdit:null,boardPhotos:[],loginFull:false,pendingCust:null,previewCust:null,mpPhone:null,lastBooking:null,pendingPhoto:'',galPostOpen:false,menuEdit:null,menuPhoto:'',menuPhotos:[],menuOpen:null,optEdit:null,bcPhone:'',bcQuery:'',bcTpl:0,adminAuthed:false,
+  galleryFilter:'all',boardFilter:'all',boardOpen:false,boardEdit:null,boardPhotos:[],loginFull:false,pendingCust:null,previewCust:null,rescheduleId:null,mpPhone:null,lastBooking:null,pendingPhoto:'',galPostOpen:false,menuEdit:null,menuPhoto:'',menuPhotos:[],menuOpen:null,optEdit:null,bcPhone:'',bcQuery:'',bcTpl:0,adminAuthed:false,
   shareFilter:'all',sharePostOpen:false,sharePhotos:[],shareCmtOpen:null,schedMode:'month',brushMode:'work',brushStart:10,brushEnd:19,heroPending:'',galPhotos:[],finOpen:null,schedStaff:'s1',scM:new Date(today.getFullYear(),today.getMonth(),1),calDay:null,navStack:[],staffEdit:null,lang:'ja',bannerPhoto:'',importStage:'idle',importHeaders:[],importRows:[],importMap:{},rankPhotos:[],recPhotos:[],staffPhotoPending:'',manualOpen:false,manualBook:null,manualCat:'all'};
 const byId=id=>document.getElementById(id);
 const app=byId('app');
@@ -788,7 +795,7 @@ function renderHome(){
   const recs=(s.shopRecs||[]).filter(r=>r&&(r.name||r.img)).slice(0,3);
   const recsHtml=recs.length?`<div class="sec-label"><span class="t">オンラインショップ おすすめ商品</span>${s.shopUrl?`<a class="more" href="${s.shopUrl}" target="_blank">ショップへ</a>`:''}</div><div class="rankgrid">${recs.map(r=>{const link=r.url||s.shopUrl||'';return `<a class="rankcard" ${link?`href="${link}" target="_blank"`:''} style="text-decoration:none;display:block"><div class="rankimg"${r.img?` style="background-image:url('${r.img}')"`:''}></div><div class="rankname">${r.name||''}</div></a>`}).join('')}</div>`:'';
   const reviewUrl=s.reviewUrl||'https://g.page/r/CUd3JdEySI5iEAE/review';
-  const socialHtml=`<div class="sec-label"><span class="t">クチコミ・ご近所</span></div><div class="socialgrid"><button class="socialcard" id="goshare"><span class="ic">🏠</span><span class="st">ご近所シェア</span><span class="ss">みんなの地域情報</span></button><a class="socialcard" href="${reviewUrl}" target="_blank"><span class="ic">⭐</span><span class="st">口コミを書く</span><span class="ss">Googleでレビュー</span></a></div><div class="review-gift">🎁 Googleの口コミを書いて、ご来店時に「書きました」とスタッフへお見せくださった方に、<b>パックを3枚プレゼント</b>いたします。</div>`;
+  const socialHtml=`<div class="sec-label"><span class="t">クチコミ</span></div><div class="socialgrid"><a class="socialcard" href="${reviewUrl}" target="_blank" style="grid-column:1/-1"><span class="ic">⭐</span><span class="st">口コミを書く</span><span class="ss">Googleでレビュー</span></a></div><div class="review-gift">🎁 Googleの口コミを書いて、ご来店時に「書きました」とスタッフへお見せくださった方に、<b>パックを3枚プレゼント</b>いたします。</div>`;
   const mapAddr=s.address||'大阪府大阪市北区西天満1-2-25 スクエア北浜3階';
   const dirUrl=s.mapUrl||('https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(mapAddr));
   const mapHtml=`<a href="${dirUrl}" target="_blank" style="text-decoration:none;display:block"><div style="position:relative;border-radius:14px;overflow:hidden;margin-bottom:10px;border:1px solid var(--line)"><iframe class="mapembed" loading="lazy" src="https://maps.google.com/maps?q=34.6933,135.5088&z=16&hl=ja&output=embed"></iframe><div style="position:absolute;inset:0"></div></div></a><a class="linkbtn" href="${dirUrl}" target="_blank" style="margin-bottom:10px"><span class="ic">🧭</span>ここへ行く（Googleマップで道案内）</a>`;
@@ -1259,7 +1266,9 @@ async function confirmBooking(){
   try{await apiOp('createBooking',{booking:bk,customer:newCustObj,phone:b.phone,couponUsed:coupon,passesAdd:passesAdd,referrerPhone:referrerPhone,referrerNotice:referrerNotice,referrerBonus:CONFIG.referralBonus,nextId:(DATA.nextId||1047)+1});}
   catch(e){alert('予約の送信に失敗しました。通信状況をご確認ください。');return;}
   state.lastBooking={...bk,name:b.name,newCust:!known,referralBonus:referrerPhone?CONFIG.referralBonus:0};
-  await refresh();state.step=4;render();
+  await refresh();
+  if(state.rescheduleId){try{await apiOp('cancelOwn',{phone:b.phone,password:localGet('salon:custpw')||'',bookingId:state.rescheduleId});}catch(e){}state.rescheduleId=null;await refresh();}
+  state.step=4;render();
 }
 function aftercareText(items){
   const cats=[...new Set(items.map(i=>i.cat))];let parts=['この度はご来店ありがとうございました。施術後のケアについてご案内いたします。\n'];
@@ -1295,6 +1304,7 @@ function startBooking(){
   if(state.mpPhone){const c=DATA.customers[normPhone(state.mpPhone)];if(c){state.b.name=c.name;state.b.phone=c.phone;}}
   go('book');
 }
+function canModifyBk(b){return Date.now()<(new Date(b.date+'T00:00:00').getTime()-3*3600*1000);}
 function renderMypage(){
   if(!state.mpPhone){
     const lineU=(S().lineUrl)||'';
@@ -1314,6 +1324,8 @@ function renderMypage(){
   const list=DATA.bookings.filter(b=>normPhone(b.phone)===normPhone(c.phone)).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));
   const upcoming=list.filter(b=>b.date>=fmtDate(today)&&b.status!=='cancelled').length;const vc=custBookings(c.phone).length;
   const notices=(c.notices||[]).map(n=>`<div class="ni">${n.text}<div class="nd">${n.date}</div></div>`).join('');
+  const nextBk=list.filter(b=>b.date>=fmtDate(today)&&b.status!=='cancelled').sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time))[0];
+  const nextCard=nextBk?`<div class="nextbk"><div class="nb-h">📅 次回のご予約</div><div class="nb-dt">${mdLabel(nextBk.date)}（${DOW[new Date(nextBk.date+'T00:00:00').getDay()]}）${nextBk.time}〜</div><div class="nb-menu">${nextBk.items.map(x=>x.name).join('＋')}</div><div class="nb-sub">担当：${stById(nextBk.staffId).name} ／ ${nextBk.status==='confirmed'?'✅ 予約確定':'⏳ 確認中'}</div>${canModifyBk(nextBk)?`<div class="nb-acts"><button class="nb-btn" data-resch="${nextBk.id}">🕐 時間を変更</button><button class="nb-btn cancel" data-cancelmy="${nextBk.id}">キャンセル</button></div>`:`<div class="note" style="margin-top:8px">前日の21時を過ぎているため、こちらからの変更・キャンセルはできません。公式LINEまたはお電話でご連絡ください。</div>`}</div>`:'';
   const passes=(c.passes||[]).filter(p=>p.remaining>0).map(p=>`<div class="pass"><span class="pl">🎫 ${p.label}</span><span class="pr">残り <b>${p.remaining}</b>/${p.total}回</span></div>`).join('');
   const savedPosts=(c.saved||[]).map(getPost).filter(Boolean);
   const savedHtml=savedPosts.length?`<div class="subhead">保存したメニュー・商品</div>${savedPosts.map(p=>postCard(p,false)).join('')}`:'';
@@ -1352,16 +1364,17 @@ function renderMypage(){
     const conf=Array.from({length:20}).map((_,i)=>`<i style="left:${Math.round(Math.random()*100)}%;background:${bcolors[i%bcolors.length]};animation-duration:${(2.4+Math.random()*1.8).toFixed(2)}s;animation-delay:${(Math.random()*1.3).toFixed(2)}s"></i>`).join('');
     bdayBanner=`<div class="bday-banner"><div class="confetti">${conf}</div><div class="bday-pop">🎉🎊🎉</div><div class="bday-msg">お誕生日おめでとうございます！</div><div class="bday-sub">${c.name} 様、すてきな一年になりますように🎂</div><div class="bday-coupon">🎁 お誕生日の特典として <b>1,000円クーポン</b> をご用意しています。お誕生日の<b>前月・当月・翌月（前後1ヶ月）</b>の間にご利用ください（例：6月生まれの方は5・6・7月）。ご来店時にスタッフへお伝えください。</div></div>`;
   }
-  app.innerHTML=`<div class="fade">${previewBar}${bdayBanner}<div class="mp-hero"><button class="mp-logout" id="mp-out">ログアウト</button><div class="mp-hello">${t('mpThanks')} ${c.birthday?`・ 🎂${bdayLabel(c.birthday)}`:''}</div><div class="mp-name">${c.name} 様 <span class="rank-badge r${effectiveRank(c)}">${RANK_LABEL[effectiveRank(c)]}</span>${c.discount?`<span class="disc-badge">${DISC_LABEL[c.discount]}</span>`:''}</div><div class="mp-ptlabel">保有ポイント</div><div class="mp-pt">${bal.toLocaleString()}<small>pt</small></div><div class="mp-meta">来店 ${vc}回 ・ 今後のご予約 ${upcoming}件${coupon}</div></div>
+  app.innerHTML=`<div class="fade">${previewBar}${bdayBanner}<div class="mp-hero"><button class="mp-logout" id="mp-out">ログアウト</button><div class="mp-hello">${t('mpThanks')} ${c.birthday?`・ 🎂${bdayLabel(c.birthday)}`:''}</div><div class="mp-name">${c.name} 様 <span class="rank-badge r${effectiveRank(c)}">${RANK_LABEL[effectiveRank(c)]}</span>${c.discount?`<span class="disc-badge">${DISC_LABEL[c.discount]}</span>`:''}</div><div class="mp-ptlabel">保有ポイント</div><div class="mp-pt">${bal.toLocaleString()}<small>pt</small></div><div class="mp-meta">今後のご予約 ${upcoming}件${coupon}</div></div>
+    ${notices?`<div class="subhead" style="margin-top:0">サロンからのお知らせ</div><div class="nlist">${notices}</div>`:''}
+    ${nextCard}
     <button class="btn btn-primary" id="mp-book" style="width:100%;margin:2px 0 12px">＋ ご予約はこちら（情報入力なしでOK）</button>
     ${rebookHtml}
     ${(!c.birthday)?`<div class="reco" style="border-color:var(--rose)"><div class="reco-m">🎂 お誕生日が未登録です。ご来店時にスタッフへお伝えください。お誕生日月に特典（1,000円クーポン）のご案内をお送りします。</div></div>`:''}
     ${recoHtml}
     ${generosityHtml}
-    <div class="earn"><div class="earn-t">💎 ポイントの貯め方</div><div class="earn-row"><span>💅 ご来店ごと（お会計に応じて）</span><b>貯まる</b></div><div class="earn-row"><span>🎂 お誕生日に</span><b>+${CONFIG.birthdayBonus.toLocaleString()}</b></div><div class="earn-row"><span>👥 お友達をご紹介</span><b>+${CONFIG.referralBonus}</b></div><div class="earn-row"><span>🏠 ご近所シェアを投稿</span><b>+${CONFIG.sharePoints}</b></div><div class="earn-row"><span>📷 ギャラリーに投稿</span><b>+${CONFIG.galleryPoints}</b></div><div class="earn-row"><span>✉ ご意見箱に投稿</span><b>+${CONFIG.feedbackPoints}</b></div></div>
+    <div class="earn"><div class="earn-t">💎 ポイントの貯め方</div><div class="earn-row"><span>💅 ご来店ごと（お会計に応じて）</span><b>貯まる</b></div><div class="earn-row"><span>🎂 お誕生日に</span><b>+${CONFIG.birthdayBonus.toLocaleString()}</b></div><div class="earn-row"><span>👥 お友達をご紹介</span><b>+${CONFIG.referralBonus}</b></div><div class="earn-row"><span>📷 ギャラリーに投稿</span><b>+${CONFIG.galleryPoints}</b></div><div class="earn-row"><span>✉ ご意見箱に投稿</span><b>+${CONFIG.feedbackPoints}</b></div></div>
     ${rankLadderHtml}
     ${expiryHtml}
-    ${notices?`<div class="subhead">サロンからのお知らせ</div><div class="nlist">${notices}</div>`:''}
     ${passes?`<div class="subhead">回数券・オプション残数</div>${passes}`:''}
     ${cpn?`<div class="subhead">クーポン</div><div class="pass"><span class="pl">🎁 ${cpn}</span></div><div class="note" style="margin-top:6px">クーポンは発行から<b>3ヶ月以内</b>にご利用ください。3ヶ月を過ぎると無効になります。</div>`:''}
     ${savedHtml}<div class="subhead">パスワード変更</div><div class="composer"><div class="note" style="margin:0 0 10px">仮パスワードでログインした方は、こちらでご自身のパスワードに変更してください。</div><input id="mp-newpw" type="password" placeholder="新しいパスワード（4文字以上）" style="width:100%;font-family:inherit;font-size:14px;border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:var(--paper)"><button class="btn btn-primary" id="mp-pwsave" style="width:100%;margin-top:8px">パスワードを変更</button></div>
@@ -1373,6 +1386,7 @@ function renderMypage(){
   const mpb=byId('mp-book');if(mpb)mpb.onclick=()=>startBooking();
   const mprb=byId('mp-rebook');if(mprb&&lastBk)mprb.onclick=()=>{startBooking();state.cart=(lastBk.items||[]).map(x=>svById(x&&x.id)).filter(Boolean);if(state.cart.length)state.step=1;render();};
   app.querySelectorAll('[data-cancelmy]').forEach(b=>b.onclick=async()=>{if(!confirm('この予約をキャンセルしますか？'))return;try{await apiOp('cancelOwn',{phone:state.mpPhone,password:localGet('salon:custpw')||'',bookingId:b.dataset.cancelmy});}catch(e){alert('キャンセルに失敗しました。');return;}await refresh();render();});
+  app.querySelectorAll('[data-resch]').forEach(b=>b.onclick=()=>{const bk=DATA.bookings.find(x=>x.id===b.dataset.resch);if(!bk)return;if(!confirm('お時間の変更を行います。\nこのあと新しい日時を選んでいただくと、今の予約は自動でキャンセルされ、新しい予約に切り替わります。よろしいですか？'))return;startBooking();state.cart=(bk.items||[]).filter(x=>x.cat!=='option').map(x=>svById(x.id)).filter(Boolean);state.b.staff=stById(bk.staffId);state.b.date=null;state.b.time=null;state.rescheduleId=bk.id;state.step=2;render();window.scrollTo(0,0);});
   app.querySelectorAll('[data-rebookbk]').forEach(b=>b.onclick=()=>{const bk=DATA.bookings.find(x=>x.id===b.dataset.rebookbk);if(!bk)return;startBooking();state.cart=(bk.items||[]).map(x=>svById(x&&x.id)).filter(Boolean);if(state.cart.length)state.step=1;render();window.scrollTo(0,0)});
   const fbs=byId('fb-send');if(fbs)fbs.onclick=async()=>{const el=byId('fb-text');const t=el?el.value.trim():'';if(!t){alert('ご意見をご入力ください。');return;}const fb={id:'fb'+Date.now(),text:t,date:now()};try{await apiOp('addFeedback',{fb,phone:state.mpPhone,points:CONFIG.feedbackPoints,notice:`ご意見をお寄せいただきありがとうございます🙏 ${CONFIG.feedbackPoints}ポイントを差し上げました。`});}catch(e){alert('送信に失敗しました。');return;}await refresh();alert(`送信しました。${CONFIG.feedbackPoints}ポイント差し上げました。ありがとうございます！`);render();};
   const pwsave=byId('mp-pwsave');if(pwsave)pwsave.onclick=async()=>{const v=byId('mp-newpw').value;if(!v||v.length<4){alert('4文字以上で入力してください。');return;}try{await apiOp('changePw',{phone:state.mpPhone,oldpw:localGet('salon:custpw')||'',newpw:v});}catch(e){alert('変更に失敗しました。');return;}localSet('salon:custpw',v);await refresh();alert('パスワードを変更しました。');render();};
