@@ -498,6 +498,15 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .staffrow .mn{font-weight:700;color:var(--navy);font-size:15px}
 .staffrow .mm{font-size:12px;color:var(--ink-soft);margin-top:2px}
 .strow-edit{flex:0 0 auto;font-size:12px;font-weight:700;color:var(--gold)}
+.faq{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+.faq details{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.faq summary{padding:14px 16px;font-size:13.5px;font-weight:700;color:var(--navy);cursor:pointer;list-style:none;position:relative;padding-right:40px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::before{content:'Q';position:absolute;left:16px;display:none}
+.faq summary::after{content:'＋';position:absolute;right:16px;color:var(--gold);font-weight:700}
+.faq details[open] summary::after{content:'−'}
+.faq-a{padding:0 16px 14px;font-size:13px;line-height:1.7;color:var(--ink-soft)}
+.faq-a b{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -861,6 +870,15 @@ function renderHome(){
     ${recsHtml}
     ${socialHtml}
     <div class="sec-label"><span class="t">営業日カレンダー</span></div><div class="cal-grid sd-grid" style="margin-bottom:8px">${salonMonthCells(today.getFullYear(),today.getMonth(),false)}</div><div class="note" style="margin-bottom:14px">「営」が営業日です（火曜は基本お休み）。営業時間は日によって異なりますので、ご予約時にご確認ください。「臨時営業」「臨時休」の日は上に表示されます。</div>
+    <div class="sec-label"><span class="t">よくある質問（使い方）</span></div>
+    <div class="faq">
+      <details><summary>予約はどこからできますか？</summary><div class="faq-a">画面下の「予約」から、24時間いつでもご予約いただけます。メニュー→担当→日時を選ぶだけ。情報の入力は初回のみです。</div></details>
+      <details><summary>予約の変更・キャンセルは？</summary><div class="faq-a">マイページの「次回のご予約」から、<b>前日の21時まで</b>「🕐時間を変更」「キャンセル」ができます。それ以降は公式LINEへご連絡ください。</div></details>
+      <details><summary>マイページはどうやってログインしますか？</summary><div class="faq-a">電話番号と暗証番号でログインできます。はじめての方は、暗証番号に<b>電話番号の下4桁</b>をご入力ください（ログイン後にご自身の番号へ変更できます）。</div></details>
+      <details><summary>ポイントはどうやって貯まりますか？</summary><div class="faq-a">ご来店ごと、お誕生日、お友達のご紹介などで貯まります。次回以降のお会計でお使いいただけます。残高はマイページでいつでも確認できます。</div></details>
+      <details><summary>会員ランクとは？</summary><div class="faq-a">通常会員／シルバー会員（毎回5%OFF）／ゴールド会員（毎回10%OFF）があります。ランクはマイページに表示されます。</div></details>
+      <details><summary>お問い合わせはどこへ？</summary><div class="faq-a">施術中はお電話に出られないため、<b>公式LINE</b>へお願いいたします。${s.lineUrl?`<a href="${s.lineUrl}" target="_blank" style="color:var(--gold);font-weight:700"> 公式LINEを開く</a>`:''}</div></details>
+    </div>
     <div class="sec-label"><span class="t">アクセス・店舗情報</span></div>${mapHtml}${links}
     <div class="addr">${TX('homeNote','ご予約はこの予約ページからのみ承っております。')}<br>${s.address||''}<br>${s.hours||''}</div></div>`;
   byId('hbook').onclick=()=>startBooking();const _hm=byId('hmore');if(_hm)_hm.onclick=()=>go('gallery');bindPosts();
