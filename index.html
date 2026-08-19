@@ -507,6 +507,12 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .faq details[open] summary::after{content:'−'}
 .faq-a{padding:0 16px 14px;font-size:13px;line-height:1.7;color:var(--ink-soft)}
 .faq-a b{color:var(--ink)}
+.sd-mini{gap:3px;max-width:430px}
+.sd-mini .sd-day{aspect-ratio:auto;min-height:38px;padding:2px;border-radius:6px}
+.sd-mini .sd-n{font-size:12px}
+.sd-mini .sd-tag{font-size:7px}
+.reg-divider{display:flex;align-items:center;gap:12px;margin:16px 0 12px;color:var(--ink-soft);font-size:12px}
+.reg-divider::before,.reg-divider::after{content:'';flex:1;height:1px;background:var(--line)}
 </style>
 </head>
 <body>
@@ -869,10 +875,10 @@ function renderHome(){
     ${rankHtml}
     ${recsHtml}
     ${socialHtml}
-    <div class="sec-label"><span class="t">営業日カレンダー</span></div><div class="cal-grid sd-grid" style="margin-bottom:8px">${salonMonthCells(today.getFullYear(),today.getMonth(),false)}</div><div class="note" style="margin-bottom:14px">「営」が営業日です（火曜は基本お休み）。営業時間は日によって異なりますので、ご予約時にご確認ください。「臨時営業」「臨時休」の日は上に表示されます。</div>
+    <div class="sec-label"><span class="t">営業日カレンダー</span></div><div class="cal-grid sd-grid sd-mini" style="margin-bottom:6px">${salonMonthCells(today.getFullYear(),today.getMonth(),false)}</div><div class="note" style="margin-bottom:14px;font-size:11px">「営」が営業日（火曜は基本お休み）。営業時間は日により異なります。「臨時営業」「臨時休」は上に表示。</div>
     <div class="sec-label"><span class="t">よくある質問（使い方）</span></div>
     <div class="faq">
-      <details><summary>予約はどこからできますか？</summary><div class="faq-a">画面下の「予約」から、24時間いつでもご予約いただけます。メニュー→担当→日時を選ぶだけ。情報の入力は初回のみです。</div></details>
+      <details><summary>予約はどこからできますか？</summary><div class="faq-a">画面上部のメニュー「予約」から、24時間いつでもご予約いただけます。メニュー→担当→日時を選ぶだけ。情報の入力は初回のみです。</div></details>
       <details><summary>予約の変更・キャンセルは？</summary><div class="faq-a">マイページの「次回のご予約」から、<b>前日の21時まで</b>「🕐時間を変更」「キャンセル」ができます。それ以降は公式LINEへご連絡ください。</div></details>
       <details><summary>マイページはどうやってログインしますか？</summary><div class="faq-a">電話番号と暗証番号でログインできます。はじめての方は、暗証番号に<b>電話番号の下4桁</b>をご入力ください（ログイン後にご自身の番号へ変更できます）。</div></details>
       <details><summary>ポイントはどうやって貯まりますか？</summary><div class="faq-a">ご来店ごと、お誕生日、お友達のご紹介などで貯まります。次回以降のお会計でお使いいただけます。残高はマイページでいつでも確認できます。</div></details>
@@ -1395,11 +1401,14 @@ function renderMypage(){
     const lineU=(S().lineUrl)||'';
     const knownP=localGet('salon:knownphone');const knownN=localGet('salon:knownname')||'';
     app.innerHTML=`<div class="fade"><div class="eyebrow">Member</div><div class="h-title">${knownN?'おかえりなさい':'マイページ'}</div><div class="h-sub">${knownN?`<b>${knownN}</b> 様、暗証番号（パスワード）を入れてログインしてください。`:'電話番号と暗証番号（パスワード）でログインできます。一度ログインすると、次回からは暗証番号を入れるだけで入れます。'}</div><div class="loginbox"><div class="field"><label>電話番号</label><input id="mp-phone" inputmode="tel" value="${knownP||''}" placeholder="090-1234-5678"></div><div class="field"><label>暗証番号（パスワード）</label><input id="mp-pw" type="password" inputmode="numeric" placeholder="暗証番号"></div><button class="btn btn-primary" id="mp-login" style="width:100%">ログイン</button>
+      <div class="reg-divider"><span>はじめての方</span></div>
+      <button class="btn" id="mp-register" style="width:100%;background:var(--gold);border-color:var(--gold);color:#fff">＋ 新規ご登録（ご予約して登録・500pt進呈🎁）</button>
       ${knownP?`<button class="btn btn-ghost" id="mp-clearknown" style="width:100%;margin-top:10px">別の番号でログイン</button>`:''}
       <div class="note" style="margin:14px 0 0">${knownN?'':'<b>ご来店されたことがある方：</b>電話番号とパスワードでログインできます（以前ご登録で暗証番号がはじめての方は<b>電話番号の下4桁</b>）。<br><b>はじめての方：</b>下の「予約」からご予約いただくと、その場で会員登録されます。<br><br>'}<b>パスワードをお忘れの方</b>は、下の公式LINEへご連絡ください。新しいパスワードをお渡しします。</div>
       ${lineU?`<a class="btn btn-ghost" href="${lineU}" target="_blank" style="width:100%;display:block;text-align:center;text-decoration:none;margin-top:10px">💬 パスワードをお忘れの方・お問い合わせ（公式LINE）</a>`:''}</div></div>`;
     const doLogin=async()=>{const phone=normPhone(byId('mp-phone').value);const pw=byId('mp-pw').value;if(!phone){alert('電話番号をご入力ください。');return;}if(!pw){alert('暗証番号（パスワード）をご入力ください。');return;}try{await doCustomerLogin(phone,pw);}catch(e){if(e.status===404)alert('この電話番号の登録が見つかりませんでした。番号をもう一度ご確認ください。');else if(e.status===401)alert('暗証番号（パスワード）が違います。もう一度お試しください。');else alert('ただいまサーバーに接続できませんでした。電波の良い場所で、少し時間をおいてからもう一度お試しください。');}};
     byId('mp-login').onclick=doLogin;
+    const _reg=byId('mp-register');if(_reg)_reg.onclick=()=>startBooking();
     const pwEl=byId('mp-pw');if(pwEl)pwEl.onkeydown=e=>{if(e.key==='Enter')doLogin()};
     const ck=byId('mp-clearknown');if(ck)ck.onclick=()=>{localDel('salon:knownphone');localDel('salon:knownname');render()};
     return;}
@@ -1550,7 +1559,7 @@ function renderAdmin(){
   if(!state.adminAuthed)return renderStaffLogin();
   let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(_clch)saveData(DATA);
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
-  const tabs=[['tasks','毎日のタスク'],['bookings','予約'],['calendar','カレンダー'],['schedule','シフト'],['customers','顧客'],['homedisp','ホーム表示'],['menu','メニュー'],['staff','スタッフ'],['posts','投稿'],['broadcast','配信'+(unsent?`(${unsent})`:'')],['campaigns','告知'],['feedback','ご意見'],['sales','売上'],['settings','設定']];
+  const tabs=[['tasks','毎日のタスク'],['bookings','予約'],['schedule','シフト'],['customers','顧客'],['homedisp','ホーム表示'],['menu','メニュー'],['staff','スタッフ'],['posts','投稿'],['broadcast','配信'+(unsent?`(${unsent})`:'')],['campaigns','告知'],['feedback','ご意見'],['sales','売上'],['settings','設定']];
   let inner=({tasks:adminTasks,bookings:adminBookings,calendar:adminCalendar,schedule:adminSchedule,customers:adminCustomers,homedisp:adminHomeDisplay,menu:adminMenu,staff:adminStaff,posts:adminPosts,broadcast:adminBroadcast,campaigns:adminCampaigns,feedback:adminFeedback,sales:adminSales,settings:adminSettings}[state.adminTab])();
   app.innerHTML=`<div class="fade"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div class="eyebrow" style="margin:0">Salon Admin</div><button class="switch" id="adm-out">ログアウト</button></div><div class="atabs">${tabs.map(t=>`<button data-at="${t[0]}" class="${state.adminTab===t[0]?'active':''}">${t[1]}</button>`).join('')}</div>${adminGuide(state.adminTab)}${inner}</div>`;
   byId('adm-out').onclick=()=>{state.adminAuthed=false;setStaffSession(false);go('home')};
@@ -1676,7 +1685,7 @@ function bookingRow(x,i){
   else if(x.status==='confirmed')acts=`<button data-visit="${x.id}" title="来店済みにする">${ICchk}</button><button data-cancel="${x.id}" title="来店なし/キャンセル">${ICx}</button><button data-open="${ph}" title="カルテ">${ICcard}</button>`;
   else if(x.status==='visited')acts=`${x.thanked?'':`<button data-thanks="${x.id}" title="お礼を送る">${ICmsg}</button>`}<button data-open="${ph}" title="カルテ">${ICcard}</button>`;
   if(DATA.settings.gcal&&x.status!=='cancelled')acts+=`<a href="${gcalUrl(x)}" target="_blank" title="Googleカレンダーに追加" style="display:inline-grid;place-items:center;width:34px;height:34px;border:1px solid var(--line);border-radius:9px;color:var(--gold);text-decoration:none;font-size:15px">📅</a>`;
-  return `<div class="booking" style="animation-delay:${i*.04}s"><div class="bk-time">${x.time}</div><div class="bk-body"><div class="bk-name">${nm} <span style="font-weight:400;color:var(--ink-soft);font-size:11px">様</span></div><div class="bk-svc">${svc} / ${stById(x.staffId).name}</div>${tags?`<div class="bk-tags">${tags}</div>`:''}${x.customerMemo?`<div class="bk-note">📝 ${x.customerMemo}</div>`:''}</div><span class="pill ${x.status}">${pillTxt}</span>${acts?`<div class="bk-actions">${acts}</div>`:''}</div>`;
+  return `<div class="booking" style="animation-delay:${i*.04}s"><div class="bk-time">${x.time}</div><div class="bk-body" data-open="${ph}" style="cursor:pointer"><div class="bk-name">${nm} <span style="font-weight:400;color:var(--ink-soft);font-size:11px">様</span> <span style="color:var(--gold);font-size:10px;font-weight:700">履歴 ›</span></div><div class="bk-svc">${svc} / ${stById(x.staffId).name}</div>${tags?`<div class="bk-tags">${tags}</div>`:''}${x.customerMemo?`<div class="bk-note">📝 ${x.customerMemo}</div>`:''}</div><span class="pill ${x.status}">${pillTxt}</span>${acts?`<div class="bk-actions">${acts}</div>`:''}</div>`;
 }
 function adminSchedule(){
   const sw=`<div class="schedmode"><button data-sm="month" class="${state.schedMode==='month'?'on':''}">月間シフト</button><button data-sm="shift" class="${state.schedMode==='shift'?'on':''}">週間シフト</button><button data-sm="day" class="${state.schedMode==='day'?'on':''}">日別状況</button><button data-sm="salon" class="${state.schedMode==='salon'?'on':''}">営業日</button></div>`;
