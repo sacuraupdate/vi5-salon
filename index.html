@@ -8,9 +8,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,400&family=Hanken+Grotesk:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--paper:#F5F1E8;--paper-2:#ECE6D8;--navy:#1E2A47;--ink:#212838;--ink-soft:#6B6E79;--line:#DDD6C6;--gold:#B0894A;--gold-soft:#C9A765;--gold-bg:#F6EFDD;--card:#FCFAF4;--sage:#5F7355;--rose:#9C5B6B;--shadow:rgba(30,42,71,.13);}
+:root{--paper:#F1F2F5;--paper-2:#E6E9EE;--navy:#1E2A47;--ink:#1E2430;--ink-soft:#6E727C;--line:#E0E3E9;--gold:#B0894A;--gold-soft:#CAA25E;--gold-bg:#FBF3E0;--card:#FFFFFF;--sage:#5F7355;--rose:#B23A46;--red:#B5323F;--shadow:rgba(30,42,71,.10);}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:"Hanken Grotesk","Zen Kaku Gothic New",sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;background-image:radial-gradient(circle at 12% 8%,rgba(176,137,74,.10),transparent 42%),radial-gradient(circle at 92% 92%,rgba(30,42,71,.07),transparent 46%);min-height:100vh;}
+body{font-family:"Hanken Grotesk","Zen Kaku Gothic New",sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;background-image:radial-gradient(circle at 12% 6%,rgba(176,137,74,.06),transparent 40%),radial-gradient(circle at 92% 96%,rgba(30,42,71,.045),transparent 46%);min-height:100vh;}
 .wrap{max-width:760px;margin:0 auto;padding:0 18px 90px;}
 header{padding:26px 0 8px;text-align:center;position:relative;}
 .brand{font-family:"Fraunces",serif;font-weight:600;font-size:30px;letter-spacing:.06em;color:var(--navy);}
@@ -66,7 +66,9 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .hero-home p{font-size:13px;opacity:.85;line-height:1.7;margin-bottom:20px;max-width:92%}
 .hero-home .btn{background:var(--gold);color:var(--navy);display:inline-block;padding:13px 26px;border-radius:100px}.hero-home .btn:hover{background:#fff}
 .sec-label{display:flex;align-items:center;justify-content:space-between;margin:26px 0 14px}
-.sec-label .t{font-family:"Fraunces",serif;font-size:19px;color:var(--navy)}.sec-label .more{font-size:12px;font-weight:600;color:var(--gold);background:none;border:none;cursor:pointer}
+.sec-label .t{font-family:"Fraunces",serif;font-size:19px;color:var(--navy);position:relative;padding-left:14px}
+.sec-label .t::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:5px;height:20px;background:var(--gold);border-radius:2px}
+.sec-label .more{font-size:12px;font-weight:600;color:var(--gold);background:none;border:none;cursor:pointer}
 .camp{border:1px solid var(--gold-soft);background:var(--gold-bg);border-radius:18px;padding:18px 20px;margin-bottom:12px;animation:rise .5s both}
 .camp .ribbon{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.1em;background:var(--rose);color:#fff;padding:3px 10px;border-radius:100px;margin-bottom:9px}
 .camp h3{font-family:"Fraunces",serif;font-size:18px;color:var(--navy);margin-bottom:6px}.camp p{font-size:13px;color:var(--ink-soft);line-height:1.6}
@@ -162,7 +164,8 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .mp-ptlabel{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-soft)}.mp-pt{font-family:"Fraunces",serif;font-size:40px;font-weight:500;line-height:1}.mp-pt small{font-size:16px;margin-left:4px}
 .mp-meta{font-size:12px;opacity:.8;margin-top:10px}
 .mp-logout{position:absolute;top:16px;right:16px;z-index:6;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);color:var(--paper);font-family:inherit;font-size:13px;font-weight:700;padding:9px 16px;border-radius:100px;cursor:pointer}
-.subhead{font-family:"Fraunces",serif;font-size:17px;color:var(--navy);margin:24px 0 12px}
+.subhead{font-family:"Fraunces",serif;font-size:17px;color:var(--navy);margin:24px 0 12px;position:relative;padding-left:13px}
+.subhead::before{content:"";position:absolute;left:0;top:52%;transform:translateY(-50%);width:4px;height:17px;background:var(--gold);border-radius:2px}
 .nlist .ni{background:var(--gold-bg);border:1px solid var(--gold-soft);border-radius:12px;padding:13px 15px;margin-bottom:9px;font-size:13px;line-height:1.7;animation:rise .4s both}
 .nlist .ni .nd{font-size:10.5px;color:var(--ink-soft);margin-top:7px}
 .pass{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--gold-soft);border-radius:14px;padding:14px 16px;margin-bottom:10px}
@@ -542,7 +545,6 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 <div class="wrap">
   <header>
     <div class="brand" id="brandHome" style="cursor:pointer">Vi5<span class="dot">.</span></div>
-    <select class="langsel" id="langsel"></select>
     <button class="acct" id="acctbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span class="acctcol"><span id="acctlbl">マイページ</span><span class="acctpts" id="acctpts"></span></span><span class="acctbadge" id="acctbadge" style="display:none"></span></button>
     <div class="tagline" id="tagline">Eyelash &nbsp;·&nbsp; Brow &nbsp;·&nbsp; Beauty</div>
     <nav class="nav" id="nav">
@@ -897,8 +899,7 @@ function renderHome(){
   const dirUrl=s.mapUrl||('https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(mapAddr));
   const mapHtml=`<a href="${dirUrl}" target="_blank" style="text-decoration:none;display:block"><div style="position:relative;border-radius:14px;overflow:hidden;margin-bottom:10px;border:1px solid var(--line)"><iframe class="mapembed" loading="lazy" src="https://maps.google.com/maps?q=34.6933,135.5088&z=16&hl=ja&output=embed"></iframe><div style="position:absolute;inset:0"></div></div></a><a class="linkbtn" href="${dirUrl}" target="_blank" style="margin-bottom:10px"><span class="ic">🧭</span>ここへ行く（Googleマップで道案内）</a>`;
   const _reals=DATA.staff.filter(x=>x.id!=='s0');
-  const langBar=`<div class="langbar"><span class="langbar-ic">🌐 言語 / Language</span><div class="langbtns">${LANGS.map(l=>`<button class="langbtn ${state.lang===l[0]?'on':''}" data-setlang="${l[0]}">${l[1]}</button>`).join('')}</div></div>`;
-  app.innerHTML=`<div class="fade">${langBar}${bannerHtml}
+  app.innerHTML=`<div class="fade">${bannerHtml}
     <div class="hero-home"${heroStyle}><div class="hh-tag">Vi5 北浜</div><h2>${TX('heroTitle','バイタリティ溢れる毎日を。')}</h2><p>${TX('heroSub','まつげ・眉・ピーリング・メイク。あなたに似合うを、ここから。')}</p><button class="btn" id="hbook">${t('bookNow')}</button></div>
     ${rankHtml}
     ${recsHtml}
@@ -915,7 +916,6 @@ function renderHome(){
     <div class="sec-label"><span class="t">アクセス・店舗情報</span></div>${mapHtml}${links}
     <div class="addr">${TX('homeNote','ご予約はこの予約ページからのみ承っております。')}<br>${s.address||''}<br>${s.hours||''}</div></div>`;
   byId('hbook').onclick=()=>startBooking();const _hm=byId('hmore');if(_hm)_hm.onclick=()=>go('gallery');bindPosts();
-  app.querySelectorAll('[data-setlang]').forEach(b=>b.onclick=()=>setLang(b.dataset.setlang));
   const _gs=byId('goshare');if(_gs)_gs.onclick=()=>go('share');
   const box=byId('bannerbox');if(box){const slides=[...box.querySelectorAll('.banner-slide')];const dots=[...box.querySelectorAll('.bn-dots i')];if(slides.length>1){clearInterval(window._bnr);let idx=0;window._bnr=setInterval(()=>{slides[idx].classList.remove('on');if(dots[idx])dots[idx].classList.remove('on');idx=(idx+1)%slides.length;slides[idx].classList.add('on');if(dots[idx])dots[idx].classList.add('on');},4500);}}
 }
