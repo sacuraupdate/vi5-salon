@@ -457,6 +457,33 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .nr-flag{font-size:11.5px;font-weight:700;color:#fff;background:var(--rose);border-radius:8px;padding:5px 10px;margin-bottom:8px;display:inline-block}
 .nr-summary{background:#FCEEF2;border:1px solid #E3B9C4;border-radius:12px;padding:11px 14px;font-size:12.5px;line-height:1.6;color:var(--ink);margin-bottom:12px}
 .nr-summary b{color:var(--rose)}
+.taskmode{display:flex;gap:8px;margin-bottom:14px}
+.taskmode button{flex:1;border:1.5px solid var(--line);background:#fff;color:var(--ink-soft);border-radius:999px;padding:10px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer}
+.taskmode button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.clprog{display:flex;align-items:center;gap:10px;margin-bottom:14px;font-size:12px;color:var(--ink-soft);font-weight:700}
+.clprog-bar{flex:1;height:8px;background:var(--paper-2);border-radius:999px;overflow:hidden}
+.clprog-bar i{display:block;height:100%;background:var(--sage);border-radius:999px;transition:width .3s}
+.clcat{margin-bottom:14px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.clcat-h{display:flex;justify-content:space-between;align-items:center;background:var(--gold-bg);padding:9px 12px;font-size:13px;font-weight:700;color:var(--navy)}
+.clcat-del{border:none;background:none;color:var(--ink-soft);font-size:13px;cursor:pointer;font-family:inherit}
+.clitem{display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid var(--line);cursor:pointer}
+.clitem input{width:20px;height:20px;flex:0 0 auto;accent-color:var(--sage)}
+.cltext{flex:1;font-size:13.5px;color:var(--ink);line-height:1.5}
+.clitem.done .cltext{color:var(--ink-soft);text-decoration:line-through}
+.clfreq{display:block;font-size:10.5px;color:var(--gold);font-weight:700;margin-top:2px}
+.clfreq.over{color:var(--rose)}
+.clitem-del{border:none;background:none;font-size:14px;cursor:pointer;opacity:.5}
+.cladd{display:flex;gap:6px;padding:9px 12px;border-top:1px solid var(--line);background:var(--paper-2)}
+.cladd input{flex:1;min-width:0;font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:#fff}
+.cladd select{font-family:inherit;font-size:12px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.cladd button{flex:0 0 auto;border:none;background:var(--navy);color:#fff;border-radius:8px;padding:7px 12px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap}
+.cllog{margin-top:14px;border:1px solid var(--line);border-radius:12px;padding:10px 13px;background:#fff}
+.cllog summary{font-size:13px;font-weight:700;color:var(--navy);cursor:pointer}
+.cllog-i{font-size:11.5px;color:var(--ink-soft);padding:4px 0;border-top:1px solid var(--line);margin-top:6px}
+.wk-toggle{display:flex;gap:0;border:1.5px solid var(--line);border-radius:999px;overflow:hidden;flex:0 0 auto}
+.wk-toggle .wk{border:none;background:#fff;color:var(--ink-soft);padding:6px 14px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer}
+.wk-toggle .wk.on{background:var(--sage);color:#fff}
+.wk-toggle .wk.off.on{background:var(--rose);color:#fff}
 </style>
 </head>
 <body>
@@ -752,7 +779,7 @@ const state={view:'home',step:0,openCat:null,cart:[],
   b:{staff:null,date:null,time:null,name:'',phone:'',companions:[],referrer:'',usePoints:0,haste:null,agreed:false,party2:false,p2name:'',p2phone:'',birthday:'',password:'',b2name:'',b2phone:'',b2birthday:'',b2password:'',options:[],note:''},
   bookMode:'single',pairPerson:1,pairA:null,cartA:[],cartB:[],staffA:null,staffB:null,pairEditing:'A',optA:[],optB:[],
   calMonth:new Date(today.getFullYear(),today.getMonth(),1),
-  adminTab:'bookings',adminFilter:'all',custQuery:'',custOpen:null,salesPeriod:'month',schedDate:fmtDate(today),acM:new Date(today.getFullYear(),today.getMonth(),1),acDay:fmtDate(today),
+  adminTab:'tasks',adminFilter:'all',custQuery:'',custOpen:null,taskMode:'work',salesPeriod:'month',schedDate:fmtDate(today),acM:new Date(today.getFullYear(),today.getMonth(),1),acDay:fmtDate(today),
   galleryFilter:'all',boardFilter:'all',boardOpen:false,boardEdit:null,boardPhotos:[],loginFull:false,pendingCust:null,previewCust:null,rescheduleId:null,mpPhone:null,lastBooking:null,pendingPhoto:'',galPostOpen:false,menuEdit:null,menuPhoto:'',menuPhotos:[],menuOpen:null,optEdit:null,bcPhone:'',bcQuery:'',bcTpl:0,adminAuthed:false,
   shareFilter:'all',sharePostOpen:false,sharePhotos:[],shareCmtOpen:null,schedMode:'month',brushMode:'work',brushStart:10,brushEnd:19,heroPending:'',galPhotos:[],finOpen:null,schedStaff:'s1',scM:new Date(today.getFullYear(),today.getMonth(),1),calDay:null,navStack:[],staffEdit:null,lang:'ja',bannerPhoto:'',importStage:'idle',importHeaders:[],importRows:[],importMap:{},rankPhotos:[],recPhotos:[],staffPhotoPending:'',manualOpen:false,manualBook:null,manualCat:'all'};
 const byId=id=>document.getElementById(id);
@@ -1437,14 +1464,58 @@ function adminGuide(tab){
   const items=g[1].map(it=>`<div><span class="gi ${it[2]==='ok'?'gi-ok':(it[2]==='x'?'gi-x':'')}">${it[0]}</span>${it[1]}</div>`).join('');
   return `<details class="guide"><summary>📘 このページの使い方（タップで開きます）</summary><div class="note" style="margin:10px 0 4px">${g[0]}</div><div class="guidegrid">${items}</div><div class="note" style="margin:10px 0 0">${g[2]}</div></details>`;
 }
+function seedChecklist(){let n=0;const it=(text,freq)=>({id:'ck'+(++n),text,freq:freq||'daily',done:false,lastDone:null});
+  return {date:fmtDate(today),work:[
+    {cat:'① トイレ清掃',items:[it('便器を拭く（便座・フタ・内側・外側）'),it('床を拭く'),it('鏡を拭く'),it('手洗いボウル・蛇口を磨く'),it('ペーパーホルダー・棚・小物を拭く'),it('ゴミを捨てる'),it('トイレットペーパーを補充（三角折り）'),it('清潔感・香りを確認する')]},
+    {cat:'② 店内・入口・床',items:[it('入口ドア・ドアノブ・手すりを拭く'),it('階段のゴミ・汚れを掃除する'),it('掃除機をかける'),it('汚れ・ベタつきは水拭き／スチーム')]},
+    {cat:'③ 鏡・ガラス・窓・洗面台',items:[it('店内の鏡・ガラス扉・窓を拭く'),it('窓枠・サッシの汚れを確認'),it('洗面台のボウルを洗う・蛇口を磨く'),it('排水口を確認し水滴を拭き上げる')]},
+    {cat:'④ 商品・備品',items:[it('商品棚のホコリを取り棚を拭く'),it('商品を正面に整列させる'),it('サンプル・美容機器を拭く'),it('iPadの画面・指紋を拭く')]},
+    {cat:'⑤ 消耗品',items:[it('お水を補充する'),it('ショップバッグ補充・シール確認'),it('綿棒・パフ・コットン・ティッシュ補充')]},
+    {cat:'⑥ 在庫',items:[it('店販商品の在庫確認（残1で発注）'),it('消耗品・掃除用品の在庫確認')]},
+    {cat:'⑦ タオル・施術ルーム',items:[it('使用済みタオルを洗濯・収納'),it('ベッド・枕・ワゴンを整える'),it('ライト・機械・手鏡を拭く'),it('コード類を整える')]},
+    {cat:'⑧ 最終チェック',items:[it('髪の毛・ホコリ・指紋・水滴が残っていないか'),it('商品がきれいに並んでいるか'),it('照明・BGM・エアコンを確認')]},
+    {cat:'⑨ SNS・報告',items:[it('Instagramストーリーズを1つ以上投稿'),it('就業時にアプリで安藤さくらへ1回報告')]},
+    {cat:'⑩ 手が空いた時',items:[it('Squareメニュー：並び順・金額・新規・削除','weekly'),it('BASE：在庫・価格・新商品・クーポン配信','weekly'),it('口コミ・レビューへの返信','weekly'),it('消耗品・備品の見直し','monthly')]}
+  ],home:[
+    {cat:'毎日',items:[it('Googleタスクで今日やることを確認'),it('Instagramストーリーズを1つ以上投稿'),it('就業時に安藤さくらへ1回だけ報告')]},
+    {cat:'在宅ワーク',items:[it('BASEを確認（在庫・価格・新商品）'),it('リールを1本以上作る（下書きも可）')]},
+    {cat:'毎月やること',items:[it('Squareメニューの整理・更新','monthly'),it('今月のLINE配信を作成して配信','monthly'),it('商品棚・ディスプレイの更新','monthly'),it('口コミ・レビューに返信','monthly')]}
+  ],log:[]};}
+function clItemDone(it){if(it.freq==='daily')return !!it.done;if(!it.lastDone)return false;if(it.freq==='monthly')return it.lastDone.slice(0,7)===fmtDate(today).slice(0,7);return (today-new Date(it.lastDone+'T00:00:00'))/86400000<7;}
+function clDue(it){if(it.freq==='daily')return '';if(!it.lastDone)return it.freq==='weekly'?'今週まだ':'今月まだ';const days=Math.floor((today-new Date(it.lastDone+'T00:00:00'))/86400000);if(it.freq==='weekly'){const left=7-days;return left>=0?`前回${days}日前・あと${left}日`:`⚠前回${days}日前・期限切れ`;}const sm=it.lastDone.slice(0,7)===fmtDate(today).slice(0,7);return sm?`今月済（${days}日前）`:`⚠前回${days}日前・今月未`;}
+function clFindItem(id){for(const mode of ['work','home']){const secs=(DATA.checklist&&DATA.checklist[mode])||[];for(let ci=0;ci<secs.length;ci++){const i=secs[ci].items.find(x=>x.id===id);if(i)return{i,mode,ci};}}return null;}
+function clLog(text){DATA.checklist.log=DATA.checklist.log||[];const ts=new Date().toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});DATA.checklist.log.unshift({ts:Date.now(),text:`${ts} ✓ ${text}`});DATA.checklist.log=DATA.checklist.log.slice(0,150);}
+function checklistRollover(){if(!DATA.checklist||!DATA.checklist.work){DATA.checklist=seedChecklist();return true;}if(DATA.checklist.date!==fmtDate(today)){const cnt=arr=>{let d=0,t=0;(arr||[]).forEach(c=>c.items.forEach(i=>{if(i.freq==='daily'){t++;if(i.done)d++;}}));return[d,t];};const[wd,wt]=cnt(DATA.checklist.work),[hd,ht]=cnt(DATA.checklist.home);DATA.checklist.log=DATA.checklist.log||[];DATA.checklist.log.unshift({ts:Date.now(),text:`【${DATA.checklist.date}】出勤 ${wd}/${wt}・在宅 ${hd}/${ht} 完了`});DATA.checklist.log=DATA.checklist.log.slice(0,150);[...(DATA.checklist.work||[]),...(DATA.checklist.home||[])].forEach(c=>c.items.forEach(i=>{if(i.freq==='daily')i.done=false;}));DATA.checklist.date=fmtDate(today);return true;}return false;}
+async function clToggle(id){const f=clFindItem(id);if(!f)return;const it=f.i;const was=clItemDone(it);const y=window.scrollY;if(it.freq==='daily'){it.done=!it.done;if(it.done){it.lastDone=fmtDate(today);clLog(it.text);}}else{if(was){it.lastDone=null;it.done=false;}else{it.lastDone=fmtDate(today);it.done=true;clLog(it.text);}}await saveData(DATA);render();window.scrollTo(0,y);}
+async function clAddItem(key){const[mode,ci]=key.split('|');const el=app.querySelector(`[data-clitemin="${mode}|${ci}"]`);if(!el||!el.value.trim())return;const fsel=app.querySelector(`[data-clfreqin="${mode}|${ci}"]`);DATA.checklist[mode][+ci].items.push({id:'ck'+Date.now(),text:el.value.trim(),freq:fsel?fsel.value:'daily',done:false,lastDone:null});await saveData(DATA);render();}
+async function clDelItem(id){const f=clFindItem(id);if(!f)return;const cat=DATA.checklist[f.mode][f.ci];cat.items=cat.items.filter(i=>i.id!==id);await saveData(DATA);render();}
+async function clAddCat(mode){const el=app.querySelector(`[data-clcatin="${mode}"]`);if(!el||!el.value.trim())return;DATA.checklist[mode].push({cat:el.value.trim(),items:[]});await saveData(DATA);render();}
+async function clDelCat(key){const[mode,ci]=key.split('|');if(!confirm('このカテゴリを削除しますか？（中の項目も消えます）'))return;DATA.checklist[mode].splice(+ci,1);await saveData(DATA);render();}
+function adminTasks(){checklistRollover();const mode=state.taskMode||'work';const cl=DATA.checklist;const sections=cl[mode]||[];
+  const modeBar=`<div class="taskmode"><button class="${mode==='work'?'on':''}" data-taskmode="work">🧹 出勤時</button><button class="${mode==='home'?'on':''}" data-taskmode="home">💻 在宅時</button></div>`;
+  let d=0,t=0;sections.forEach(c=>c.items.forEach(i=>{if(i.freq==='daily'){t++;if(clItemDone(i))d++;}}));const pct=t?Math.round(d/t*100):0;
+  const prog=`<div class="clprog"><div class="clprog-bar"><i style="width:${pct}%"></i></div><span>${d}/${t} 完了（本日・毎日項目）</span></div>`;
+  const freqOpt=`<select data-clfreqin="__K__"><option value="daily">毎日</option><option value="weekly">週1</option><option value="monthly">月1</option></select>`;
+  const cats=sections.map((c,ci)=>`<div class="clcat"><div class="clcat-h"><span>${c.cat}</span><button class="clcat-del" data-cldelcat="${mode}|${ci}" title="カテゴリを削除">✕</button></div>${c.items.map(i=>{const done=clItemDone(i);const due=clDue(i);const fb=i.freq!=='daily'?`<span class="clfreq ${due.includes('⚠')?'over':''}">${i.freq==='weekly'?'週1':'月1'}・${due}</span>`:'';return `<label class="clitem ${done?'done':''}"><input type="checkbox" ${done?'checked':''} data-cltoggle="${i.id}"><span class="cltext">${i.text}${fb}</span><button class="clitem-del" data-cldelitem="${i.id}" title="削除">🗑</button></label>`}).join('')}<div class="cladd"><input placeholder="項目を追加" data-clitemin="${mode}|${ci}">${freqOpt.replace('__K__',mode+'|'+ci)}<button data-cladditem="${mode}|${ci}">＋</button></div></div>`).join('');
+  const addCat=`<div class="cladd" style="margin-top:12px"><input placeholder="新しいカテゴリ名" data-clcatin="${mode}"><button data-claddcat="${mode}">＋ カテゴリ</button></div>`;
+  const logHtml=(cl.log&&cl.log.length)?`<details class="cllog"><summary>📝 更新履歴（${cl.log.length}件）</summary>${cl.log.slice(0,80).map(l=>`<div class="cllog-i">${l.text}</div>`).join('')}</details>`:'';
+  return `<div class="note" style="margin-top:0;margin-bottom:12px">終わった項目にチェックを入れてください。<b>スタッフ全員の画面で共有</b>され、何が終わって何が残っているか一目で分かります。毎日リセットされ、履歴が残ります。週1・月1の項目は前回からの日数と残り日数が出ます。</div>${modeBar}${prog}${cats}${addCat}${logHtml}`;
+}
 function renderAdmin(){
   if(!state.adminAuthed)return renderStaffLogin();
+  if(checklistRollover())saveData(DATA);
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
-  const tabs=[['bookings','予約'],['calendar','カレンダー'],['schedule','シフト'],['customers','顧客'],['homedisp','ホーム表示'],['menu','メニュー'],['staff','スタッフ'],['posts','投稿'],['broadcast','配信'+(unsent?`(${unsent})`:'')],['campaigns','告知'],['feedback','ご意見'],['sales','売上'],['settings','設定']];
-  let inner=({bookings:adminBookings,calendar:adminCalendar,schedule:adminSchedule,customers:adminCustomers,homedisp:adminHomeDisplay,menu:adminMenu,staff:adminStaff,posts:adminPosts,broadcast:adminBroadcast,campaigns:adminCampaigns,feedback:adminFeedback,sales:adminSales,settings:adminSettings}[state.adminTab])();
+  const tabs=[['tasks','毎日のタスク'],['bookings','予約'],['calendar','カレンダー'],['schedule','シフト'],['customers','顧客'],['homedisp','ホーム表示'],['menu','メニュー'],['staff','スタッフ'],['posts','投稿'],['broadcast','配信'+(unsent?`(${unsent})`:'')],['campaigns','告知'],['feedback','ご意見'],['sales','売上'],['settings','設定']];
+  let inner=({tasks:adminTasks,bookings:adminBookings,calendar:adminCalendar,schedule:adminSchedule,customers:adminCustomers,homedisp:adminHomeDisplay,menu:adminMenu,staff:adminStaff,posts:adminPosts,broadcast:adminBroadcast,campaigns:adminCampaigns,feedback:adminFeedback,sales:adminSales,settings:adminSettings}[state.adminTab])();
   app.innerHTML=`<div class="fade"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div class="eyebrow" style="margin:0">Salon Admin</div><button class="switch" id="adm-out">ログアウト</button></div><div class="atabs">${tabs.map(t=>`<button data-at="${t[0]}" class="${state.adminTab===t[0]?'active':''}">${t[1]}</button>`).join('')}</div>${adminGuide(state.adminTab)}${inner}</div>`;
   byId('adm-out').onclick=()=>{state.adminAuthed=false;setStaffSession(false);go('home')};
   app.querySelectorAll('[data-at]').forEach(b=>b.onclick=()=>{state.adminTab=b.dataset.at;state.custOpen=null;render()});
+  app.querySelectorAll('[data-cltoggle]').forEach(cb=>cb.onchange=()=>clToggle(cb.dataset.cltoggle));
+  app.querySelectorAll('[data-cldelitem]').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();clDelItem(b.dataset.cldelitem);});
+  app.querySelectorAll('[data-cladditem]').forEach(b=>b.onclick=()=>clAddItem(b.dataset.cladditem));
+  app.querySelectorAll('[data-claddcat]').forEach(b=>b.onclick=()=>clAddCat(b.dataset.claddcat));
+  app.querySelectorAll('[data-cldelcat]').forEach(b=>b.onclick=()=>clDelCat(b.dataset.cldelcat));
+  app.querySelectorAll('[data-taskmode]').forEach(b=>b.onclick=()=>{state.taskMode=b.dataset.taskmode;render()});
   bindAdmin();
 }
 function adminCalendar(){
@@ -1613,7 +1684,7 @@ function shiftMonthList(){
     const sh=effectiveShift(sid,ds);const on=sh.on&&sh.ranges.length;const r0=on?sh.ranges[0]:{start:bs,end:be};const r1=on&&sh.ranges[1]?sh.ranges[1]:null;
     const selT=(i,fld,val)=>{let o='';for(let h=OPEN_HOUR;h<=LAST_RECEPTION;h++)o+=`<option value="${h}" ${val===h?'selected':''}>${gpad(h)}:00</option>`;return `<select data-drng="${ds}|${i}|${fld}" class="${fld==='start'?'mst':'met'}">${o}</select>`;};
     const times=on?`<div class="mtimes"><div class="mtrow">${selT(0,'start',r0.start)}<span class="tl">〜</span>${selT(0,'end',r0.end)}${r1?'':`<button class="addrng" data-addrng="${ds}" title="間で抜ける時間を作る">＋抜け</button>`}</div>${r1?`<div class="mtrow">${selT(1,'start',r1.start)}<span class="tl">〜</span>${selT(1,'end',r1.end)}<button class="rmrng" data-rmrng="${ds}">✕</button></div>`:''}</div>`:'';
-    rows+=`<div class="mlrow ${on?'':'off'}"><div class="mlr-top"><span class="mld">${d}日(${DOW[dow]})</span><button class="mtgl ${on?'':'offb'}" data-dayoff="${ds}">${on?'出勤':'休み'}</button></div>${times}</div>`;
+    rows+=`<div class="mlrow ${on?'':'off'}"><div class="mlr-top"><span class="mld">${d}日(${DOW[dow]})</span><div class="wk-toggle"><button class="wk ${on?'on':''}" data-setday="${ds}|on">出勤</button><button class="wk off ${on?'':'on'}" data-setday="${ds}|off">休み</button></div></div>${times}</div>`;
   }
   return `<div class="chips" style="margin-bottom:12px">${chips}</div>${nav}${qf}<div class="note" style="margin-bottom:8px">各日の右の「<b>出勤／休み</b>」を押すとワンクリックで切り替わります。出勤の日は開始〜終了の時刻を選びます。お昼などで<b>間に抜ける時間</b>がある日は「<b>＋抜け</b>」を押すと、もう1つの時間帯（例：9-12と14-18）を作れます。1日から月末までこの画面で完結、入力中に画面は動きません。</div><div class="mlist">${rows}</div><button class="btn btn-ghost" id="ics-month" style="width:100%;margin-top:14px">📅 今月（${mo+1}月）の全員のシフトをGoogleカレンダーへ出力</button><div class="note" style="margin-top:6px">押すとファイル（.ics）が保存されます。Googleカレンダー →「設定」→「インポート/エクスポート」から取り込めます。</div>`;
 }
@@ -1931,6 +2002,7 @@ function bindAdmin(){
   const icsm=byId('ics-month');if(icsm)icsm.onclick=downloadMonthICS;
   app.querySelectorAll('[data-drng]').forEach(s=>s.onchange=()=>dRngSet(s));
   app.querySelectorAll('[data-dayoff]').forEach(b=>b.onclick=()=>dDayOff(b.dataset.dayoff));
+  app.querySelectorAll('[data-setday]').forEach(b=>b.onclick=()=>dSetDay(b.dataset.setday));
   app.querySelectorAll('[data-sdtoggle]').forEach(b=>b.onclick=()=>salonDayToggle(b.dataset.sdtoggle));
   app.querySelectorAll('[data-addrng]').forEach(b=>b.onclick=()=>dAddRng(b.dataset.addrng));
   app.querySelectorAll('[data-rmrng]').forEach(b=>b.onclick=()=>dRmRng(b.dataset.rmrng));
@@ -2090,6 +2162,7 @@ function saveSoon(){clearTimeout(_saveT);_saveT=setTimeout(()=>{saveData(DATA);}
 function _matRanges(sid,ds){DATA.shiftOverrides[sid]=DATA.shiftOverrides[sid]||{};let ov=DATA.shiftOverrides[sid][ds];const eff=effectiveShift(sid,ds);if(!ov||ov.off||!ov.ranges||!ov.ranges.length){ov={ranges:(eff.on&&eff.ranges.length?eff.ranges.map(r=>({start:r.start,end:r.end})):[{start:state.brushStart??10,end:state.brushEnd??19}])};DATA.shiftOverrides[sid][ds]=ov;}return ov;}
 function dRngSet(sel){const[ds,i,fld]=sel.dataset.drng.split('|');const sid=state.schedStaff||'s1';const ov=_matRanges(sid,ds);const idx=parseInt(i);if(!ov.ranges[idx])ov.ranges[idx]={start:OPEN_HOUR,end:LAST_RECEPTION};ov.ranges[idx][fld]=parseInt(sel.value);const rg=ov.ranges[idx];if(rg.start>=rg.end){if(fld==='start')rg.end=Math.min(LAST_RECEPTION,rg.start+1);else rg.start=Math.max(OPEN_HOUR,rg.end-1);const sib=sel.closest('.mtrow').querySelector(fld==='start'?'[data-drng$="end"]':'[data-drng$="start"]');if(sib)sib.value=String(fld==='start'?rg.end:rg.start);}saveSoon();}
 function dDayOff(ds){const sid=state.schedStaff||'s1';DATA.shiftOverrides[sid]=DATA.shiftOverrides[sid]||{};const eff=effectiveShift(sid,ds);const isOn=eff.on&&eff.ranges.length;if(isOn)DATA.shiftOverrides[sid][ds]={off:true};else DATA.shiftOverrides[sid][ds]={ranges:[{start:state.brushStart??10,end:state.brushEnd??19}]};saveSoon();render();}
+function dSetDay(key){const[ds,v]=key.split('|');const sid=state.schedStaff||'s1';DATA.shiftOverrides[sid]=DATA.shiftOverrides[sid]||{};if(v==='off'){DATA.shiftOverrides[sid][ds]={off:true};}else{const eff=effectiveShift(sid,ds);const ranges=(eff.on&&eff.ranges.length)?eff.ranges.map(r=>({start:r.start,end:r.end})):[{start:state.brushStart??10,end:state.brushEnd??19}];DATA.shiftOverrides[sid][ds]={ranges};}saveSoon();render();}
 function dAddRng(ds){const sid=state.schedStaff||'s1';const ov=_matRanges(sid,ds);const last=ov.ranges[ov.ranges.length-1];const ns=Math.min(LAST_RECEPTION-1,(last?last.end:OPEN_HOUR)+1);ov.ranges.push({start:ns,end:Math.min(LAST_RECEPTION,ns+2)});saveSoon();render();}
 function dRmRng(ds){const sid=state.schedStaff||'s1';const ov=_matRanges(sid,ds);ov.ranges=ov.ranges.slice(0,1);saveSoon();render();}
 async function offToday(){const sid=state.schedStaff||'s1';const ds=fmtDate(today);const sh=effectiveShift(sid,ds);const isOff=!(sh.on&&sh.ranges.length);DATA.shiftOverrides[sid]=DATA.shiftOverrides[sid]||{};
