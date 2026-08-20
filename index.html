@@ -38,7 +38,6 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .gi-ok{color:#fff;background:var(--sage);border-color:var(--sage);font-weight:800}
 .gi-x{color:#fff;background:var(--rose);border-color:var(--rose);font-weight:800}
 .tagline{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-top:7px;font-weight:600;}
-.langsel{position:absolute;top:24px;left:0;font-family:inherit;font-size:11.5px;font-weight:600;color:var(--navy);background:var(--card);border:1px solid var(--line);border-radius:100px;padding:7px 9px;cursor:pointer;max-width:108px}
 .acct{position:absolute;top:22px;right:0;display:inline-flex;align-items:center;gap:6px;background:var(--navy);color:#fff;border:none;font-family:inherit;font-size:12px;font-weight:600;padding:8px 13px 8px 11px;border-radius:100px;cursor:pointer;box-shadow:0 4px 14px var(--shadow)}
 .acct svg{width:16px;height:16px}
 .acctcol{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
@@ -59,12 +58,13 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .btn{font-family:inherit;font-size:15px;font-weight:600;padding:15px 22px;border-radius:13px;border:none;cursor:pointer;transition:all .25s}
 .btn-primary{background:var(--navy);color:var(--paper);flex:1}.btn-primary:hover:not(:disabled){background:var(--gold)}.btn-primary:disabled{opacity:.32;cursor:not-allowed}
 .btn-ghost{flex:0 0 auto;background:transparent;border:1px solid var(--line);color:var(--navy)}.btn-ghost:hover{border-color:var(--navy)}
-.hero-home{background:var(--navy);border-radius:22px;padding:30px 26px;color:var(--paper);position:relative;overflow:hidden;margin-bottom:22px;animation:rise .5s both}
+.hero-home{background:var(--navy);border-radius:22px;padding:30px 26px 70px;color:var(--paper);position:relative;overflow:hidden;margin-bottom:22px;animation:rise .5s both;min-height:200px}
 .hero-home::after{content:"";position:absolute;right:-40px;top:-40px;width:170px;height:170px;border-radius:50%;background:rgba(176,137,74,.18)}
 .hero-home .hh-tag{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold-soft);font-weight:600}
-.hero-home h2{font-family:"Fraunces",serif;font-size:26px;font-weight:500;margin:8px 0 6px;line-height:1.3}
-.hero-home p{font-size:13px;opacity:.85;line-height:1.7;margin-bottom:20px;max-width:92%}
+.hero-home h2{font-family:"Fraunces",serif;font-size:26px;font-weight:500;margin:8px 0 6px;line-height:1.3;position:relative;z-index:1}
+.hero-home p{font-size:13px;opacity:.85;line-height:1.7;margin-bottom:0;max-width:80%;position:relative;z-index:1}
 .hero-home .btn{background:var(--gold);color:var(--navy);display:inline-block;padding:13px 26px;border-radius:100px}.hero-home .btn:hover{background:#fff}
+.btn-book-hero{position:absolute!important;bottom:20px!important;right:20px!important;z-index:2;background:var(--gold);color:var(--navy);padding:12px 20px;border-radius:100px;font-weight:700;font-size:14px;border:none;font-family:inherit;cursor:pointer;box-shadow:0 4px 14px rgba(176,137,74,.3)}
 .sec-label{display:flex;align-items:center;justify-content:space-between;margin:26px 0 14px}
 .sec-label .t{font-family:"Fraunces",serif;font-size:19px;color:var(--navy);position:relative;padding-left:14px}
 .sec-label .t::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:5px;height:20px;background:var(--gold);border-radius:2px}
@@ -529,11 +529,6 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .histd .histd-b{padding:0 16px 16px;border-top:1px solid var(--line)}
 .doccard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
 .doc-t{font-weight:700;color:var(--navy);margin-bottom:10px;font-size:14px}
-.langbar{background:var(--navy);border-radius:14px;padding:12px 14px;margin-bottom:14px}
-.langbar-ic{display:block;font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.05em;margin-bottom:8px}
-.langbtns{display:flex;flex-wrap:wrap;gap:6px}
-.langbtn{border:1px solid rgba(255,255,255,.25);background:transparent;color:var(--paper);border-radius:999px;padding:6px 13px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer}
-.langbtn.on{background:var(--gold);color:var(--navy);border-color:var(--gold)}
 .docfile-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .docfile-row .dfn{flex:0 0 auto;font-size:12px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .docfile-row .dflabel{flex:1;min-width:0;font-family:inherit;font-size:12px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:#fff}
@@ -866,12 +861,12 @@ const optTotal=arr=>optItemsOf(arr).reduce((s,o)=>s+(o.price||0),0);
 const optChips=(arr,attr)=>{const list=(S().options||[]);if(!list.length)return '<div class="note" style="margin:0">追加できるオプションはありません。</div>';return `<div class="optchips">${list.map(o=>`<button class="optchip ${(arr||[]).includes(o.id)?'on':''}" data-${attr}="${o.id}">${o.name}<span>${o.price?'+'+yen(o.price):'無料'}${o.min?'・'+o.min+'分':''}</span></button>`).join('')}</div>`};
 const nav=byId('nav');
 function unreadCount(){if(!state.mpPhone)return 0;const c=DATA.customers[normPhone(state.mpPhone)];return c?(c.notices||[]).filter(n=>!n.read).length:0}
-function updateNav(){const map={home:'nav_home',book:'nav_book',gallery:'nav_gallery',share:'nav_share',board:'nav_board',shop:'nav_shop',staff:'nav_staff',care:'nav_care'};nav.querySelectorAll('button').forEach(b=>{b.classList.toggle('active',b.dataset.view===state.view);if(map[b.dataset.view])b.textContent=t(map[b.dataset.view])});
+function updateNav(){const map={home:'nav_home',book:'nav_book',board:'nav_board',shop:'nav_shop'};nav.querySelectorAll('button').forEach(b=>{b.classList.toggle('active',b.dataset.view===state.view);if(map[b.dataset.view])b.textContent=t(map[b.dataset.view])});
   const acct=byId('acctbtn');if(acct)acct.classList.toggle('active',state.view==='mypage');
   const lbl=byId('acctlbl');const pts=byId('acctpts');const c=state.mpPhone&&DATA.customers[normPhone(state.mpPhone)];if(lbl)lbl.textContent=c?(c.name+t('sama')):t('account');if(pts)pts.textContent=c?('★ '+pointBalance(c.phone).toLocaleString()+'pt'):'';
   const bd=byId('acctbadge');if(bd){const u=unreadCount();if(u){bd.style.display='inline-grid';bd.textContent=u}else bd.style.display='none'}
   const se=byId('staff-entry');if(se)se.textContent=t('staffEntry');
-  const ls=byId('langsel');if(ls){if(!ls.dataset.built){ls.innerHTML=LANGS.map(l=>`<option value="${l[0]}">${l[1]}</option>`).join('');ls.dataset.built='1';ls.onchange=()=>setLang(ls.value)}ls.value=state.lang}}
+}
 async function setLang(v){state.lang=v;document.documentElement.lang=v;try{if(window.storage)await window.storage.set('salon:lang',v,false)}catch(e){}render()}
 async function loadLang(){try{if(window.storage){const r=await window.storage.get('salon:lang',false);if(r&&r.value)return r.value}}catch(e){}return 'ja'}
 function render(){updateNav();updateBack();if(state.view==='home')renderHome();else if(state.view==='book')renderCustomer();else if(state.view==='gallery')renderGallery();else if(state.view==='share')renderShare();else if(state.view==='board')renderBoard();else if(state.view==='staff')renderStaffIntro();else if(state.view==='care')renderCareDocs();else if(state.view==='mypage')renderMypage();else renderAdmin();}
@@ -895,13 +890,13 @@ function renderHome(){
     ${s.catalogUrl?`<a class="linkbtn" href="${s.catalogUrl}" target="_blank"><span class="ic">📖</span>カタログを見る</a>`:''}
     ${s.shopUrl?`<a class="linkbtn" href="${s.shopUrl}" target="_blank"><span class="ic">🛍️</span>オンラインショップ</a>`:''}
     ${s.lineUrl?`<a class="linkbtn" href="${s.lineUrl}" target="_blank"><span class="ic">💬</span>公式LINE</a>`:''}</div>`;
-  const heroImg=(s.theme&&s.theme.heroImg)||'';const heroStyle=heroImg?` style="background-image:linear-gradient(rgba(30,42,71,.55),rgba(30,42,71,.75)),url('${heroImg}');background-size:cover;background-position:center"`:'';
+  const heroImg=(s.theme&&s.theme.heroImg)||'';const heroStyle=heroImg?` style="background-image:url('${heroImg}');background-size:cover;background-position:center;min-height:340px"`:'';
   const rk=(s.ranking||[]).filter(r=>r&&(r.name||r.img)).slice(0,3);const medals=['🥇','🥈','🥉'];
   const rankHtml=rk.length?`<div class="sec-label"><span class="t">今月の人気商品ランキング</span></div><div class="rankgrid">${rk.map((r,i)=>{const link=r.url||'';const op=link?`<a class="rankcard" href="${link}" target="_blank" style="text-decoration:none;display:block">`:`<div class="rankcard">`;const cl=link?'</a>':'</div>';return `${op}<div class="rankmedal">${medals[i]||''}</div><div class="rankimg"${r.img?` style="background-image:url('${r.img}')"`:''}></div><div class="rankname">${r.name||''}</div>${cl}`}).join('')}</div>`:'';
   const recs=(s.shopRecs||[]).filter(r=>r&&(r.name||r.img)).slice(0,3);
   const recsHtml=recs.length?`<div class="sec-label"><span class="t">オンラインショップ おすすめ商品</span>${s.shopUrl?`<a class="more" href="${s.shopUrl}" target="_blank">ショップへ</a>`:''}</div><div class="rankgrid">${recs.map(r=>{const link=r.url||s.shopUrl||'';return `<a class="rankcard" ${link?`href="${link}" target="_blank"`:''} style="text-decoration:none;display:block"><div class="rankimg"${r.img?` style="background-image:url('${r.img}')"`:''}></div><div class="rankname">${r.name||''}</div></a>`}).join('')}</div>`:'';
   const reviewUrl=s.reviewUrl||'https://g.page/r/CUd3JdEySI5iEAE/review';
-  const socialHtml=`<div class="sec-label"><span class="t">クチコミ</span></div><div class="socialgrid"><a class="socialcard" href="${reviewUrl}" target="_blank" style="grid-column:1/-1"><span class="ic">⭐</span><span class="st">口コミを書く</span><span class="ss">Googleでレビュー</span></a></div><div class="review-gift">🎁 Googleの口コミを書いて、ご来店時に「書きました」とスタッフへお見せくださった方に、<b>パックを3枚プレゼント</b>いたします。</div>`;
+  const socialHtml=`<div class="sec-label"><span class="t">クチコミ</span></div><div class="socialgrid"><a class="socialcard" href="${reviewUrl}" target="_blank" style="grid-column:1/-1"><span class="ic">✍️</span><span class="st">Googleで口コミを書く</span><span class="ss">投稿するだけでパック3枚プレゼント 🎁</span></a></div>`;
   const mapAddr=s.address||'大阪府大阪市北区西天満1-2-25 スクエア北浜3階';
   const dirUrl=s.mapUrl||('https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(mapAddr));
   const mapHtml=`<a href="${dirUrl}" target="_blank" style="text-decoration:none;display:block"><div style="position:relative;border-radius:14px;overflow:hidden;margin-bottom:10px;border:1px solid var(--line)"><iframe class="mapembed" loading="lazy" src="https://maps.google.com/maps?q=34.6933,135.5088&z=16&hl=ja&output=embed"></iframe><div style="position:absolute;inset:0"></div></div></a><a class="linkbtn" href="${dirUrl}" target="_blank" style="margin-bottom:10px"><span class="ic">🧭</span>ここへ行く（Googleマップで道案内）</a>`;
@@ -909,7 +904,7 @@ function renderHome(){
   const menuPics=DATA.services.filter(s2=>s2.cat!=='option').slice(0,6);
   const menuTiles=menuPics.length?`<div class="sec-label"><span class="t">メニュー</span><button class="more" id="menumore">すべて見る →</button></div><div class="mtile-grid">${menuPics.map(s2=>`<button class="mtile" data-mtile="1"><div class="mtile-img" style="${s2.img?`background-image:url('${s2.img}')`:'background:linear-gradient(135deg,var(--navy),#33436b)'}">${s2.img?'':'<span class="mtile-mono">Vi5</span>'}</div><div class="mtile-b"><div class="mtile-n">${svcName(s2)}</div><div class="mtile-p">${s2.price?yen(s2.price):'—'}</div></div></button>`).join('')}</div>`:'';
   app.innerHTML=`<div class="fade">${bannerHtml}
-    <div class="hero-home"${heroStyle}><div class="hh-tag">Vi5 北浜</div><h2>${TX('heroTitle','バイタリティ溢れる毎日を。')}</h2><p>${TX('heroSub','まつげ・眉・ピーリング・メイク。あなたに似合うを、ここから。')}</p><button class="btn" id="hbook">${t('bookNow')}</button></div>
+    <div class="hero-home"${heroStyle}>${TX('heroTitle','')?`<h2>${TX('heroTitle','')}</h2>`:''} ${TX('heroSub','')?`<p>${TX('heroSub','')}</p>`:''}<button class="btn btn-book-hero" id="hbook">${t('bookNow')}</button></div>
     ${menuTiles}
     ${rankHtml}
     ${recsHtml}
