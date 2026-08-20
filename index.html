@@ -541,6 +541,14 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .mtile-b{padding:9px 3px 0}
 .mtile-n{font-size:13px;font-weight:700;color:var(--navy);line-height:1.4}
 .mtile-p{font-size:12px;color:var(--gold);font-weight:700;margin-top:2px}
+.login-twobtn{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0 18px}
+.login-panel{background:#fff;border:2px solid var(--line);border-radius:18px;padding:20px 16px;text-align:center;cursor:pointer;transition:.15s}
+.login-panel:hover,.login-panel.active{border-color:var(--navy)}
+.login-panel.gold{background:var(--navy);border-color:var(--navy)}
+.login-panel .lp-head{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px}
+.login-panel.gold .lp-head{color:var(--gold)}
+.login-panel .lp-sub{font-size:12px;color:var(--ink-soft);line-height:1.5}
+.login-panel.gold .lp-sub{color:#CDD3DE}
 </style>
 </head>
 <body>
@@ -1228,7 +1236,7 @@ function stepInfo(){
   app.innerHTML=stepsBar(3)+`<div class="fade"><div class="eyebrow">Step 04</div><div class="h-title">${t('confirmT')}</div><div class="h-sub">${t('confirmSub')}</div>${recog}
     <div class="summary"><div class="sum-row"><span class="k">メニュー</span><span class="sum-list">${itemsLines(b.staff&&b.staff.id)}</span></div><div class="sum-row"><span class="k">所要時間</span><span class="v">約${cartMin()}分</span></div><div class="sum-row"><span class="k">担当</span><span class="v">${b.staff.name}</span></div><div class="sum-row"><span class="k">日時</span><span class="v">${dateLabel()}</span></div><div class="sum-row"><span class="k">小計</span><span class="v">${yen(gross)}</span></div>${rate>0?`<div class="sum-row"><span class="k">${dd.label}</span><span class="v disc">-${yen(gross-afterDisc)}</span></div>`:''}${coupon>0?`<div class="sum-row"><span class="k">クーポン</span><span class="v disc">-${yen(coupon)}</span></div>`:''}${use>0?`<div class="sum-row"><span class="k">ポイント利用</span><span class="v pt">-${yen(use)}</span></div>`:''}<div class="sum-row sum-total"><span class="k">お支払い</span><span class="v">${yen(payment)}</span></div></div>
     <div class="field"><label>お名前</label><input id="f-name" value="${b.name||(known?known.name:'')}" placeholder="山田 花子"></div>
-    <div class="field"><label>電話番号 <span class="opt">(登録済みなら自動で会員情報を表示)</span></label><input id="f-phone" value="${b.phone}" inputmode="tel" placeholder="090-1234-5678"></div>
+    <div class="field"><label>電話番号 <span class="opt">(登録済みなら自動で会員情報を表示)</span></label><input id="f-phone" value="${b.phone}" inputmode="tel" placeholder="09012345678（ハイフンなし）"></div>
     ${useField}${newFields}
     <div class="field"><label>ご来店ペース <span class="opt">(毎回お伺いします)</span></label><div class="chips">${hchips}</div><div class="note" style="margin-top:6px">⚡ 急いでいる：できるだけ手早い施術・スピードを重視してご案内します。　🌿 特に急いでいない：ゆっくり丁寧に対応させていただきます。</div></div>
     <div class="field"><label>同伴について <span class="opt">(該当があれば選択)</span></label><div class="chips">${chips}</div></div>
@@ -1337,11 +1345,11 @@ function stepInfoPair(){
     <div class="subhead" style="margin:14px 0 8px">オプション（お二人目）</div>${optChips(state.optB,'optb')}
     <div class="subhead" style="margin:14px 0 8px">お一人目（ご予約者）</div>
     <div class="field"><label>お名前</label><input id="f-name" value="${b.name||(knownA?knownA.name:'')}" placeholder="山田 花子"></div>
-    <div class="field"><label>電話番号 <span class="opt">(登録済みなら自動表示)</span></label><input id="f-phone" value="${b.phone}" inputmode="tel" placeholder="090-1234-5678"></div>
+    <div class="field"><label>電話番号 <span class="opt">(登録済みなら自動表示)</span></label><input id="f-phone" value="${b.phone}" inputmode="tel" placeholder="09012345678（ハイフンなし）"></div>
     ${useField}${newA}
     <div class="subhead" style="margin:14px 0 8px">お二人目</div>
     <div class="field"><label>お名前</label><input id="f-b2name" value="${b.b2name||(knownB?knownB.name:'')}" placeholder="同伴の方のお名前"></div>
-    <div class="field"><label>電話番号</label><input id="f-b2phone" value="${b.b2phone}" inputmode="tel" placeholder="090-1234-5678"></div>
+    <div class="field"><label>電話番号</label><input id="f-b2phone" value="${b.b2phone}" inputmode="tel" placeholder="09012345678（ハイフンなし）"></div>
     ${!knownB&&normPhone(b.b2phone).length>=10?`<div class="note" style="color:var(--gold)">お二人目も電話番号で登録します（仮パスワード：電話番号の下4桁）。</div>`:''}
     <div class="field"><label>ご来店ペース <span class="opt">(おふたり共通)</span></label><div class="chips">${hchips}</div><div class="note" style="margin-top:6px">⚡ 急いでいる：手早い施術・スピード重視。　🌿 特に急いでいない：ゆっくり丁寧に。</div></div>
     <div class="field"><label>同伴について <span class="opt">(該当があれば選択)</span></label><div class="chips">${chips}</div></div>
@@ -1458,16 +1466,27 @@ function renderMypage(){
   if(!state.mpPhone){
     const lineU=(S().lineUrl)||'';
     const knownP=localGet('salon:knownphone');const knownN=localGet('salon:knownname')||'';
-    app.innerHTML=`<div class="fade"><div class="eyebrow">Member</div><div class="h-title">${knownN?'おかえりなさい':'マイページ'}</div><div class="h-sub">${knownN?`<b>${knownN}</b> 様、暗証番号（パスワード）を入れてログインしてください。`:'電話番号と暗証番号（パスワード）でログインできます。一度ログインすると、次回からは暗証番号を入れるだけで入れます。'}</div><div class="loginbox"><div class="field"><label>電話番号</label><input id="mp-phone" inputmode="tel" value="${knownP||''}" placeholder="090-1234-5678"></div><div class="field"><label>暗証番号（パスワード）</label><input id="mp-pw" type="password" inputmode="numeric" placeholder="暗証番号"></div><button class="btn btn-primary" id="mp-login" style="width:100%">ログイン</button>
-      <div class="reg-divider"><span>はじめての方</span></div>
-      <button class="btn" id="mp-register" style="width:100%;background:var(--gold);border-color:var(--gold);color:#fff">＋ 新規ご登録（ご予約して登録・500pt進呈🎁）</button>
-      ${knownP?`<button class="btn btn-ghost" id="mp-clearknown" style="width:100%;margin-top:10px">別の番号でログイン</button>`:''}
-      <div class="signup-promo">🎁 <b>新規ご登録で500ポイント</b>プレゼント！<br>さらに、これまでにご来店・ご紹介いただいているお客様には、<b>ご登録後1週間以内</b>に、これまでのご来店回数などをもとに<b>ポイントを追加で付与</b>いたします。</div>
-      <div class="note" style="margin:14px 0 0">${knownN?'':'マイページは<b>電話番号とパスワード</b>でログインできます。はじめての方は上の「新規ご登録」から、お名前・電話番号・生年月日・パスワードをご登録ください（登録は一度だけ）。<br><br>'}<b>パスワードをお忘れの方</b>は、下の公式LINEへご連絡ください。新しいパスワードをお渡しします。</div>
-      ${lineU?`<a class="btn btn-ghost" href="${lineU}" target="_blank" style="width:100%;display:block;text-align:center;text-decoration:none;margin-top:10px">💬 パスワードをお忘れの方・お問い合わせ（公式LINE）</a>`:''}</div></div>`;
-    const doLogin=async()=>{const phone=normPhone(byId('mp-phone').value);const pw=byId('mp-pw').value;if(!phone){alert('電話番号をご入力ください。');return;}if(!pw){alert('暗証番号（パスワード）をご入力ください。');return;}try{await doCustomerLogin(phone,pw);}catch(e){if(e.status===404)alert('この電話番号の登録が見つかりませんでした。番号をもう一度ご確認ください。');else if(e.status===401)alert('暗証番号（パスワード）が違います。もう一度お試しください。');else alert('ただいまサーバーに接続できませんでした。電波の良い場所で、少し時間をおいてからもう一度お試しください。');}};
+    app.innerHTML=`<div class="fade"><div class="eyebrow">Member</div><div class="h-title">${knownN?'おかえりなさい':'マイページ'}</div>
+    <div class="login-twobtn">
+      <div class="login-panel" id="panel-login"><div class="lp-head">👤 ログイン</div><div class="lp-sub">すでに会員の方</div></div>
+      <div class="login-panel gold" id="panel-register"><div class="lp-head">✨ 新規登録</div><div class="lp-sub">はじめての方<br>登録で500pt🎁</div></div>
+    </div>
+    <div class="loginbox">
+      ${knownN?`<div class="note" style="margin:0 0 14px"><b>${knownN}</b> 様、パスワードを入れてログインしてください。</div>`:''}
+      <div class="field"><label>電話番号（ハイフンなし）</label><input id="mp-phone" inputmode="tel" value="${(knownP||'').replace(/-/g,'')}" placeholder="09012345678"></div>
+      <div class="field"><label>パスワード</label><input id="mp-pw" type="password" placeholder="パスワード"></div>
+      <button class="btn btn-primary" id="mp-login" style="width:100%">ログイン</button>
+      ${knownP?`<button class="btn btn-ghost" id="mp-clearknown" style="width:100%;margin-top:8px">別の番号でログイン</button>`:''}
+      <div class="note" style="margin:14px 0 0"><b>パスワードをお忘れの方</b>は、下の公式LINEへご連絡ください。</div>
+      ${lineU?`<a class="btn btn-ghost" href="${lineU}" target="_blank" style="width:100%;display:block;text-align:center;text-decoration:none;margin-top:8px">💬 パスワードをお忘れの方・お問い合わせ（公式LINE）</a>`:''}
+    </div>
+    <div class="signup-promo">🎁 <b>新規ご登録で500ポイント</b>プレゼント！<br>さらに、これまでにご来店・ご紹介いただいているお客様には、<b>ご登録後1週間以内</b>に、これまでのご来店回数などをもとに<b>ポイントを追加で付与</b>いたします。</div>
+    </div>`;
+    const doLogin=async()=>{const raw=byId('mp-phone').value;const phone=normPhone(raw);const pw=byId('mp-pw').value;if(!phone){alert('電話番号をご入力ください（ハイフンなし）。');return;}if(!pw){alert('パスワードをご入力ください。');return;}try{await doCustomerLogin(phone,pw);}catch(e){if(e.status===404)alert('この電話番号の登録が見つかりませんでした。番号をもう一度ご確認ください。');else if(e.status===401)alert('パスワードが違います。もう一度お試しください。');else alert('ただいまサーバーに接続できませんでした。少し時間をおいてからもう一度お試しください。');}};
     byId('mp-login').onclick=doLogin;
     const _reg=byId('mp-register');if(_reg)_reg.onclick=()=>startBooking();
+    const _pl=byId('panel-login');if(_pl)_pl.onclick=()=>{const lb=document.querySelector('.loginbox');if(lb)lb.scrollIntoView({behavior:'smooth'});byId('mp-phone').focus();};
+    const _pr=byId('panel-register');if(_pr)_pr.onclick=()=>startBooking();
     const pwEl=byId('mp-pw');if(pwEl)pwEl.onkeydown=e=>{if(e.key==='Enter')doLogin()};
     const ck=byId('mp-clearknown');if(ck)ck.onclick=()=>{localDel('salon:knownphone');localDel('salon:knownname');render()};
     return;}
@@ -1837,7 +1856,7 @@ function adminCustomers(){
   const cards=entries.map((c,i)=>{const fav=favMenus(c.phone).slice(0,3);const vc=custBookings(c.phone).length;const nr=needsRecord(c);let bdg='';const dl=custDiscount(c).label;if(dl)bdg+=`<span class="tag disc">${dl}</span>`;if(usedPoints(c.phone))bdg+=`<span class="tag">pt利用あり</span>`;if(c.referredBy&&DATA.customers[c.referredBy])bdg+=`<span class="tag">紹介入会：${DATA.customers[c.referredBy].name}様</span>`;if(couponVal(c)>0)bdg+=`<span class="tag disc">クーポン¥${couponVal(c)}</span>`;
     return `<div class="cust ${nr?'needrec':''}" data-cust="${normPhone(c.phone)}" style="animation-delay:${i*.03}s">${nr?'<div class="nr-flag">📝 施術記録が未入力です</div>':''}<div class="cust-top"><div><div class="cust-name">${c.name}</div><div class="cust-phone">${c.phone} ・ 来店${vc}回${c.birthday?` ・ 🎂${bdayLabel(c.birthday)}`:''}</div></div><div class="cust-pt"><div class="n">${pointBalance(c.phone).toLocaleString()}</div><div class="l">pt</div></div></div>${fav.length?`<div class="cust-fav">よく選ぶ：<b>${fav.join('、')}</b></div>`:''}${bdg?`<div class="cust-badges">${bdg}</div>`:''}</div>`}).join('');
   const importUI=`<div class="addform" style="margin-bottom:14px"><div class="subhead" style="margin:0 0 10px">📥 CSVから顧客を一括取り込み（RESERVA等）</div>${state.importStage==='map'?impMapUI():`<label class="fileinput">📄 CSVファイルを選ぶ<input type="file" id="imp-file" accept=".csv,text/csv"></label><div class="note" style="margin-top:8px">RESERVAの「顧客データCSV」または「予約一覧CSV」を選んでください。氏名・電話番号があれば取り込めます。（文字化けする場合も自動で調整します）</div>`}</div>`;
-  const newCustUI=`<button class="btn btn-primary" id="cust-newbtn" style="width:100%;margin:0 0 12px">＋ 新規のお客様を登録（予約なしでOK）</button>${state.custNew?`<div class="addform" style="margin-bottom:14px"><div class="subhead" style="margin:0 0 10px">新規のお客様を登録</div><div class="field"><label>お名前</label><input id="nc-name" placeholder="例：山田 花子"></div><div class="field"><label>電話番号</label><input id="nc-phone" inputmode="tel" placeholder="090-1234-5678"></div><div class="field"><label>生年月日 <span class="opt">(お誕生日特典に使います)</span></label><input id="nc-bday" type="date"></div><div class="field"><label>パスワード <span class="opt">(空欄なら電話番号の下4桁。お客様が後で変更できます)</span></label><input id="nc-pw" placeholder="任意"></div><div class="note" style="margin:0 0 10px">登録特典として <b>${CONFIG.signupBonus}pt</b> が自動で付きます。</div><div style="display:flex;gap:9px"><button class="btn btn-ghost" id="nc-cancel">やめる</button><button class="btn btn-primary" id="nc-save">登録する</button></div></div>`:''}`;
+  const newCustUI=`<button class="btn btn-primary" id="cust-newbtn" style="width:100%;margin:0 0 12px">＋ 新規のお客様を登録（予約なしでOK）</button>${state.custNew?`<div class="addform" style="margin-bottom:14px"><div class="subhead" style="margin:0 0 10px">新規のお客様を登録</div><div class="field"><label>お名前</label><input id="nc-name" placeholder="例：山田 花子"></div><div class="field"><label>電話番号</label><input id="nc-phone" inputmode="tel" placeholder="09012345678（ハイフンなし）"></div><div class="field"><label>生年月日 <span class="opt">(お誕生日特典に使います)</span></label><input id="nc-bday" type="date"></div><div class="field"><label>パスワード <span class="opt">(空欄なら電話番号の下4桁。お客様が後で変更できます)</span></label><input id="nc-pw" placeholder="任意"></div><div class="note" style="margin:0 0 10px">登録特典として <b>${CONFIG.signupBonus}pt</b> が自動で付きます。</div><div style="display:flex;gap:9px"><button class="btn btn-ghost" id="nc-cancel">やめる</button><button class="btn btn-primary" id="nc-save">登録する</button></div></div>`:''}`;
   return `<div class="searchbar"><input id="cust-q" value="${state.custQuery}" placeholder="お名前・電話番号で検索"></div>${newCustUI}${q?'':importUI}${nrNote}${bdayHtml}<div class="subhead">顧客一覧</div>${entries.length?cards:'<div class="empty">該当する顧客が見つかりません</div>'}`;
 }
 function custDetail(key){
