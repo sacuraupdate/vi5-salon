@@ -776,7 +776,7 @@ function defaultData(){
       {cat:'お誕生日',text:'お誕生日おめでとうございます🎂✨ 日頃の感謝を込めてポイントをプレゼントいたしました🎁 素敵な一年になりますように💖'},
       {cat:'キャンペーン案内',text:'お得なキャンペーンのご案内です🌸 詳しくはホーム・ギャラリーをご覧ください。ご予約お待ちしております😊'}],
     theme:{navy:'#1E2A47',gold:'#B0894A',sage:'#5F7355',rose:'#9C5B6B',paper:'#F5F1E8',heroImg:''},gcal:true,banners:[],
-    texts:{tagline:'Eyelash · Brow · Beauty',heroTitle:'バイタリティ溢れる毎日を。',heroSub:'まつげ・眉・ピーリング・メイク。あなたに似合うを、ここから。',homeNote:'ご予約はこの予約ページからのみ承っております。'}};
+    texts:{tagline:'Eyelash · Brow · Beauty',heroTitle:'',heroSub:'',homeNote:'ご予約はこの予約ページからのみ承っております。'}};
   return {customers:C,bookings:B,blocks,posts,campaigns,settings,shares,boards,shifts,shiftOverrides:{},feedback:[],nextId:1047};
 }
 async function loadData(){
@@ -885,7 +885,7 @@ function updateBack(){const b=byId('backbtn');if(b){b.style.display=state.navSta
 const S=()=>DATA.settings;
 
 /* ===== HOME ===== */
-function renderHome(){
+function renderHome(){if(textsMigrate())saveData(DATA);
   const active=DATA.campaigns.filter(c=>c.active);
   const camps=active.map(c=>`<div class="camp"><span class="ribbon">CAMPAIGN</span><h3>${c.title}</h3><p>${c.desc}</p></div>`).join('');
   const feat=DATA.posts.slice(0,4).map(p=>postCard(p,true)).join('');
@@ -1605,6 +1605,8 @@ function clItemDone(it){if(it.freq==='daily')return !!it.done;if(!it.lastDone)re
 function clDue(it){if(it.freq==='daily')return '';if(!it.lastDone)return it.freq==='weekly'?'今週まだ':'今月まだ';const days=Math.floor((today-new Date(it.lastDone+'T00:00:00'))/86400000);if(it.freq==='weekly'){const left=7-days;return left>=0?`前回${days}日前・あと${left}日`:`⚠前回${days}日前・期限切れ`;}const sm=it.lastDone.slice(0,7)===fmtDate(today).slice(0,7);return sm?`今月済（${days}日前）`:`⚠前回${days}日前・今月未`;}
 function clFindItem(id){for(const mode of ['work','home']){const secs=(DATA.checklist&&DATA.checklist[mode])||[];for(let ci=0;ci<secs.length;ci++){const i=secs[ci].items.find(x=>x.id===id);if(i)return{i,mode,ci};}}return null;}
 function clLog(text){DATA.checklist.log=DATA.checklist.log||[];const ts=new Date().toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});DATA.checklist.log.unshift({ts:Date.now(),text:`${ts} ✓ ${text}`});DATA.checklist.log=DATA.checklist.log.slice(0,150);}
+function textsMigrate(){const s=DATA.settings;if(!s)return false;if((s.textsMigVer||0)>=1)return false;// clear old default texts from Supabase
+s.texts=s.texts||{};if(s.texts.heroTitle==='バイタリティ溢れる毎日を。')s.texts.heroTitle='';if(s.texts.heroSub==='まつげ・眉・ピーリング・メイク。あなたに似合うを、ここから。')s.texts.heroSub='';s.textsMigVer=1;return true;}
 function checklistRollover(){if(!DATA.checklist||!DATA.checklist.work){DATA.checklist=seedChecklist();return true;}if(DATA.checklist.date!==fmtDate(today)){const cnt=arr=>{let d=0,t=0;(arr||[]).forEach(c=>c.items.forEach(i=>{if(i.freq==='daily'){t++;if(i.done)d++;}}));return[d,t];};const[wd,wt]=cnt(DATA.checklist.work),[hd,ht]=cnt(DATA.checklist.home);DATA.checklist.log=DATA.checklist.log||[];DATA.checklist.log.unshift({ts:Date.now(),text:`【${DATA.checklist.date}】出勤 ${wd}/${wt}・在宅 ${hd}/${ht} 完了`});DATA.checklist.log=DATA.checklist.log.slice(0,150);[...(DATA.checklist.work||[]),...(DATA.checklist.home||[])].forEach(c=>c.items.forEach(i=>{if(i.freq==='daily')i.done=false;}));DATA.checklist.date=fmtDate(today);return true;}return false;}
 async function clToggle(id){const f=clFindItem(id);if(!f)return;const it=f.i;const was=clItemDone(it);const y=window.scrollY;if(it.freq==='daily'){it.done=!it.done;if(it.done){it.lastDone=fmtDate(today);clLog(it.text);}}else{if(was){it.lastDone=null;it.done=false;}else{it.lastDone=fmtDate(today);it.done=true;clLog(it.text);}}await saveData(DATA);render();window.scrollTo(0,y);}
 async function clAddItem(key){const[mode,ci]=key.split('|');const el=app.querySelector(`[data-clitemin="${mode}|${ci}"]`);if(!el||!el.value.trim())return;const fsel=app.querySelector(`[data-clfreqin="${mode}|${ci}"]`);DATA.checklist[mode][+ci].items.push({id:'ck'+Date.now(),text:el.value.trim(),freq:fsel?fsel.value:'daily',done:false,lastDone:null});await saveData(DATA);render();}
@@ -1635,7 +1637,7 @@ function checklistMigrate(){const cl=DATA.checklist;if(!cl||!cl.work)return fals
   cl.ver=2;return true;}
 function renderAdmin(){
   if(!state.adminAuthed)return renderStaffLogin();
-  let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(_clch)saveData(DATA);
+  let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(_clch)saveData(DATA);
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
   const tabs=[['tasks','毎日のタスク'],['bookings','予約'],['schedule','シフト'],['customers','顧客'],['docs','ケア・同意書'],['homedisp','ホーム表示'],['menu','メニュー'],['staff','スタッフ'],['broadcast','配信'+(unsent?`(${unsent})`:'')],['campaigns','告知'],['feedback','ご意見'],['sales','売上'],['settings','設定']];
   let inner=({tasks:adminTasks,bookings:adminBookings,calendar:adminCalendar,schedule:adminSchedule,customers:adminCustomers,docs:adminDocs,homedisp:adminHomeDisplay,menu:adminMenu,staff:adminStaff,broadcast:adminBroadcast,campaigns:adminCampaigns,feedback:adminFeedback,sales:adminSales,settings:adminSettings}[state.adminTab])();
