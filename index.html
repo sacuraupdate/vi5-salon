@@ -1601,8 +1601,9 @@ function renderMypage(){
 
 /* ===== サロン管理 ===== */
 function renderStaffLogin(){
-  app.innerHTML=`<div class="fade"><div class="eyebrow">Staff</div><div class="h-title">サロン管理ログイン</div><div class="h-sub">スタッフ専用です。パスワードを入力してログインしてください。</div><div class="loginbox"><div class="field"><label>メールアドレス</label><input id="st-email" inputmode="email" value="${S().staffEmail||''}"></div><div class="field"><label>パスワード</label><input id="st-pw" type="password" placeholder="パスワード"></div><button class="btn btn-primary" id="st-login" style="width:100%">ログイン</button></div></div>`;
-  byId('st-login').onclick=async()=>{const p=byId('st-pw').value;if(!p){alert('パスワードをご入力ください。');return;}try{const j=await api({action:'full',pw:p});DATA=j.data;services=DATA.services;staff=DATA.staff;state.adminAuthed=true;localSet('salon:staff','1');localSet('salon:staffpw',p);render();}catch(e){if(e.status===401)alert('パスワードが違います。もう一度お試しください。');else alert('ただいまサーバーに接続できませんでした。電波の良い場所で、少し時間をおいてからもう一度お試しください。（パスワードの問題ではありません）');}};
+  app.innerHTML=`<div class="fade"><div class="eyebrow">Staff Only</div><div class="h-title">スタッフログイン</div><div class="h-sub">スタッフ専用です。パスワードを入力してください。</div><div class="loginbox"><div class="field"><label>パスワード</label><input id="st-pw" type="password" placeholder="パスワードを入力"></div><button class="btn btn-primary" id="st-login" style="width:100%;margin-top:4px">ログイン</button><div class="note" style="margin-top:14px">パスワードは <b>202207vi5</b> です（設定で変更できます）。</div></div></div>`;
+  const el=byId('st-pw');if(el)el.focus();
+  byId('st-login').onclick=async()=>{const p=byId('st-pw').value.trim();if(!p){alert('パスワードをご入力ください。');return;}try{const j=await api({action:'full',pw:p});DATA=j.data;services=DATA.services;staff=DATA.staff;state.adminAuthed=true;localSet('salon:staff','1');localSet('salon:staffpw',p);render();}catch(e){console.error(e);if(e&&e.status===401)alert('パスワードが違います。\n\n正しいパスワード: 202207vi5');else alert('サーバーに接続できませんでした。\nパスワードの問題ではありません。インターネット接続をご確認ください。\n\nエラー: '+(e&&e.status||'不明'));}};
 }
 function adminGuide(tab){
   const G={
