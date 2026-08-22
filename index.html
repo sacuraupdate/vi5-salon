@@ -549,6 +549,13 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .login-panel.gold .lp-head{color:var(--gold)}
 .login-panel .lp-sub{font-size:12px;color:var(--ink-soft);line-height:1.5}
 .login-panel.gold .lp-sub{color:#CDD3DE}
+.msec{font-size:13px;font-weight:800;color:var(--navy);margin:18px 0 10px;padding:8px 12px;background:var(--gold-bg);border-radius:8px;border-left:4px solid var(--gold)}
+.staff-checks{display:flex;flex-direction:column;gap:6px;margin-bottom:4px}
+.staff-checks label{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 13px;font-size:13.5px;cursor:pointer}
+.staff-checks input[type=checkbox]{width:18px;height:18px;accent-color:var(--gold);flex:0 0 auto}
+.chk-field{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 13px;font-size:13.5px;cursor:pointer;width:100%}
+.chk-field input[type=checkbox]{width:18px;height:18px;accent-color:var(--gold);flex:0 0 auto}
+.chk-field span{flex:1;line-height:1.5}
 </style>
 </head>
 <body>
@@ -1639,6 +1646,25 @@ function clItemDone(it){if(it.freq==='daily')return !!it.done;if(!it.lastDone)re
 function clDue(it){if(it.freq==='daily')return '';if(!it.lastDone)return it.freq==='weekly'?'今週まだ':'今月まだ';const days=Math.floor((today-new Date(it.lastDone+'T00:00:00'))/86400000);if(it.freq==='weekly'){const left=7-days;return left>=0?`前回${days}日前・あと${left}日`:`⚠前回${days}日前・期限切れ`;}const sm=it.lastDone.slice(0,7)===fmtDate(today).slice(0,7);return sm?`今月済（${days}日前）`:`⚠前回${days}日前・今月未`;}
 function clFindItem(id){for(const mode of ['work','home']){const secs=(DATA.checklist&&DATA.checklist[mode])||[];for(let ci=0;ci<secs.length;ci++){const i=secs[ci].items.find(x=>x.id===id);if(i)return{i,mode,ci};}}return null;}
 function clLog(text){DATA.checklist.log=DATA.checklist.log||[];const ts=new Date().toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});DATA.checklist.log.unshift({ts:Date.now(),text:`${ts} ✓ ${text}`});DATA.checklist.log=DATA.checklist.log.slice(0,150);}
+function menuDescMigrate(){const s=DATA.settings;if((s.menuDescVer||0)>=1)return false;const descs={
+  'セーブル100本':{desc:'自然なフサフサまつげ。初めての方にも人気',detail:'極細のセーブルファーを使用した、最も自然な仕上がりのエクステです。軽くてやわらかく、自まつげへの負担も少ないため、はじめてまつげエクステをされる方にも安心してお選びいただけます。'},
+  'セーブル120本':{desc:'ボリューム＆自然さのバランス最高',detail:'程よいボリュームと自然な仕上がりを両立したセーブルエクステ。目元をより印象的に、しかも自然に仕上げます。'},
+  'セーブル140本':{desc:'しっかりボリューム・目力UP',detail:'しっかりとしたボリュームで目力を際立たせます。アイライナーが不要になるほどの存在感。特別な日にも普段使いにもおすすめです。'},
+  'セーブル160本':{desc:'華やかで印象的な仕上がり',detail:'たっぷりのボリュームで、華やかで印象的な目元に仕上げます。目を大きく見せたい方に。'},
+  'セーブル180本':{desc:'最高ボリューム・圧倒的な目力',detail:'最大ボリュームのエクステで、圧倒的な存在感のある目元に。イベントや特別な日に。'},
+  'つけ放題':{desc:'1時間で思いっきりボリューム',detail:'1時間の施術内で技術の許す限りエクステを装着します。本数の上限なしでボリュームを追求したい方に最適です。本数の保証はございません。'},
+  'ウィスパーラッシュ100本':{desc:'ふわっと軽い仕上がり・自まつげ風',detail:'先端が細くなった特殊なウィスパーラッシュを使用。自まつげのような自然な印象でありながら、しっかりと目元を演出します。'},
+  'ウィスパーラッシュ120本':{desc:'自然なのに目力UP',detail:'ウィスパーラッシュの120本仕上げ。ナチュラルな雰囲気を保ちながら、目元をしっかりと印象付けます。'},
+  'ウィスパーラッシュ140本':{desc:'ふわっと軽い・ボリュームあり',detail:'ウィスパーラッシュの140本仕上げ。ふんわりとした軽さとボリュームを両立した仕上がりです。'},
+  'ウィスパーラッシュ160本':{desc:'華やかなのに軽い特別感',detail:'ウィスパーラッシュの160本。ボリュームたっぷりなのにふわっとした軽さが魅力の仕上がりです。'},
+  'ウィスパーラッシュ180本':{desc:'最高ボリューム・軽やかに',detail:'ウィスパーラッシュの最高本数仕上げ。軽さと存在感を最大限に引き出します。'},
+  'アイブロウ':{desc:'あなたに似合う眉を整えます',detail:'顔のバランスを見ながら、似合う眉の形に整えます。骨格や顔立ちに合わせたデザインで、メイクが格段にしやすくなります。'},
+  'インクブロウ':{desc:'自然な眉毛が続く・水に強い',detail:'専用のインクを使って自然な眉毛を表現します。汗や水に強く、毎日のメイク時間を大幅に短縮できます。肌への負担が少なく、自然な仕上がりが続きます。'},
+  'ピーリング':{desc:'角質ケアで透明感のある肌に',detail:'肌表面の古い角質を除去し、透明感・くすみ改善・毛穴ケアに効果的です。スキンケアの浸透も高まり、肌本来の美しさを引き出します。'},
+  'インクメイク':{desc:'プロの技術で長持ちメイク',detail:'専用のインクを使って眉・目元・リップラインなどを表現します。汗や摩擦に強く、毎日のメイク時間を大幅に短縮。自然で上品な仕上がりが長続きします。'},
+};
+DATA.services.forEach(sv=>{if(!descs[sv.name])return;const d=descs[sv.name];if(!sv.desc||sv.desc.trim()==='')sv.desc=d.desc;if(!sv.detail||sv.detail.trim()==='')sv.detail=d.detail;});
+s.menuDescVer=1;return true;}
 function textsMigrate(){const s=DATA.settings;if(!s)return false;if((s.textsMigVer||0)>=1)return false;// clear old default texts from Supabase
 s.texts=s.texts||{};if(s.texts.heroTitle==='バイタリティ溢れる毎日を。')s.texts.heroTitle='';if(s.texts.heroSub==='まつげ・眉・ピーリング・メイク。あなたに似合うを、ここから。')s.texts.heroSub='';s.textsMigVer=1;return true;}
 function checklistRollover(){if(!DATA.checklist||!DATA.checklist.work){DATA.checklist=seedChecklist();return true;}if(DATA.checklist.date!==fmtDate(today)){const cnt=arr=>{let d=0,t=0;(arr||[]).forEach(c=>c.items.forEach(i=>{if(i.freq==='daily'){t++;if(i.done)d++;}}));return[d,t];};const[wd,wt]=cnt(DATA.checklist.work),[hd,ht]=cnt(DATA.checklist.home);DATA.checklist.log=DATA.checklist.log||[];DATA.checklist.log.unshift({ts:Date.now(),text:`【${DATA.checklist.date}】出勤 ${wd}/${wt}・在宅 ${hd}/${ht} 完了`});DATA.checklist.log=DATA.checklist.log.slice(0,150);[...(DATA.checklist.work||[]),...(DATA.checklist.home||[])].forEach(c=>c.items.forEach(i=>{if(i.freq==='daily')i.done=false;}));DATA.checklist.date=fmtDate(today);return true;}return false;}
@@ -1671,7 +1697,7 @@ function checklistMigrate(){const cl=DATA.checklist;if(!cl||!cl.work)return fals
   cl.ver=2;return true;}
 function renderAdmin(){
   if(!state.adminAuthed)return renderStaffLogin();
-  let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(_clch)saveData(DATA);
+  let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(_clch)saveData(DATA);
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
   const tabs=[['tasks','毎日のタスク'],['bookings','予約'],['schedule','シフト'],['customers','顧客'],['docs','ケア・同意書'],['homedisp','ホーム表示'],['menu','メニュー'],['staff','スタッフ'],['broadcast','配信'+(unsent?`(${unsent})`:'')],['campaigns','告知'],['feedback','ご意見'],['sales','売上'],['settings','設定']];
   let inner=({tasks:adminTasks,bookings:adminBookings,calendar:adminCalendar,schedule:adminSchedule,customers:adminCustomers,docs:adminDocs,homedisp:adminHomeDisplay,menu:adminMenu,staff:adminStaff,broadcast:adminBroadcast,campaigns:adminCampaigns,feedback:adminFeedback,sales:adminSales,settings:adminSettings}[state.adminTab])();
@@ -2021,26 +2047,29 @@ function adminMenu(){
     const eligibleNow=st=>!sv?false:(!(st.services||[]).length||(st.services||[]).includes(sv.id));
     const staffChecks=staff.filter(s=>s.id!=='s0').map(s=>`<label><input type="checkbox" data-mstaff="${s.id}" ${eligibleNow(s)?'checked':(!sv?'checked':'')}>${s.name}</label>`).join('');
     return `<button class="backlink" id="m-back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>メニュー一覧</button>
-      <div class="addform"><div class="subhead" style="margin:0 0 12px">${editing?'メニューを編集':'メニューを追加'}</div>
-      <div class="field"><label>写真（3枚まで・1枚目が一覧の写真）</label><div class="photoslot">${slots}</div></div>
+      <div class="addform">
+      <div class="subhead" style="margin:0 0 4px">${editing?'メニューを編集':'メニューを追加'}</div>
+      <div class="msec">📸 写真・基本情報</div>
+      <div class="field"><label>写真（3枚まで・1枚目が一覧に表示）</label><div class="photoslot">${slots}</div></div>
       <div class="field"><label>メニュー名</label><input id="m-name" value="${sv?sv.name.replace(/"/g,'&quot;'):''}"></div>
-      <div class="field"><label>多言語のメニュー名 <span class="opt">(任意・言語を切り替えたお客様に表示)</span></label>
-        <input id="m-name-en" placeholder="English" value="${sv&&sv.i18n?(sv.i18n.en||'').replace(/"/g,'&quot;'):''}" style="margin-bottom:6px;width:100%;font-family:inherit;font-size:14px;border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:var(--paper)">
-        <input id="m-name-zh" placeholder="中文（简体）" value="${sv&&sv.i18n?(sv.i18n.zh||'').replace(/"/g,'&quot;'):''}" style="margin-bottom:6px;width:100%;font-family:inherit;font-size:14px;border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:var(--paper)">
-        <input id="m-name-tw" placeholder="中文（繁體）" value="${sv&&sv.i18n?(sv.i18n.tw||'').replace(/"/g,'&quot;'):''}" style="margin-bottom:6px;width:100%;font-family:inherit;font-size:14px;border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:var(--paper)">
-        <input id="m-name-ko" placeholder="한국어" value="${sv&&sv.i18n?(sv.i18n.ko||'').replace(/"/g,'&quot;'):''}" style="margin-bottom:6px;width:100%;font-family:inherit;font-size:14px;border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:var(--paper)">
-        <input id="m-name-ru" placeholder="Русский" value="${sv&&sv.i18n?(sv.i18n.ru||'').replace(/"/g,'&quot;'):''}" style="width:100%;font-family:inherit;font-size:14px;border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:var(--paper)"></div>
       <div class="field"><label>カテゴリー</label><select id="m-cat">${catopts}</select></div>
-      <div class="field two"><div><label>料金(円)</label><input id="m-price" type="number" inputmode="numeric" value="${sv?sv.price:''}"></div><div><label>所要(分)</label><input id="m-min" type="number" inputmode="numeric" value="${sv?sv.min:''}"></div></div>
-      <div class="field"><label>おふたり同時施術</label><label class="checkgrid" style="display:block"><input type="checkbox" id="m-pair" ${(!sv||sv.pair!==false)?'checked':''}> おふたりが同時に受けられるメニュー（チェックを外すと「おふたり同時は不可」になります）</label></div>
-      <div class="field"><label>メンズにおすすめ</label><label class="checkgrid" style="display:block"><input type="checkbox" id="m-mens" ${(sv&&sv.mens)?'checked':''}> 「メンズにおすすめ」カテゴリーにも表示する</label></div>
-      <div class="field"><label>説明（一覧に表示・短文）</label><input id="m-desc" value="${sv?(sv.desc||'').replace(/"/g,'&quot;'):''}"></div>
-      <div class="field"><label>詳細（タップで開く説明・長文OK）</label><textarea id="m-detail">${sv?(sv.detail||''):''}</textarea></div>
-      <div class="field"><label>担当できるスタッフ</label><div class="checkgrid">${staffChecks||'<span class="note" style="margin:0">スタッフがいません</span>'}</div></div>
-      <div class="field"><label>このメニューに追加できるメニュー</label><div class="checkgrid">${checks||'<span class="note" style="margin:0">他のメニューがありません</span>'}</div></div>
-      <div style="display:flex;gap:9px"><button class="btn btn-ghost" id="m-cancel">やめる</button><button class="btn btn-primary" id="m-save">保存する</button></div>
+      <div class="field two"><div><label>料金（円）</label><input id="m-price" type="number" inputmode="numeric" value="${sv?sv.price:''}"></div><div><label>所要時間（分）</label><input id="m-min" type="number" inputmode="numeric" value="${sv?sv.min:''}"></div></div>
+      <div class="msec">📝 説明文</div>
+      <div class="field"><label>短い説明 <span class="opt">（一覧に表示・1〜2行）</span></label><input id="m-desc" value="${sv?(sv.desc||'').replace(/"/g,'&quot;'):''}"></div>
+      <div class="field"><label>詳細説明 <span class="opt">（タップして開く・施術内容・注意事項など）</span></label><textarea id="m-detail" style="min-height:90px">${sv?(sv.detail||''):''}</textarea></div>
+      <div class="msec">👥 担当できるスタッフ</div>
+      <div class="note" style="margin:0 0 10px">チェックしたスタッフだけ予約画面に表示されます。</div>
+      <div class="staff-checks">${staffChecks||'<span class="note" style="margin:0">まだスタッフが登録されていません</span>'}</div>
+      <div class="msec">➕ 一緒に追加できるオプション</div>
+      <div class="note" style="margin:0 0 10px">お客様が確認画面で追加できるメニューを選びます。</div>
+      <div class="staff-checks">${checks||'<span class="note" style="margin:0">他のメニューがありません</span>'}</div>
+      <div class="msec">⚙️ その他の設定</div>
+      <label class="chk-field"><input type="checkbox" id="m-pair" ${(!sv||sv.pair!==false)?'checked':''}><span>おふたりが同時に受けられるメニュー</span></label>
+      <label class="chk-field" style="margin-top:8px"><input type="checkbox" id="m-mens" ${(sv&&sv.mens)?'checked':''}><span>「メンズにおすすめ」カテゴリーにも表示する</span></label>
+      <div style="display:flex;gap:9px;margin-top:20px"><button class="btn btn-ghost" id="m-cancel">やめる</button><button class="btn btn-primary" id="m-save">保存する</button></div>
       ${editing?`<button class="btn btn-ghost" id="m-del" style="width:100%;margin-top:10px;color:var(--rose);border-color:#D8B6BF">このメニューを削除</button>`:''}</div>`;
   }
+
   if(state.optEdit){
     const editing=state.optEdit!=='new';const o=editing?(S().options||[]).find(x=>x.id===state.optEdit):null;
     return `<button class="backlink" id="o-back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>メニュー一覧</button>
