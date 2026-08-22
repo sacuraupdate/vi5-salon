@@ -776,7 +776,7 @@ function defaultData(){
     address:'大阪府大阪市北区西天満1-2-25 スクエア北浜 3階',
     hours:'月〜日 9:00〜21:00（最終受付21:00）／火曜定休',
     birthdayMsg:'お誕生日おめでとうございます🎂✨ 日頃のご利用に感謝して、{bonus}ポイントをプレゼントいたします🎁 素敵な一年になりますように💖',
-    staffEmail:'oooh.vi5@gmail.com',staffPw:'202207vi5',
+    staffEmail:'oooh.vi5@gmail.com',staffPw:'202207',
     templates:[
       {cat:'ご来店のお礼',text:'本日はご来店いただきありがとうございました😊 仕上がりはいかがでしょうか？気になる点があればいつでもご連絡くださいね。またのお越しを心よりお待ちしております✨'},
       {cat:'ご紹介のお礼',text:'この度は大切なご友人をご紹介いただき、本当にありがとうございます🎁 感謝を込めて特典をご用意しております。次回のご来店もお待ちしております😊'},
@@ -1601,9 +1601,9 @@ function renderMypage(){
 
 /* ===== サロン管理 ===== */
 function renderStaffLogin(){
-  app.innerHTML=`<div class="fade"><div class="eyebrow">Staff Only</div><div class="h-title">スタッフログイン</div><div class="h-sub">スタッフ専用です。パスワードを入力してください。</div><div class="loginbox"><div class="field"><label>パスワード</label><input id="st-pw" type="password" placeholder="パスワードを入力"></div><button class="btn btn-primary" id="st-login" style="width:100%;margin-top:4px">ログイン</button><div class="note" style="margin-top:14px">パスワードは <b>202207vi5</b> です（設定で変更できます）。</div></div></div>`;
+  app.innerHTML=`<div class="fade"><div class="eyebrow">Staff Only</div><div class="h-title">スタッフログイン</div><div class="h-sub">スタッフ専用です。パスワードを入力してください。</div><div class="loginbox"><div class="field"><label>パスワード</label><input id="st-pw" type="password" placeholder="パスワードを入力"></div><button class="btn btn-primary" id="st-login" style="width:100%;margin-top:4px">ログイン</button></div></div>`;
   const el=byId('st-pw');if(el)el.focus();
-  byId('st-login').onclick=async()=>{const p=byId('st-pw').value.trim();if(!p){alert('パスワードをご入力ください。');return;}try{const j=await api({action:'full',pw:p});DATA=j.data;services=DATA.services;staff=DATA.staff;state.adminAuthed=true;localSet('salon:staff','1');localSet('salon:staffpw',p);render();}catch(e){console.error(e);if(e&&e.status===401)alert('パスワードが違います。\n\n正しいパスワード: 202207vi5');else alert('サーバーに接続できませんでした。\nパスワードの問題ではありません。インターネット接続をご確認ください。\n\nエラー: '+(e&&e.status||'不明'));}};
+  byId('st-login').onclick=async()=>{const p=byId('st-pw').value.trim();if(!p){alert('パスワードをご入力ください。');return;}try{const j=await api({action:'full',pw:p});DATA=j.data;services=DATA.services;staff=DATA.staff;state.adminAuthed=true;localSet('salon:staff','1');localSet('salon:staffpw',p);render();}catch(e){console.error(e);if(e&&e.status===401)alert('パスワードが違います。もう一度お試しください。');else alert('サーバーに接続できませんでした。インターネット接続をご確認のうえ、もう一度お試しください。\nエラー: '+(e&&e.status||'不明'));}};
 }
 function adminGuide(tab){
   const G={
@@ -1666,6 +1666,7 @@ function menuDescMigrate(){const s=DATA.settings;if((s.menuDescVer||0)>=1)return
 };
 DATA.services.forEach(sv=>{if(!descs[sv.name])return;const d=descs[sv.name];if(!sv.desc||sv.desc.trim()==='')sv.desc=d.desc;if(!sv.detail||sv.detail.trim()==='')sv.detail=d.detail;});
 s.menuDescVer=1;return true;}
+function staffPwMigrate(){const s=DATA.settings;if(!s)return false;if(s.staffPw==='202207vi5'||!s.staffPw){s.staffPw='202207';return true;}return false;}
 function textsMigrate(){const s=DATA.settings;if(!s)return false;if((s.textsMigVer||0)>=1)return false;// clear old default texts from Supabase
 s.texts=s.texts||{};if(s.texts.heroTitle==='バイタリティ溢れる毎日を。')s.texts.heroTitle='';if(s.texts.heroSub==='まつげ・眉・ピーリング・メイク。あなたに似合うを、ここから。')s.texts.heroSub='';s.textsMigVer=1;return true;}
 function checklistRollover(){if(!DATA.checklist||!DATA.checklist.work){DATA.checklist=seedChecklist();return true;}if(DATA.checklist.date!==fmtDate(today)){const cnt=arr=>{let d=0,t=0;(arr||[]).forEach(c=>c.items.forEach(i=>{if(i.freq==='daily'){t++;if(i.done)d++;}}));return[d,t];};const[wd,wt]=cnt(DATA.checklist.work),[hd,ht]=cnt(DATA.checklist.home);DATA.checklist.log=DATA.checklist.log||[];DATA.checklist.log.unshift({ts:Date.now(),text:`【${DATA.checklist.date}】出勤 ${wd}/${wt}・在宅 ${hd}/${ht} 完了`});DATA.checklist.log=DATA.checklist.log.slice(0,150);[...(DATA.checklist.work||[]),...(DATA.checklist.home||[])].forEach(c=>c.items.forEach(i=>{if(i.freq==='daily')i.done=false;}));DATA.checklist.date=fmtDate(today);return true;}return false;}
@@ -1698,7 +1699,7 @@ function checklistMigrate(){const cl=DATA.checklist;if(!cl||!cl.work)return fals
   cl.ver=2;return true;}
 function renderAdmin(){
   if(!state.adminAuthed)return renderStaffLogin();
-  let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(_clch)saveData(DATA);
+  let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(_clch)saveData(DATA);
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
   const tabs=[['tasks','毎日のタスク'],['bookings','予約'],['schedule','シフト'],['customers','顧客'],['docs','ケア・同意書'],['homedisp','ホーム表示'],['menu','メニュー'],['staff','スタッフ'],['broadcast','配信'+(unsent?`(${unsent})`:'')],['campaigns','告知'],['feedback','ご意見'],['sales','売上'],['settings','設定']];
   let inner=({tasks:adminTasks,bookings:adminBookings,calendar:adminCalendar,schedule:adminSchedule,customers:adminCustomers,docs:adminDocs,homedisp:adminHomeDisplay,menu:adminMenu,staff:adminStaff,broadcast:adminBroadcast,campaigns:adminCampaigns,feedback:adminFeedback,sales:adminSales,settings:adminSettings}[state.adminTab])();
