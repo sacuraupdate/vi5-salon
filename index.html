@@ -8,9 +8,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,400&family=Hanken+Grotesk:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--paper:#F1F2F5;--paper-2:#E6E9EE;--navy:#1E2A47;--ink:#1E2430;--ink-soft:#6E727C;--line:#E0E3E9;--gold:#B0894A;--gold-soft:#CAA25E;--gold-bg:#FBF3E0;--card:#FFFFFF;--sage:#5F7355;--rose:#B23A46;--red:#B5323F;--shadow:rgba(30,42,71,.10);}
+:root{--paper:#FFFFFF;--paper-2:#F5F6F8;--navy:#1E2A47;--ink:#1E2430;--ink-soft:#6E727C;--line:#E6E8EC;--gold:#B0894A;--gold-soft:#CAA25E;--gold-bg:#FBF3E0;--card:#FFFFFF;--sage:#3F5A46;--rose:#C4362F;--red:#C4362F;--shadow:rgba(30,42,71,.08);}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:"Hanken Grotesk","Zen Kaku Gothic New",sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;background-image:radial-gradient(circle at 12% 6%,rgba(176,137,74,.06),transparent 40%),radial-gradient(circle at 92% 96%,rgba(30,42,71,.045),transparent 46%);min-height:100vh;}
+body{font-family:"Hanken Grotesk","Zen Kaku Gothic New",sans-serif;background:#FFFFFF;color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh;}
 .wrap{max-width:760px;margin:0 auto;padding:0 18px 90px;}
 header{padding:26px 0 8px;text-align:center;position:relative;}
 .brand{font-family:"Fraunces",serif;font-weight:600;font-size:30px;letter-spacing:.06em;color:var(--navy);}
@@ -565,6 +565,17 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .firsttime .ft-head{font-family:"Fraunces",serif;font-size:18px;font-weight:600;color:var(--navy);margin-bottom:8px}
 .firsttime .ft-body{font-size:13.5px;line-height:1.85;color:#4a4a4a}
 .firsttime .ft-line{display:inline-block;margin-top:12px;background:#06C755;color:#fff;text-decoration:none;font-weight:700;font-size:13px;padding:10px 18px;border-radius:100px}
+.firsttime .ft-btns{display:flex;gap:10px;margin-top:14px}
+.firsttime .ft-btn{flex:1;border:none;font-family:inherit;font-weight:700;font-size:15px;padding:14px 10px;border-radius:12px;cursor:pointer;transition:transform .12s}
+.firsttime .ft-btn:active{transform:translateY(1px)}
+.firsttime .ft-reg{background:var(--navy);color:#fff}
+.firsttime .ft-login{background:#fff;color:var(--navy);border:1.5px solid var(--navy)}
+.consent-box{margin:6px 0 12px;border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--paper-2)}
+.consent-box .consent-title{font-weight:700;font-size:14px;color:var(--navy);margin-bottom:8px}
+.consent-box .consent-terms{max-height:150px;overflow-y:auto;font-size:12px;line-height:1.75;color:#555;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.consent-box .consent-check{display:flex;align-items:flex-start;gap:8px;margin-top:12px;font-size:14px;color:var(--ink);cursor:pointer;font-weight:600}
+.consent-box .consent-check input{width:20px;height:20px;margin-top:1px;flex:none;accent-color:var(--navy)}
+.consent-box .consent-note{margin-top:8px;font-size:12px;color:var(--sage);font-weight:600}
 </style>
 </head>
 <body>
@@ -862,7 +873,8 @@ async function loadStaffSession(){return !!localGet('salon:staff')}
 async function setStaffSession(v){if(v)localSet('salon:staff','1');else{localDel('salon:staff');localDel('salon:staffpw');}}
 function getPost(id){return DATA.posts.find(p=>p.id===id)}
 function TX(k,d){return (DATA.settings&&DATA.settings.texts&&DATA.settings.texts[k])||d}
-function applyTheme(){const t=(DATA.settings&&DATA.settings.theme)||{};const r=document.documentElement;['navy','gold','sage','rose','paper'].forEach(k=>{if(t[k])r.style.setProperty('--'+k,t[k])});const tg=byId('tagline');if(tg)tg.textContent=TX('tagline','Eyelash · Brow · Beauty');}
+function applyTheme(){const r=document.documentElement;r.style.setProperty('--paper','#FFFFFF');r.style.setProperty('--paper-2','#F5F6F8');r.style.setProperty('--navy','#1E2A47');r.style.setProperty('--gold','#B0894A');r.style.setProperty('--rose','#C4362F');r.style.setProperty('--red','#C4362F');r.style.setProperty('--sage','#3F5A46');const tg=byId('tagline');if(tg)tg.textContent=TX('tagline','Eyelash · Brow · Beauty');}
+function applyThemeOLD(){const t=(DATA.settings&&DATA.settings.theme)||{};const r=document.documentElement;['navy','gold','sage','rose','paper'].forEach(k=>{if(t[k])r.style.setProperty('--'+k,t[k])});const tg=byId('tagline');if(tg)tg.textContent=TX('tagline','Eyelash · Brow · Beauty');}
 function gpad(n){return String(n).padStart(2,'0')}
 function nameInitial(n){const p=(n||'').split(' ');return (p[1]&&p[1][0])||(n&&n[0])||'?';}
 function gcalUrl(bk){const start=new Date(bk.date+'T'+bk.time+':00');const dur=bk.items.reduce((a,i)=>a+(i.min||0),0)||60;const end=new Date(start.getTime()+dur*60000);const f=d=>d.getFullYear()+gpad(d.getMonth()+1)+gpad(d.getDate())+'T'+gpad(d.getHours())+gpad(d.getMinutes())+'00';const text=encodeURIComponent('Vi5 ご予約：'+bk.items.map(i=>i.name).join('＋'));const det=encodeURIComponent('担当：'+stById(bk.staffId).name+' / '+bk.id);const loc=encodeURIComponent((DATA.settings&&DATA.settings.address)||'');return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${f(start)}/${f(end)}&details=${det}&location=${loc}&ctz=Asia/Tokyo`}
@@ -958,7 +970,7 @@ function renderHome(){if(textsMigrate())saveData(DATA);
     ${s.shopUrl?`<a class="linkbtn" href="${s.shopUrl}" target="_blank"><span class="ic">🛍️</span>オンラインショップ</a>`:''}
     ${s.lineUrl?`<a class="linkbtn" href="${s.lineUrl}" target="_blank"><span class="ic">💬</span>公式LINE</a>`:''}</div>`;
   const heroImg=(s.theme&&s.theme.heroImg)||'/hero.jpg';
-  const firstTimeHtml=`<div class="firsttime"><div class="ft-head">はじめての方へ</div><div class="ft-body">${TX('firstTimeNote','ご予約は上部メニューの「予約」から24時間受付中です。メニュー→担当→日時を選ぶだけ。<br>会員登録は<b>初回のみ</b>（お名前・電話番号・生年月日・パスワード）。ご登録で<b>500ポイント</b>プレゼント、さらに登録後1週間以内に、これまでのご来店回数などをもとにポイントを追加付与いたします。<br>ご不明な点・パスワードをお忘れの場合は公式LINEへお気軽にどうぞ。')}</div>${s.lineUrl?`<a class="ft-line" href="${s.lineUrl}" target="_blank">💬 公式LINEで相談する</a>`:''}</div>`;
+  const firstTimeHtml=`<div class="firsttime"><div class="ft-head">はじめての方へ</div><div class="ft-body">${TX('firstTimeNote','ご予約は上部メニューの「予約」から24時間受付中です。メニュー→担当→日時を選ぶだけ。<br>会員登録は<b>初回のみ</b>（お名前・電話番号・生年月日・パスワード）。ご登録で<b>500ポイント</b>プレゼント、さらに登録後1週間以内に、これまでのご来店回数などをもとにポイントを追加付与いたします。<br>ご登録時に同意事項へチェックいただくため、<b>当日の同意書のご記入は不要</b>です。')}</div><div class="ft-btns"><button class="ft-btn ft-reg" id="ft-reg">✨ 新規登録</button><button class="ft-btn ft-login" id="ft-login">👤 ログイン</button></div></div>`;
   const rk=(s.ranking||[]).filter(r=>r&&(r.name||r.img)).slice(0,3);const medals=['🥇','🥈','🥉'];
   const rankHtml=rk.length?`<div class="sec-label"><span class="t">今月の人気商品ランキング</span></div><div class="rankgrid">${rk.map((r,i)=>{const link=r.url||'';const op=link?`<a class="rankcard" href="${link}" target="_blank" style="text-decoration:none;display:block">`:`<div class="rankcard">`;const cl=link?'</a>':'</div>';return `${op}<div class="rankmedal">${medals[i]||''}</div><div class="rankimg"${r.img?` style="background-image:url('${r.img}')"`:''}></div><div class="rankname">${r.name||''}</div>${cl}`}).join('')}</div>`:'';
   const recs=(s.shopRecs||[]).filter(r=>r&&(r.name||r.img)).slice(0,3);
@@ -978,7 +990,9 @@ function renderHome(){if(textsMigrate())saveData(DATA);
     ${rankHtml}
     ${recsHtml}
     ${socialHtml}
-    <div class="sec-label"><span class="t">よくある質問（使い方）</span></div>
+    <div class="sec-label"><span class="t">アクセス・店舗情報</span></div>${mapHtml}${links}
+    <div class="addr">${TX('homeNote','ご予約はこの予約ページからのみ承っております。')}<br>${s.address||''}</div>
+        <div class="sec-label"><span class="t">よくある質問（使い方）</span></div>
     <div class="faq">
       <details><summary>予約はどこからできますか？</summary><div class="faq-a">画面上部のメニュー「予約」から、24時間いつでもご予約いただけます。メニュー→担当→日時を選ぶだけ。情報の入力は初回のみです。</div></details>
       <details><summary>予約の変更・キャンセルは？</summary><div class="faq-a">マイページの「次回のご予約」から、<b>前日の21時まで</b>「🕐時間を変更」「キャンセル」ができます。それ以降は公式LINEへご連絡ください。</div></details>
@@ -987,9 +1001,10 @@ function renderHome(){if(textsMigrate())saveData(DATA);
       <details><summary>会員ランクとは？</summary><div class="faq-a">通常会員／シルバー会員（毎回5%OFF）／ゴールド会員（毎回10%OFF）があります。ランクはマイページに表示されます。</div></details>
       <details><summary>お問い合わせはどこへ？</summary><div class="faq-a">施術中はお電話に出られないため、<b>公式LINE</b>へお願いいたします。${s.lineUrl?`<a href="${s.lineUrl}" target="_blank" style="color:var(--gold);font-weight:700"> 公式LINEを開く</a>`:''}</div></details>
     </div>
-    <div class="sec-label"><span class="t">アクセス・店舗情報</span></div>${mapHtml}${links}
-    <div class="addr">${TX('homeNote','ご予約はこの予約ページからのみ承っております。')}<br>${s.address||''}<br>${s.hours||''}</div></div>`;
+    </div>`;
   byId('hbook').onclick=()=>startBooking();const _hm=byId('hmore');if(_hm)_hm.onclick=()=>go('gallery');bindPosts();
+  const _ftr=byId('ft-reg');if(_ftr)_ftr.onclick=()=>{state.mpReg=true;go('mypage');};
+  const _ftl=byId('ft-login');if(_ftl)_ftl.onclick=()=>{state.mpReg=false;go('mypage');};
   app.querySelectorAll('[data-mtile]').forEach(b=>b.onclick=()=>startBooking());const _mm=byId('menumore');if(_mm)_mm.onclick=()=>startBooking();
   const _gs=byId('goshare');if(_gs)_gs.onclick=()=>go('share');
   const box=byId('bannerbox');if(box){const slides=[...box.querySelectorAll('.banner-slide')];const dots=[...box.querySelectorAll('.bn-dots i')];if(slides.length>1){clearInterval(window._bnr);let idx=0;window._bnr=setInterval(()=>{slides[idx].classList.remove('on');if(dots[idx])dots[idx].classList.remove('on');idx=(idx+1)%slides.length;slides[idx].classList.add('on');if(dots[idx])dots[idx].classList.add('on');},4500);}}
@@ -1536,6 +1551,7 @@ function renderMypage(){
         <div class="field"><label>電話番号（ハイフンなし）</label><input id="rg-phone" inputmode="tel" value="${r.phone}" placeholder="09012345678"></div>
         <div class="field two"><div><label>生年月日</label><input id="rg-bday" type="date" value="${r.birthday}"></div><div><label>パスワード <span class="opt">(4文字以上)</span></label><input id="rg-pw" type="password" value="${r.password}" placeholder="マイページ用"></div></div>
         <div class="field"><label>ご紹介者の電話番号 <span class="opt">(任意・ご紹介でお互いに${CONFIG.referralBonus}pt)</span></label><input id="rg-ref" inputmode="tel" value="${r.referrer}" placeholder="090..."></div>
+        <div class="consent-box"><div class="consent-title">ご利用にあたっての同意事項</div><div class="consent-terms">${TERMS.replace(/\n/g,'<br>')}</div><label class="consent-check"><input type="checkbox" id="rg-consent"> 上記の内容を読み、<b>同意します</b></label><div class="consent-note">✓ ご登録時にご同意いただくため、<b>当日の同意書のご記入は不要</b>です。</div></div>
         <button class="btn btn-primary" id="rg-go" style="width:100%">この内容で登録する（${CONFIG.signupBonus}pt🎁）</button>
         <button class="btn btn-ghost" id="rg-book" style="width:100%;margin-top:8px">📅 ご予約もあわせてする（予約画面へ）</button>
         <button class="btn btn-ghost" id="rg-back" style="width:100%;margin-top:8px">← ログイン画面へ戻る</button>
@@ -1546,6 +1562,7 @@ function renderMypage(){
       byId('rg-back').onclick=()=>{grab();state.mpReg=false;render();};
       byId('rg-book').onclick=()=>{grab();state.mpReg=false;state.b.name=r.name;state.b.phone=r.phone;state.b.birthday=r.birthday;state.b.password=r.password;state.b.referrer=r.referrer;startBooking();};
       byId('rg-go').onclick=async()=>{grab();
+        if(!byId('rg-consent')||!byId('rg-consent').checked){alert('ご利用にあたっての同意事項をお読みのうえ、「同意します」にチェックをお願いいたします。');return;}
         const phone=normPhone(r.phone);
         if(!r.name.trim()){alert('お名前をご入力ください。');return;}
         if(!phone){alert('電話番号をご入力ください（ハイフンなし）。');return;}
@@ -1701,26 +1718,39 @@ function clItemDone(it){if(it.freq==='daily')return !!it.done;if(!it.lastDone)re
 function clDue(it){if(it.freq==='daily')return '';if(!it.lastDone)return it.freq==='weekly'?'今週まだ':'今月まだ';const days=Math.floor((today-new Date(it.lastDone+'T00:00:00'))/86400000);if(it.freq==='weekly'){const left=7-days;return left>=0?`前回${days}日前・あと${left}日`:`⚠前回${days}日前・期限切れ`;}const sm=it.lastDone.slice(0,7)===fmtDate(today).slice(0,7);return sm?`今月済（${days}日前）`:`⚠前回${days}日前・今月未`;}
 function clFindItem(id){for(const mode of ['work','home']){const secs=(DATA.checklist&&DATA.checklist[mode])||[];for(let ci=0;ci<secs.length;ci++){const i=secs[ci].items.find(x=>x.id===id);if(i)return{i,mode,ci};}}return null;}
 function clLog(text){DATA.checklist.log=DATA.checklist.log||[];const ts=new Date().toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});DATA.checklist.log.unshift({ts:Date.now(),text:`${ts} ✓ ${text}`});DATA.checklist.log=DATA.checklist.log.slice(0,150);}
-function menuDescMigrate(){const s=DATA.settings;if((s.menuDescVer||0)>=1)return false;const descs={
-  'セーブル100本':{desc:'自然なフサフサまつげ。初めての方にも人気',detail:'極細のセーブルファーを使用した、最も自然な仕上がりのエクステです。軽くてやわらかく、自まつげへの負担も少ないため、はじめてまつげエクステをされる方にも安心してお選びいただけます。'},
-  'セーブル120本':{desc:'ボリューム＆自然さのバランス最高',detail:'程よいボリュームと自然な仕上がりを両立したセーブルエクステ。目元をより印象的に、しかも自然に仕上げます。'},
-  'セーブル140本':{desc:'しっかりボリューム・目力UP',detail:'しっかりとしたボリュームで目力を際立たせます。アイライナーが不要になるほどの存在感。特別な日にも普段使いにもおすすめです。'},
-  'セーブル160本':{desc:'華やかで印象的な仕上がり',detail:'たっぷりのボリュームで、華やかで印象的な目元に仕上げます。目を大きく見せたい方に。'},
-  'セーブル180本':{desc:'最高ボリューム・圧倒的な目力',detail:'最大ボリュームのエクステで、圧倒的な存在感のある目元に。イベントや特別な日に。'},
-  'つけ放題':{desc:'1時間で思いっきりボリューム',detail:'1時間の施術内で技術の許す限りエクステを装着します。本数の上限なしでボリュームを追求したい方に最適です。本数の保証はございません。'},
-  'ウィスパーラッシュ100本':{desc:'ふわっと軽い仕上がり・自まつげ風',detail:'先端が細くなった特殊なウィスパーラッシュを使用。自まつげのような自然な印象でありながら、しっかりと目元を演出します。'},
-  'ウィスパーラッシュ120本':{desc:'自然なのに目力UP',detail:'ウィスパーラッシュの120本仕上げ。ナチュラルな雰囲気を保ちながら、目元をしっかりと印象付けます。'},
-  'ウィスパーラッシュ140本':{desc:'ふわっと軽い・ボリュームあり',detail:'ウィスパーラッシュの140本仕上げ。ふんわりとした軽さとボリュームを両立した仕上がりです。'},
-  'ウィスパーラッシュ160本':{desc:'華やかなのに軽い特別感',detail:'ウィスパーラッシュの160本。ボリュームたっぷりなのにふわっとした軽さが魅力の仕上がりです。'},
-  'ウィスパーラッシュ180本':{desc:'最高ボリューム・軽やかに',detail:'ウィスパーラッシュの最高本数仕上げ。軽さと存在感を最大限に引き出します。'},
-  'アイブロウ':{desc:'あなたに似合う眉を整えます',detail:'顔のバランスを見ながら、似合う眉の形に整えます。骨格や顔立ちに合わせたデザインで、メイクが格段にしやすくなります。'},
-  'インクブロウ':{desc:'自然な眉毛が続く・水に強い',detail:'専用のインクを使って自然な眉毛を表現します。汗や水に強く、毎日のメイク時間を大幅に短縮できます。肌への負担が少なく、自然な仕上がりが続きます。'},
-  'ピーリング':{desc:'角質ケアで透明感のある肌に',detail:'肌表面の古い角質を除去し、透明感・くすみ改善・毛穴ケアに効果的です。スキンケアの浸透も高まり、肌本来の美しさを引き出します。'},
-  'インクメイク':{desc:'プロの技術で長持ちメイク',detail:'専用のインクを使って眉・目元・リップラインなどを表現します。汗や摩擦に強く、毎日のメイク時間を大幅に短縮。自然で上品な仕上がりが長続きします。'},
-};
-DATA.services.forEach(sv=>{if(!descs[sv.name])return;const d=descs[sv.name];if(!sv.desc||sv.desc.trim()==='')sv.desc=d.desc;if(!sv.detail||sv.detail.trim()==='')sv.detail=d.detail;});
-s.menuDescVer=1;return true;}
+function menuDescMigrate(){const s=DATA.settings;if((s.menuDescVer||0)>=2)return false;const D={
+  'pm1':{desc:'ダメージレスで上向きカール',detail:'自まつげにやさしい薬剤で、根元から自然に立ち上げる上まつげのパーマです。ビューラーいらずのぱっちりとした目元が約1ヶ月持続。すっぴんでも自信の持てる仕上がりに。<br><b>お直し保証：3日以内</b>／気になる点があれば3日以内に次回ご予約をお取りいただければお直しいたします。'},
+  'pm2':{desc:'上下まとめてぱっちり',detail:'上まつげ・下まつげの両方にパーマをかけ、目全体をぐるりと大きく見せます。下まつげも上向きになることで、より立体的で印象的な目元に。<br><b>お直し保証：3日以内</b>'},
+  'pm3':{desc:'目元と眉を同時に',detail:'まつげパーマと眉パーマをセットで。まつげは上向きに、眉は毛流れを整えて自然な立体感を演出します。顔全体の印象がすっきり垢抜けます。<br><b>お直し保証：3日以内</b>'},
+  'br1':{desc:'メンズ大歓迎・形を整える',detail:'眉の形をカウンセリングし、余分な毛を丁寧に処理して黄金比に近づけます。メイクだけでは出せない自然で洗練された眉に。男性のお客様にも人気のメニューです。'},
+  'br2':{desc:'メンズ大歓迎・立体的な眉に',detail:'眉パーマで毛流れを作り、スタイリングまで行う人気メニュー。毛が寝てしまう・左右差が気になる方に。朝のメイク時間が大幅に短縮でき、立体的で凛々しい眉が続きます。'},
+  'le0':{desc:'付け足し・お直しに',detail:'既存のまつげエクステの付け足し・お直し用メニューです（60本〜）。当店で施術された方の1週間以内のお直しは保証対象です。<br><b>保証期間：1週間</b>／1週間以内であれば無料でお直しいたします。'},
+  'le1':{desc:'フラットラッシュでナチュラル',detail:'軽くて負担の少ないフラットラッシュを80本装着。ナチュラルにさりげなく目力をアップさせたい方におすすめの、いちばん自然な仕上がりです。<br><b>保証期間：1週間</b>／1週間以内のお直しは無料です。'},
+  'le2':{desc:'ほどよいボリューム',detail:'100本でほどよいボリューム。ナチュラルすぎず派手すぎない、毎日使いにちょうど良いバランスの仕上がりです。<br><b>保証期間：1週間</b>'},
+  'le3':{desc:'華やかな目元に',detail:'120本でしっかりとした華やかさ。目尻を長めにするなどデザインの幅も広がり、印象的な目元を演出します。<br><b>保証期間：1週間</b>'},
+  'le4':{desc:'上下振り分け自由',detail:'140本をお好みで上下に振り分け可能。ボリューム感と華やかさを両立し、特別な日にもおすすめのデザインです。<br><b>保証期間：1週間</b>'},
+  'le5':{desc:'気が済むまでたっぷり',detail:'本数を気にせず、目元がいちばんきれいに見えるところまでたっぷり装着するつけ放題メニュー。ボリューム重視の方に。<br><b>保証期間：1週間</b>'},
+  'wl1':{desc:'付け足しメニュー',detail:'1本の自まつげに極細のエクステを複数本束ねて装着するボリュームラッシュ（Wエクステ）。60束(120本)で、軽やかにボリュームをプラスします。<br><b>保証期間：1週間</b>'},
+  'wl2':{desc:'フラットラッシュ',detail:'80束(160本)のボリュームラッシュ。ふんわりとした毛量で、隙間を自然に埋めて濃密な目元に。軽い付け心地です。<br><b>保証期間：1週間</b>'},
+  'wl3':{desc:'ボリューム感アップ',detail:'100束(200本)でしっかりボリューム。目元の存在感が増し、華やかで印象的な仕上がりになります。<br><b>保証期間：1週間</b>'},
+  'wl4':{desc:'しっかり濃密',detail:'120束(240本)の濃密ボリューム。まつげ全体をたっぷり密にして、目力のある華やかな目元を演出します。<br><b>保証期間：1週間</b>'},
+  'wl5':{desc:'上限なしでたっぷり',detail:'束数無制限のつけ放題。いちばんきれいに見えるところまでとことん装着。最大限のボリュームをお求めの方に。<br><b>保証期間：1週間</b>'},
+  'pe1':{desc:'大人気・剥離無し',detail:'植物由来成分を含むハーブを肌に届け、肌本来の再生力を引き出す漢方ハーブピーリングです。剥離がないため当日メイクもOK。毛穴・くすみ・ハリ不足が気になる方に人気の看板メニューです。'},
+  'pe2':{desc:'1度でハーブ3回分の効果',detail:'高濃度ビタミンAと微細なマイクロニードルの組み合わせで、角層の深部まで有効成分を届ける肌再生ピーリング。毛穴の黒ずみ・くすみ・ハリ不足・ニキビ跡などの集中ケアに。1度でハーブピーリング約3回分の手応えを目指します。'},
+  'mk1':{desc:'特別な日のヘアセット',detail:'結婚式・パーティー・撮影などの特別な日に。なりたい印象に合わせて丁寧にセットいたします。'},
+  'mk2':{desc:'ヘアセット＋メイク',detail:'ヘアセットとメイクをセットで。トータルで華やかに仕上げ、特別な一日をサポートします。'},
+  'mk3':{desc:'1〜4名まで同価格',detail:'ご自身でメイクができるようになるためのマンツーマン〜少人数レッスン。骨格やお悩みに合わせた似合わせメイクをお伝えします。1〜4名まで同一料金です。'},
+  'mk4':{desc:'ストローク+パウダー+眉スタイリング',detail:'専用のインクで眉のラインや毛流れを表現し、自然な立体眉を長期間キープするアートメイクメニュー。汗や摩擦に強く、毎朝のメイク時間を大幅に短縮します。ストローク＋パウダー＋眉スタイリング込み。'},
+  'tk1':{desc:'剥離無し・5回チケット',detail:'漢方ハーブピーリングをお得に続けられる5回分の回数券です。定期的なケアで肌のコンディションを整えたい方に。'},
+  'tk2':{desc:'5回チケット',detail:'ニードルピーリングをお得に続けられる5回分の回数券です。集中的な肌再生ケアをご希望の方に。'},
+  'cs1':{desc:'何を選べばいいか分からない方へ',detail:'メニュー選びに迷われている方へのカウンセリングメニューです。お悩みやご希望をうかがい、最適なメニューをご提案します。'}
+  };
+  if(!Array.isArray(DATA.services))return false;
+  let ch=false;
+  DATA.services.forEach(sv=>{const d=D[sv.id];if(!d)return;if(sv.desc!==d.desc){sv.desc=d.desc;ch=true;}if(sv.detail!==d.detail){sv.detail=d.detail;ch=true;}});
+  s.menuDescVer=2;return true;}
 function staffPwMigrate(){const s=DATA.settings;if(!s)return false;if(s.staffPw==='202207vi5'||!s.staffPw){s.staffPw='202207';return true;}return false;}
+function staffNameMigrate(){if(!Array.isArray(DATA.staff))return false;let ch=false;const map={'s2':'TOMOMI','s3':'HARUKA','s1':'SAKURA'};const seed={'s1':'佐藤 ミナ','s2':'田中 ユウ','s3':'鈴木 アオイ'};DATA.staff.forEach(st=>{if(st&&seed[st.id]&&st.name===seed[st.id]){st.name=map[st.id];ch=true;}});return ch;}
 function textsMigrate(){const s=DATA.settings;if(!s)return false;if((s.textsMigVer||0)>=1)return false;// clear old default texts from Supabase
 s.texts=s.texts||{};if(s.texts.heroTitle==='バイタリティ溢れる毎日を。')s.texts.heroTitle='';if(s.texts.heroSub==='まつげ・眉・ピーリング・メイク。あなたに似合うを、ここから。')s.texts.heroSub='';s.textsMigVer=1;return true;}
 function checklistRollover(){if(!DATA.checklist||!DATA.checklist.work){DATA.checklist=seedChecklist();return true;}if(DATA.checklist.date!==fmtDate(today)){const cnt=arr=>{let d=0,t=0;(arr||[]).forEach(c=>c.items.forEach(i=>{if(i.freq==='daily'){t++;if(i.done)d++;}}));return[d,t];};const[wd,wt]=cnt(DATA.checklist.work),[hd,ht]=cnt(DATA.checklist.home);DATA.checklist.log=DATA.checklist.log||[];DATA.checklist.log.unshift({ts:Date.now(),text:`【${DATA.checklist.date}】出勤 ${wd}/${wt}・在宅 ${hd}/${ht} 完了`});DATA.checklist.log=DATA.checklist.log.slice(0,150);[...(DATA.checklist.work||[]),...(DATA.checklist.home||[])].forEach(c=>c.items.forEach(i=>{if(i.freq==='daily')i.done=false;}));DATA.checklist.date=fmtDate(today);return true;}return false;}
@@ -1753,7 +1783,7 @@ function checklistMigrate(){const cl=DATA.checklist;if(!cl||!cl.work)return fals
   cl.ver=2;return true;}
 function renderAdmin(){
   if(!state.adminAuthed)return renderStaffLogin();
-  let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(_clch)saveData(DATA);
+  let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(staffNameMigrate())_clch=true;if(_clch)saveData(DATA);
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
   const tabs=[['tasks','毎日のタスク'],['bookings','予約'],['schedule','シフト'],['customers','顧客'],['docs','ケア・同意書'],['homedisp','ホーム表示'],['menu','メニュー'],['staff','スタッフ'],['broadcast','配信'+(unsent?`(${unsent})`:'')],['campaigns','告知'],['feedback','ご意見'],['sales','売上'],['settings','設定']];
   let inner=({tasks:adminTasks,bookings:adminBookings,calendar:adminCalendar,schedule:adminSchedule,customers:adminCustomers,docs:adminDocs,homedisp:adminHomeDisplay,menu:adminMenu,staff:adminStaff,broadcast:adminBroadcast,campaigns:adminCampaigns,feedback:adminFeedback,sales:adminSales,settings:adminSettings}[state.adminTab])();
