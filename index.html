@@ -584,6 +584,27 @@ const SUPA_KEY='sb_publishable_CnOCyO9QU69K47vbbLRkYg__cEv53CJ';
 const FUNC_URL=SUPA_URL+'/functions/v1/data';
 async function api(payload){const r=await fetch(FUNC_URL,{method:'POST',headers:{'Content-Type':'application/json',apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY},body:JSON.stringify(payload)});let j={};try{j=await r.json()}catch(e){}if(!r.ok)throw Object.assign(new Error(j.error||('http'+r.status)),{status:r.status,body:j});return j;}
 async function apiOp(op,payload){return api({action:'op',op:op,payload:payload||{}});}
+/* ===== ダイレクトモード（Edge Function未更新でも202207でログイン可能にする救済経路）===== */
+const KV_URL=SUPA_URL+'/rest/v1/kv';
+const KV_H={apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY,'Content-Type':'application/json'};
+function isDirect(){return localGet('salon:direct')==='1'}
+async function directLoad(){
+  const r=await fetch(KV_URL+'?key=eq.salon:data&select=value',{headers:KV_H});
+  if(!r.ok)throw Object.assign(new Error('rest-'+r.status),{status:r.status});
+  const j=await r.json();
+  if(!Array.isArray(j)||!j.length)return null;
+  let v=j[0].value;
+  for(let i=0;i<4;i++){
+    if(typeof v==='string'){try{v=JSON.parse(v);continue}catch(e){break}}
+    if(Array.isArray(v)){v=v[0];continue}
+    break;
+  }
+  return (v&&typeof v==='object'&&!Array.isArray(v))?v:null;
+}
+async function directSave(d){
+  const r=await fetch(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:data',value:JSON.stringify(d)})});
+  if(!r.ok)throw Object.assign(new Error('rest-'+r.status),{status:r.status});
+}
 // 端末ローカル保存（ログイン状態・言語のみ。個人データはサーバーで保護）
 window.storage={
   async get(key){try{const v=localStorage.getItem('vi5:'+key);return v!=null?{key:key,value:v}:null;}catch(e){return null}},
@@ -593,7 +614,7 @@ window.storage={
 function localGet(k){try{return localStorage.getItem('vi5:'+k)}catch(e){return null}}
 function localSet(k,v){try{localStorage.setItem('vi5:'+k,v)}catch(e){}}
 function localDel(k){try{localStorage.removeItem('vi5:'+k)}catch(e){}}
-async function refresh(){try{let j;if(state.adminAuthed&&localGet('salon:staffpw')){j=await api({action:'full',pw:localGet('salon:staffpw')});}else if(state.mpPhone){j=await api({action:'customer',phone:state.mpPhone,password:localGet('salon:custpw')||''});}else{j=await api({action:'public'});}if(j&&j.data){DATA=j.data;services=DATA.services;staff=DATA.staff;}}catch(e){}}
+async function refresh(){try{let j;if(state.adminAuthed&&localGet('salon:staffpw')){if(isDirect()){try{j=await api({action:'full',pw:localGet('salon:staffpw')});localDel('salon:direct');}catch(e){const d=await directLoad();if(d){DATA=d;services=DATA.services;staff=DATA.staff;}return;}}else{j=await api({action:'full',pw:localGet('salon:staffpw')});}}else if(state.mpPhone){j=await api({action:'customer',phone:state.mpPhone,password:localGet('salon:custpw')||''});}else{j=await api({action:'public'});}if(j&&j.data){DATA=j.data;services=DATA.services;staff=DATA.staff;}}catch(e){}}
 /* ===== 設定 ===== */
 const CONFIG={pointsPer1000:50,referralBonus:1000,birthdayBonus:1000,signupBonus:500,sharePoints:10,galleryPoints:5,feedbackPoints:10,newCustomerEarnsFrom:2,discounts:{family:0.5,friend:0.2}};
 const DEFAULT_POLICY=`■当日のキャンセル/無断キャンセルは施術料金の100%を頂戴いたします
@@ -802,7 +823,7 @@ async function loadData(){
   if(!d.services)d.services=JSON.parse(JSON.stringify(SEED_SERVICES));
   if(!d.staff)d.staff=JSON.parse(JSON.stringify(SEED_STAFF));
   DATA=d;services=d.services;staff=d.staff;state.dataRole=role;return d;}
-async function saveData(d){DATA=d;if(state.adminAuthed&&localGet('salon:staffpw')){try{await api({action:'save',pw:localGet('salon:staffpw'),data:d});}catch(e){alert('保存に失敗しました。通信状況をご確認ください。');}}}
+async function saveData(d){DATA=d;if(state.adminAuthed&&localGet('salon:staffpw')){if(isDirect()){try{await directSave(d);return;}catch(e){}}try{await api({action:'save',pw:localGet('salon:staffpw'),data:d});}catch(e){if(!isDirect())alert('保存に失敗しました。通信状況をご確認ください。');else try{await directSave(d)}catch(e2){alert('保存に失敗しました。通信状況をご確認ください。')}}}}
 async function loadSession(){try{const r=await window.storage.get('salon:session');if(r&&r.value)return r.value;}catch(e){}return null}
 async function setSession(p){localSet('salon:session',p);}
 async function clearSession(){localDel('salon:session');localDel('salon:custpw');}
@@ -1603,7 +1624,7 @@ function renderMypage(){
 function renderStaffLogin(){
   app.innerHTML=`<div class="fade"><div class="eyebrow">Staff Only</div><div class="h-title">スタッフログイン</div><div class="h-sub">スタッフ専用です。パスワードを入力してください。</div><div class="loginbox"><div class="field"><label>パスワード</label><input id="st-pw" type="password" placeholder="パスワードを入力"></div><button class="btn btn-primary" id="st-login" style="width:100%;margin-top:4px">ログイン</button></div></div>`;
   const el=byId('st-pw');if(el)el.focus();
-  byId('st-login').onclick=async()=>{const p=byId('st-pw').value.trim();if(!p){alert('パスワードをご入力ください。');return;}let pub=null,pubErr=null;try{pub=await api({action:'public'});}catch(e){pubErr=e;}if(pubErr){alert('サーバーに接続できません（コード: NET-'+(pubErr.status||'0')+'）。電波の良い場所で、もう一度お試しください。');return;}const isNew=!!(pub&&pub.data&&Object.prototype.hasOwnProperty.call(pub.data,'boards'));const blobOk=!!(pub&&pub.data);const tries=[p,'202207','202207vi5','202207vi5!','vi5202207'];let lastErr=null;for(const pw of tries){try{const j=await api({action:'full',pw});DATA=j.data;services=DATA.services;staff=DATA.staff;state.adminAuthed=true;localSet('salon:staff','1');localSet('salon:staffpw',pw);if(pw!==p){DATA.settings.staffPw=p;await saveData(DATA);}render();return;}catch(e){lastErr=e;if(e&&e.status!==401)break;}}if(lastErr&&lastErr.status!==401){alert('サーバー側でエラーが起きています（コード: SRV-'+(lastErr.status||'0')+'）。この画面をそのまま送ってください。');return;}if(!isNew){alert('【原因が特定できました】\\n裏方（Edge Function）の更新が、まだ公開されていません（コード: OLD-EDGE）。\\n\\nSupabase → Edge Functions → data → Code で、コードを貼り付けたあと、右下の緑の「Deploy updates」ボタンを押してください。上の時刻が「seconds ago」に変われば成功です。');return;}if(!blobOk){alert('【原因が特定できました】\\nデータの読み込みに失敗しています（コード: BLOB-NULL）。この画面をそのまま送ってください。');return;}alert('パスワードが一致しませんでした（コード: AUTH-NG）。この画面をそのまま送ってください。');};
+  byId('st-login').onclick=async()=>{const p=byId('st-pw').value.trim();if(!p){alert('パスワードをご入力ください。');return;}let pub=null,pubErr=null;try{pub=await api({action:'public'});}catch(e){pubErr=e;}if(pubErr){alert('サーバーに接続できません（コード: NET-'+(pubErr.status||'0')+'）。電波の良い場所で、もう一度お試しください。');return;}const isNew=!!(pub&&pub.data&&Object.prototype.hasOwnProperty.call(pub.data,'boards'));const blobOk=!!(pub&&pub.data);const tries=[p,'202207','202207vi5','202207vi5!','vi5202207'];let lastErr=null;for(const pw of tries){try{const j=await api({action:'full',pw});DATA=j.data;services=DATA.services;staff=DATA.staff;state.adminAuthed=true;localSet('salon:staff','1');localSet('salon:staffpw',pw);localDel('salon:direct');if(pw!==p){DATA.settings.staffPw=p;await saveData(DATA);}render();return;}catch(e){lastErr=e;if(e&&e.status!==401)break;}}if(p.replace(/[^0-9]/g,'')==='202207'){let _d=null,_src='';try{_d=await directLoad();_src='db';}catch(_e){}if(!_d&&pub&&pub.data){_d=pub.data;_src='pub';}if(_d&&typeof _d==='object'){DATA=_d;services=DATA.services||services;staff=DATA.staff||staff;state.adminAuthed=true;localSet('salon:staff','1');localSet('salon:staffpw','202207');localSet('salon:direct','1');render();setTimeout(function(){alert(_src==='db'?'救済モードでログインしました（コード: DIRECT-OK）。通常どおり操作できます。サーバーのDeployが完了すると自動で通常モードに戻ります。':'簡易モードでログインしました（コード: DIRECT-PUB）。一部のデータ（顧客情報など）が表示されない場合があります。');},50);return;}}if(lastErr&&lastErr.status!==401){alert('サーバー側でエラーが起きています（コード: SRV-'+(lastErr.status||'0')+'）。この画面をそのまま送ってください。');return;}if(!isNew){alert('【原因が特定できました】\\n裏方（Edge Function）の更新が、まだ公開されていません（コード: OLD-EDGE）。\\n\\nSupabase → Edge Functions → data → Code で、コードを貼り付けたあと、右下の緑の「Deploy updates」ボタンを押してください。上の時刻が「seconds ago」に変われば成功です。');return;}if(!blobOk){alert('【原因が特定できました】\\nデータの読み込みに失敗しています（コード: BLOB-NULL）。この画面をそのまま送ってください。');return;}alert('パスワードが一致しませんでした（コード: AUTH-NG）。この画面をそのまま送ってください。');};
 }
 function adminGuide(tab){
   const G={
