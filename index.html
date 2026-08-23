@@ -578,6 +578,26 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .consent-box .consent-check{display:flex;align-items:flex-start;gap:8px;margin-top:12px;font-size:14px;color:var(--ink);cursor:pointer;font-weight:600}
 .consent-box .consent-check input{width:20px;height:20px;margin-top:1px;flex:none;accent-color:var(--navy)}
 .consent-box .consent-note{margin-top:8px;font-size:12px;color:var(--sage);font-weight:600}
+/* ===== スマホ表示の安定化 ===== */
+html,body{overflow-x:hidden;max-width:100%}
+img{max-width:100%}
+.nb-menu,.nb-dt,.nb-sub,.ft-body,.consent-terms,.faq-a,.hist-staff,.addr,.camp p,.ni{overflow-wrap:anywhere;word-break:normal;line-break:strict}
+button{white-space:normal}
+@media (max-width:430px){
+  .brand{font-size:26px}
+  .btn-book-big{font-size:16px;padding:16px 14px;letter-spacing:.02em}
+  .firsttime .ft-head{font-size:17px}
+  .firsttime .ft-btn{font-size:14px;padding:13px 8px}
+  .hero-photo{border-radius:14px}
+  .sec-label .t{font-size:15px}
+  .nb-dt{font-size:15px}
+  .h-title{font-size:24px}
+}
+@media (max-width:360px){
+  .brand{font-size:23px}
+  .btn-book-big{font-size:15px}
+  .firsttime .ft-btn{font-size:13px;padding:12px 6px}
+}
 </style>
 </head>
 <body>
@@ -752,7 +772,7 @@ const SEED_STAFF=[
 let staff=SEED_STAFF;
 const companionOpts=[{id:'pet',label:'ペット同伴',ic:'🐾'},{id:'kids',label:'お子様同伴',ic:'🧒'},{id:'guest',label:'付き添いあり',ic:'👤'}];
 const hasteOpts=[{id:'hurry',label:'急いでいる',ic:'⚡'},{id:'relaxed',label:'特に急いでいない',ic:'🌿'}];
-const TERMS='・記載の施術内容・料金・所要時間に同意の上ご予約ください。\n・ご予約のキャンセル・変更は、ご予約時間の24時間前までにお願いいたします。\n・当日のキャンセルは、原則として施術料金の全額をお支払いいただきます。\n・ご予約時間に10分以上遅れられた場合は、自動的に当日のお時間に合わせた対応（メニュー変更など）となります。\n・10分以上ご連絡なく遅れられた場合は、当日キャンセル（無断キャンセル）扱いとさせていただきます。\n・前後に他のお客様のご予約が入っております。早すぎるご来店・遅刻はお控えくださいますようお願いいたします。\n・ペットをご同伴の際は、必ずマナーベルトの着用をお願いいたします。\n・アレルギー・既往症・妊娠中など、施術に影響する事項がある場合は事前にお知らせください。\n・ポイントは施術および店頭商品にご利用いただけます（オンラインショップではご利用いただけません）。\n・施術写真をSNS・ギャラリーへ掲載する場合があります（個人が特定される写真は許可なく使用しません）。';
+const TERMS='・記載の施術内容・料金・所要時間に同意の上ご予約ください。\n・ご予約のキャンセル・変更は、ご予約時間の24時間前までにお願いいたします。\n・当日のキャンセルは、原則として施術料金の全額をお支払いいただきます。\n・ご予約時間に10分以上遅れられた場合は、自動的に当日のお時間に合わせた対応（メニュー変更など）となります。\n・10分以上ご連絡なく遅れられた場合は、当日キャンセル（無断キャンセル）扱いとさせていただきます。\n・前後に他のお客様のご予約が入っております。早すぎるご来店・遅刻はお控えくださいますようお願いいたします。\n・ペットをご同伴の際は、必ずマナーベルトの着用をお願いいたします。\n・アレルギー・既往症・妊娠中など、施術に影響する事項がある場合は事前にお知らせください。\n・ポイントはご予約メニュー（施術料金）のお支払いにのみご利用いただけます。商品との交換・現金へのお引き換えはできません。同じ当店に通われている方へポイントをお贈りいただくことは可能です。\n・施術写真をSNS・ギャラリーへ掲載する場合があります（個人が特定される写真は許可なく使用しません）。';
 const DOW=['日','月','火','水','木','金','土'];
 const fmtDate=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const minToTime=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
@@ -999,7 +1019,7 @@ function renderHome(){if(textsMigrate())saveData(DATA);
       <details><summary>予約はどこからできますか？</summary><div class="faq-a">画面上部のメニュー「予約」から、24時間いつでもご予約いただけます。メニュー→担当→日時を選ぶだけ。情報の入力は初回のみです。</div></details>
       <details><summary>予約の変更・キャンセルは？</summary><div class="faq-a">マイページの「次回のご予約」から、<b>前日の21時まで</b>「🕐時間を変更」「キャンセル」ができます。それ以降は公式LINEへご連絡ください。</div></details>
       <details><summary>マイページはどうやってログインしますか？</summary><div class="faq-a">電話番号とパスワードでログインできます。はじめての方は「予約」または「マイページ」の<b>新規ご登録</b>から、お名前・電話番号・生年月日・パスワードをご登録ください。パスワードをお忘れの場合は公式LINEへご連絡ください。</div></details>
-      <details><summary>ポイントはどうやって貯まりますか？</summary><div class="faq-a">ご来店ごと、お誕生日、お友達のご紹介などで貯まります。次回以降のお会計でお使いいただけます。残高はマイページでいつでも確認できます。</div></details>
+      <details><summary>ポイントはどうやって貯まりますか？</summary><div class="faq-a">ご来店ごと、お誕生日、お友達のご紹介などで貯まります。ポイントは<b>ご予約メニュー（施術料金）のお支払いにのみ</b>ご利用いただけます。商品との交換・現金へのお引き換えはできません。なお、<b>同じ当店に通われている方へポイントをお贈りいただくこと</b>は可能です。残高はマイページでいつでも確認できます。</div></details>
       <details><summary>会員ランクとは？</summary><div class="faq-a">通常会員／シルバー会員（毎回5%OFF）／ゴールド会員（毎回10%OFF）があります。ランクはマイページに表示されます。</div></details>
       <details><summary>お問い合わせはどこへ？</summary><div class="faq-a">施術中はお電話に出られないため、<b>公式LINE</b>へお願いいたします。${s.lineUrl?`<a href="${s.lineUrl}" target="_blank" style="color:var(--gold);font-weight:700"> 公式LINEを開く</a>`:''}</div></details>
     </div>
@@ -1612,7 +1632,7 @@ function renderMypage(){
   const notices=(c.notices||[]).map(n=>`<div class="ni">${n.text}${n.img?`<img src="${n.img}" alt="添付画像" style="width:100%;border-radius:10px;margin-top:8px;display:block">`:''}<div class="nd">${n.date}</div></div>`).join('');
   const nextBk=list.filter(b=>b.date>=fmtDate(today)&&b.status!=='cancelled').sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time))[0];
   const _lineU=(S().lineUrl)||'';const _lineBtn=_lineU?`<a class="btn btn-ghost" href="${_lineU}" target="_blank" style="width:100%;display:block;text-align:center;text-decoration:none;margin-top:8px">💬 公式LINEで連絡する</a>`:'';
-  const nextCard=nextBk?`<div class="nextbk"><div class="nb-h">📅 次回のご予約</div><div class="nb-dt">${mdLabel(nextBk.date)}（${DOW[new Date(nextBk.date+'T00:00:00').getDay()]}）${nextBk.time}〜</div><div class="nb-menu">${nextBk.items.map(x=>itemName(x)).join('＋')}</div><div class="nb-sub">担当：${stById(nextBk.staffId).name} ／ ${nextBk.status==='confirmed'?'✅ 予約確定':'⏳ 確認中'}</div>${canModifyBk(nextBk)?`<div class="nb-acts"><button class="nb-btn" data-resch="${nextBk.id}">🕐 時間を変更</button><button class="nb-btn cancel" data-cancelmy="${nextBk.id}">キャンセル</button></div>`:`<div class="note" style="margin-top:8px">前日の21時を過ぎているため、こちらからの変更・キャンセルはできません。<b>公式LINE</b>からご連絡ください。</div>${_lineBtn}`}</div>`:'';
+  const nextCard=nextBk?`<div class="nextbk"><div class="nb-h">📅 次回のご予約</div><div class="nb-dt">${mdLabel(nextBk.date)}（${DOW[new Date(nextBk.date+'T00:00:00').getDay()]}）${nextBk.time}〜</div><div class="nb-menu">${nextBk.items.map(x=>itemName(x)).join('＋')}</div><div class="nb-sub">担当：${stById(nextBk.staffId).name}</div>${canModifyBk(nextBk)?`<div class="nb-acts"><button class="nb-btn" data-resch="${nextBk.id}">🕐 時間を変更</button><button class="nb-btn cancel" data-cancelmy="${nextBk.id}">キャンセル</button></div>`:`<div class="note" style="margin-top:8px">前日の21時を過ぎているため、こちらからの変更・キャンセルはできません。<b>公式LINE</b>からご連絡ください。</div>${_lineBtn}`}</div>`:'';
   const passes=(c.passes||[]).filter(p=>p.remaining>0).map(p=>`<div class="pass"><span class="pl">🎫 ${p.label}</span><span class="pr">残り <b>${p.remaining}</b>/${p.total}回</span></div>`).join('');
   const savedPosts=(c.saved||[]).map(getPost).filter(Boolean);
   const savedHtml=savedPosts.length?`<div class="subhead">保存したメニュー・商品</div>${savedPosts.map(p=>postCard(p,false)).join('')}`:'';
@@ -1665,7 +1685,7 @@ function renderMypage(){
   const mpb=byId('mp-book');if(mpb)mpb.onclick=()=>startBooking();
   const mprb=byId('mp-rebook');if(mprb&&lastBk)mprb.onclick=()=>{startBooking();state.cart=(lastBk.items||[]).map(x=>svById(x&&x.id)).filter(Boolean);if(state.cart.length)state.step=1;render();};
   app.querySelectorAll('[data-cancelmy]').forEach(b=>b.onclick=async()=>{if(!confirm('この予約をキャンセルしますか？'))return;try{await apiOp('cancelOwn',{phone:state.mpPhone,password:localGet('salon:custpw')||'',bookingId:b.dataset.cancelmy});}catch(e){alert('キャンセルに失敗しました。');return;}await refresh();render();});
-  app.querySelectorAll('[data-resch]').forEach(b=>b.onclick=()=>{const bk=DATA.bookings.find(x=>x.id===b.dataset.resch);if(!bk)return;if(!confirm('お時間の変更を行います。\nこのあと新しい日時を選んでいただくと、今の予約は自動でキャンセルされ、新しい予約に切り替わります。よろしいですか？'))return;startBooking();state.cart=(bk.items||[]).filter(x=>x.cat!=='option').map(x=>svById(x.id)).filter(Boolean);state.b.staff=stById(bk.staffId);state.b.date=null;state.b.time=null;state.rescheduleId=bk.id;state.step=2;render();window.scrollTo(0,0);});
+  app.querySelectorAll('[data-resch]').forEach(b=>b.onclick=()=>{const bk=DATA.bookings.find(x=>x.id===b.dataset.resch);if(!bk)return;if(!confirm('お時間の変更を行います。\nこのあと新しい日時を選んでいただくと、今の予約は自動でキャンセルされ、新しい予約に切り替わります。よろしいですか？'))return;startBooking();state.cart=(bk.items||[]).filter(x=>x.cat!=='option').map(x=>svById(x.id)).filter(Boolean);state.b.staff=stById(bk.staffId);state.b.options=(bk.items||[]).filter(x=>x.cat==='option').map(x=>x.id);state.b.companions=[...(bk.companions||[])];state.b.haste=bk.haste||'';state.b.party2=!!(bk.party&&bk.party.length);state.b.agreed=true;state.b.date=null;state.b.time=null;state.rescheduleId=bk.id;state.step=2;render();window.scrollTo(0,0);});
   app.querySelectorAll('[data-rebookbk]').forEach(b=>b.onclick=()=>{const bk=DATA.bookings.find(x=>x.id===b.dataset.rebookbk);if(!bk)return;startBooking();state.cart=(bk.items||[]).map(x=>svById(x&&x.id)).filter(Boolean);if(state.cart.length)state.step=1;render();window.scrollTo(0,0)});
   const fbs=byId('fb-send');if(fbs)fbs.onclick=async()=>{const el=byId('fb-text');const t=el?el.value.trim():'';if(!t){alert('ご意見をご入力ください。');return;}const fb={id:'fb'+Date.now(),text:t,date:now()};try{await apiOp('addFeedback',{fb,phone:state.mpPhone,points:CONFIG.feedbackPoints,notice:`ご意見をお寄せいただきありがとうございます🙏 ${CONFIG.feedbackPoints}ポイントを差し上げました。`});}catch(e){alert('送信に失敗しました。');return;}await refresh();alert(`送信しました。${CONFIG.feedbackPoints}ポイント差し上げました。ありがとうございます！`);render();};
   const pwsave=byId('mp-pwsave');if(pwsave)pwsave.onclick=async()=>{const v=byId('mp-newpw').value;if(!v||v.length<4){alert('4文字以上で入力してください。');return;}try{await apiOp('changePw',{phone:state.mpPhone,oldpw:localGet('salon:custpw')||'',newpw:v});}catch(e){alert('変更に失敗しました。');return;}localSet('salon:custpw',v);await refresh();alert('パスワードを変更しました。');render();};
