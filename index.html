@@ -556,6 +556,15 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .chk-field{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 13px;font-size:13.5px;cursor:pointer;width:100%}
 .chk-field input[type=checkbox]{width:18px;height:18px;accent-color:var(--gold);flex:0 0 auto}
 .chk-field span{flex:1;line-height:1.5}
+.hero-photo{border-radius:18px;overflow:hidden;margin-bottom:14px;line-height:0;box-shadow:0 4px 18px rgba(30,42,71,.10)}
+.hero-photo img{width:100%;height:auto;display:block}
+.btn-book-big{width:100%;background:var(--gold);color:#fff;border:none;font-family:inherit;font-weight:700;font-size:18px;padding:18px 20px;border-radius:14px;cursor:pointer;box-shadow:0 6px 18px rgba(176,137,74,.35);letter-spacing:.04em;transition:transform .12s,box-shadow .12s}
+.btn-book-big:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(176,137,74,.45)}
+.btn-book-big:active{transform:translateY(0)}
+.firsttime{margin:18px 0 6px;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px 18px 16px}
+.firsttime .ft-head{font-family:"Fraunces",serif;font-size:18px;font-weight:600;color:var(--navy);margin-bottom:8px}
+.firsttime .ft-body{font-size:13.5px;line-height:1.85;color:#4a4a4a}
+.firsttime .ft-line{display:inline-block;margin-top:12px;background:#06C755;color:#fff;text-decoration:none;font-weight:700;font-size:13px;padding:10px 18px;border-radius:100px}
 </style>
 </head>
 <body>
@@ -948,7 +957,8 @@ function renderHome(){if(textsMigrate())saveData(DATA);
     ${s.catalogUrl?`<a class="linkbtn" href="${s.catalogUrl}" target="_blank"><span class="ic">📖</span>カタログを見る</a>`:''}
     ${s.shopUrl?`<a class="linkbtn" href="${s.shopUrl}" target="_blank"><span class="ic">🛍️</span>オンラインショップ</a>`:''}
     ${s.lineUrl?`<a class="linkbtn" href="${s.lineUrl}" target="_blank"><span class="ic">💬</span>公式LINE</a>`:''}</div>`;
-  const heroImg=(s.theme&&s.theme.heroImg)||'';const heroStyle=heroImg?` style="background-image:url('${heroImg}');background-size:cover;background-position:center;min-height:340px"`:'';
+  const heroImg=(s.theme&&s.theme.heroImg)||'/hero.jpg';
+  const firstTimeHtml=`<div class="firsttime"><div class="ft-head">はじめての方へ</div><div class="ft-body">${TX('firstTimeNote','ご予約は上部メニューの「予約」から24時間受付中です。メニュー→担当→日時を選ぶだけ。<br>会員登録は<b>初回のみ</b>（お名前・電話番号・生年月日・パスワード）。ご登録で<b>500ポイント</b>プレゼント、さらに登録後1週間以内に、これまでのご来店回数などをもとにポイントを追加付与いたします。<br>ご不明な点・パスワードをお忘れの場合は公式LINEへお気軽にどうぞ。')}</div>${s.lineUrl?`<a class="ft-line" href="${s.lineUrl}" target="_blank">💬 公式LINEで相談する</a>`:''}</div>`;
   const rk=(s.ranking||[]).filter(r=>r&&(r.name||r.img)).slice(0,3);const medals=['🥇','🥈','🥉'];
   const rankHtml=rk.length?`<div class="sec-label"><span class="t">今月の人気商品ランキング</span></div><div class="rankgrid">${rk.map((r,i)=>{const link=r.url||'';const op=link?`<a class="rankcard" href="${link}" target="_blank" style="text-decoration:none;display:block">`:`<div class="rankcard">`;const cl=link?'</a>':'</div>';return `${op}<div class="rankmedal">${medals[i]||''}</div><div class="rankimg"${r.img?` style="background-image:url('${r.img}')"`:''}></div><div class="rankname">${r.name||''}</div>${cl}`}).join('')}</div>`:'';
   const recs=(s.shopRecs||[]).filter(r=>r&&(r.name||r.img)).slice(0,3);
@@ -962,8 +972,9 @@ function renderHome(){if(textsMigrate())saveData(DATA);
   const menuPics=DATA.services.filter(s2=>s2.cat!=='option').slice(0,6);
   const menuTiles=menuPics.length?`<div class="sec-label"><span class="t">メニュー</span><button class="more" id="menumore">すべて見る →</button></div><div class="mtile-grid">${menuPics.map(s2=>`<button class="mtile" data-mtile="1"><div class="mtile-img" style="${s2.img?`background-image:url('${s2.img}')`:'background:linear-gradient(135deg,var(--navy),#33436b)'}">${s2.img?'':'<span class="mtile-mono">Vi5</span>'}</div><div class="mtile-b"><div class="mtile-n">${svcName(s2)}</div><div class="mtile-p">${s2.price?yen(s2.price):'—'}</div></div></button>`).join('')}</div>`:'';
   app.innerHTML=`<div class="fade">${bannerHtml}
-    <div class="hero-home"${heroStyle}>${TX('heroTitle','')?`<h2>${TX('heroTitle','')}</h2>`:''} ${TX('heroSub','')?`<p>${TX('heroSub','')}</p>`:''}<button class="btn btn-book-hero" id="hbook">${t('bookNow')}</button></div>
-    ${menuTiles}
+    <div class="hero-photo"><img src="${heroImg}" alt="Vi5"></div>
+    <button class="btn btn-book-big" id="hbook">📅 ご予約はこちら</button>
+    ${firstTimeHtml}
     ${rankHtml}
     ${recsHtml}
     ${socialHtml}
@@ -2025,8 +2036,7 @@ function adminSettings(){
     <button class="btn btn-ghost" id="set-backup" style="width:100%;margin-bottom:18px">💾 バックアップをダウンロード</button>
     <div class="subhead" style="margin:0 0 12px">サイトの文言</div>
     <div class="field"><label>タグライン（ロゴ下）</label><input id="tx-tagline" value="${(tx.tagline||'').replace(/"/g,'&quot;')}"></div>
-    <div class="field"><label>トップ見出し</label><input id="tx-heroTitle" value="${(tx.heroTitle||'').replace(/"/g,'&quot;')}"></div>
-    <div class="field"><label>トップ説明文</label><textarea id="tx-heroSub">${tx.heroSub||''}</textarea></div>
+    <div class="field"><label>はじめての方へ（トップに表示）<span class="opt">改行は&lt;br&gt;、太字は&lt;b&gt;〜&lt;/b&gt;が使えます</span></label><textarea id="tx-firstTimeNote" rows="5">${tx.firstTimeNote||''}</textarea></div>
     <div class="field"><label>ホーム下部の案内文</label><input id="tx-homeNote" value="${(tx.homeNote||'').replace(/"/g,'&quot;')}"></div>
     <div class="subhead" style="margin:6px 0 12px">店舗リンク・カタログ</div>
     <div class="field"><label>公式LINE URL</label><input id="set-line" value="${s.lineUrl||''}"></div>
@@ -2464,7 +2474,7 @@ async function addBanner(){const img=state.bannerPhoto||'';if(!img){alert('画�
 async function saveSettings(){const s=S();s.lineUrl=byId('set-line').value.trim();s.mapUrl=byId('set-map').value.trim();s.shopUrl=byId('set-shop').value.trim();s.catalogUrl=byId('set-cat').value.trim();s.address=byId('set-addr').value.trim();s.hours=byId('set-hours').value.trim();s.birthdayMsg=byId('set-bday').value;const e=byId('set-email');if(e)s.staffEmail=e.value.trim();const p=byId('set-pw');if(p)s.staffPw=p.value;
   const pol=byId('set-policy');if(pol)s.bookingPolicy=pol.value;
   s.theme=s.theme||{};['navy','gold','sage','rose','paper'].forEach(k=>{const el=byId('th-'+k);if(el)s.theme[k]=el.value});if(state.heroPending){s.theme.heroImg=state.heroPending;state.heroPending=''}
-  s.texts=s.texts||{};['tagline','heroTitle','heroSub','homeNote'].forEach(k=>{const el=byId('tx-'+k);if(el)s.texts[k]=el.value});
+  s.texts=s.texts||{};['tagline','heroTitle','heroSub','homeNote','firstTimeNote'].forEach(k=>{const el=byId('tx-'+k);if(el)s.texts[k]=el.value});
   await saveData(DATA);applyTheme();alert('保存しました。');render();}
 function exportCSV(){
   const head=['予約ID','日付','時間','お名前','電話番号','メニュー','担当','割引','クーポン','利用pt','支払額','同伴','急ぎ','同行者','ステータス','一言','顧客メモ'];
