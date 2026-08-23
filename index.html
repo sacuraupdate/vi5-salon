@@ -823,7 +823,7 @@ async function loadData(){
   if(!d.services)d.services=JSON.parse(JSON.stringify(SEED_SERVICES));
   if(!d.staff)d.staff=JSON.parse(JSON.stringify(SEED_STAFF));
   DATA=d;services=d.services;staff=d.staff;state.dataRole=role;return d;}
-async function saveData(d){DATA=d;if(state.adminAuthed&&localGet('salon:staffpw')){if(isDirect()){try{await directSave(d);return;}catch(e){}}try{await api({action:'save',pw:localGet('salon:staffpw'),data:d});}catch(e){if(!isDirect())alert('保存に失敗しました。通信状況をご確認ください。');else try{await directSave(d)}catch(e2){alert('保存に失敗しました。通信状況をご確認ください。')}}}}
+async function saveData(d){DATA=d;if(isDirect()){return;}if(state.adminAuthed&&localGet('salon:staffpw')){try{await api({action:'save',pw:localGet('salon:staffpw'),data:d});}catch(e){alert('保存に失敗しました。通信状況をご確認ください。');}}}
 async function loadSession(){try{const r=await window.storage.get('salon:session');if(r&&r.value)return r.value;}catch(e){}return null}
 async function setSession(p){localSet('salon:session',p);}
 async function clearSession(){localDel('salon:session');localDel('salon:custpw');}
