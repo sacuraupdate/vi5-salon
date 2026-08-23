@@ -823,7 +823,29 @@ async function loadData(){
   if(!d.services)d.services=JSON.parse(JSON.stringify(SEED_SERVICES));
   if(!d.staff)d.staff=JSON.parse(JSON.stringify(SEED_STAFF));
   DATA=d;services=d.services;staff=d.staff;state.dataRole=role;return d;}
-async function saveData(d){DATA=d;if(isDirect()){return;}if(state.adminAuthed&&localGet('salon:staffpw')){try{await api({action:'save',pw:localGet('salon:staffpw'),data:d});}catch(e){alert('保存に失敗しました。通信状況をご確認ください。');}}}
+async function saveData(d){DATA=d;
+  if(isDirect()){
+    // アプリ単独保存（Edge Function非依存）。空・初期データでの上書きを防ぐ安全弁つき。
+    if(!state.adminAuthed)return;
+    // 本物のデータをDBから読めていない状態では保存しない（初期データでの再上書き防止）
+    if(!state.dataFromDB){console.warn('save skipped: data not confirmed from DB');return;}
+    const staffCount=(d&&Array.isArray(d.staff))?d.staff.filter(s=>s&&s.id!=='s0').length:0;
+    const custCount=(d&&d.customers)?Object.keys(d.customers).length:0;
+    // データが極端に空なら誤上書きの恐れ→保存中止
+    if(staffCount===0&&custCount===0){console.warn('save aborted: empty data');return;}
+    try{await directSave(d);state._lastSaveOk=Date.now();}
+    catch(e){alert('保存できませんでした（コード: WRITE-'+(e.status||'0')+'）。この画面をそのままお知らせください。');}
+    return;
+  }
+  if(state.adminAuthed&&localGet('salon:staffpw')){try{await api({action:'save',pw:localGet('salon:staffpw'),data:d});}catch(e){alert('保存に失敗しました。通信状況をご確認ください。');}}}
+async function downloadBackup(){
+  try{
+    let d=DATA;try{const fresh=await directLoad();if(fresh)d=fresh;}catch(_e){}
+    const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');
+    a.href=url;a.download='vi5-backup-'+fmtDate(today)+'.json';document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(url);a.remove();},1000);
+  }catch(e){alert('バックアップの作成に失敗しました。')}}
 async function loadSession(){try{const r=await window.storage.get('salon:session');if(r&&r.value)return r.value;}catch(e){}return null}
 async function setSession(p){localSet('salon:session',p);}
 async function clearSession(){localDel('salon:session');localDel('salon:custpw');}
@@ -1624,7 +1646,7 @@ function renderMypage(){
 function renderStaffLogin(){
   app.innerHTML=`<div class="fade"><div class="eyebrow">Staff Only</div><div class="h-title">スタッフログイン</div><div class="h-sub">スタッフ専用です。パスワードを入力してください。</div><div class="loginbox"><div class="field"><label>パスワード</label><input id="st-pw" type="password" placeholder="パスワードを入力"></div><button class="btn btn-primary" id="st-login" style="width:100%;margin-top:4px">ログイン</button><div style="text-align:center;margin-top:10px;font-size:11px;color:#b9a">rescue build v2 · 202207対応済</div></div></div>`;
   const el=byId('st-pw');if(el)el.focus();
-  byId('st-login').onclick=async()=>{const p=byId('st-pw').value.trim();if(!p){alert('パスワードをご入力ください。');return;}let pub=null,pubErr=null;try{pub=await api({action:'public'});}catch(e){pubErr=e;}if(pubErr){alert('サーバーに接続できません（コード: NET-'+(pubErr.status||'0')+'）。電波の良い場所で、もう一度お試しください。');return;}const isNew=!!(pub&&pub.data&&Object.prototype.hasOwnProperty.call(pub.data,'boards'));const blobOk=!!(pub&&pub.data);const tries=[p,'202207','202207vi5','202207vi5!','vi5202207'];let lastErr=null;for(const pw of tries){try{const j=await api({action:'full',pw});DATA=j.data;services=DATA.services;staff=DATA.staff;state.adminAuthed=true;localSet('salon:staff','1');localSet('salon:staffpw',pw);localDel('salon:direct');if(pw!==p){DATA.settings.staffPw=p;await saveData(DATA);}render();return;}catch(e){lastErr=e;if(e&&e.status!==401)break;}}if(p.replace(/[^0-9]/g,'')==='202207'){let _d=null,_src='none';try{_d=await directLoad();if(_d)_src='db';}catch(_e){}if(!_d&&pub&&pub.data&&typeof pub.data==='object'){_d=pub.data;_src='pub';}if(!_d&&DATA&&typeof DATA==='object')_d=DATA;if(_d&&typeof _d==='object'){DATA=_d;services=DATA.services||services;staff=DATA.staff||staff;}state.adminAuthed=true;localSet('salon:staff','1');localSet('salon:staffpw','202207');localSet('salon:direct','1');render();setTimeout(function(){alert(_src==='db'?'ログインしました（コード: DIRECT-OK v2）。全データを表示・保存できます。サーバーのDeploy完了後は自動で通常モードに戻ります。':(_src==='pub'?'ログインしました（コード: DIRECT-PUB v2）。表示・操作は可能ですが、顧客情報など一部が空の場合があります。':'ログインしました（コード: DIRECT-LOCAL v2）。データ取得に失敗したため一部が空の可能性がありますが、操作は可能です。'));},50);return;}if(lastErr&&lastErr.status!==401){alert('サーバー側でエラーが起きています（コード: SRV-'+(lastErr.status||'0')+'）。この画面をそのまま送ってください。');return;}if(!isNew){alert('【原因が特定できました】\\n裏方（Edge Function）の更新が、まだ公開されていません（コード: OLD-EDGE）。\\n\\nSupabase → Edge Functions → data → Code で、コードを貼り付けたあと、右下の緑の「Deploy updates」ボタンを押してください。上の時刻が「seconds ago」に変われば成功です。');return;}if(!blobOk){alert('【原因が特定できました】\\nデータの読み込みに失敗しています（コード: BLOB-NULL）。この画面をそのまま送ってください。');return;}alert('パスワードが一致しませんでした（コード: AUTH-NG）。この画面をそのまま送ってください。');};
+  byId('st-login').onclick=async()=>{const p=byId('st-pw').value.trim();if(!p){alert('パスワードをご入力ください。');return;}let pub=null,pubErr=null;try{pub=await api({action:'public'});}catch(e){pubErr=e;}if(pubErr){alert('サーバーに接続できません（コード: NET-'+(pubErr.status||'0')+'）。電波の良い場所で、もう一度お試しください。');return;}const isNew=!!(pub&&pub.data&&Object.prototype.hasOwnProperty.call(pub.data,'boards'));const blobOk=!!(pub&&pub.data);const tries=[p,'202207','202207vi5','202207vi5!','vi5202207'];let lastErr=null;for(const pw of tries){try{const j=await api({action:'full',pw});DATA=j.data;services=DATA.services;staff=DATA.staff;state.adminAuthed=true;localSet('salon:staff','1');localSet('salon:staffpw',pw);localDel('salon:direct');if(pw!==p){DATA.settings.staffPw=p;await saveData(DATA);}render();return;}catch(e){lastErr=e;if(e&&e.status!==401)break;}}if(p.replace(/[^0-9]/g,'')==='202207'){let _d=null,_src='none';try{_d=await directLoad();if(_d)_src='db';}catch(_e){}if(!_d&&pub&&pub.data&&typeof pub.data==='object'){_d=pub.data;_src='pub';}if(!_d&&DATA&&typeof DATA==='object')_d=DATA;if(_d&&typeof _d==='object'){DATA=_d;services=DATA.services||services;staff=DATA.staff||staff;}state.adminAuthed=true;state.dataFromDB=(_src==='db');localSet('salon:staff','1');localSet('salon:staffpw','202207');localSet('salon:direct','1');render();setTimeout(function(){alert(_src==='db'?'ログインしました（コード: DIRECT-OK v2）。全データを表示・保存できます。サーバーのDeploy完了後は自動で通常モードに戻ります。':(_src==='pub'?'ログインしました（コード: DIRECT-PUB v2）。表示・操作は可能ですが、顧客情報など一部が空の場合があります。':'ログインしました（コード: DIRECT-LOCAL v2）。データ取得に失敗したため一部が空の可能性がありますが、操作は可能です。'));},50);return;}if(lastErr&&lastErr.status!==401){alert('サーバー側でエラーが起きています（コード: SRV-'+(lastErr.status||'0')+'）。この画面をそのまま送ってください。');return;}if(!isNew){alert('【原因が特定できました】\\n裏方（Edge Function）の更新が、まだ公開されていません（コード: OLD-EDGE）。\\n\\nSupabase → Edge Functions → data → Code で、コードを貼り付けたあと、右下の緑の「Deploy updates」ボタンを押してください。上の時刻が「seconds ago」に変われば成功です。');return;}if(!blobOk){alert('【原因が特定できました】\\nデータの読み込みに失敗しています（コード: BLOB-NULL）。この画面をそのまま送ってください。');return;}alert('パスワードが一致しませんでした（コード: AUTH-NG）。この画面をそのまま送ってください。');};
 }
 function adminGuide(tab){
   const G={
@@ -1998,7 +2020,10 @@ function adminCampaigns(){
 }
 function adminSettings(){
   const s=S();const tx=s.texts||{};
-  return `<div class="addform"><div class="subhead" style="margin:0 0 12px">サイトの文言</div>
+  return `<div class="addform"><div class="subhead" style="margin:0 0 12px">バックアップ</div>
+    <div style="font-size:13px;color:#777;margin-bottom:8px">現在のデータ（予約・顧客・スタッフ・設定すべて）を1つのファイルとして手元に保存できます。定期的に押しておくと安心です。</div>
+    <button class="btn btn-ghost" id="set-backup" style="width:100%;margin-bottom:18px">💾 バックアップをダウンロード</button>
+    <div class="subhead" style="margin:0 0 12px">サイトの文言</div>
     <div class="field"><label>タグライン（ロゴ下）</label><input id="tx-tagline" value="${(tx.tagline||'').replace(/"/g,'&quot;')}"></div>
     <div class="field"><label>トップ見出し</label><input id="tx-heroTitle" value="${(tx.heroTitle||'').replace(/"/g,'&quot;')}"></div>
     <div class="field"><label>トップ説明文</label><textarea id="tx-heroSub">${tx.heroSub||''}</textarea></div>
@@ -2209,6 +2234,7 @@ function bindAdmin(){
   const bnf=byId('bn-file');if(bnf)bnf.onchange=e=>{const f=e.target.files[0];if(f)handlePhoto(f,d=>{state.bannerPhoto=d;render()},1200)};
   app.querySelectorAll('[data-bntoggle]').forEach(b=>b.onclick=async()=>{const bn=(S().banners||[]).find(x=>x.id===b.dataset.bntoggle);if(bn){bn.active=bn.active===false;await saveData(DATA);render()}});
   app.querySelectorAll('[data-bndel]').forEach(b=>b.onclick=async()=>{if(!confirm('このバナーを削除しますか？'))return;S().banners=(S().banners||[]).filter(x=>x.id!==b.dataset.bndel);await saveData(DATA);render()});
+  const bkp=byId('set-backup');if(bkp)bkp.onclick=downloadBackup;
   const ss=byId('set-save');if(ss)ss.onclick=saveSettings;
   const capTpl=()=>{(S().templates||[]).forEach((tp,i)=>{const el=byId('set-tpl-'+i);if(el)tp.text=el.value;const ec=byId('set-tplc-'+i);if(ec)tp.cat=ec.value.trim()||tp.cat})};
   const tpa=byId('tpl-add');if(tpa)tpa.onclick=async()=>{capTpl();S().templates=S().templates||[];S().templates.push({cat:'新しいテンプレート',text:''});await saveData(DATA);render()};
