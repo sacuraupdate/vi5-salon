@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,400&family=Hanken+Grotesk:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--paper:#FFFFFF;--paper-2:#F5F6F8;--navy:#1E2A47;--ink:#1E2430;--ink-soft:#6E727C;--line:#E6E8EC;--gold:#B0894A;--gold-soft:#CAA25E;--gold-bg:#FBF3E0;--card:#FFFFFF;--sage:#3F5A46;--rose:#C4362F;--red:#C4362F;--shadow:rgba(30,42,71,.08);}
+:root{--paper:#FFFFFF;--paper-2:#F5F6F8;--navy:#1E2A47;--ink:#1E2430;--ink-soft:#6E727C;--line:#E6E8EC;--gold:#C9A227;--gold-soft:#E6C963;--gold-bg:#FBF3E0;--gold-deep:#9E7C1E;--gold-grad:linear-gradient(135deg,#B8860B 0%,#E6C766 18%,#FFF3B0 36%,#D4AF37 52%,#FFF3B0 66%,#C9A227 84%,#9E7C1E 100%);--card:#FFFFFF;--sage:#3F5A46;--rose:#C4362F;--red:#C4362F;--shadow:rgba(30,42,71,.08);}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:"Hanken Grotesk","Zen Kaku Gothic New",sans-serif;background:#FFFFFF;color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh;}
 .wrap{max-width:760px;margin:0 auto;padding:0 18px 90px;}
@@ -558,7 +558,9 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .chk-field span{flex:1;line-height:1.5}
 .hero-photo{border-radius:18px;overflow:hidden;margin-bottom:14px;line-height:0;box-shadow:0 4px 18px rgba(30,42,71,.10)}
 .hero-photo img{width:100%;height:auto;display:block}
-.btn-book-big{width:100%;background:var(--gold);color:#fff;border:none;font-family:inherit;font-weight:700;font-size:18px;padding:18px 20px;border-radius:14px;cursor:pointer;box-shadow:0 6px 18px rgba(176,137,74,.35);letter-spacing:.04em;transition:transform .12s,box-shadow .12s}
+.btn-book-big{position:relative;overflow:hidden;width:100%;background:var(--gold-grad);background-size:180% 180%;color:var(--navy);border:1px solid var(--gold-deep);font-family:inherit;font-weight:800;font-size:18px;padding:18px 20px;border-radius:14px;cursor:pointer;box-shadow:0 6px 20px rgba(201,162,39,.45),inset 0 1px 0 rgba(255,255,255,.5);letter-spacing:.04em;text-shadow:0 1px 0 rgba(255,255,255,.35);transition:transform .12s,box-shadow .12s}
+.btn-book-big::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.85),transparent);transform:skewX(-20deg);animation:shine 3.2s ease-in-out infinite}
+@keyframes shine{0%{left:-60%}22%{left:130%}100%{left:130%}}
 .btn-book-big:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(176,137,74,.45)}
 .btn-book-big:active{transform:translateY(0)}
 .firsttime{margin:18px 0 6px;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px 18px 16px}
@@ -873,7 +875,7 @@ async function loadStaffSession(){return !!localGet('salon:staff')}
 async function setStaffSession(v){if(v)localSet('salon:staff','1');else{localDel('salon:staff');localDel('salon:staffpw');}}
 function getPost(id){return DATA.posts.find(p=>p.id===id)}
 function TX(k,d){return (DATA.settings&&DATA.settings.texts&&DATA.settings.texts[k])||d}
-function applyTheme(){const r=document.documentElement;r.style.setProperty('--paper','#FFFFFF');r.style.setProperty('--paper-2','#F5F6F8');r.style.setProperty('--navy','#1E2A47');r.style.setProperty('--gold','#B0894A');r.style.setProperty('--rose','#C4362F');r.style.setProperty('--red','#C4362F');r.style.setProperty('--sage','#3F5A46');const tg=byId('tagline');if(tg)tg.textContent=TX('tagline','Eyelash · Brow · Beauty');}
+function applyTheme(){const r=document.documentElement;r.style.setProperty('--paper','#FFFFFF');r.style.setProperty('--paper-2','#F5F6F8');r.style.setProperty('--navy','#1E2A47');r.style.setProperty('--gold','#C9A227');r.style.setProperty('--gold-soft','#E6C963');r.style.setProperty('--rose','#C4362F');r.style.setProperty('--red','#C4362F');r.style.setProperty('--sage','#3F5A46');const tg=byId('tagline');if(tg)tg.textContent=TX('tagline','Eyelash · Brow · Beauty');}
 function applyThemeOLD(){const t=(DATA.settings&&DATA.settings.theme)||{};const r=document.documentElement;['navy','gold','sage','rose','paper'].forEach(k=>{if(t[k])r.style.setProperty('--'+k,t[k])});const tg=byId('tagline');if(tg)tg.textContent=TX('tagline','Eyelash · Brow · Beauty');}
 function gpad(n){return String(n).padStart(2,'0')}
 function nameInitial(n){const p=(n||'').split(' ');return (p[1]&&p[1][0])||(n&&n[0])||'?';}
