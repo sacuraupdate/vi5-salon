@@ -794,6 +794,8 @@ function itemName(x){if(!x)return '';const s=svById(x.id);return (s&&svcName(s))
 const stById=id=>staff.find(s=>s.id===id);
 const catLabel=id=>{const c=categories.find(x=>x.id===id);return c?c.label:(id==='product'?'商品':id==='mens'?'メンズ':id)};
 const normPhone=p=>(p||'').replace(/[^0-9]/g,'');
+
+function normBday(v){const d=String(v||'').replace(/[^0-9]/g,'');if(d.length!==8)return '';const y=+d.slice(0,4),m=+d.slice(4,6),dd=+d.slice(6,8);if(y<1900||y>today.getFullYear()||m<1||m>12||dd<1||dd>31)return '';return d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8);}
 const yen=n=>'¥'+Math.round(n).toLocaleString('ja-JP');
 const bkTotal=b=>b.items.reduce((a,i)=>a+i.price,0);
 const bkPayment=b=>Math.max(0,Math.round(bkTotal(b)*(1-(b.discountRate||0)))-(b.pointsUsed||0)-(b.couponUsed||0));
@@ -1337,7 +1339,7 @@ function stepInfo(){
   const chips=companionOpts.map(o=>{const sel=b.companions.includes(o.id);return `<button class="chip ${sel?'sel':''}" data-comp="${o.id}"><span>${o.ic}</span>${o.label}</button>`}).join('');
   const hchips=hasteOpts.map(o=>{const sel=b.haste===o.id;return `<button class="chip ${sel?'sel':''}" data-haste="${o.id}"><span>${o.ic}</span>${o.label}</button>`}).join('');
   const useField=(known&&useCap>0)?`<div class="field"><label>ポイントを使う <span class="opt">(保有 ${bal.toLocaleString()}pt・1pt=¥1)</span></label><input id="f-pt" type="number" min="0" max="${useCap}" value="${b.usePoints||0}" inputmode="numeric"></div>`:'';
-  const newFields=!known?`<div class="field two"><div><label>生年月日</label><input id="f-bday" type="date" value="${b.birthday}"></div><div><label>パスワード <span class="opt">(マイページ用)</span></label><input id="f-pw" type="password" value="${b.password}" placeholder="4文字以上"></div></div><div class="field"><label>ご紹介者の電話番号 <span class="opt">(任意・紹介でお互いに${CONFIG.referralBonus}pt)</span></label><input id="f-ref" value="${b.referrer}" inputmode="tel" placeholder="090-..."></div><div class="note" style="margin-top:-2px;color:var(--gold)">※ 会員登録は<b>初回のみ</b>（お名前・電話番号・生年月日・パスワード）。ご登録で<b>${CONFIG.signupBonus}ポイント</b>プレゼント🎁 パスワードはマイページのログインに使います。お忘れの場合は公式LINEへご連絡ください。次回以降はログインするだけでOKです。</div>`:'';
+  const newFields=!known?`<div class="field two"><div><label>生年月日</label><input id="f-bday" inputmode="numeric" value="${b.birthday}" placeholder="例）19900615（数字8桁）"></div><div><label>パスワード <span class="opt">(マイページ用)</span></label><input id="f-pw" type="password" value="${b.password}" placeholder="4文字以上"></div></div><div class="field"><label>ご紹介者の電話番号 <span class="opt">(任意・紹介でお互いに${CONFIG.referralBonus}pt)</span></label><input id="f-ref" value="${b.referrer}" inputmode="tel" placeholder="090-..."></div><div class="note" style="margin-top:-2px;color:var(--gold)">※ 会員登録は<b>初回のみ</b>（お名前・電話番号・生年月日・パスワード）。ご登録で<b>${CONFIG.signupBonus}ポイント</b>プレゼント🎁 パスワードはマイページのログインに使います。お忘れの場合は公式LINEへご連絡ください。次回以降はログインするだけでOKです。</div>`:'';
   const party='';
   app.innerHTML=stepsBar(3)+`<div class="fade"><div class="eyebrow">Step 04</div><div class="h-title">${t('confirmT')}</div><div class="h-sub">${t('confirmSub')}</div>${recog}
     <div class="summary"><div class="sum-row"><span class="k">メニュー</span><span class="sum-list">${itemsLines(b.staff&&b.staff.id)}</span></div><div class="sum-row"><span class="k">所要時間</span><span class="v">約${cartMin()}分</span></div><div class="sum-row"><span class="k">担当</span><span class="v">${b.staff.name}</span></div><div class="sum-row"><span class="k">日時</span><span class="v">${dateLabel()}</span></div><div class="sum-row"><span class="k">小計</span><span class="v">${yen(gross)}</span></div>${rate>0?`<div class="sum-row"><span class="k">${dd.label}</span><span class="v disc">-${yen(gross-afterDisc)}</span></div>`:''}${coupon>0?`<div class="sum-row"><span class="k">クーポン</span><span class="v disc">-${yen(coupon)}</span></div>`:''}${use>0?`<div class="sum-row"><span class="k">ポイント利用</span><span class="v pt">-${yen(use)}</span></div>`:''}<div class="sum-row sum-total"><span class="k">お支払い</span><span class="v">${yen(payment)}</span></div></div>
@@ -1353,7 +1355,7 @@ function stepInfo(){
   byId('f-name').oninput=e=>state.b.name=e.target.value;
   byId('f-phone').oninput=e=>{state.b.phone=e.target.value;const c=DATA.customers[normPhone(e.target.value)];if(c)state.b.name=c.name;softInfo()};
   const fp=byId('f-pt');if(fp)fp.oninput=e=>{state.b.usePoints=parseInt(e.target.value||'0')||0;softInfo()};
-  const fb=byId('f-bday');if(fb)fb.onchange=e=>state.b.birthday=e.target.value;const fpw=byId('f-pw');if(fpw)fpw.oninput=e=>state.b.password=e.target.value;
+  const fb=byId('f-bday');if(fb)fb.oninput=e=>state.b.birthday=e.target.value;const fpw=byId('f-pw');if(fpw)fpw.oninput=e=>state.b.password=e.target.value;
   const fr=byId('f-ref');if(fr)fr.oninput=e=>state.b.referrer=e.target.value;
   const p2n=byId('f-p2n');if(p2n)p2n.oninput=e=>state.b.p2name=e.target.value;const p2p=byId('f-p2p');if(p2p)p2p.oninput=e=>state.b.p2phone=e.target.value;
   app.querySelectorAll('[data-comp]').forEach(c=>c.onclick=()=>{const id=c.dataset.comp;b.companions.includes(id)?b.companions=b.companions.filter(x=>x!==id):b.companions.push(id);render()});
@@ -1405,12 +1407,17 @@ function stepStaffPair(){
   const card=(p,who,selStaff,cartIds,i)=>{const ok=p.id==='s0'||!(p.services||[]).length||cartIds.every(id=>(p.services||[]).includes(id));const sel=ok&&selStaff&&selStaff.id===p.id;const initial=p.id==='s0'?'?':nameInitial(p.name);const bg=p.photo?`background-image:url('${p.photo}')`:`background:${p.color}`;
     return `<div class="staff ${sel?'sel':''}" ${ok?`data-staff${who}="${p.id}"`:''} style="${ok?'':'opacity:.45'};animation-delay:${i*.05}s"><div class="photo" style="${bg}">${p.photo?'':initial}<div class="staff-check"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div></div><div class="staff-body"><div class="staff-top"><span class="staff-name">${p.name}</span><span class="staff-role">${p.role}</span></div><div class="staff-intro">${ok?p.intro:'選択中のメニューは担当外です。'}</div>${(ok&&p.quals)?`<div class="quals">${p.quals.split(/[,、]/).map(q=>q.trim()).filter(Boolean).map(q=>`<span class="qual">🏅 ${q}</span>`).join('')}</div>`:''}</div></div>`};
   const idsA=cartA.map(x=>x.id),idsB=cartB.map(x=>x.id);
-  const cardsA=staff.map((p,i)=>card(p,'a',state.staffA,idsA,i)).join('');
-  const cardsB=staff.map((p,i)=>card(p,'b',state.staffB,idsB,i)).join('');
+  const realStaff=staff.filter(p=>p.id!=='s0');
+  const cardsA=realStaff.map((p,i)=>card(p,'a',state.staffA,idsA,i)).join('');
+  const cardsB=realStaff.map((p,i)=>card(p,'b',state.staffB,idsB,i)).join('');
+  const canDo=(p,ids)=>!(p.services||[]).length||ids.every(id=>(p.services||[]).includes(id));
+  const eligA=realStaff.filter(p=>canDo(p,idsA)),eligB=realStaff.filter(p=>canDo(p,idsB));
+  const canPair=eligA.some(a=>eligB.some(b2=>b2.id!==a.id));
   const same=state.staffA&&state.staffB&&state.staffA.id===state.staffB.id;
   const sameWarn=same?`<div class="note" style="color:var(--rose)">⚠ おふたりとも同じ担当は同時にご案内できません。別の担当をお選びください。</div>`:'';
-  const ready=state.staffA&&state.staffB&&!same;
-  app.innerHTML=stepsBar(1)+`<div class="fade"><div class="eyebrow">Step 02</div><div class="h-title">${t('selectStaff')}</div><div class="h-sub">おふたりそれぞれの担当をお選びください</div>${sameWarn}<div class="subhead" style="margin:6px 0 8px">お一人目の担当 <span style="color:var(--ink-soft);font-weight:400;font-size:11px">（${cartA.map(x=>x.name).join('・')}）</span></div>${cardsA}<div class="subhead" style="margin:18px 0 8px">お二人目の担当 <span style="color:var(--ink-soft);font-weight:400;font-size:11px">（${cartB.map(x=>x.name).join('・')}）</span></div>${cardsB}</div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">${t('backBtn')}</button><button class="btn btn-primary" id="next" ${ready?'':'disabled'}>${t('ctaNextDate')}</button></div>`;
+  const pairBlock=!canPair?`<div class="note" style="color:var(--rose);font-weight:700;border:1.5px solid var(--rose);border-radius:12px;padding:12px 14px">⚠ お選びのメニューは担当できるスタッフが同じため、おふたり同時のご予約はできません。<br>同じスタッフは同時にお一人しか施術できません。お手数ですが、お時間をずらして別々にご予約いただくか、メニューをご変更ください。</div>`:'';
+  const ready=canPair&&state.staffA&&state.staffB&&!same;
+  app.innerHTML=stepsBar(1)+`<div class="fade"><div class="eyebrow">Step 02</div><div class="h-title">${t('selectStaff')}</div><div class="h-sub">おふたりそれぞれの担当をお選びください</div>${pairBlock}${sameWarn}<div class="subhead" style="margin:6px 0 8px">お一人目の担当 <span style="color:var(--ink-soft);font-weight:400;font-size:11px">（${cartA.map(x=>x.name).join('・')}）</span></div>${cardsA}<div class="subhead" style="margin:18px 0 8px">お二人目の担当 <span style="color:var(--ink-soft);font-weight:400;font-size:11px">（${cartB.map(x=>x.name).join('・')}）</span></div>${cardsB}</div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">${t('backBtn')}</button><button class="btn btn-primary" id="next" ${ready?'':'disabled'}>${t('ctaNextDate')}</button></div>`;
   app.querySelectorAll('[data-staffa]').forEach(b=>b.onclick=()=>{state.staffA=stById(b.dataset.staffa);state.b.date=null;state.b.time=null;render()});
   app.querySelectorAll('[data-staffb]').forEach(b=>b.onclick=()=>{state.staffB=stById(b.dataset.staffb);state.b.date=null;state.b.time=null;render()});
   byId('back').onclick=()=>{state.step=0;render()};byId('next').onclick=()=>{state.step=2;render()};
@@ -1425,8 +1432,7 @@ function stepDatePair(){
     for(let mm=OPEN_HOUR*60;mm<=LAST_RECEPTION*60;mm+=30){const tt=minToTime(mm);if(mm+maxMin>closeMin)continue;const slotTime=new Date(state.b.date+'T'+tt+':00').getTime();const inTime=slotTime>=cutoff;const open=!sameStaff&&inTime&&slotOpenFor(sidA,state.b.date,mm)&&slotOpenFor(sidB,state.b.date,mm);const full=!open;const sel=state.b.time===tt?'sel':'';opts+=`<div class="slot ${full?'full':''} ${sel}" ${full?'':`data-slot="${tt}"`}>${tt}</div>`;shown++;}
     const block=shown?`<div class="slots">${opts}</div>`:'<div class="note">この日におふたり同時でご予約いただける時間がありません。別の日をお選びください。</div>';
     slotHtml=`<div class="slot-wrap"><div class="slot-label">おふたり同時に空いている開始時間</div>${block}<div class="note" style="margin-top:8px">日時はおふたり共通です。所要は長い方 約${maxMin}分で計算しています。</div></div>`;}
-  const shared=state.cartA.filter(x=>state.cartB.some(z=>z.id===x.id)&&!svPairable(x.id));
-  const warnPair=shared.length?`<div class="note" style="color:var(--rose)">⚠ 「${shared.map(x=>x.name).join('・')}」はおふたり同時の施術ができません。お時間をずらしてご案内する場合があります。</div>`:'';
+  const warnPair='';
   app.innerHTML=stepsBar(2)+`<div class="fade"><div class="eyebrow">Step 03</div><div class="h-title">${t('selectDate')}</div><div class="h-sub">👥 ${state.staffA.name}（お一人目）＋ ${state.staffB.name}（お二人目）</div>${warnPair}<div class="cal"><div class="cal-head"><button class="cal-nav" id="prev" ${canPrev?'':'disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><div class="cal-title">${y}年 ${mo+1}月</div><button class="cal-nav" id="nextm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></div><div class="cal-grid">${cells}</div><div class="cal-legend">グレーの日はおふたりのどちらかがお休みです</div></div>${slotHtml}</div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">${t('backBtn')}</button><button class="btn btn-primary" id="next" ${state.b.date&&state.b.time?'':'disabled'}>${t('ctaNextInfo')}</button></div>`;
   const pv=byId('prev');if(pv&&canPrev)pv.onclick=()=>{state.calMonth=new Date(y,mo-1,1);render()};byId('nextm').onclick=()=>{state.calMonth=new Date(y,mo+1,1);render()};
   app.querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>{state.b.date=b.dataset.date;state.b.time=null;render()});
@@ -1442,7 +1448,7 @@ function stepInfoPair(){
   const chips=companionOpts.map(o=>{const sel=b.companions.includes(o.id);return `<button class="chip ${sel?'sel':''}" data-comp="${o.id}"><span>${o.ic}</span>${o.label}</button>`}).join('');
   const hchips=hasteOpts.map(o=>{const sel=b.haste===o.id;return `<button class="chip ${sel?'sel':''}" data-haste="${o.id}"><span>${o.ic}</span>${o.label}</button>`}).join('');
   const useField=(knownA&&useCap>0)?`<div class="field"><label>ポイントを使う（お一人目） <span class="opt">(保有 ${balA.toLocaleString()}pt・1pt=¥1)</span></label><input id="f-pt" type="number" min="0" max="${useCap}" value="${b.usePoints||0}" inputmode="numeric"></div>`:'';
-  const newA=!knownA?`<div class="field two"><div><label>生年月日</label><input id="f-bday" type="date" value="${b.birthday}"></div><div><label>パスワード <span class="opt">(マイページ用)</span></label><input id="f-pw" type="password" value="${b.password}" placeholder="4文字以上"></div></div><div class="field"><label>ご紹介者の電話番号 <span class="opt">(任意・お互いに${CONFIG.referralBonus}pt)</span></label><input id="f-ref" value="${b.referrer}" inputmode="tel" placeholder="090-..."></div><div class="note" style="margin-top:-2px;color:var(--gold)">※ 生年月日・パスワード・ご紹介者番号は初回のみお伺いします。</div>`:'';
+  const newA=!knownA?`<div class="field two"><div><label>生年月日</label><input id="f-bday" inputmode="numeric" value="${b.birthday}" placeholder="例）19900615（数字8桁）"></div><div><label>パスワード <span class="opt">(マイページ用)</span></label><input id="f-pw" type="password" value="${b.password}" placeholder="4文字以上"></div></div><div class="field"><label>ご紹介者の電話番号 <span class="opt">(任意・お互いに${CONFIG.referralBonus}pt)</span></label><input id="f-ref" value="${b.referrer}" inputmode="tel" placeholder="090-..."></div><div class="note" style="margin-top:-2px;color:var(--gold)">※ 生年月日・パスワード・ご紹介者番号は初回のみお伺いします。</div>`:'';
   const optAfmt=optItemsOf(state.optA).map(o=>o.name).join('・');const optBfmt=optItemsOf(state.optB).map(o=>o.name).join('・');
   app.innerHTML=stepsBar(3)+`<div class="fade"><div class="eyebrow">Step 04</div><div class="h-title">${t('confirmT')}</div><div class="h-sub">👥 おふたりでのご予約内容をご確認ください</div>${recogA}
     <div class="summary"><div class="sum-row"><span class="k">日時</span><span class="v">${dateLabel()}</span></div><div class="sum-row"><span class="k">お一人目</span><span class="sum-list">${state.cartA.map(x=>itemName(x)).join('<br>')}${optAfmt?`<br><span class="sub">＋${optAfmt}</span>`:''}<br><span class="sub">担当 ${state.staffA.name}・${yen(grossA)}</span></span></div><div class="sum-row"><span class="k">お二人目</span><span class="sum-list">${state.cartB.map(x=>itemName(x)).join('<br>')}${optBfmt?`<br><span class="sub">＋${optBfmt}</span>`:''}<br><span class="sub">担当 ${state.staffB.name}・${yen(grossB)}</span></span></div>${rateA>0?`<div class="sum-row"><span class="k">${ddA.label}(お一人目)</span><span class="v disc">-${yen(grossA-afterA)}</span></div>`:''}${coupon>0?`<div class="sum-row"><span class="k">クーポン(お一人目)</span><span class="v disc">-${yen(coupon)}</span></div>`:''}${use>0?`<div class="sum-row"><span class="k">ポイント利用(お一人目)</span><span class="v pt">-${yen(use)}</span></div>`:''}<div class="sum-row sum-total"><span class="k">お支払い目安(合計)</span><span class="v">${yen(payA+grossB)}</span></div></div>
@@ -1465,7 +1471,7 @@ function stepInfoPair(){
   byId('f-name').oninput=e=>state.b.name=e.target.value;
   byId('f-phone').oninput=e=>{state.b.phone=e.target.value;const c=DATA.customers[normPhone(e.target.value)];if(c)state.b.name=c.name;softInfo()};
   const fp=byId('f-pt');if(fp)fp.oninput=e=>{state.b.usePoints=parseInt(e.target.value||'0')||0;softInfo()};
-  const fb=byId('f-bday');if(fb)fb.onchange=e=>state.b.birthday=e.target.value;const fpw=byId('f-pw');if(fpw)fpw.oninput=e=>state.b.password=e.target.value;
+  const fb=byId('f-bday');if(fb)fb.oninput=e=>state.b.birthday=e.target.value;const fpw=byId('f-pw');if(fpw)fpw.oninput=e=>state.b.password=e.target.value;
   const fr=byId('f-ref');if(fr)fr.oninput=e=>state.b.referrer=e.target.value;
   byId('f-b2name').oninput=e=>state.b.b2name=e.target.value;
   byId('f-b2phone').oninput=e=>{state.b.b2phone=e.target.value;softInfo()};
@@ -1488,10 +1494,10 @@ async function confirmPair(){
   const slotTime=new Date(b.date+'T'+b.time+':00').getTime();if(slotTime<Date.now()+3*60*60*1000){alert('ご予約は開始時間の3時間前までにお願いいたします。');return;}
   const maxMin=Math.max(cartDur(state.cartA),cartDur(state.cartB));if(timeToMin(b.time)+maxMin>LAST_RECEPTION*60){alert('営業終了（21:00）までに施術が終わらないため、別のお時間をお選びください。');return;}
   const shared=state.cartA.filter(x=>state.cartB.some(z=>z.id===x.id)&&!svPairable(x.id));
-  if(shared.length&&!confirm(`「${shared.map(x=>x.name).join('・')}」はおふたり同時の施術ができません。お時間をずらしてご案内する場合がありますが、このままご予約しますか？`))return;
+  if(state.staffA.id===state.staffB.id){alert('おふたりとも同じ担当ではご予約できません。別の担当をお選びください。');return;}if(shared.length){alert('「'+shared.map(x=>x.name).join('・')+'」はおふたり同時にはご案内できません。お手数ですが、別々のお時間でご予約ください。');return;}
   const knownA=DATA.customers[keyA],knownB=DATA.customers[keyB];
   let newA=null,referrerPhone=null,referrerNotice='';
-  if(!knownA){if(!b.birthday){alert('お一人目の生年月日をご入力ください。');return;}if(!b.password||b.password.length<4){alert('お一人目のパスワードは4文字以上でご設定ください。');return;}
+  if(!knownA){b.birthday=normBday(b.birthday);if(!b.birthday){alert('お一人目の生年月日は数字8桁（例：19900615）でご入力ください。');return;}if(!b.password||b.password.length<4){alert('お一人目のパスワードは4文字以上でご設定ください。');return;}
     newA={phone:b.phone,name:b.name,password:b.password,referredBy:null,bonusPoints:CONFIG.signupBonus,joined:fmtDate(today),discount:null,birthday:b.birthday,saved:[],couponYen:0,notices:[{text:`ご登録ありがとうございます🎁 会員登録特典として ${CONFIG.signupBonus}ポイント をプレゼントしました。`,date:fmtDate(today),read:false}],salonNote:'',passes:[],bdayYear:0};
     const rk=normPhone(b.referrer);if(rk&&rk!==keyA){newA.referredBy=rk;newA.bonusPoints+=CONFIG.referralBonus;referrerPhone=rk;referrerNotice=`お友達をご紹介いただきありがとうございます🎁 ${CONFIG.referralBonus}ポイントを差し上げました。`;}}
   let newB=null;if(!knownB){newB={phone:b.b2phone,name:b.b2name,password:keyB.slice(-4),referredBy:null,bonusPoints:CONFIG.signupBonus,joined:fmtDate(today),discount:null,birthday:'',saved:[],couponYen:0,notices:[],salonNote:'おふたり予約で登録',passes:[],bdayYear:0};}
@@ -1517,7 +1523,7 @@ async function confirmBooking(){
   if(b.date&&b.time){const slotTime=new Date(b.date+'T'+b.time+':00').getTime();if(slotTime<Date.now()+3*60*60*1000){alert('ご予約は開始時間の3時間前までにお願いいたします。別のお時間をお選びください。');return;}const totMin=state.cart.reduce((s,x)=>s+(x.min||0),0);if(timeToMin(b.time)+totMin>LAST_RECEPTION*60){alert('営業終了（21:00）までに施術が終わらないため、別のお時間をお選びください。');return;}}
   const key=normPhone(b.phone);const known=DATA.customers[key];const loggedIn=state.mpPhone&&normPhone(state.mpPhone)===key;
   let newCustObj=null,referrerPhone=null,referrerNotice='';
-  if(!known){if(!b.birthday){alert('生年月日をご入力ください。');return;}if(!b.password||b.password.length<4){alert('パスワード（マイページ用）を4文字以上でご設定ください。');return;}
+  if(!known){b.birthday=normBday(b.birthday);if(!b.birthday){alert('生年月日は数字8桁（例：19900615）でご入力ください。');return;}if(!b.password||b.password.length<4){alert('パスワード（マイページ用）を4文字以上でご設定ください。');return;}
     newCustObj={phone:b.phone,name:b.name,password:b.password,referredBy:null,bonusPoints:CONFIG.signupBonus,joined:fmtDate(today),discount:null,birthday:b.birthday,saved:[],couponYen:0,notices:[{text:`ご登録ありがとうございます🎁 会員登録特典として ${CONFIG.signupBonus}ポイント をプレゼントしました。`,date:fmtDate(today),read:false}],salonNote:'',passes:[],bdayYear:0};
     const rk=normPhone(b.referrer);if(rk&&rk!==key){newCustObj.referredBy=rk;newCustObj.bonusPoints+=CONFIG.referralBonus;referrerPhone=rk;referrerNotice=`お友達をご紹介いただきありがとうございます🎁 ${CONFIG.referralBonus}ポイントを差し上げました。`;}
   }
@@ -1579,7 +1585,7 @@ function renderMypage(){
       <div class="loginbox">
         <div class="field"><label>お名前</label><input id="rg-name" value="${r.name}" placeholder="例：山田 花子"></div>
         <div class="field"><label>電話番号（ハイフンなし）</label><input id="rg-phone" inputmode="tel" value="${r.phone}" placeholder="09012345678"></div>
-        <div class="field two"><div><label>生年月日</label><input id="rg-bday" type="date" value="${r.birthday}"></div><div><label>パスワード <span class="opt">(4文字以上)</span></label><input id="rg-pw" type="password" value="${r.password}" placeholder="マイページ用"></div></div>
+        <div class="field two"><div><label>生年月日</label><input id="rg-bday" inputmode="numeric" value="${r.birthday}" placeholder="例）19900615（数字8桁）"></div><div><label>パスワード <span class="opt">(4文字以上)</span></label><input id="rg-pw" type="password" value="${r.password}" placeholder="マイページ用"></div></div>
         <div class="field"><label>ご紹介者の電話番号 <span class="opt">(任意・ご紹介でお互いに${CONFIG.referralBonus}pt)</span></label><input id="rg-ref" inputmode="tel" value="${r.referrer}" placeholder="090..."></div>
         <div class="consent-box"><div class="consent-title">ご利用にあたっての同意事項</div><div class="consent-terms">${TERMS.replace(/\n/g,'<br>')}</div><label class="consent-check"><input type="checkbox" id="rg-consent"> 上記の内容を読み、<b>同意します</b></label><div class="consent-note">✓ ご登録時にご同意いただくため、<b>当日の同意書のご記入は不要</b>です。</div></div>
         <button class="btn btn-primary" id="rg-go" style="width:100%">この内容で登録する（${CONFIG.signupBonus}pt🎁）</button>
@@ -1596,7 +1602,7 @@ function renderMypage(){
         const phone=normPhone(r.phone);
         if(!r.name.trim()){alert('お名前をご入力ください。');return;}
         if(!phone){alert('電話番号をご入力ください（ハイフンなし）。');return;}
-        if(!r.birthday){alert('生年月日をご入力ください。');return;}
+        r.birthday=normBday(r.birthday);if(!r.birthday){alert('生年月日は数字8桁（例：19900615）でご入力ください。');return;}
         if(!r.password||r.password.length<4){alert('パスワード（マイページ用）は4文字以上でご設定ください。');return;}
         const rk=normPhone(r.referrer);const hasRef=!!(rk&&rk!==phone);
         const cust={phone:phone,name:r.name.trim(),password:r.password,referredBy:hasRef?rk:null,bonusPoints:CONFIG.signupBonus+(hasRef?CONFIG.referralBonus:0),joined:fmtDate(today),discount:null,birthday:r.birthday,saved:[],couponYen:0,notices:[{text:`ご登録ありがとうございます🎁 会員登録特典として ${CONFIG.signupBonus}ポイント をプレゼントしました。`,date:fmtDate(today),read:false}],salonNote:'',passes:[],bdayYear:0};
@@ -1674,12 +1680,12 @@ function renderMypage(){
     bdayBanner=`<div class="bday-banner"><div class="confetti">${conf}</div><div class="bday-pop">🎉🎊🎉</div><div class="bday-msg">お誕生日おめでとうございます！</div><div class="bday-sub">${c.name} 様、すてきな一年になりますように🎂</div><div class="bday-coupon">🎁 お誕生日の特典として <b>1,000円クーポン</b> をご用意しています。お誕生日の<b>前月・当月・翌月（前後1ヶ月）</b>の間にご利用ください（例：6月生まれの方は5・6・7月）。ご来店時にスタッフへお伝えください。</div></div>`;
   }
   app.innerHTML=`<div class="fade">${previewBar}${bdayBanner}<div class="mp-hero"><button class="mp-logout" id="mp-out">ログアウト</button><div class="mp-hello">${t('mpThanks')} ${c.birthday?`・ 🎂${bdayLabel(c.birthday)}`:''}</div><div class="mp-name">${c.name} 様 <span class="rank-badge r${effectiveRank(c)}">${RANK_LABEL[effectiveRank(c)]}</span>${c.discount?`<span class="disc-badge">${DISC_LABEL[c.discount]}</span>`:''}</div><div class="mp-ptlabel">保有ポイント</div><div class="mp-pt">${bal.toLocaleString()}<small>pt</small></div><div class="mp-meta">今後のご予約 ${upcoming}件${coupon}</div></div>
-    ${notices?`<div class="subhead" style="margin-top:0">📢 サロンからのお知らせ</div><div class="nlist">${notices}</div>`:''}
     ${nextCard}
     <button class="btn btn-primary" id="mp-book" style="width:100%;margin:2px 0 12px">＋ ご予約はこちら（情報入力なしでOK）</button>
     ${rebookHtml}
     ${recoHtml}
     <div class="subhead" style="margin-top:14px">メニュー</div>
+    <details class="mrow"><summary><span class="mic">📢</span>サロンからのメッセージ<span class="chev">›</span></summary><div class="mrow-b">${notices?`<div class="nlist" style="margin-top:12px">${notices}</div>`:'<div class="empty">新しいメッセージはありません</div>'}</div></details>
     <details class="mrow"><summary><span class="mic">🗓</span>ご予約一覧・来店履歴<span class="chev">›</span></summary><div class="mrow-b">${list.length?hist:'<div class="empty">履歴はまだありません</div>'}</div></details>
     <details class="mrow"><summary><span class="mic">💎</span>ポイント・会員ランク<span class="chev">›</span></summary><div class="mrow-b">${generosityHtml}<div class="earn"><div class="earn-t">💎 ポイントの貯め方</div><div class="earn-row"><span>💅 ご来店ごと（お会計に応じて）</span><b>貯まる</b></div><div class="earn-row"><span>🎂 お誕生日に</span><b>+${CONFIG.birthdayBonus.toLocaleString()}</b></div><div class="earn-row"><span>👥 お友達をご紹介</span><b>+${CONFIG.referralBonus}</b></div><div class="earn-row"><span>✉ ご意見箱に投稿</span><b>+${CONFIG.feedbackPoints}</b></div></div>${rankLadderHtml}${expiryHtml}</div></details>
     <details class="mrow"><summary><span class="mic">🎫</span>回数券<span class="chev">›</span></summary><div class="mrow-b">${passes||'<div class="empty">ご利用中の回数券はありません</div>'}</div></details>
