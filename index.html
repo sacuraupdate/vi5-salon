@@ -598,6 +598,14 @@ button{white-space:normal}
   .btn-book-big{font-size:15px}
   .firsttime .ft-btn{font-size:13px;padding:12px 6px}
 }
+/* ===== マイページ メニューリスト ===== */
+.mrow{background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden;box-shadow:0 2px 8px rgba(30,42,71,.05)}
+.mrow>summary{list-style:none;display:flex;align-items:center;gap:12px;padding:16px;cursor:pointer;font-weight:700;color:var(--navy);font-size:15px}
+.mrow>summary::-webkit-details-marker{display:none}
+.mrow .mic{width:36px;height:36px;border-radius:11px;background:var(--paper-2);display:flex;align-items:center;justify-content:center;font-size:17px;flex:none}
+.mrow .chev{margin-left:auto;color:#b9bcc4;font-size:20px;font-weight:400;transition:transform .15s}
+.mrow[open] .chev{transform:rotate(90deg)}
+.mrow .mrow-b{padding:2px 16px 16px;border-top:1px solid var(--paper-2)}
 </style>
 </head>
 <body>
@@ -1670,13 +1678,15 @@ function renderMypage(){
     ${nextCard}
     <button class="btn btn-primary" id="mp-book" style="width:100%;margin:2px 0 12px">＋ ご予約はこちら（情報入力なしでOK）</button>
     ${rebookHtml}
-    ${(!c.birthday)?`<div class="reco" style="border-color:var(--rose)"><div class="reco-m">🎂 お誕生日が未登録です。ご来店時にスタッフへお伝えください。お誕生日月に特典（1,000円クーポン）のご案内をお送りします。</div></div>`:''}
     ${recoHtml}
-    ${passes?`<div class="subhead">🎫 回数券・オプション残数</div>${passes}`:''}
-    ${cpn?`<div class="subhead">🎁 クーポン</div><div class="pass"><span class="pl">🎁 ${cpn}</span></div><div class="note" style="margin-top:6px">クーポンは発行から<b>3ヶ月以内</b>にご利用ください。</div>`:''}
-    <details class="mp-acc"><summary>💎 ポイント・会員ランクについて</summary><div class="mp-acc-b">${generosityHtml}<div class="earn"><div class="earn-t">💎 ポイントの貯め方</div><div class="earn-row"><span>💅 ご来店ごと（お会計に応じて）</span><b>貯まる</b></div><div class="earn-row"><span>🎂 お誕生日に</span><b>+${CONFIG.birthdayBonus.toLocaleString()}</b></div><div class="earn-row"><span>👥 お友達をご紹介</span><b>+${CONFIG.referralBonus}</b></div><div class="earn-row"><span>✉ ご意見箱に投稿</span><b>+${CONFIG.feedbackPoints}</b></div></div>${rankLadderHtml}${expiryHtml}</div></details>
-    <details class="mp-acc"><summary>⚙️ その他・設定（パスワード・ご意見箱）</summary><div class="mp-acc-b">${savedHtml}<div class="subhead" style="margin-top:0">パスワード変更</div><div class="composer"><div class="note" style="margin:0 0 10px">仮パスワードでログインした方は、こちらでご自身のパスワードに変更してください。</div><input id="mp-newpw" type="password" placeholder="新しいパスワード（4文字以上）" style="width:100%;font-family:inherit;font-size:14px;border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:var(--paper)"><button class="btn btn-primary" id="mp-pwsave" style="width:100%;margin-top:8px">パスワードを変更</button></div><div class="subhead">ご意見箱</div><div class="composer"><div class="note" style="margin:0 0 10px">気になった点など、小さなことでも構いません。お名前は不要・匿名で届きます。送ってくださった方には${CONFIG.feedbackPoints}ポイントを差し上げます。</div><textarea id="fb-text" placeholder="ご意見・ご感想（匿名で届きます）"></textarea><button class="btn btn-primary" id="fb-send" style="width:100%;margin-top:8px">送信して ${CONFIG.feedbackPoints}pt 受け取る</button></div></div></details>
-    <div class="subhead">🗓 来店履歴・ご予約</div>${list.length?hist:'<div class="empty">履歴はまだありません</div>'}
+    <div class="subhead" style="margin-top:14px">メニュー</div>
+    <details class="mrow"><summary><span class="mic">🗓</span>ご予約一覧・来店履歴<span class="chev">›</span></summary><div class="mrow-b">${list.length?hist:'<div class="empty">履歴はまだありません</div>'}</div></details>
+    <details class="mrow"><summary><span class="mic">💎</span>ポイント・会員ランク<span class="chev">›</span></summary><div class="mrow-b">${generosityHtml}<div class="earn"><div class="earn-t">💎 ポイントの貯め方</div><div class="earn-row"><span>💅 ご来店ごと（お会計に応じて）</span><b>貯まる</b></div><div class="earn-row"><span>🎂 お誕生日に</span><b>+${CONFIG.birthdayBonus.toLocaleString()}</b></div><div class="earn-row"><span>👥 お友達をご紹介</span><b>+${CONFIG.referralBonus}</b></div><div class="earn-row"><span>✉ ご意見箱に投稿</span><b>+${CONFIG.feedbackPoints}</b></div></div>${rankLadderHtml}${expiryHtml}</div></details>
+    <details class="mrow"><summary><span class="mic">🎫</span>回数券<span class="chev">›</span></summary><div class="mrow-b">${passes||'<div class="empty">ご利用中の回数券はありません</div>'}</div></details>
+    <details class="mrow"><summary><span class="mic">🎁</span>クーポン<span class="chev">›</span></summary><div class="mrow-b">${cpn?`<div class="pass"><span class="pl">🎁 ${cpn}</span></div><div class="note" style="margin-top:6px">クーポンは発行から<b>3ヶ月以内</b>にご利用ください。</div>`:'<div class="empty">ご利用可能なクーポンはありません</div>'}</div></details>
+    <details class="mrow"><summary><span class="mic">🎂</span>誕生日特典<span class="chev">›</span></summary><div class="mrow-b">${c.birthday?`<div class="note">🎂 お誕生日：<b>${bdayLabel(c.birthday)}</b><br>お誕生日の<b>前月・当月・翌月</b>の3ヶ月間、<b>1,000円クーポン</b>がご利用いただけます。お誕生日には<b>${CONFIG.birthdayBonus.toLocaleString()}pt</b>もプレゼント🎁</div>`:`<div class="note">🎂 お誕生日が未登録です。ご来店時にスタッフへお伝えください。ご登録いただくと、お誕生日月に<b>1,000円クーポン</b>と<b>${CONFIG.birthdayBonus.toLocaleString()}pt</b>の特典があります。</div>`}</div></details>
+    <details class="mrow"><summary><span class="mic">⚙️</span>会員情報・その他<span class="chev">›</span></summary><div class="mrow-b">${savedHtml}<div class="subhead" style="margin-top:0">パスワード変更</div><div class="composer"><div class="note" style="margin:0 0 10px">仮パスワードでログインした方は、こちらでご自身のパスワードに変更してください。</div><input id="mp-newpw" type="password" placeholder="新しいパスワード（4文字以上）" style="width:100%;font-family:inherit;font-size:14px;border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:var(--paper)"><button class="btn btn-primary" id="mp-pwsave" style="width:100%;margin-top:8px">パスワードを変更</button></div><div class="subhead">ご意見箱</div><div class="composer"><div class="note" style="margin:0 0 10px">気になった点など、小さなことでも構いません。お名前は不要・匿名で届きます。送ってくださった方には${CONFIG.feedbackPoints}ポイントを差し上げます。</div><textarea id="fb-text" placeholder="ご意見・ご感想（匿名で届きます）"></textarea><button class="btn btn-primary" id="fb-send" style="width:100%;margin-top:8px">送信して ${CONFIG.feedbackPoints}pt 受け取る</button></div></div></details>
+    <div class="note" style="text-align:center;margin-top:14px">※ご予約の変更・キャンセルは<b style="color:var(--rose)">前日の21時まで</b></div>
     <button class="btn btn-ghost" id="mp-out2" style="width:100%;margin-top:24px">ログアウト</button></div>`;
   const _exitPreview=()=>{const k=state.previewCust;state.previewCust=null;state.mpPhone=null;state.view='admin';state.adminTab='customers';state.custOpen=k;render();};
   byId('mp-out').onclick=async()=>{if(state.previewCust){_exitPreview();return;}state.mpPhone=null;await clearSession();render()};
