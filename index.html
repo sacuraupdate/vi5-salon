@@ -909,6 +909,8 @@ function applyTheme(){const r=document.documentElement;r.style.setProperty('--pa
 function applyThemeOLD(){const t=(DATA.settings&&DATA.settings.theme)||{};const r=document.documentElement;['navy','gold','sage','rose','paper'].forEach(k=>{if(t[k])r.style.setProperty('--'+k,t[k])});const tg=byId('tagline');if(tg)tg.textContent=TX('tagline','Eyelash · Brow · Beauty');}
 function gpad(n){return String(n).padStart(2,'0')}
 function nameInitial(n){const p=(n||'').split(' ');return (p[1]&&p[1][0])||(n&&n[0])||'?';}
+function gcalPayload(bk,action){const st=(typeof stById==='function'?stById(bk.staffId):null)||{};const cust=(DATA.customers&&DATA.customers[normPhone(bk.phone)])||{};const name=bk.name||cust.name||'お客様';const dur=(bk.items||[]).reduce((a,i)=>a+(i.min||0),0)||60;const menu=(bk.items||[]).map(i=>i.name).join('＋');return {action:action||'create',id:bk.id,date:bk.date||'',time:bk.time||'',duration:dur,menu:menu,staff:st.name||'',customer:name,phone:bk.phone||'',companions:(bk.companions||[]).join(',')};}
+function pushGCal(bk,action){try{const url=(DATA.settings&&DATA.settings.gcalHook)||'';if(!url||!bk||!bk.id)return;fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(gcalPayload(bk,action))});}catch(e){}}
 function gcalUrl(bk){const start=new Date(bk.date+'T'+bk.time+':00');const dur=bk.items.reduce((a,i)=>a+(i.min||0),0)||60;const end=new Date(start.getTime()+dur*60000);const f=d=>d.getFullYear()+gpad(d.getMonth()+1)+gpad(d.getDate())+'T'+gpad(d.getHours())+gpad(d.getMinutes())+'00';const text=encodeURIComponent('Vi5 ご予約：'+bk.items.map(i=>i.name).join('＋'));const det=encodeURIComponent('担当：'+stById(bk.staffId).name+' / '+bk.id);const loc=encodeURIComponent((DATA.settings&&DATA.settings.address)||'');return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${f(start)}/${f(end)}&details=${det}&location=${loc}&ctz=Asia/Tokyo`}
 function gcalShiftUrl(sid,ds,sh){if(!sh.on||!sh.ranges.length)return '';const rs=sh.ranges;const st=Math.min(...rs.map(r=>r.start)),en=Math.max(...rs.map(r=>r.end));const start=new Date(ds+'T'+gpad(st)+':00:00');const end=new Date(ds+'T'+gpad(en)+':00:00');const f=d=>d.getFullYear()+gpad(d.getMonth()+1)+gpad(d.getDate())+'T'+gpad(d.getHours())+gpad(d.getMinutes())+'00';const text=encodeURIComponent('出勤：'+stById(sid).name);const det=encodeURIComponent('受付 '+rs.map(r=>r.start+':00〜'+r.end+':00').join('、'));return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${f(start)}/${f(end)}&details=${det}&ctz=Asia/Tokyo`}
 function shiftFor(sid,dow){return (DATA.shifts&&DATA.shifts[sid]&&DATA.shifts[sid][dow])||null}
@@ -1515,7 +1517,7 @@ async function confirmPair(){
     await apiOp('createBooking',{booking:bkA,customer:newA,phone:b.phone,couponUsed:coupon,passesAdd:passesAddA,referrerPhone:referrerPhone,referrerNotice:referrerNotice,referrerBonus:CONFIG.referralBonus,nextId:(DATA.nextId||1047)+1});
     await apiOp('createBooking',{booking:bkB,customer:newB,phone:b.b2phone,couponUsed:0,passesAdd:passesAddB,referrerPhone:null,referrerNotice:'',referrerBonus:CONFIG.referralBonus,nextId:(DATA.nextId||1047)+2});
   }catch(e){alert('予約の送信に失敗しました。通信状況をご確認ください。');return;}
-  state.lastBooking={...bkA,name:b.name,newCust:!knownA,referralBonus:referrerPhone?CONFIG.referralBonus:0,pairName:b.b2name};
+  pushGCal({...bkA,name:b.name},'create');pushGCal({...bkB,name:b.b2name},'create');state.lastBooking={...bkA,name:b.name,newCust:!knownA,referralBonus:referrerPhone?CONFIG.referralBonus:0,pairName:b.b2name};
   await refresh();state.step=4;render();
 }
 async function confirmBooking(){
@@ -1535,9 +1537,9 @@ async function confirmBooking(){
   const passesAdd=[];state.cart.forEach(it=>{if(it.pass)passesAdd.push({label:it.pass.label,total:it.pass.count,remaining:it.pass.count})});
   try{await apiOp('createBooking',{booking:bk,customer:newCustObj,phone:b.phone,couponUsed:coupon,passesAdd:passesAdd,referrerPhone:referrerPhone,referrerNotice:referrerNotice,referrerBonus:CONFIG.referralBonus,nextId:(DATA.nextId||1047)+1});}
   catch(e){alert('予約の送信に失敗しました。通信状況をご確認ください。');return;}
-  state.lastBooking={...bk,name:b.name,newCust:!known,referralBonus:referrerPhone?CONFIG.referralBonus:0};
+  state.lastBooking={...bk,name:b.name,newCust:!known,referralBonus:referrerPhone?CONFIG.referralBonus:0};pushGCal({...bk,name:b.name},'create');
   await refresh();
-  if(state.rescheduleId){try{await apiOp('cancelOwn',{phone:b.phone,password:localGet('salon:custpw')||'',bookingId:state.rescheduleId});}catch(e){}state.rescheduleId=null;await refresh();}
+  if(state.rescheduleId){try{await apiOp('cancelOwn',{phone:b.phone,password:localGet('salon:custpw')||'',bookingId:state.rescheduleId});pushGCal({id:state.rescheduleId},'cancel');}catch(e){}state.rescheduleId=null;await refresh();}
   state.step=4;render();
 }
 function aftercareText(items){
@@ -1701,7 +1703,7 @@ function renderMypage(){
   const _pvb=byId('mp-preview-back');if(_pvb)_pvb.onclick=_exitPreview;
   const mpb=byId('mp-book');if(mpb)mpb.onclick=()=>startBooking();
   const mprb=byId('mp-rebook');if(mprb&&lastBk)mprb.onclick=()=>{startBooking();state.cart=(lastBk.items||[]).map(x=>svById(x&&x.id)).filter(Boolean);if(state.cart.length)state.step=1;render();};
-  app.querySelectorAll('[data-cancelmy]').forEach(b=>b.onclick=async()=>{if(!confirm('この予約をキャンセルしますか？'))return;try{await apiOp('cancelOwn',{phone:state.mpPhone,password:localGet('salon:custpw')||'',bookingId:b.dataset.cancelmy});}catch(e){alert('キャンセルに失敗しました。');return;}await refresh();render();});
+  app.querySelectorAll('[data-cancelmy]').forEach(b=>b.onclick=async()=>{if(!confirm('この予約をキャンセルしますか？'))return;try{await apiOp('cancelOwn',{phone:state.mpPhone,password:localGet('salon:custpw')||'',bookingId:b.dataset.cancelmy});pushGCal({id:b.dataset.cancelmy},'cancel');}catch(e){alert('キャンセルに失敗しました。');return;}await refresh();render();});
   app.querySelectorAll('[data-resch]').forEach(b=>b.onclick=()=>{const bk=DATA.bookings.find(x=>x.id===b.dataset.resch);if(!bk)return;if(!confirm('お時間の変更を行います。\nこのあと新しい日時を選んでいただくと、今の予約は自動でキャンセルされ、新しい予約に切り替わります。よろしいですか？'))return;startBooking();state.cart=(bk.items||[]).filter(x=>x.cat!=='option').map(x=>svById(x.id)).filter(Boolean);state.b.staff=stById(bk.staffId);state.b.options=(bk.items||[]).filter(x=>x.cat==='option').map(x=>x.id);state.b.companions=[...(bk.companions||[])];state.b.haste=bk.haste||'';state.b.party2=!!(bk.party&&bk.party.length);state.b.agreed=true;state.b.date=null;state.b.time=null;state.rescheduleId=bk.id;state.step=2;render();window.scrollTo(0,0);});
   app.querySelectorAll('[data-rebookbk]').forEach(b=>b.onclick=()=>{const bk=DATA.bookings.find(x=>x.id===b.dataset.rebookbk);if(!bk)return;startBooking();state.cart=(bk.items||[]).map(x=>svById(x&&x.id)).filter(Boolean);if(state.cart.length)state.step=1;render();window.scrollTo(0,0)});
   const fbs=byId('fb-send');if(fbs)fbs.onclick=async()=>{const el=byId('fb-text');const t=el?el.value.trim():'';if(!t){alert('ご意見をご入力ください。');return;}const fb={id:'fb'+Date.now(),text:t,date:now()};try{await apiOp('addFeedback',{fb,phone:state.mpPhone,points:CONFIG.feedbackPoints,notice:`ご意見をお寄せいただきありがとうございます🙏 ${CONFIG.feedbackPoints}ポイントを差し上げました。`});}catch(e){alert('送信に失敗しました。');return;}await refresh();alert(`送信しました。${CONFIG.feedbackPoints}ポイント差し上げました。ありがとうございます！`);render();};
@@ -1930,7 +1932,7 @@ async function saveManualBooking(){
   const bk={id:'PB'+Date.now(),phone:phoneRaw,items,staffId:mb.staffId,date:mb.date,time:mb.time,companions:[],party:[],pointsUsed:0,couponUsed:0,discountRate:0,haste:null,salonMessage:'',customerMemo:'',status:mb.status||'confirmed',byStaff:true};
   DATA.bookings.push(bk);
   await saveData(DATA);
-  state.manualOpen=false;state.manualBook=null;state.adminFilter='all';
+  pushGCal(bk,'create');state.manualOpen=false;state.manualBook=null;state.adminFilter='all';
   alert(`予約を登録しました。\n${name} 様 ／ ${mdLabel(mb.date)} ${bk.time}\n${items.map(i=>i.name).join('＋')}`);
   render();
 }
@@ -2112,6 +2114,7 @@ function adminSettings(){
     <div class="field"><label>地図(Google Maps) URL</label><input id="set-map" value="${s.mapUrl||''}"></div>
     <div class="field"><label>オンラインショップ URL</label><input id="set-shop" value="${s.shopUrl||''}"></div>
     <div class="field"><label>カタログ URL</label><input id="set-cat" value="${s.catalogUrl||''}"></div>
+    <div class="field"><label>Googleカレンダー連携URL <span class="opt">（設定するとご予約が自動でGoogleカレンダーに入ります／設定方法はサロンオーナーへ）</span></label><input id="set-gcalhook" value="${s.gcalHook||''}" placeholder="https://script.google.com/macros/s/.../exec"></div>
     <div class="field"><label>住所</label><input id="set-addr" value="${s.address||''}"></div>
     <div class="field"><label>営業時間</label><input id="set-hours" value="${s.hours||''}"></div>
     <div class="field"><label>お誕生日メッセージ <span class="opt">({bonus}=付与ポイント)</span></label><textarea id="set-bday">${s.birthdayMsg||''}</textarea></div>
@@ -2540,7 +2543,7 @@ async function toggleCamp(id){const c=getCamp(id);if(c){c.active=!c.active;await
 async function delCamp(id){if(!confirm('削除しますか？'))return;DATA.campaigns=DATA.campaigns.filter(c=>c.id!==id);await saveData(DATA);render();}
 async function pushCampAll(id){const c=getCamp(id);if(!confirm('このお知らせを全顧客のマイページに配信しますか？'))return;Object.values(DATA.customers).forEach(cu=>pushNotice(cu,`【${c.title}】${c.desc}`));await saveData(DATA);alert('全顧客に配信しました。');}
 async function addBanner(){const img=state.bannerPhoto||'';if(!img){alert('画像を選んでください。');return;}const link=byId('bn-link').value.trim();const from=byId('bn-from').value;const to=byId('bn-to').value;S().banners=S().banners||[];S().banners.unshift({id:'bn'+Date.now(),img,link,from,to,active:true});state.bannerPhoto='';await saveData(DATA);alert('バナーを追加しました。');render();}
-async function saveSettings(){const s=S();s.lineUrl=byId('set-line').value.trim();s.mapUrl=byId('set-map').value.trim();s.shopUrl=byId('set-shop').value.trim();s.catalogUrl=byId('set-cat').value.trim();s.address=byId('set-addr').value.trim();s.hours=byId('set-hours').value.trim();s.birthdayMsg=byId('set-bday').value;const e=byId('set-email');if(e)s.staffEmail=e.value.trim();const p=byId('set-pw');if(p)s.staffPw=p.value;
+async function saveSettings(){const s=S();s.lineUrl=byId('set-line').value.trim();s.mapUrl=byId('set-map').value.trim();s.shopUrl=byId('set-shop').value.trim();s.catalogUrl=byId('set-cat').value.trim();const gh=byId('set-gcalhook');if(gh)s.gcalHook=gh.value.trim();s.address=byId('set-addr').value.trim();s.hours=byId('set-hours').value.trim();s.birthdayMsg=byId('set-bday').value;const e=byId('set-email');if(e)s.staffEmail=e.value.trim();const p=byId('set-pw');if(p)s.staffPw=p.value;
   const pol=byId('set-policy');if(pol)s.bookingPolicy=pol.value;
   s.theme=s.theme||{};['navy','gold','sage','rose','paper'].forEach(k=>{const el=byId('th-'+k);if(el)s.theme[k]=el.value});if(state.heroPending){s.theme.heroImg=state.heroPending;state.heroPending=''}
   s.texts=s.texts||{};['tagline','heroTitle','heroSub','homeNote','firstTimeNote'].forEach(k=>{const el=byId('tx-'+k);if(el)s.texts[k]=el.value});
