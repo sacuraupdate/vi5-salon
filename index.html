@@ -779,6 +779,12 @@ button{white-space:normal}
 .tk-open{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:none;border:none;text-align:left;cursor:pointer;font-family:inherit;padding:0}
 .tk-chk{cursor:pointer}
 .tbnum{position:absolute;top:4px;right:8px;background:var(--rose);color:#fff;font-size:10px;font-weight:800;border-radius:100px;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 4px}
+.clbtn.home{background:#5a7db0;color:#fff}
+.taskseg{display:flex;gap:10px;margin-bottom:14px}
+.taskseg button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;border:2px solid var(--line);background:#fff;border-radius:14px;padding:14px 8px;font-family:inherit;font-weight:800;font-size:14px;color:var(--ink-soft);cursor:pointer}
+.taskseg button.on{border-color:var(--navy);background:var(--navy);color:#fff}
+.taskseg .ts-ic{font-size:24px}
+.taskseg .ts-s{font-size:10.5px;font-weight:600;opacity:.85}
 </style>
 </head>
 <body>
@@ -1128,7 +1134,7 @@ const state={view:'home',step:0,openCat:null,cart:[],
   b:{staff:null,date:null,time:null,name:'',phone:'',companions:[],referrer:'',usePoints:0,haste:null,agreed:false,party2:false,p2name:'',p2phone:'',birthday:'',password:'',b2name:'',b2phone:'',b2birthday:'',b2password:'',options:[],note:''},
   bookMode:'single',pairPerson:1,pairA:null,cartA:[],cartB:[],staffA:null,staffB:null,pairEditing:'A',optA:[],optB:[],
   calMonth:new Date(today.getFullYear(),today.getMonth(),1),
-  adminTab:'calendar',adminFilter:'all',custQuery:'',custOpen:null,taskMode:'work',salesPeriod:'month',schedDate:fmtDate(today),acM:new Date(today.getFullYear(),today.getMonth(),1),acDay:fmtDate(today),
+  adminTab:'todo',adminFilter:'all',custQuery:'',custOpen:null,taskMode:'work',salesPeriod:'month',schedDate:fmtDate(today),acM:new Date(today.getFullYear(),today.getMonth(),1),acDay:fmtDate(today),
   galleryFilter:'all',boardFilter:'all',boardOpen:false,boardEdit:null,boardPhotos:[],loginFull:false,pendingCust:null,previewCust:null,rescheduleId:null,mpPhone:null,lastBooking:null,pendingPhoto:'',galPostOpen:false,menuEdit:null,menuPhoto:'',menuPhotos:[],menuOpen:null,optEdit:null,bcPhone:'',bcQuery:'',bcTpl:0,adminAuthed:false,
   shareFilter:'all',sharePostOpen:false,sharePhotos:[],shareCmtOpen:null,schedMode:'month',brushMode:'work',brushStart:10,brushEnd:19,heroPending:'',galPhotos:[],finOpen:null,schedStaff:'s1',scM:new Date(today.getFullYear(),today.getMonth(),1),calDay:null,navStack:[],staffEdit:null,lang:'ja',bannerPhoto:'',importStage:'idle',importHeaders:[],importRows:[],importMap:{},rankPhotos:[],recPhotos:[],staffPhotoPending:'',manualOpen:false,manualBook:null,manualCat:'all'};
 const byId=id=>document.getElementById(id);
@@ -1846,10 +1852,10 @@ function renderMypage(){
   const er=effectiveRank(c);
   const _md=s=>{const p=s.split('-');return `${+p[1]}/${+p[2]}`};
   const er2=er;
-  const ladder=[[0,'通常会員','通常価格でご利用いただけます'],[1,'シルバー会員','毎回のお会計が 5%OFF'],[2,'ゴールド会員','毎回のお会計が 10%OFF']];
-  const rankLadderHtml=`<div class="subhead">💳 会員ランク</div><div class="ranklad">${ladder.map(r=>`<div class="rank-tier ${er2===r[0]?'cur':''}"><div class="rt-top"><span class="rt-name">${['🥉','🥈','🥇'][r[0]]} ${r[1]}</span>${er2===r[0]?'<span class="rt-now">いまここ</span>':''}</div><div class="rt-ben">${r[2]}</div></div>`).join('')}</div><div class="note" style="margin-top:8px">会員ランクはサロンが設定します。ランクが上がるほど、毎回のお会計がお得になります😊</div>`;
+  const ladder=[[0,'通常会員','通常価格。月1回のご来店を続けると翌月シルバーへ✨'],[1,'シルバー会員','毎回5%OFF。月2回のご来店を続けるとゴールドへ⤴'],[2,'ゴールド会員','毎回10%OFF。最上位ランクです👑']];
+  const rankLadderHtml=`<div class="subhead">💳 会員ランク</div><div class="ranklad">${ladder.map(r=>`<div class="rank-tier ${er2===r[0]?'cur':''}"><div class="rt-top"><span class="rt-name">${['🥉','🥈','🥇'][r[0]]} ${r[1]}</span>${er2===r[0]?'<span class="rt-now">いまここ</span>':''}</div><div class="rt-ben">${r[2]}</div></div>`).join('')}</div><div class="note" style="margin-top:8px">🥈シルバー＝毎回5%OFF／🥇ゴールド＝毎回10%OFF。<b>月1回の定期ご来店でシルバー、月2回でゴールド</b>にランクアップします（サロンが来店状況を確認して反映）。通うほどお得です😊</div>`;
   const generosityHtml=`<div class="generosity">💛 物価高が続くいま、少しでも多くお客様に還元したいと思っています。貯まったポイントや会員ランクの割引は、<b>どうぞお気遣いなく、たくさんお使いください</b>。お客様に喜んでいただくことが、私たちのいちばんの願いです。</div>`;
-  const expiryHtml=`<div class="subhead">ポイント・特典の有効期限</div><div class="earn"><div class="earn-row"><span>👥 お友達紹介のポイント</span><b>2年間</b></div><div class="earn-row"><span>✉ ご意見箱のポイント</span><b>3ヶ月間</b></div><div class="earn-row"><span>🎂 お誕生日クーポン</span><b>前後1ヶ月</b></div></div><div class="note" style="margin-top:6px">お誕生日クーポンは、お誕生日の<b>前月・当月・翌月</b>の3ヶ月間ご利用いただけます（例：6月生まれの方は5月・6月・7月）。期限を過ぎた分は無効になりますので、ぜひお早めにお使いください😊</div>`;
+  const expiryHtml=`<div class="subhead">ポイント・特典の有効期限</div><div class="earn"><div class="earn-row"><span>👥 お友達紹介のポイント</span><b>1年間</b></div><div class="earn-row"><span>✉ ご意見箱のポイント</span><b>1ヶ月間</b></div><div class="earn-row"><span>🎂 お誕生日クーポン</span><b>前後1ヶ月</b></div></div><div class="note" style="margin-top:6px">お誕生日クーポンは、お誕生日の<b>前月・当月・翌月</b>の3ヶ月間ご利用いただけます（例：6月生まれの方は5月・6月・7月）。期限を過ぎた分は無効になりますので、ぜひお早めにお使いください😊</div>`;
   const previewBar=state.previewCust?`<div class="preview-bar"><span>👀 スタッフ確認用プレビュー（このお客様に表示される画面です）</span><button id="mp-preview-back">← 管理画面に戻る</button></div>`:'';
   let bdayBanner='';
   if(c.birthday&&c.birthday.slice(5,7)===fmtDate(today).slice(5,7)){
@@ -2072,7 +2078,7 @@ function taskOpenCount(){const me=localGet('salon:me');return ((WORK&&WORK.tasks
 function adminTodo(){
   if(!WORK){loadWork().then(()=>render());return '<div class="empty" style="padding:40px 0">✅ 読み込み中…</div>';}
   const me=localGet('salon:me');const meNm=meName();const reals=staff.filter(s=>s.id!=='s0');
-  const tmode=state.taskTab||'personal';const modeSw=`<div class="tkfilter" style="margin-bottom:12px"><button data-ttab="daily" class="${tmode==='daily'?'on':''}">📋 毎日のタスク</button><button data-ttab="personal" class="${tmode==='personal'?'on':''}">🙋 個人のタスク</button></div>`;if(tmode==='daily')return modeSw+adminTasks();  if(state.taskOpen){return taskDetail(state.taskOpen);}
+  const tmode=state.taskTab||'personal';const modeSw=`<div class="taskseg"><button data-ttab="daily" class="${tmode==='daily'?'on':''}"><span class="ts-ic">📋</span><span>毎日のタスク</span><span class="ts-s">店舗・在宅の毎日の項目</span></button><button data-ttab="personal" class="${tmode==='personal'?'on':''}"><span class="ts-ic">🙋</span><span>個人のタスク</span><span class="ts-s">自分・依頼された仕事</span></button></div>`;if(tmode==='daily')return modeSw+adminTasks();  if(state.taskOpen){return taskDetail(state.taskOpen);}
   const flt=state.taskFilter||'mine';
   let ts=(WORK.tasks||[]).slice();
   if(flt==='allt'){}else if(flt==='mine')ts=ts.filter(t=>t.assignee===me||t.scope==='all'||t.by===me);
@@ -2131,7 +2137,7 @@ function fmtDur(ms){const m=Math.max(0,Math.floor(ms/60000));return Math.floor(m
 function clockWorkedMs(c){if(!c.in)return 0;const end=c.out||Date.now();let br=0;(c.breaks||[]).forEach(b=>{br+=(b.end||Date.now())-b.start;});return Math.max(0,end-c.in-br);}
 async function clockAction(act){const me=localGet('salon:me');if(!me||me==='owner'){alert('先に「担当を変更」からご自身を選んでください。');return;}
   await loadWork();WORK.clock=WORK.clock||[];let cur=WORK.clock.find(c=>c.staff===me&&!c.out);
-  if(act==='in'){if(cur){alert('すでに出勤中です。');return;}const mode=confirm('本日は「出勤（店舗）」ですか？\n\nOK＝出勤（店舗・上限8時間）\nキャンセル＝在宅（上限5時間・在宅手当200円）')?'onsite':'home';
+  if(act==='in'||act==='in_onsite'||act==='in_home'){if(cur){alert('すでに出勤中です。');return;}const mode=(act==='in_home')?'home':'onsite';
     WORK.clock.push({id:'c'+Date.now(),staff:me,name:meName(),mode,in:Date.now(),breaks:[],out:0});logAct('出勤打刻（'+(mode==='onsite'?'店舗':'在宅')+'）');}
   else if(act==='break'){if(!cur){alert('出勤していません。');return;}cur.breaks=cur.breaks||[];const ob=cur.breaks.find(b=>!b.end);if(ob){ob.end=Date.now();logAct('休憩終了');}else{cur.breaks.push({start:Date.now(),end:0});logAct('休憩開始');}}
   else if(act==='out'){if(!cur){alert('出勤していません。');return;}const ob=(cur.breaks||[]).find(b=>!b.end);if(ob)ob.end=Date.now();cur.out=Date.now();cur.workedMs=clockWorkedMs(cur);logAct('退勤打刻（'+fmtDur(cur.workedMs)+'）');if(!reportedToday()){setTimeout(()=>alert('お疲れさまでした！本日の業務報告がまだです。「📝業務報告」から提出をお願いします。'),100);}}
@@ -2148,7 +2154,7 @@ function computePay(staffId,mkey){const sv=stById(staffId)||{};const wage=sv.wag
   const adj=payItemsFor(staffId,mkey);let plus=0,minus=0;adj.forEach(x=>{if(x.amount>=0)plus+=x.amount;else minus+=-x.amount;});
   const total=base+homeAllow+nomFee+plus-minus;
   return {wage,hours,days,homeDays,base,homeAllow,noms,nomFee,adj,plus,minus,total};}
-function clockBar(){if(!WORK)return '';const me=localGet('salon:me');if(!me||me==='owner')return '';const cur=(WORK.clock||[]).find(c=>c.staff===me&&!c.out);const onBreak=cur&&(cur.breaks||[]).some(b=>!b.end);let warn='';if(cur){const w=clockWorkedMs(cur)/3600000;const mx=WORK_MAX[cur.mode];if(w>=mx)warn=`<div class="cl-warn">⏰ 上限${mx}時間超過。退勤してください</div>`;}return `<div class="clockp"><div class="cl-status">${cur?`🟢 出勤中（${cur.mode==='onsite'?'店舗':'在宅'}）／ ${fmtDur(clockWorkedMs(cur))}${onBreak?' ・ ☕休憩中':''}`:'⚪ 未出勤'}</div><div class="cl-btns">${!cur?`<button class="clbtn in" data-clock="in">🟢 出勤</button>`:`<button class="clbtn br" data-clock="break">${onBreak?'☕ 休憩終了':'☕ 休憩'}</button><button class="clbtn out" data-clock="out">🔴 退勤</button>`}</div>${warn}</div>`;}
+function clockBar(){if(!WORK)return '';const me=localGet('salon:me');if(!me||me==='owner')return '';const cur=(WORK.clock||[]).find(c=>c.staff===me&&!c.out);const onBreak=cur&&(cur.breaks||[]).some(b=>!b.end);let warn='';if(cur){const w=clockWorkedMs(cur)/3600000;const mx=WORK_MAX[cur.mode];if(w>=mx)warn=`<div class="cl-warn">⏰ 上限${mx}時間超過。退勤してください</div>`;}return `<div class="clockp"><div class="cl-status">${cur?`🟢 出勤中（${cur.mode==='onsite'?'店舗':'在宅'}）／ ${fmtDur(clockWorkedMs(cur))}${onBreak?' ・ ☕休憩中':''}`:'⚪ 未出勤'}</div><div class="cl-btns">${!cur?`<button class="clbtn in" data-clock="in_onsite">🏢 店舗 出勤</button><button class="clbtn home" data-clock="in_home">🏠 在宅 出勤</button>`:`<button class="clbtn br" data-clock="break">${onBreak?'☕ 休憩終了':'☕ 休憩'}</button><button class="clbtn out" data-clock="out">🔴 退勤</button>`}</div>${warn}</div>`;}
 function adminPay(){
   if(!WORK){loadWork().then(()=>render());return '<div class="empty" style="padding:40px 0">💴 読み込み中…</div>';}
   const me=localGet('salon:me');const isOwner=meName()==='SAKURA';
@@ -2226,7 +2232,7 @@ function renderAdmin(){
   if(!localGet('salon:me')){app.innerHTML=renderMePicker();app.querySelectorAll('[data-me]').forEach(b=>b.onclick=()=>setMe(b.dataset.me));const _mo=byId('me-logout');if(_mo)_mo.onclick=()=>{try{localStorage.removeItem('vi5:datacache');}catch(e){}state.adminAuthed=false;localDel('salon:staff');localDel('salon:staffpw');render();};return;}
   let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(staffNameMigrate())_clch=true;if(wageMigrate())_clch=true;if(_clch)saveData(DATA);
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
-  const tabs=[['calendar','📆','カレンダー'],['todo','✅','タスク'],['bookings','📅','予約'],['schedule','⏰','シフト'],['customers','👥','顧客'],['feedback','💬','ご意見'],['menu','📋','メニュー'],['staff','💇','スタッフ'],['broadcast','✉️','配信'+(unsent?`(${unsent})`:'')],['homedisp','🏠','ホーム・告知'],['sales','💰','売上'],['chat','💬','チャット'],['pay','💴','給与'],['report','📝','業務報告'],['settings','⚙️','設定']];
+  const tabs=[['todo','✅','タスク'],['bookings','📅','予約'],['schedule','⏰','シフト'],['customers','👥','顧客'],['feedback','💬','ご意見'],['menu','📋','メニュー'],['staff','💇','スタッフ'],['broadcast','✉️','配信'+(unsent?`(${unsent})`:'')],['homedisp','🏠','ホーム・告知'],['sales','💰','売上'],['chat','💬','チャット'],['pay','💴','給与'],['report','📝','業務報告'],['settings','⚙️','設定']];
   const _sec=(t)=>`<div class="subhead" style="margin:26px 0 12px;padding-top:18px;border-top:2px solid var(--line)">${t}</div>`;
   let inner=({
     tasks:adminTasks,bookings:adminBookings,calendar:adminCalendar,todo:adminTodo,schedule:adminSchedule,
@@ -2492,10 +2498,10 @@ async function vsApply(){const acts=(state.vsActions||[]).filter(a=>a.ok);if(!ac
   });});
   await saveData(DATA);state.vsActions=null;if(byId('vs-text'))state.vsText='';alert('シフトを設定しました。');render();}
 function vsStartVoice(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert('お使いのブラウザは音声入力に対応していません。Safari／Chromeの最新版をお試しください（テキスト入力でも設定できます）。');return;}
-  const rec=new SR();rec.lang='ja-JP';rec.interimResults=false;rec.continuous=false;state.vsListening=true;render();
-  rec.onresult=e=>{let s='';for(let i=0;i<e.results.length;i++)s+=e.results[i][0].transcript;const ta=byId('vs-text');const prev=ta?ta.value:'';state.vsText=(prev?prev+'\n':'')+s;state.vsListening=false;state.vsActions=parseShiftText(state.vsText);render();};
-  rec.onerror=()=>{state.vsListening=false;render();};rec.onend=()=>{if(state.vsListening){state.vsListening=false;render();}};
-  try{rec.start();}catch(e){state.vsListening=false;}}
+  const rec=new SR();rec.lang='ja-JP';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=1;state.vsListening=true;render();let _finalTxt='';
+  rec.onresult=e=>{let interim='';for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)_finalTxt+=e.results[i][0].transcript+' ';else interim+=e.results[i][0].transcript;}const base=(state.vsTextBase||'');state.vsText=(base?base+'\n':'')+_finalTxt+interim;const ta=byId('vs-text');if(ta)ta.value=state.vsText;};
+  rec.onerror=(ev)=>{if(ev&&ev.error==='no-speech'){return;}state.vsListening=false;state.vsRec=null;state.vsText=(state.vsTextBase?state.vsTextBase+'\n':'')+_finalTxt;state.vsActions=parseShiftText(state.vsText);render();};rec.onend=()=>{if(state.vsListening&&state.vsRec){try{rec.start();return;}catch(e){}}state.vsListening=false;state.vsRec=null;state.vsText=(state.vsTextBase?state.vsTextBase+'\n':'')+_finalTxt;state.vsActions=parseShiftText(state.vsText);render();};
+  state.vsTextBase=(byId('vs-text')?byId('vs-text').value:'')||'';state.vsRec=rec;try{rec.start();}catch(e){state.vsListening=false;state.vsRec=null;}}
 function voiceShiftPanel(){const acts=state.vsActions||[];
   const preview=acts.length?`<div class="subhead" style="margin:16px 0 8px">確認（この内容で設定します）</div>`+acts.map(a=>a.ok?`<div class="pass" style="border-color:var(--sage)"><span class="pl">✅ ${a.summary}</span></div>`:`<div class="pass" style="border-color:var(--rose)"><span class="pl">⚠ 「${a.raw}」→ ${a.msg}</span></div>`).join('')+(acts.some(a=>a.ok)?`<button class="btn btn-primary" id="vs-apply" style="width:100%;margin-top:10px">この内容でシフトを設定する</button>`:''):'';
   return `<div class="addform"><div class="subhead" style="margin:0 0 8px">🎤 音声でシフト設定</div>
@@ -2704,7 +2710,7 @@ function adminStaff(){
       <div class="stsec">📸 基本情報</div>
       <div class="field"><label>スタッフ写真 <span class="opt">（任意・丸く表示されます）</span></label>${(state.staffPhotoPending||(sv&&sv.photo))?`<div class="preview" style="background-image:url('${state.staffPhotoPending||sv.photo}')"></div>`:''}<label class="fileinput">📷 画像を選ぶ<input type="file" id="st-photo" accept="image/*"></label></div>
       <div class="field"><label>お名前</label><input id="st-name" value="${sv?sv.name.replace(/"/g,'&quot;'):''}" placeholder="例：山田 花子"></div>
-      <div class="field"><label>役割 <span class="opt">（例：アイリスト／店長）</span></label><input id="st-role" value="${sv?(sv.role||'').replace(/"/g,'&quot;'):''}"></div><div class="field"><label style="display:flex;gap:8px;align-items:center;cursor:pointer;font-weight:600"><input type="checkbox" id="st-hidden" ${sv&&sv.hidden?'checked':''} style="width:18px;height:18px"> お客様ページに表示しない（裏方スタッフ）</label></div><div class="field"><label>時給（円）<span class="opt">給与計算に使用（本人にのみ表示）</span></label><input id="st-wage" inputmode="numeric" value="${sv&&sv.wage?sv.wage:''}" placeholder="例：1200"></div>
+      <div class="field"><label>役割 <span class="opt">（例：アイリスト／店長）</span></label><input id="st-role" value="${sv?(sv.role||'').replace(/"/g,'&quot;'):''}"></div><div class="field"><label style="display:flex;gap:8px;align-items:center;cursor:pointer;font-weight:600"><input type="checkbox" id="st-hidden" ${sv&&sv.hidden?'checked':''} style="width:18px;height:18px"> お客様ページに表示しない（接客しない裏方スタッフとして登録）</label></div><div class="field"><label>時給（円）<span class="opt">給与計算に使用（本人にのみ表示）</span></label><input id="st-wage" inputmode="numeric" value="${sv&&sv.wage?sv.wage:''}" placeholder="例：1200"></div>
       <div class="colorrow"><label>テーマカラー <span class="opt">（写真がない時の色・カレンダー表示色）</span></label><input type="color" id="st-color" value="${sv?sv.color:'#1E2A47'}"></div>
       <div class="stsec">💬 お客様向けの紹介 <span class="opt" style="font-weight:400">予約画面・スタッフ紹介ページに表示されます</span></div>
       <div class="field"><label>紹介文</label><textarea id="st-intro" placeholder="お客様へのひとこと・得意な施術など">${sv?sv.intro||'':''}</textarea></div>
@@ -2911,7 +2917,7 @@ function bindAdmin(){
   app.querySelectorAll('[data-drng]').forEach(s=>s.onchange=()=>dRngSet(s));
   app.querySelectorAll('[data-dayoff]').forEach(b=>b.onclick=()=>dDayOff(b.dataset.dayoff));
   app.querySelectorAll('[data-setday]').forEach(b=>b.onclick=()=>dSetDay(b.dataset.setday));
-  app.querySelectorAll('[data-sdtoggle]').forEach(b=>b.onclick=()=>salonDayToggle(b.dataset.sdtoggle));const _oda=byId('od-add');if(_oda)_oda.onclick=addOpenDay;const _emg=byId('emg-off');if(_emg)_emg.onclick=async()=>{const meid=localGet('salon:me');if(!meid||meid==='owner'){alert('先に上の「担当を変更」からご自身のお名前を選んでください。');return;}if(!confirm(meName()+'さんを本日おやすみにして、全体チャットへ連絡します。よろしいですか？\n（本日すでに入っているご予約は自動では動きません。必要に応じてお客様へご連絡ください）'))return;DATA.shiftOverrides=DATA.shiftOverrides||{};DATA.shiftOverrides[meid]=DATA.shiftOverrides[meid]||{};DATA.shiftOverrides[meid][fmtDate(today)]={off:true};await loadWork();WORK.chats['all']=WORK.chats['all']||[];WORK.chats['all'].push({id:'m'+Date.now(),by:meName(),at:Date.now(),text:'【🆘急遽欠勤】本日 '+meName()+' はお休みをいただきます。ご迷惑をおかけしますがよろしくお願いします🙇',reads:[meName()],reacts:{}});logAct('急遽欠勤を連絡');await saveData(DATA);await saveWork();alert('本日をおやすみにし、全体チャットへ連絡しました。');render();};const _vm=byId('vs-mic');if(_vm)_vm.onclick=vsStartVoice;const _vg=byId('vs-go');if(_vg)_vg.onclick=vsInterpret;const _va=byId('vs-apply');if(_va)_va.onclick=vsApply;const _vt=byId('vs-text');if(_vt)_vt.oninput=e=>{state.vsText=e.target.value};
+  app.querySelectorAll('[data-sdtoggle]').forEach(b=>b.onclick=()=>salonDayToggle(b.dataset.sdtoggle));const _oda=byId('od-add');if(_oda)_oda.onclick=addOpenDay;const _emg=byId('emg-off');if(_emg)_emg.onclick=async()=>{const meid=localGet('salon:me');if(!meid||meid==='owner'){alert('先に上の「担当を変更」からご自身のお名前を選んでください。');return;}if(!confirm(meName()+'さんを本日おやすみにして、全体チャットへ連絡します。よろしいですか？\n（本日すでに入っているご予約は自動では動きません。必要に応じてお客様へご連絡ください）'))return;DATA.shiftOverrides=DATA.shiftOverrides||{};DATA.shiftOverrides[meid]=DATA.shiftOverrides[meid]||{};DATA.shiftOverrides[meid][fmtDate(today)]={off:true};await loadWork();WORK.chats['all']=WORK.chats['all']||[];WORK.chats['all'].push({id:'m'+Date.now(),by:meName(),at:Date.now(),text:'【🆘急遽欠勤】本日 '+meName()+' はお休みをいただきます。ご迷惑をおかけしますがよろしくお願いします🙇',reads:[meName()],reacts:{}});logAct('急遽欠勤を連絡');await saveData(DATA);await saveWork();alert('本日をおやすみにし、全体チャットへ連絡しました。');render();};const _vm=byId('vs-mic');if(_vm)_vm.onclick=()=>{if(state.vsListening&&state.vsRec){state.vsListening=false;try{state.vsRec.stop();}catch(e){}state.vsRec=null;render();}else{vsStartVoice();}};const _vg=byId('vs-go');if(_vg)_vg.onclick=vsInterpret;const _va=byId('vs-apply');if(_va)_va.onclick=vsApply;const _vt=byId('vs-text');if(_vt)_vt.oninput=e=>{state.vsText=e.target.value};
   app.querySelectorAll('[data-addrng]').forEach(b=>b.onclick=()=>dAddRng(b.dataset.addrng));
   app.querySelectorAll('[data-rmrng]').forEach(b=>b.onclick=()=>dRmRng(b.dataset.rmrng));
   const qff=byId('qf-fill');if(qff)qff.onclick=qfFill;
