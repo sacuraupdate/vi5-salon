@@ -859,6 +859,8 @@ button{white-space:normal}
 .tip-bubble:after{content:'';position:absolute;left:-7px;top:19px;width:0;height:0;border-top:7px solid transparent;border-bottom:7px solid transparent;border-right:8px solid var(--gold-bg)}
 .tip-bubble .tip-h{font-size:12px;font-weight:800;color:var(--gold-deep);margin-bottom:4px;letter-spacing:.03em}
 .tip-bubble .tip-x{font-size:14px;line-height:1.75;color:var(--navy);font-weight:600}
+.sharebtn{width:100%;margin-top:14px;background:#fff;border:1.5px solid var(--gold);color:var(--gold-deep);font-weight:800;font-size:15px;padding:14px;border-radius:14px;cursor:pointer}
+.sharebtn:active{background:var(--gold-bg)}
 </style>
 </head>
 <body>
@@ -1252,6 +1254,7 @@ const S=()=>DATA.settings;
 
 /* ===== HOME ===== */
 const BEAUTY_TIPS=['まつげは目を保護する大切な毛。こすらず優しく扱うと長持ちします✨','施術後6時間は、まつげ・眉を濡らさないと持ちが良くなります💧','オイルクレンジングはエクステの接着を弱めることも。摩擦は控えめに🌿','眉は「眉山」を意識すると顔がすっきり見えます☝️','水分をとる量が多いほど、肌のうるおいは保たれやすくなります🥤','日焼け止めは冬でも毎日。紫外線は一年中降っています☀️','枕カバーをこまめに替えると、肌トラブルが減ります🛏️','まつげ美容液は「根元」に。毛周期に合わせて続けるのがコツ🌱','睡眠は最高の美容液。同じ時間に寝ると肌が整います😴','ハーブピーリング後はしっかり保湿でつるん肌が続きます🌸','笑顔の表情筋を動かすと、フェイスラインが引き締まります😊','温かい湯船に浸かると血行が良くなり、肌色が明るく見えます♨️','カフェインの摂りすぎはむくみの原因に。お水もこまめに💧','眉メイクは「左右対称」より「自分の骨格に合わせる」のが自然💁','まつげパーマ後3日はビューラーを避けるとカールが長持ち🌀','ビタミンCは肌の味方。野菜・果物を意識して🍊','こすらないスキンケアが、シミ・くすみ予防の第一歩🕊️','寝る前のスマホは控えめに。目元の疲れ・くまの予防に📵','リップは輪郭をぼかすと今っぽく、上品に仕上がります💄','季節の変わり目は肌が敏感に。新しい化粧品は少しずつ🌤️'];function beautyTip(){const d=new Date(today);const doy=Math.floor((d-new Date(d.getFullYear(),0,0))/86400000);return BEAUTY_TIPS[doy%BEAUTY_TIPS.length];}
+async function shareSalon(){const url=location.origin;const s=S();const name="Vi5（アイラッシュ・眉・ビューティー）";const text=name+"のWeb予約サイトはこちら✨ ネットでかんたんにご予約できます😊\n"+url;try{if(navigator.share){await navigator.share({title:name,text:name+"のWeb予約サイト✨",url:url});return;}}catch(e){if(e&&e.name==="AbortError")return;}try{if(navigator.clipboard){await navigator.clipboard.writeText(text);alert("共有メッセージをコピーしました📋 LINEやメールに貼り付けて送れます。");return;}}catch(e){}prompt("この内容をコピーして共有してください",text);}
 function renderHome(){if(textsMigrate())saveData(DATA);
   const active=DATA.campaigns.filter(c=>c.active);
   const camps=active.map(c=>`<div class="camp"><span class="ribbon">CAMPAIGN</span><h3>${c.title}</h3><p>${c.desc}</p></div>`).join('');
@@ -1282,6 +1285,7 @@ function renderHome(){if(textsMigrate())saveData(DATA);
     ${promoCardHtml()}
     <div class="tipwrap"><div class="tip-face">💁‍♀️</div><div class="tip-bubble"><div class="tip-h">💡 今日の美容豆知識</div><div class="tip-x">${beautyTip()}</div></div></div>
     ${firstTimeHtml}
+    <button class="btn sharebtn" id="home-share">💌 このお店を友だち・ご家族に教える</button>
     ${rankHtml}
     ${recsHtml}
     ${socialHtml}
@@ -1298,7 +1302,7 @@ function renderHome(){if(textsMigrate())saveData(DATA);
       <details><summary>お問い合わせはどこへ？</summary><div class="faq-a">施術中はお電話に出られないため、<b>公式LINE</b>へお願いいたします。${s.lineUrl?`<a href="${s.lineUrl}" target="_blank" style="color:var(--gold);font-weight:700"> 公式LINEを開く</a>`:''}</div></details>
     </div>
     </div>`;
-  byId('hbook').onclick=()=>startBooking();const _hm=byId('hmore');if(_hm)_hm.onclick=()=>go('gallery');bindPosts();
+  byId('hbook').onclick=()=>startBooking();const _hs=byId('home-share');if(_hs)_hs.onclick=shareSalon;const _hm=byId('hmore');if(_hm)_hm.onclick=()=>go('gallery');bindPosts();
   const _ftr=byId('ft-reg');if(_ftr)_ftr.onclick=()=>{state.mpReg=true;go('mypage');};
   const _ftl=byId('ft-login');if(_ftl)_ftl.onclick=()=>{state.mpReg=false;go('mypage');};
   app.querySelectorAll('[data-mtile]').forEach(b=>b.onclick=()=>startBooking());const _mm=byId('menumore');if(_mm)_mm.onclick=()=>startBooking();
