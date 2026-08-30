@@ -691,6 +691,36 @@ button{white-space:normal}
 .chhead{display:flex;align-items:center;gap:10px;margin-bottom:10px;border-bottom:1px solid var(--line);padding-bottom:10px}
 .chback{background:none;border:none;color:var(--navy);font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}
 .chtitle{font-weight:800;color:var(--navy);font-size:16px}
+.calnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.calnav button{background:var(--paper-2);border:none;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;color:var(--navy)}
+.calttl{font-weight:800;font-size:17px;color:var(--navy);font-family:'Fraunces',serif}
+.calhead{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px}
+.calhead>div{text-align:center;font-size:11px;font-weight:700;color:var(--ink-soft);padding:2px 0}
+.calhead .wend{color:var(--rose)}
+.calgrid{display:flex;flex-direction:column;gap:3px}
+.calrow{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.calcell{min-height:74px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:3px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.calcell.empty{background:transparent;border:none;cursor:default}
+.calcell.today{border-color:var(--gold);border-width:2px;background:var(--gold-bg)}
+.calcell.wend{background:#FCF7F7}
+.caldn{font-size:12px;font-weight:700;color:var(--ink)}
+.calchip{font-size:9.5px;line-height:1.25;border-radius:4px;padding:1px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.calchip.pay{background:#FDE7C9;color:#8a5a12}
+.calchip.bk{background:#E3ECFB;color:#26437e}
+.calchip.wk{background:#E7F0EA;color:#3F5A46}
+.calchip.ev{background:#F0E9F6;color:#5b4a76}
+.calchip.tk{background:#FDE9E7;color:#a23a30}
+.calchip.off{background:#eef1f4;color:#555}
+.caldetail{margin-top:14px;background:#fff;border:1.5px solid var(--gold-soft);border-radius:14px;padding:14px}
+.caldetail .cd-h{display:flex;align-items:center;font-weight:800;color:var(--navy);font-size:16px;margin-bottom:10px}
+.caldetail .cd-x{margin-left:auto;background:none;border:none;font-size:16px;color:var(--ink-soft);cursor:pointer}
+.caldetail .cd-sec{border-top:1px solid var(--paper-2);padding:9px 0;font-size:13px}
+.caldetail .cd-sec>b{display:block;color:var(--gold-deep);font-size:12px;margin-bottom:4px}
+.dtag{display:inline-block;background:var(--paper-2);border-radius:100px;padding:3px 10px;font-size:12px;margin:2px 4px 2px 0}
+.drow{padding:3px 0;line-height:1.6}
+.evdel{background:none;border:none;color:var(--rose);font-size:11px;cursor:pointer}
+.cd-add{border-top:1px solid var(--paper-2);padding-top:10px;margin-top:4px;display:flex;flex-direction:column;gap:8px}
+.cd-add select,.cd-add input{font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--paper-2);width:100%}
 </style>
 </head>
 <body>
@@ -1039,7 +1069,7 @@ const state={view:'home',step:0,openCat:null,cart:[],
   b:{staff:null,date:null,time:null,name:'',phone:'',companions:[],referrer:'',usePoints:0,haste:null,agreed:false,party2:false,p2name:'',p2phone:'',birthday:'',password:'',b2name:'',b2phone:'',b2birthday:'',b2password:'',options:[],note:''},
   bookMode:'single',pairPerson:1,pairA:null,cartA:[],cartB:[],staffA:null,staffB:null,pairEditing:'A',optA:[],optB:[],
   calMonth:new Date(today.getFullYear(),today.getMonth(),1),
-  adminTab:'bookings',adminFilter:'all',custQuery:'',custOpen:null,taskMode:'work',salesPeriod:'month',schedDate:fmtDate(today),acM:new Date(today.getFullYear(),today.getMonth(),1),acDay:fmtDate(today),
+  adminTab:'calendar',adminFilter:'all',custQuery:'',custOpen:null,taskMode:'work',salesPeriod:'month',schedDate:fmtDate(today),acM:new Date(today.getFullYear(),today.getMonth(),1),acDay:fmtDate(today),
   galleryFilter:'all',boardFilter:'all',boardOpen:false,boardEdit:null,boardPhotos:[],loginFull:false,pendingCust:null,previewCust:null,rescheduleId:null,mpPhone:null,lastBooking:null,pendingPhoto:'',galPostOpen:false,menuEdit:null,menuPhoto:'',menuPhotos:[],menuOpen:null,optEdit:null,bcPhone:'',bcQuery:'',bcTpl:0,adminAuthed:false,
   shareFilter:'all',sharePostOpen:false,sharePhotos:[],shareCmtOpen:null,schedMode:'month',brushMode:'work',brushStart:10,brushEnd:19,heroPending:'',galPhotos:[],finOpen:null,schedStaff:'s1',scM:new Date(today.getFullYear(),today.getMonth(),1),calDay:null,navStack:[],staffEdit:null,lang:'ja',bannerPhoto:'',importStage:'idle',importHeaders:[],importRows:[],importMap:{},rankPhotos:[],recPhotos:[],staffPhotoPending:'',manualOpen:false,manualBook:null,manualCat:'all'};
 const byId=id=>document.getElementById(id);
@@ -1930,7 +1960,7 @@ async function loadWork(){if(WORK)return WORK;
       for(let i=0;i<4;i++){if(typeof v==='string'){try{v=JSON.parse(v);continue}catch(e){break}}if(Array.isArray(v)){v=v[0];continue}break;}
       if(v&&typeof v==='object'&&!Array.isArray(v))WORK=v;}}}catch(e){}
   if(!WORK)WORK={};
-  WORK.chats=WORK.chats||{};WORK.tasks=WORK.tasks||[];WORK.reports=WORK.reports||[];WORK.clock=WORK.clock||[];WORK.pay=WORK.pay||{};
+  WORK.chats=WORK.chats||{};WORK.tasks=WORK.tasks||[];WORK.reports=WORK.reports||[];WORK.clock=WORK.clock||[];WORK.pay=WORK.pay||{};WORK.events=WORK.events||[];WORK.groups=WORK.groups||[];
   return WORK;}
 async function saveWork(){if(!WORK)return;
   try{const r=await fetch(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:work',value:JSON.stringify(WORK)})});
@@ -1986,7 +2016,7 @@ function renderAdmin(){
   if(!localGet('salon:me')){app.innerHTML=renderMePicker();app.querySelectorAll('[data-me]').forEach(b=>b.onclick=()=>setMe(b.dataset.me));const _mo=byId('me-logout');if(_mo)_mo.onclick=()=>{state.adminAuthed=false;setStaff&&0;localDel('salon:staff');localDel('salon:staffpw');render();};return;}
   let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(staffNameMigrate())_clch=true;if(_clch)saveData(DATA);
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
-  const tabs=[['bookings','📅','予約'],['schedule','⏰','シフト'],['customers','👥','顧客'],['feedback','💬','ご意見'],['menu','📋','メニュー'],['staff','💇','スタッフ'],['broadcast','✉️','配信'+(unsent?`(${unsent})`:'')],['tasks','✅','毎日のタスク'],['homedisp','🏠','ホーム・告知'],['sales','💰','売上'],['chat','💬','チャット'],['settings','⚙️','設定']];
+  const tabs=[['calendar','📆','カレンダー'],['bookings','📅','予約'],['schedule','⏰','シフト'],['customers','👥','顧客'],['feedback','💬','ご意見'],['menu','📋','メニュー'],['staff','💇','スタッフ'],['broadcast','✉️','配信'+(unsent?`(${unsent})`:'')],['tasks','✅','毎日のタスク'],['homedisp','🏠','ホーム・告知'],['sales','💰','売上'],['chat','💬','チャット'],['settings','⚙️','設定']];
   const _sec=(t)=>`<div class="subhead" style="margin:26px 0 12px;padding-top:18px;border-top:2px solid var(--line)">${t}</div>`;
   let inner=({
     tasks:adminTasks,bookings:adminBookings,calendar:adminCalendar,schedule:adminSchedule,
@@ -1998,7 +2028,7 @@ function renderAdmin(){
   }[state.adminTab]||adminBookings)();
   const _cseen=parseInt(localGet('seen:chat')||'0');let _chatNew=false;if(WORK){const _mn=meName();chatRooms().forEach(r=>{(WORK.chats[r.id]||[]).forEach(m=>{if(m.at>_cseen&&m.by!==_mn)_chatNew=true;});});}
   app.innerHTML=`<div class="fade"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div class="eyebrow" style="margin:0">Salon Admin</div><button class="switch" id="adm-out">ログアウト</button></div><div class="mebar"><span class="me-who">👤 担当：<b>${meName()||'未選択'}</b></span><button class="me-chg" id="me-change">担当を変更</button></div>${(()=>{const all=(DATA.announcements||[]);const list=all.slice(0,3);const form=state.annOpen?`<div class="annform"><textarea id="ann-text" rows="2" placeholder="全員へのお知らせを入力"></textarea><input id="ann-url" placeholder="リンク（任意）https://..." style="margin-top:6px"><div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-primary" id="ann-post" style="flex:1;padding:10px">投稿する</button><button class="btn btn-ghost" id="ann-cancel" style="flex:1;padding:10px">やめる</button></div></div>`:``;return `<div class="annbar"><div class="ann-h"><span>📢 みんなへのお知らせ</span><button class="ann-add" id="ann-open">${state.annOpen?`閉じる`:`＋投稿`}</button></div>${form}${list.length?list.map(a=>`<div class="ann"><div class="ann-t">${a.text}</div>${a.url?`<a class="ann-u" href="${a.url}" target="_blank" rel="noopener">🔗 リンクを開く</a>`:``}<div class="ann-m"><b>${a.by}</b> ・ ${actAgo(a.at)}${[`👍`,`✅`,`😊`].map(e=>{const who=((a.reactions||{})[e]||[]);return `<button class="ann-r ${who.includes(meName())?`on`:``}" data-annr="${a.id}|${e}" title="${who.join(`、`)}">${e}${who.length||``}</button>`;}).join(``)}${(meName()===a.by||meName()===`SAKURA`)?`<button class="ann-del" data-anndel="${a.id}">削除</button>`:``}</div></div>`).join(``):`<div class="note" style="padding:4px 0 2px">お知らせはまだありません。「＋投稿」から全員に伝えられます。</div>`}${all.length>3?`<div class="note" style="text-align:right">ほか${all.length-3}件</div>`:``}</div>`;})()}${(()=>{const g=thisGoal();return g?`<div class="goalbar"><div class="gb-h">🎯 ${goalLabel()}の目標</div><div class="gb-t">${g.text}</div><div class="gb-m">設定：${g.setBy}<button class="gb-edit" id="goal-edit">編集</button></div></div>`:`<div class="goalbar goalbar-empty"><div class="gb-t">🎯 ${goalLabel()}の目標が未設定です</div><button class="gb-set" id="goal-set">目標を設定する</button></div>`;})()}${(()=>{const dd=today.getDate();if(dd<15||dd>20)return ``;const nm=new Date(today.getFullYear(),today.getMonth()+1,1);const key=nm.getFullYear()+'-'+String(nm.getMonth()+1).padStart(2,'0');const okl=(WORK&&WORK.shiftOK&&WORK.shiftOK[key])||[];const pend=staff.filter(s=>s.id!=='s0'&&!okl.includes(s.id));if(!pend.length)return ``;const meid=localGet('salon:me');return `<div class="kalert" style="background:#FFF6E5;border-color:var(--gold);color:var(--gold-deep)">⏰ <b>${nm.getMonth()+1}月シフトの提出は20日まで！</b> 未提出：${pend.map(s=>s.name).join('・')}${pend.some(s=>s.id===meid)?` <button class="kalert-b" data-shiftok="1" style="border-color:var(--gold-deep);color:var(--gold-deep)">提出済みにする</button>`:``}</div>`;})()}${(()=>{if(!WORK)return ``;const d3=new Date(today);d3.setDate(d3.getDate()-3);const lim=fmtDate(d3);const miss=DATA.bookings.filter(b=>b.status===`visited`&&b.date>=lim).filter(b=>{const k=normPhone(b.phone);const wl=(WORK.karte&&WORK.karte[k])||[];const cl=(DATA.customers[k]&&DATA.customers[k].karte)||[];const vd=new Date(b.date+`T00:00:00`).getTime();return !wl.concat(cl).some(e=>e.at>=vd);});if(!miss.length)return ``;return `<div class="kalert">📒 <b>カルテ未入力！</b> ${miss.slice(0,5).map(b=>`<button class="kalert-b" data-opencust="${normPhone(b.phone)}">${(DATA.customers[normPhone(b.phone)]||{}).name||b.phone}様（${mdLabel(b.date)}来店）</button>`).join(``)}${miss.length>5?` ほか${miss.length-5}件`:``}</div>`;})()}${(()=>{const a=(DATA.activity||[]).slice(0,20);if(!a.length)return '';return `<details class="actlog"><summary>📋 最近のスタッフ操作（${a.length}件）</summary><div class="actlog-b">${a.map(x=>`<div class="actrow"><b>${x.who}</b> ${x.act}<span class="actt">${actAgo(x.at)}</span></div>`).join('')}</div></details>`;})()}<div class="atabs">${tabs.map(t=>t[0]==='work'?`<a class="atbtn atwork" href="https://vi5-work.vercel.app" target="_blank" rel="noopener"><span class="ate">${t[1]}</span><span class="atl">${t[2]}</span></a>`:`<button data-at="${t[0]}" class="atbtn ${state.adminTab===t[0]?'active':''}"><span class="ate">${t[1]}</span><span class="atl">${t[2]}</span>${(t[0]===`chat`&&_chatNew)?`<span class="tbdot"></span>`:``}</button>`).join('')}</div>${adminGuide(state.adminTab)}${inner}</div>`;
-  byId('adm-out').onclick=()=>{state.adminAuthed=false;setStaffSession(false);go('home')};const _mc=byId('me-change');if(_mc)_mc.onclick=()=>{localDel('salon:me');render();};const _ao=byId('ann-open');if(_ao)_ao.onclick=()=>{state.annOpen=!state.annOpen;render();};const _ac=byId('ann-cancel');if(_ac)_ac.onclick=()=>{state.annOpen=false;render();};const _ap=byId('ann-post');if(_ap)_ap.onclick=annPost;app.querySelectorAll('[data-annr]').forEach(b=>b.onclick=()=>{const[id,emo]=b.dataset.annr.split('|');annReact(id,emo);});app.querySelectorAll('[data-anndel]').forEach(b=>b.onclick=()=>annDel(b.dataset.anndel));app.querySelectorAll('[data-opencust]').forEach(b=>b.onclick=()=>{state.adminTab='customers';state.custOpen=b.dataset.opencust;render();});app.querySelectorAll('[data-shiftok]').forEach(b=>b.onclick=async()=>{const nm=new Date(today.getFullYear(),today.getMonth()+1,1);const key=nm.getFullYear()+'-'+String(nm.getMonth()+1).padStart(2,'0');await loadWork();WORK.shiftOK=WORK.shiftOK||{};WORK.shiftOK[key]=WORK.shiftOK[key]||[];const meid=localGet('salon:me');if(!WORK.shiftOK[key].includes(meid))WORK.shiftOK[key].push(meid);logAct((nm.getMonth()+1)+'月シフトを提出済みにチェック');await saveWork();render();});app.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>{state.chatRoom=b.dataset.room;render();});const _cbk=byId('ch-back');if(_cbk)_cbk.onclick=()=>{state.chatRoom=null;render();};const _cng=byId('ch-newgrp');if(_cng)_cng.onclick=chCreateGroup;const _cs2=byId('ch-send');if(_cs2)_cs2.onclick=chSend;const _ci2=byId('ch-img');if(_ci2)_ci2.onchange=chPick;const _ct2=byId('ch-text');if(_ct2)_ct2.oninput=e=>state.chatDraft=e.target.value;app.querySelectorAll('[data-chrm]').forEach(b=>b.onclick=()=>{state.chatImgs.splice(parseInt(b.dataset.chrm),1);render();});app.querySelectorAll('[data-chreact]').forEach(b=>b.onclick=()=>{const p=b.dataset.chreact.split('|');chReact(p[0],p[1]);});app.querySelectorAll('[data-chzoom]').forEach(im=>im.onclick=()=>{state.chatZoom=im.src;render();});const _cz2=byId('ch-zoomclose');if(_cz2)_cz2.onclick=()=>{state.chatZoom=null;render();};if(state.adminTab==='chat'&&WORK&&state.chatRoom){const _rm=state.chatRoom;const _me=meName()||'不明';let _chg=false;(WORK.chats[_rm]||[]).forEach(m=>{m.reads=m.reads||[];if(!m.reads.includes(_me)){m.reads.push(_me);_chg=true;}});if(_chg)saveWork();localSet('seen:chat',String(Date.now()));const _l=byId('chlist');if(_l)_l.scrollTop=_l.scrollHeight;}const _gs=byId('goal-set');if(_gs)_gs.onclick=setGoalPrompt;const _ge=byId('goal-edit');if(_ge)_ge.onclick=setGoalPrompt;
+  byId('adm-out').onclick=()=>{state.adminAuthed=false;setStaffSession(false);go('home')};const _mc=byId('me-change');if(_mc)_mc.onclick=()=>{localDel('salon:me');render();};const _ao=byId('ann-open');if(_ao)_ao.onclick=()=>{state.annOpen=!state.annOpen;render();};const _ac=byId('ann-cancel');if(_ac)_ac.onclick=()=>{state.annOpen=false;render();};const _ap=byId('ann-post');if(_ap)_ap.onclick=annPost;app.querySelectorAll('[data-annr]').forEach(b=>b.onclick=()=>{const[id,emo]=b.dataset.annr.split('|');annReact(id,emo);});app.querySelectorAll('[data-anndel]').forEach(b=>b.onclick=()=>annDel(b.dataset.anndel));app.querySelectorAll('[data-opencust]').forEach(b=>b.onclick=()=>{state.adminTab='customers';state.custOpen=b.dataset.opencust;render();});app.querySelectorAll('[data-calday]').forEach(c=>c.onclick=()=>{state.calDay=c.dataset.calday;render();});app.querySelectorAll('[data-calmv]').forEach(b=>b.onclick=()=>{state.calMonth=b.dataset.calmv;state.calDay=null;render();});const _cdx=byId('cd-close');if(_cdx)_cdx.onclick=()=>{state.calDay=null;render();};const _eva=byId('ev-add');if(_eva)_eva.onclick=calAddEvent;app.querySelectorAll('[data-evdel]').forEach(b=>b.onclick=async()=>{if(!confirm('この予定を削除しますか？'))return;await loadWork();WORK.events=(WORK.events||[]).filter(e=>e.id!==b.dataset.evdel);await saveWork();render();});app.querySelectorAll('[data-shiftok]').forEach(b=>b.onclick=async()=>{const nm=new Date(today.getFullYear(),today.getMonth()+1,1);const key=nm.getFullYear()+'-'+String(nm.getMonth()+1).padStart(2,'0');await loadWork();WORK.shiftOK=WORK.shiftOK||{};WORK.shiftOK[key]=WORK.shiftOK[key]||[];const meid=localGet('salon:me');if(!WORK.shiftOK[key].includes(meid))WORK.shiftOK[key].push(meid);logAct((nm.getMonth()+1)+'月シフトを提出済みにチェック');await saveWork();render();});app.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>{state.chatRoom=b.dataset.room;render();});const _cbk=byId('ch-back');if(_cbk)_cbk.onclick=()=>{state.chatRoom=null;render();};const _cng=byId('ch-newgrp');if(_cng)_cng.onclick=chCreateGroup;const _cs2=byId('ch-send');if(_cs2)_cs2.onclick=chSend;const _ci2=byId('ch-img');if(_ci2)_ci2.onchange=chPick;const _ct2=byId('ch-text');if(_ct2)_ct2.oninput=e=>state.chatDraft=e.target.value;app.querySelectorAll('[data-chrm]').forEach(b=>b.onclick=()=>{state.chatImgs.splice(parseInt(b.dataset.chrm),1);render();});app.querySelectorAll('[data-chreact]').forEach(b=>b.onclick=()=>{const p=b.dataset.chreact.split('|');chReact(p[0],p[1]);});app.querySelectorAll('[data-chzoom]').forEach(im=>im.onclick=()=>{state.chatZoom=im.src;render();});const _cz2=byId('ch-zoomclose');if(_cz2)_cz2.onclick=()=>{state.chatZoom=null;render();};if(state.adminTab==='chat'&&WORK&&state.chatRoom){const _rm=state.chatRoom;const _me=meName()||'不明';let _chg=false;(WORK.chats[_rm]||[]).forEach(m=>{m.reads=m.reads||[];if(!m.reads.includes(_me)){m.reads.push(_me);_chg=true;}});if(_chg)saveWork();localSet('seen:chat',String(Date.now()));const _l=byId('chlist');if(_l)_l.scrollTop=_l.scrollHeight;}const _gs=byId('goal-set');if(_gs)_gs.onclick=setGoalPrompt;const _ge=byId('goal-edit');if(_ge)_ge.onclick=setGoalPrompt;
   app.querySelectorAll('[data-at]').forEach(b=>b.onclick=()=>{state.adminTab=b.dataset.at;state.custOpen=null;render()});
   app.querySelectorAll('[data-cltoggle]').forEach(cb=>cb.onchange=()=>clToggle(cb.dataset.cltoggle));
   app.querySelectorAll('[data-cldelitem]').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();clDelItem(b.dataset.cldelitem);});
@@ -2008,20 +2038,72 @@ function renderAdmin(){
   app.querySelectorAll('[data-taskmode]').forEach(b=>b.onclick=()=>{state.taskMode=b.dataset.taskmode;render()});
   bindAdmin();
 }
+/* ===== カレンダー ===== */
+function calKey(y,m){return y+'-'+String(m+1).padStart(2,'0');}
+function calEventsFor(ds){return ((WORK&&WORK.events)||[]).filter(e=>{
+  if(e.end)return ds>=e.date&&ds<=e.end; return e.date===ds;});}
 function adminCalendar(){
-  const m=state.acM||new Date(today.getFullYear(),today.getMonth(),1);const y=m.getFullYear(),mo=m.getMonth();
-  const startDow=new Date(y,mo,1).getDay(),days=new Date(y,mo+1,0).getDate();
-  const byDate={};DATA.bookings.forEach(b=>{if(b.status==='cancelled')return;(byDate[b.date]=byDate[b.date]||[]).push(b)});
-  let cells='';['日','月','火','水','木','金','土'].forEach((d,i)=>cells+=`<div class="cal-dow ${i===0?'sun':''}">${d}</div>`);
-  for(let i=0;i<startDow;i++)cells+='<div></div>';
-  const tds=fmtDate(today);
-  for(let d=1;d<=days;d++){const dd=new Date(y,mo,d);const ds=fmtDate(dd);const cnt=(byDate[ds]||[]).length;const sel=state.acDay===ds?'sel':'';const isT=ds===tds;cells+=`<div class="cal-day calhas ${sel}" data-acday="${ds}" style="${isT?'outline:2px solid var(--gold);outline-offset:-2px;':''}">${d}${cnt?`<span class="calbadge">${cnt}</span>`:''}</div>`}
-  const selDay=state.acDay||tds;
-  const labels={confirmed:'確定',pending:'未確定',visited:'来店済',cancelled:'取消'};
-  const dayBks=(byDate[selDay]||[]).slice().sort((a,b)=>a.time.localeCompare(b.time));
-  const listHtml=dayBks.length?dayBks.map(b=>{const ph=normPhone(b.phone);const nm=DATA.customers[ph]?DATA.customers[ph].name:b.phone;const dur=(b.items||[]).reduce((s,x)=>s+(x.min||0),0);const endT=minToTime(timeToMin(b.time)+dur);return `<div class="calrow"><div class="calt">${b.time}<small>〜${endT}</small></div><div class="calinfo"><b>${nm} 様</b><span>${b.items.map(x=>x.name).join('＋')} ／ ${stById(b.staffId).name}</span></div><span class="pill ${b.status}">${labels[b.status]}</span></div>`}).join(''):'<div class="empty"><div class="big">○</div>この日のご予約はありません</div>';
-  return `<div class="note" style="margin-top:0">日付をタップすると、その日の予約が時間順で表示されます（数字は件数）。</div><div class="cal"><div class="cal-head"><button class="cal-nav" id="ac-prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><div class="cal-title">${y}年 ${mo+1}月</div><button class="cal-nav" id="ac-next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></div><div class="cal-grid">${cells}</div></div><div class="subhead">${mdLabel(selDay)} のご予約（${dayBks.length}件）</div>${listHtml}`;
-}
+  if(!WORK){loadWork().then(()=>render());return '<div class="empty" style="padding:40px 0">📆 読み込み中…</div>';}
+  const base=state.calMonth?new Date(state.calMonth+'-01T00:00:00'):new Date(today.getFullYear(),today.getMonth(),1);
+  const y=base.getFullYear(),mo=base.getMonth();
+  const first=new Date(y,mo,1);const startDow=(first.getDay()+6)%7; // 月曜=0
+  const days=new Date(y,mo+1,0).getDate();
+  const reals=staff.filter(s=>s.id!=='s0');
+  const me=localGet('salon:me');
+  const cells=[];
+  for(let i=0;i<startDow;i++)cells.push(null);
+  for(let d=1;d<=days;d++)cells.push(d);
+  while(cells.length%7)cells.push(null);
+  const todayS=fmtDate(today);
+  let grid='';
+  for(let w=0;w<cells.length/7;w++){grid+='<div class="calrow">';
+    for(let i=0;i<7;i++){const d=cells[w*7+i];
+      if(!d){grid+='<div class="calcell empty"></div>';continue;}
+      const ds=calKey(y,mo)+'-'+String(d).padStart(2,'0');
+      const isToday=ds===todayS;const dow=(startDow+d-1)%7; // 0=月
+      // 予約件数
+      const bkN=DATA.bookings.filter(b=>b.date===ds&&b.status!=='cancelled').length;
+      // 出勤スタッフ（シフトあり＆非表示でも勤怠上は表示）
+      const working=reals.filter(s=>{const sh=effectiveShift(s.id,ds);return sh&&sh.on&&(sh.ranges||[]).length;});
+      const evs=calEventsFor(ds);
+      // 個人タスク（本人のみ）＋全体タスク
+      const myTasks=((WORK.tasks)||[]).filter(t=>!t.done&&t.due===ds&&(t.scope==='all'||t.assignee===me||t.by===me));
+      let chips='';
+      if(d===10)chips+='<div class="calchip pay">💴給料日</div>';
+      if(bkN)chips+=`<div class="calchip bk">予約${bkN}</div>`;
+      evs.forEach(e=>{chips+=`<div class="calchip ev ${e.type||''}">${({event:'📌',course:'🎓',meeting:'💻',off:'🏝'}[e.type]||'📌')}${e.title}</div>`;});
+      if(working.length)chips+=`<div class="calchip wk">👤${working.length}名</div>`;
+      myTasks.forEach(t=>{chips+=`<div class="calchip tk">✅${t.title}</div>`;});
+      grid+=`<div class="calcell${isToday?' today':''}${dow>=5?' wend':''}" data-calday="${ds}"><div class="caldn">${d}</div>${chips}</div>`;
+    }
+    grid+='</div>';
+  }
+  const prev=new Date(y,mo-1,1),next=new Date(y,mo+1,1);
+  const detail=state.calDay?calDayDetail(state.calDay):'';
+  return `<div class="calnav"><button data-calmv="${calKey(prev.getFullYear(),prev.getMonth())}">‹</button><div class="calttl">${y}年 ${mo+1}月</div><button data-calmv="${calKey(next.getFullYear(),next.getMonth())}">›</button></div>
+  <div class="calhead">${['月','火','水','木','金','土','日'].map((x,i)=>`<div class="${i>=5?'wend':''}">${x}</div>`).join('')}</div>
+  <div class="calgrid">${grid}</div>
+  <div class="note" style="margin-top:8px">🗓 日付をタップすると、その日の予定確認・追加ができます。</div>
+  ${detail}`;}
+function calDayDetail(ds){const reals=staff.filter(s=>s.id!=='s0');
+  const bks=DATA.bookings.filter(b=>b.date===ds&&b.status!=='cancelled').sort((a,b)=>a.time.localeCompare(b.time));
+  const working=reals.map(s=>{const sh=effectiveShift(s.id,ds);return {s,sh};}).filter(x=>x.sh&&x.sh.on&&(x.sh.ranges||[]).length);
+  const evs=calEventsFor(ds);
+  const shiftH=working.length?working.map(x=>`<span class="dtag">👤 ${x.s.name} ${(x.sh.ranges||[]).map(r=>r.start+'-'+r.end).join(',')}</span>`).join(''):'<span class="note">出勤予定なし（定休の可能性）</span>';
+  const bkH=bks.length?bks.map(b=>`<div class="drow">🕐 ${b.time} ${(DATA.customers[normPhone(b.phone)]||{}).name||b.phone}様／${(b.items||[]).map(i=>i.name).join('＋')}${stById(b.staffId)?'（'+stById(b.staffId).name+'）':''}</div>`).join(''):'<div class="note">予約なし</div>';
+  const evH=evs.length?evs.map(e=>`<div class="drow">${({event:'📌',course:'🎓',meeting:'💻',off:'🏝'}[e.type]||'📌')} ${e.title}${e.end&&e.end!==ds?`（〜${mdLabel(e.end)}）`:''}${e.memo?' — '+e.memo:''} <button class="evdel" data-evdel="${e.id}">削除</button></div>`).join(''):'<div class="note">イベントなし</div>';
+  return `<div class="caldetail"><div class="cd-h">${mdLabel(ds)}（${DOW[new Date(ds+'T00:00:00').getDay()]}）<button class="cd-x" id="cd-close">✕</button></div>
+  <div class="cd-sec"><b>出勤</b><div>${shiftH}</div></div>
+  <div class="cd-sec"><b>ご予約</b>${bkH}</div>
+  <div class="cd-sec"><b>予定・イベント</b>${evH}</div>
+  <div class="cd-add"><select id="ev-type"><option value="event">📌 イベント</option><option value="course">🎓 講習</option><option value="meeting">💻 オンラインMTG</option><option value="off">🏝 不在（休暇・出張）</option></select>
+  <input id="ev-title" placeholder="タイトル（例：SAKURA不在／9月講習）">
+  <div style="display:flex;gap:8px"><input id="ev-end" type="date" title="終了日(任意)" style="flex:1"><button class="btn btn-primary" id="ev-add" style="flex:none;padding:10px 16px">追加</button></div>
+  <div class="note">「不在」は開始日をこの日、終了日を入れると期間表示されます。</div></div></div>`;}
+async function calAddEvent(){const ds=state.calDay;const type=byId('ev-type').value;const title=(byId('ev-title').value||'').trim();const end=(byId('ev-end').value||'').trim();
+  if(!title){alert('タイトルをご入力ください。');return;}
+  await loadWork();WORK.events=WORK.events||[];WORK.events.push({id:'e'+Date.now(),date:ds,end:end||'',type,title,by:meName()||''});
+  logAct('カレンダーに予定追加：'+title);await saveWork();render();}
 function adminHomeDisplay(){
   const s=S();const REC=3;
   const rankBlocks=[0,1,2].map(i=>{const r=(s.ranking&&s.ranking[i])||{};const img=(state.rankPhotos[i]!=null)?state.rankPhotos[i]:(r.img||'');return `<div class="addform" style="padding:12px;margin-bottom:10px"><div style="font-weight:700;margin-bottom:8px">${['🥇 1位','🥈 2位','🥉 3位'][i]}</div>${img?`<div class="preview" style="background-image:url('${img}')"></div>`:''}<label class="fileinput">📷 画像を選ぶ<input type="file" accept="image/*" data-rankimg="${i}"></label><div class="field" style="margin-top:8px;margin-bottom:8px"><label>商品名</label><input id="rank-name-${i}" value="${(r.name||'').replace(/"/g,'&quot;')}" placeholder="例：まつげ美容液"></div><div class="field" style="margin-bottom:0"><label>リンク先URL（任意・タップで開く）</label><input id="rank-url-${i}" value="${(r.url||'').replace(/"/g,'&quot;')}" placeholder="https://vi5.shopselect.net/..."></div></div>`}).join('');
