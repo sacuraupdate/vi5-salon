@@ -863,6 +863,16 @@ button{white-space:normal}
 .sharebtn:active{background:var(--gold-bg)}
 .hdr-share{position:absolute;left:0;top:22px;background:var(--gold-bg);border:1px solid var(--gold-soft);color:var(--gold-deep);font-family:inherit;font-weight:700;font-size:12px;padding:7px 12px;border-radius:100px;cursor:pointer;z-index:5}
 .noticebar{background:var(--navy);color:#fff;border-radius:10px;padding:10px 14px;margin:14px 0 4px;font-size:13.5px;font-weight:700;text-align:center}
+.wxcard{background:linear-gradient(135deg,#6ea8e0,#a8d0f0);color:#fff;border-radius:14px;padding:10px 14px;flex:none;min-width:96px;text-align:center;box-shadow:0 2px 8px rgba(30,42,71,.15)}
+.wxcard .wx-ic{font-size:30px;line-height:1}
+.wxcard .wx-t{font-size:20px;font-weight:800;margin-top:2px}
+.wxcard .wx-uv{font-size:11px;font-weight:700;margin-top:2px}
+.wxcard .wx-uvl{display:block;font-size:10px;opacity:.9}
+.tipwrap{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap}
+.ft-acc>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.ft-acc>summary::-webkit-details-marker{display:none}
+.ft-acc .ft-arrow{transition:transform .2s;color:var(--gold-deep)}
+.ft-acc[open] .ft-arrow{transform:rotate(180deg)}
 </style>
 </head>
 <body>
@@ -1255,9 +1265,10 @@ function updateBack(){const b=byId('backbtn');if(b){b.style.display=state.navSta
 const S=()=>DATA.settings;
 
 /* ===== HOME ===== */
-const BEAUTY_TIPS=['まつげは目を保護する大切な毛。こすらず優しく扱うと長持ちします✨','施術後6時間は、まつげ・眉を濡らさないと持ちが良くなります💧','オイルクレンジングはエクステの接着を弱めることも。摩擦は控えめに🌿','眉は「眉山」を意識すると顔がすっきり見えます☝️','水分をとる量が多いほど、肌のうるおいは保たれやすくなります🥤','日焼け止めは冬でも毎日。紫外線は一年中降っています☀️','枕カバーをこまめに替えると、肌トラブルが減ります🛏️','まつげ美容液は「根元」に。毛周期に合わせて続けるのがコツ🌱','睡眠は最高の美容液。同じ時間に寝ると肌が整います😴','ハーブピーリング後はしっかり保湿でつるん肌が続きます🌸','笑顔の表情筋を動かすと、フェイスラインが引き締まります😊','温かい湯船に浸かると血行が良くなり、肌色が明るく見えます♨️','カフェインの摂りすぎはむくみの原因に。お水もこまめに💧','眉メイクは「左右対称」より「自分の骨格に合わせる」のが自然💁','まつげパーマ後3日はビューラーを避けるとカールが長持ち🌀','ビタミンCは肌の味方。野菜・果物を意識して🍊','こすらないスキンケアが、シミ・くすみ予防の第一歩🕊️','寝る前のスマホは控えめに。目元の疲れ・くまの予防に📵','リップは輪郭をぼかすと今っぽく、上品に仕上がります💄','季節の変わり目は肌が敏感に。新しい化粧品は少しずつ🌤️'];function beautyTip(){const d=new Date(today);const doy=Math.floor((d-new Date(d.getFullYear(),0,0))/86400000);return BEAUTY_TIPS[doy%BEAUTY_TIPS.length];}
+const BEAUTY_TIPS=['まつげは目を保護する大切な毛。こすらず優しく扱うと長持ちします✨','施術後6時間は、まつげ・眉を濡らさないと持ちが良くなります💧','オイルクレンジングはエクステの接着を弱めることも。摩擦は控えめに🌿','眉は「眉山」を意識すると顔がすっきり見えます☝️','水分をとる量が多いほど、肌のうるおいは保たれやすくなります🥤','日焼け止めは冬でも毎日。紫外線は一年中降っています☀️','枕カバーをこまめに替えると、肌トラブルが減ります🛏️','まつげ美容液は「根元」に。毛周期に合わせて続けるのがコツ🌱','睡眠は最高の美容液。同じ時間に寝ると肌が整います😴','ハーブピーリング後はしっかり保湿でつるん肌が続きます🌸','笑顔の表情筋を動かすと、フェイスラインが引き締まります😊','温かい湯船に浸かると血行が良くなり、肌色が明るく見えます♨️','カフェインの摂りすぎはむくみの原因に。お水もこまめに💧','眉メイクは「左右対称」より「自分の骨格に合わせる」のが自然💁','まつげパーマ後3日はビューラーを避けるとカールが長持ち🌀','ビタミンCは肌の味方。野菜・果物を意識して🍊','こすらないスキンケアが、シミ・くすみ予防の第一歩🕊️','寝る前のスマホは控えめに。目元の疲れ・くまの予防に📵','リップは輪郭をぼかすと今っぽく、上品に仕上がります💄','季節の変わり目は肌が敏感に。新しい化粧品は少しずつ🌤️'];function weatherHtml(){const w=state.weather;if(!w)return '<div class="wxcard"><div class="wx-ic">⛅</div><div class="wx-t">読み込み中…</div></div>';return `<div class="wxcard"><div class="wx-ic">${w.icon}</div><div class="wx-t">${w.temp}℃</div><div class="wx-uv">🔆UV ${w.uvpct}%<span class="wx-uvl">${w.uvlabel}</span></div></div>`;}function wxIcon(c){if(c===0)return '☀️';if(c<=3)return '⛅';if(c===45||c===48)return '🌫️';if(c>=51&&c<=67)return '🌧️';if(c>=71&&c<=77)return '❄️';if(c>=80&&c<=82)return '🌦️';if(c>=95)return '⛈️';return '☁️';}async function loadWeather(){if(state.weather||state._wxLoading)return;state._wxLoading=true;try{const r=await fetchT('https://api.open-meteo.com/v1/forecast?latitude=34.6913&longitude=135.5088&current=temperature_2m,weather_code,uv_index&timezone=Asia%2FTokyo',{},8000);const j=await r.json();const c=j.current||{};const uv=Math.max(0,c.uv_index||0);const uvpct=Math.min(100,Math.round(uv/11*100));const uvlabel=uv<3?'弱い':uv<6?'ふつう':uv<8?'強い':'非常に強い';state.weather={temp:Math.round(c.temperature_2m),icon:wxIcon(c.weather_code),uvpct:uvpct,uvlabel:uvlabel};render();}catch(e){state.weather={temp:'—',icon:'⛅',uvpct:'—',uvlabel:''};}state._wxLoading=false;}
+function beautyTip(){const d=new Date(today);const doy=Math.floor((d-new Date(d.getFullYear(),0,0))/86400000);return BEAUTY_TIPS[doy%BEAUTY_TIPS.length];}
 async function shareSalon(){const url=location.origin;const s=S();const name="Vi5（アイラッシュ・眉・ビューティー）";const text=name+"のWeb予約サイトはこちら✨ ネットでかんたんにご予約できます😊\n"+url;try{if(navigator.share){await navigator.share({title:name,text:name+"のWeb予約サイト✨",url:url});return;}}catch(e){if(e&&e.name==="AbortError")return;}try{if(navigator.clipboard){await navigator.clipboard.writeText(text);alert("共有メッセージをコピーしました📋 LINEやメールに貼り付けて送れます。");return;}}catch(e){}prompt("この内容をコピーして共有してください",text);}
-function renderHome(){if(textsMigrate())saveData(DATA);
+function renderHome(){if(textsMigrate())saveData(DATA);loadWeather();
   const active=DATA.campaigns.filter(c=>c.active);
   const camps=active.map(c=>`<div class="camp"><span class="ribbon">CAMPAIGN</span><h3>${c.title}</h3><p>${c.desc}</p></div>`).join('');
   const feat=DATA.posts.slice(0,4).map(p=>postCard(p,true)).join('');
@@ -1268,7 +1279,7 @@ function renderHome(){if(textsMigrate())saveData(DATA);
   const bannerHtml=bns.length?`<div class="banner" id="bannerbox">${bns.map((b,i)=>`<a class="banner-slide ${i===0?'on':''}" ${b.link?`href="${b.link}" target="_blank"`:''}><img src="${b.img}" alt="お知らせ"></a>`).join('')}${bns.length>1?`<div class="bn-dots">${bns.map((b,i)=>`<i class="${i===0?'on':''}"></i>`).join('')}</div>`:''}</div>`:'';
   const links=`<div class="linkgrid2">${s.catalogUrl?`<a class="linkbig cat" href="${s.catalogUrl}" target="_blank"><span class="lb-ic">📖</span><span class="lb-t">カタログを見る</span><span class="lb-s">メニュー・料金の詳しい冊子</span></a>`:''}${s.lineUrl?`<a class="linkbig line" href="${s.lineUrl}" target="_blank"><span class="lb-ic">💬</span><span class="lb-t">公式LINE</span><span class="lb-s">ご相談・お問い合わせはこちら</span></a>`:''}</div>`;
   const heroImg=(s.theme&&s.theme.heroImg)||'/hero.jpg';
-  const firstTimeHtml=`<div class="firsttime"><div class="ft-head">はじめての方へ</div><div class="ft-body">${TX('firstTimeNote','ご予約は上部メニューの「予約」から24時間受付中です。メニュー→担当→日時を選ぶだけ。<br>会員登録は<b>初回のみ</b>（お名前・電話番号・生年月日・パスワード）。ご登録で<b>500ポイント</b>プレゼント、さらに登録後1週間以内に、これまでのご来店回数などをもとにポイントを追加付与いたします。<br>ご登録時に同意事項へチェックいただくため、<b>当日の同意書のご記入は不要</b>です。')}</div><div class="ft-btns"><button class="ft-btn ft-reg" id="ft-reg">✨ 新規登録</button><button class="ft-btn ft-login" id="ft-login">👤 ログイン</button></div></div>`;
+  const firstTimeHtml=`<details class="firsttime ft-acc"><summary class="ft-head">はじめての方へ<span class="ft-arrow">▾</span></summary><div class="ft-body" style="margin-top:10px">${TX('firstTimeNote','ご予約は上部メニューの「予約」から24時間受付中です。メニュー→担当→日時を選ぶだけ。<br>会員登録は<b>初回のみ</b>（お名前・電話番号・生年月日・パスワード）。ご登録で<b>500ポイント</b>プレゼント、さらに登録後1週間以内に、これまでのご来店回数などをもとにポイントを追加付与いたします。<br>ご登録時に同意事項へチェックいただくため、<b>当日の同意書のご記入は不要</b>です。')}</div><div class="ft-btns"><button class="ft-btn ft-reg" id="ft-reg">✨ 新規登録</button><button class="ft-btn ft-login" id="ft-login">👤 ログイン</button></div></div></details>`;
   const rk=(s.ranking||[]).filter(r=>r&&(r.name||r.img)).slice(0,3);const medals=['🥇','🥈','🥉'];
   const rankHtml=rk.length?`<div class="sec-label"><span class="t">今月の人気商品ランキング</span></div><div class="rankgrid">${rk.map((r,i)=>{const link=r.url||'';const op=link?`<a class="rankcard" href="${link}" target="_blank" style="text-decoration:none;display:block">`:`<div class="rankcard">`;const cl=link?'</a>':'</div>';return `${op}<div class="rankmedal">${medals[i]||''}</div><div class="rankimg"${r.img?` style="background-image:url('${r.img}')"`:''}></div><div class="rankname">${r.name||''}</div>${cl}`}).join('')}</div>`:'';
   const recs=(s.shopRecs||[]).filter(r=>r&&(r.name||r.img)).slice(0,3);
@@ -1286,7 +1297,7 @@ function renderHome(){if(textsMigrate())saveData(DATA);
     <button class="btn btn-book-big" id="hbook">📅 ご予約はこちら</button>
     ${(S().noticeBar)?`<div class="noticebar">📢 ${S().noticeBar}</div>`:''}
     ${promoCardHtml()}
-    <div class="tipwrap"><div class="tip-face">💁‍♀️</div><div class="tip-bubble"><div class="tip-h">💡 今日の美容豆知識</div><div class="tip-x">${beautyTip()}</div></div></div>
+    <div class="tipwrap"><div class="tip-bubble" style="flex:1"><div class="tip-h">💁‍♀️ 今日の美容豆知識</div><div class="tip-x">${beautyTip()}</div></div>${weatherHtml()}</div>
     ${firstTimeHtml}
     
     ${rankHtml}
@@ -1821,7 +1832,7 @@ function aftercareText(items){
 function stepDone(){
   const bk=state.lastBooking;const c=DATA.customers[normPhone(bk.phone)]||{name:bk.name||'お客'};const loggedIn=!!DATA.customers[normPhone(bk.phone)];const earned=loggedIn?earnedFor(bk,custBookings(bk.phone).length-1):0;const bal=loggedIn?pointBalance(bk.phone):0;
   const partyTxt=bk.party.length?`<div class="sum-row"><span class="k">ご一緒の方</span><span class="v">${bk.party[0].name} 様</span></div>`:'';
-  const _rk=effectiveRank(c)||0;const rankBox=`<div class="promo" style="margin:14px 0"><div class="promo-h">💳 会員ランクについて</div><div style="font-size:13.5px;line-height:1.7;color:var(--navy)">${_rk>=2?'あなたは<b>🥇ゴールド会員</b>（毎回10%OFF）です。いつもありがとうございます👑':_rk===1?'あなたは<b>🥈シルバー会員</b>（毎回5%OFF）。<b>月2回のご来店を続ける</b>と🥇ゴールド（10%OFF）へ！この調子でぜひ続けてご予約ください😊':'<b>月1回の定期ご来店</b>で🥈シルバー会員（毎回5%OFF）、<b>月2回</b>で🥇ゴールド会員（毎回10%OFF）にランクアップ！次回もぜひご予約くださいね😊'}</div></div>`;
+  const _rk=effectiveRank(c)||0;const rankBox=`<div class="promo" style="margin:14px 0"><div class="promo-h">💳 会員ランクについて</div><div style="font-size:13.5px;line-height:1.7;color:var(--navy)">${_rk>=2?'あなたは<b>🥇ゴールド会員</b>（毎回10%OFF）です。いつもありがとうございます👑':_rk===1?'あなたは<b>🥈シルバー会員</b>（毎回5%OFF）。<b>月2回のご来店を続ける</b>と🥇ゴールド（10%OFF）へ！この調子でぜひ続けてご予約ください😊':'どなたでも通常会員から。<b>月1回のご来店を続けると🥈シルバー（5%OFF）</b>、<b>月2回で🥇ゴールド（10%OFF）</b>にランクアップ！次回もぜひご予約くださいね😊'}</div></div>`;
   const policyBox=`<div class="aftercare" style="white-space:pre-line;text-align:left"><b>📋 ご予約にあたってのお願い</b>\n\n${S().bookingPolicy||DEFAULT_POLICY}</div>`;
   app.innerHTML=`<div class="done"><div class="done-check"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div><h2>ご予約を承りました</h2><p>${c.name} 様、ありがとうございます。<br>確認のご連絡を ${bk.phone} 宛に差し上げます。</p><div class="code">${bk.id}</div>
     <div class="ptgain">${loggedIn?`${earned>0?`今回の獲得予定 <b>+${earned.toLocaleString()}pt</b><br>`:`<span style="color:var(--ink-soft)">初回ご来店のため通常ポイントは2回目から付与されます。</span><br>`}${bk.referralBonus?`ご紹介ボーナス <b>+${bk.referralBonus}pt</b><br>`:''}現在の保有ポイント <b>${bal.toLocaleString()}pt</b>`:`ポイントはご来店時に加算されます。${bk.referralBonus?`<br>ご紹介ボーナス <b>+${bk.referralBonus}pt</b>`:''}<br><span style="color:var(--ink-soft)">マイページにログインすると保有ポイントを確認できます。</span>`}</div>
@@ -1940,8 +1951,8 @@ function renderMypage(){
   const er=effectiveRank(c);
   const _md=s=>{const p=s.split('-');return `${+p[1]}/${+p[2]}`};
   const er2=er;
-  const ladder=[[0,'通常会員','通常価格。月1回のご来店を続けると翌月シルバーへ✨'],[1,'シルバー会員','毎回5%OFF。月2回のご来店を続けるとゴールドへ⤴'],[2,'ゴールド会員','毎回10%OFF。最上位ランクです👑']];
-  const rankLadderHtml=`<div class="subhead">💳 会員ランク</div><div class="ranklad">${ladder.map(r=>`<div class="rank-tier ${er2===r[0]?'cur':''}"><div class="rt-top"><span class="rt-name">${['🥉','🥈','🥇'][r[0]]} ${r[1]}</span>${er2===r[0]?'<span class="rt-now">いまここ</span>':''}</div><div class="rt-ben">${r[2]}</div></div>`).join('')}</div><div class="note" style="margin-top:8px">🥈シルバー＝毎回5%OFF／🥇ゴールド＝毎回10%OFF。<b>月1回の定期ご来店でシルバー、月2回でゴールド</b>にランクアップします（サロンが来店状況を確認して反映）。通うほどお得です😊</div>`;
+  const ladder=[[0,'通常会員','どなたでも（ご登録で全員）。通常価格でご利用いただけます'],[1,'シルバー会員','毎回5%OFF｜月1回のご来店を続けてくださった方'],[2,'ゴールド会員','毎回10%OFF｜月2回のご来店を続けてくださった方']];
+  const rankLadderHtml=`<div class="subhead">💳 会員ランク</div><div class="ranklad">${ladder.map(r=>`<div class="rank-tier ${er2===r[0]?'cur':''}"><div class="rt-top"><span class="rt-name">${['🥉','🥈','🥇'][r[0]]} ${r[1]}</span>${er2===r[0]?'<span class="rt-now">いまここ</span>':''}</div><div class="rt-ben">${r[2]}</div></div>`).join('')}</div><div class="note" style="margin-top:8px">どなたでも通常会員から。<b>月1回のご来店を続けると🥈シルバー（毎回5%OFF）</b>、<b>月2回続けると🥇ゴールド（毎回10%OFF）</b>にランクアップ！（ご来店状況をサロンが確認して反映）通うほどお得です😊</div>`;
   const generosityHtml=`<div class="generosity">💛 物価高が続くいま、少しでも多くお客様に還元したいと思っています。貯まったポイントや会員ランクの割引は、<b>どうぞお気遣いなく、たくさんお使いください</b>。お客様に喜んでいただくことが、私たちのいちばんの願いです。</div>`;
   const expiryHtml=`<div class="subhead">ポイント・特典の有効期限</div><div class="earn"><div class="earn-row"><span>👥 お友達紹介のポイント</span><b>1年間</b></div><div class="earn-row"><span>✉ ご意見箱のポイント</span><b>1ヶ月間</b></div><div class="earn-row"><span>🎂 お誕生日クーポン</span><b>前後1ヶ月</b></div></div><div class="note" style="margin-top:6px">お誕生日クーポンは、お誕生日の<b>前月・当月・翌月</b>の3ヶ月間ご利用いただけます（例：6月生まれの方は5月・6月・7月）。期限を過ぎた分は無効になりますので、ぜひお早めにお使いください😊</div>`;
   const previewBar=state.previewCust?`<div class="preview-bar"><span>👀 スタッフ確認用プレビュー（このお客様に表示される画面です）</span><button id="mp-preview-back">← 管理画面に戻る</button></div>`:'';
