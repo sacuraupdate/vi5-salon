@@ -1145,7 +1145,8 @@ function updateNav(){const map={home:'nav_home',book:'nav_book',board:'nav_board
 }
 async function setLang(v){state.lang=v;document.documentElement.lang=v;try{if(window.storage)await window.storage.set('salon:lang',v,false)}catch(e){}render()}
 async function loadLang(){try{if(window.storage){const r=await window.storage.get('salon:lang',false);if(r&&r.value)return r.value}}catch(e){}return 'ja'}
-function render(){updateNav();updateBack();if(state.view==='home')renderHome();else if(state.view==='book')renderCustomer();else if(state.view==='gallery')renderGallery();else if(state.view==='share')renderShare();else if(state.view==='board')renderBoard();else if(state.view==='staff')renderStaffIntro();else if(state.view==='course')renderCourse();else if(state.view==='care')renderCareDocs();else if(state.view==='mypage')renderMypage();else renderAdmin();}
+function normDATA(){try{DATA=DATA||{};['customers'].forEach(k=>{if(typeof DATA[k]!=='object'||DATA[k]===null||Array.isArray(DATA[k]))DATA[k]={};});['bookings','blocks','posts','campaigns','shares','boards','feedback'].forEach(k=>{if(!Array.isArray(DATA[k]))DATA[k]=[];});if(!DATA.settings||typeof DATA.settings!=='object')DATA.settings={};if(!Array.isArray(DATA.services)||!DATA.services.length)DATA.services=(typeof SEED_SERVICES!=='undefined')?JSON.parse(JSON.stringify(SEED_SERVICES)):[];if(!Array.isArray(DATA.staff)||!DATA.staff.length)DATA.staff=(typeof SEED_STAFF!=='undefined')?JSON.parse(JSON.stringify(SEED_STAFF)):[];services=DATA.services;staff=DATA.staff;}catch(e){}}
+function render(){normDATA();updateNav();updateBack();if(state.view==='home')renderHome();else if(state.view==='book')renderCustomer();else if(state.view==='gallery')renderGallery();else if(state.view==='share')renderShare();else if(state.view==='board')renderBoard();else if(state.view==='staff')renderStaffIntro();else if(state.view==='course')renderCourse();else if(state.view==='care')renderCareDocs();else if(state.view==='mypage')renderMypage();else renderAdmin();}
 function stepsBar(n){let h='<div class="steps">';for(let i=0;i<4;i++)h+=`<div class="s ${i<=n?'on':''}"></div>`;return h+'</div>'}
 function go(v){if(v!==state.view){state.navStack.push(state.view);if(state.navStack.length>30)state.navStack.shift();}state.view=v;render();window.scrollTo(0,0)}
 function goBack(){if(state.navStack.length){state.view=state.navStack.pop();render();window.scrollTo(0,0)}}
@@ -2018,8 +2019,8 @@ function chatRooms(){const me=localGet('salon:me');const reals=staff.filter(s=>s
   ((WORK&&WORK.groups)||[]).forEach(g=>{if(!me||me==='owner'||(g.members||[]).includes(me))rooms.push({id:'grp:'+g.id,label:g.name,icon:'👨‍👩‍👧',kind:'grp'});});
   return rooms;}
 function roomLabel(id){const r=chatRooms().find(x=>x.id===id);return r?r.label:'トーク';}
-function lastMsg(room){const a=(WORK.chats[room]||[]);return a.length?a[a.length-1]:null;}
-function unreadCount(room){const me=meName()||'';return (WORK.chats[room]||[]).filter(m=>m.by!==me&&!(m.reads||[]).includes(me)).length;}
+function lastMsg(room){const a=((WORK&&WORK.chats&&WORK.chats[room])||[]);return a.length?a[a.length-1]:null;}
+function chatUnread(room){const me=meName()||'';return ((WORK&&WORK.chats&&WORK.chats[room])||[]).filter(m=>m.by!==me&&!(m.reads||[]).includes(me)).length;}
 async function chCreateGroup(){const me=localGet('salon:me');if(!me||me==='owner'){alert('先に担当者を選んでください。');return;}
   const name=prompt('グループ名を入力してください（例：アイラッシュ班）');if(!name||!name.trim())return;
   const reals=staff.filter(s=>s.id!=='s0'&&s.id!==me);const picked=[];
@@ -2031,7 +2032,7 @@ function adminChat(){
   const me=meName()||'不明';const rooms=chatRooms();
   // 一覧（room未選択）
   if(!state.chatRoom){
-    const rowsH=rooms.map(r=>{const lm=lastMsg(r.id);const un=unreadCount(r.id);
+    const rowsH=rooms.map(r=>{const lm=lastMsg(r.id);const un=chatUnread(r.id);
       const prev=lm?((lm.text||(lm.imgs&&lm.imgs.length?'📷 写真':'')||'').slice(0,26)):'まだメッセージがありません';
       return `<button class="troom" data-room="${r.id}"><div class="troom-ic">${r.icon}</div><div class="troom-b"><div class="troom-t">${r.label}${un?`<span class="troom-un">${un}</span>`:''}</div><div class="troom-p">${lm?`${lm.by}: `:''}${prev}</div></div>${lm?`<div class="troom-time">${actAgo(lm.at)}</div>`:''}</button>`;}).join('');
     return `<div class="trooms">${rowsH}</div><button class="btn btn-ghost" id="ch-newgrp" style="width:100%;margin-top:12px">＋ グループを作る</button>`;
