@@ -1244,7 +1244,7 @@ function attachInputTools(){try{const excl=['vs-text','shop-bulk','shop-prompt',
 function render(){normDATA();updateNav();updateBack();if(state.view==='home')renderHome();else if(state.view==='book')renderCustomer();else if(state.view==='gallery')renderGallery();else if(state.view==='share')renderShare();else if(state.view==='board')renderBoard();else if(state.view==='staff')renderStaffIntro();else if(state.view==='course')renderCourse();else if(state.view==='care')renderCareDocs();else if(state.view==='mypage')renderMypage();else renderAdmin();attachInputTools();}
 function stepsBar(n){let h='<div class="steps">';for(let i=0;i<4;i++)h+=`<div class="s ${i<=n?'on':''}"></div>`;return h+'</div>'}
 function go(v){if(v!==state.view){state.navStack.push(state.view);if(state.navStack.length>30)state.navStack.shift();try{history.pushState({v:v},"");}catch(e){}}state.view=v;render();window.scrollTo(0,0)}
-window.addEventListener("popstate",function(){if(state.navStack.length){state.view=state.navStack.pop();}else{state.view="home";}render();window.scrollTo(0,0);});
+if(window.addEventListener)window.addEventListener("popstate",function(){if(state.navStack.length){state.view=state.navStack.pop();}else{state.view="home";}render();window.scrollTo(0,0);});
 try{history.replaceState({v:"home"},"");}catch(e){}
 function goBack(){try{history.back();}catch(e){if(state.navStack.length){state.view=state.navStack.pop();render();window.scrollTo(0,0);}}}
 function updateBack(){const b=byId('backbtn');if(b){b.style.display=state.navStack.length?'block':'none';b.textContent=t('back')}}
