@@ -793,14 +793,15 @@ button{white-space:normal}
 const SUPA_URL='https://tehcaufdztgpbrknpshk.supabase.co';
 const SUPA_KEY='sb_publishable_CnOCyO9QU69K47vbbLRkYg__cEv53CJ';
 const FUNC_URL=SUPA_URL+'/functions/v1/data';
-async function api(payload){const r=await fetch(FUNC_URL,{method:'POST',headers:{'Content-Type':'application/json',apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY},body:JSON.stringify(payload)});let j={};try{j=await r.json()}catch(e){}if(!r.ok)throw Object.assign(new Error(j.error||('http'+r.status)),{status:r.status,body:j});return j;}
+function fetchT(url,opts,ms){opts=opts||{};const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),ms||9000);return fetch(url,Object.assign({},opts,{signal:ctl.signal})).finally(()=>clearTimeout(t));}
+async function api(payload){const r=await fetchT(FUNC_URL,{method:'POST',headers:{'Content-Type':'application/json',apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY},body:JSON.stringify(payload)});let j={};try{j=await r.json()}catch(e){}if(!r.ok)throw Object.assign(new Error(j.error||('http'+r.status)),{status:r.status,body:j});return j;}
 async function apiOp(op,payload){return api({action:'op',op:op,payload:payload||{}});}
 /* ===== ダイレクトモード（Edge Function未更新でも202207でログイン可能にする救済経路）===== */
 const KV_URL=SUPA_URL+'/rest/v1/kv';
 const KV_H={apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY,'Content-Type':'application/json'};
 function isDirect(){return localGet('salon:direct')==='1'}
 async function directLoad(){
-  const r=await fetch(KV_URL+'?key=eq.salon:data&select=value',{headers:KV_H});
+  const r=await fetchT(KV_URL+'?key=eq.salon:data&select=value',{headers:KV_H});
   if(!r.ok)throw Object.assign(new Error('rest-'+r.status),{status:r.status});
   const j=await r.json();
   if(!Array.isArray(j)||!j.length)return null;
@@ -813,7 +814,7 @@ async function directLoad(){
   return (v&&typeof v==='object'&&!Array.isArray(v))?v:null;
 }
 async function directSave(d){
-  const r=await fetch(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:data',value:JSON.stringify(d)})});
+  const r=await fetchT(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:data',value:JSON.stringify(d)})});
   if(!r.ok)throw Object.assign(new Error('rest-'+r.status),{status:r.status});
 }
 // 端末ローカル保存（ログイン状態・言語のみ。個人データはサーバーで保護）
@@ -2000,7 +2001,7 @@ async function annDel(id){if(!confirm('このお知らせを削除しますか�
 /* ===== 業務データ(別保管)とチャット ===== */
 let WORK=null;
 async function loadWork(){if(WORK)return WORK;
-  try{const r=await fetch(KV_URL+'?key=eq.salon:work&select=value',{headers:KV_H});
+  try{const r=await fetchT(KV_URL+'?key=eq.salon:work&select=value',{headers:KV_H});
     if(r.ok){const j=await r.json();if(Array.isArray(j)&&j.length){let v=j[0].value;
       for(let i=0;i<4;i++){if(typeof v==='string'){try{v=JSON.parse(v);continue}catch(e){break}}if(Array.isArray(v)){v=v[0];continue}break;}
       if(v&&typeof v==='object'&&!Array.isArray(v))WORK=v;}}}catch(e){}
@@ -2008,7 +2009,7 @@ async function loadWork(){if(WORK)return WORK;
   WORK.chats=WORK.chats||{};WORK.tasks=WORK.tasks||[];WORK.reports=WORK.reports||[];WORK.clock=WORK.clock||[];WORK.pay=WORK.pay||{};WORK.events=WORK.events||[];WORK.groups=WORK.groups||[];
   return WORK;}
 async function saveWork(){if(!WORK)return;
-  try{const r=await fetch(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:work',value:JSON.stringify(WORK)})});
+  try{const r=await fetchT(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:work',value:JSON.stringify(WORK)})});
     if(!r.ok)throw new Error('w-'+r.status);}
   catch(e){alert('業務データの保存に失敗しました。通信状況をご確認ください。');}}
 function wkCompress(file,cb){const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{const mx=900;let w=img.width,hh=img.height;if(w>mx){hh=Math.round(hh*mx/w);w=mx;}const cv=document.createElement('canvas');cv.width=w;cv.height=hh;cv.getContext('2d').drawImage(img,0,0,w,hh);cb(cv.toDataURL('image/jpeg',0.72));};img.src=e.target.result;};r.readAsDataURL(file);}
@@ -3106,7 +3107,7 @@ const acctBtn=byId('acctbtn');if(acctBtn)acctBtn.onclick=()=>go('mypage');
 app.innerHTML='<div class="empty"><div class="big">···</div>読み込み中</div>';
 (async()=>{applyTheme();state.lang=await loadLang();document.documentElement.lang=state.lang;state.adminAuthed=!!localGet('salon:staff');const _sess=localGet('salon:session');const _setSess=()=>{if(_sess&&DATA.customers&&DATA.customers[normPhone(_sess)]){state.mpPhone=DATA.customers[normPhone(_sess)].phone;localSet('salon:knownphone',state.mpPhone);localSet('salon:knownname',DATA.customers[normPhone(_sess)].name);}};const _bindHome=()=>{const _bl=document.getElementById('brandHome');if(_bl)_bl.onclick=()=>go('home');};// ① 前回のキャッシュがあれば即描画（体感速度改善）
 let _cached=false;try{const cc=localStorage.getItem('vi5:datacache');if(cc){const o=JSON.parse(cc);if(o&&o.d&&!(o.role==='staff'&&!localGet('salon:staff'))){DATA=o.d;services=DATA.services;staff=DATA.staff;_setSess();render();_bindHome();_cached=true;}}}catch(e){}if(!_cached){app.innerHTML='<div style="padding:60px 0;text-align:center;color:#8a8f99">読み込み中…</div>';}// ② 最新データを取得して再描画
-await loadData();_setSess();render();_bindHome();// ③ お客様には不要な処理は描画後・スタッフのみ
+try{await loadData();}catch(e){}_setSess();try{render();_bindHome();}catch(e){app.innerHTML='<div style="padding:50px 20px;text-align:center;color:#8a8f99">表示に問題が発生しました。<br>ページを再読み込みしてください。<br><br><button onclick="location.reload()" style="padding:10px 20px;border:1px solid #ccc;border-radius:8px;background:#fff">再読み込み</button></div>';}// ③ お客様には不要な処理は描画後・スタッフのみ
 if(state.adminAuthed){setTimeout(async()=>{try{await checkBirthdays();}catch(e){}try{await checkReminders();}catch(e){}render();},50);}})();
 
 </script>
