@@ -2403,28 +2403,70 @@ function bookingRow(x,i){
 }
 /* ===== 音声シフト設定 ===== */
 const STAFF_ALIAS={s1:['sakura','さくら','サクラ','桜'],s2:['tomomi','ともみ','トモミ','智美'],s3:['haruka','はるか','ハルカ','遥','春香']};
-function vsResolveStaff(txt){const t=txt.toLowerCase();if(/全員|みんな|全部|ぜんいん/.test(txt))return staff.filter(s=>s.id!=='s0').map(s=>s.id);const ids=[];staff.filter(s=>s.id!=='s0').forEach(s=>{const al=(STAFF_ALIAS[s.id]||[]).concat([(s.name||'').toLowerCase()]);if(al.some(a=>a&&t.includes(a)))ids.push(s.id);});return ids;}
-function vsToHankaku(s){return s.replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));}
-function vsResolveDate(txt){const T=vsToHankaku(txt);const base=new Date(today);
-  if(/今日|本日|きょう/.test(T))return fmtDate(base);
-  if(/明後日|あさって/.test(T)){const d=new Date(base);d.setDate(d.getDate()+2);return fmtDate(d);}
-  if(/明日|あした|あす/.test(T)){const d=new Date(base);d.setDate(d.getDate()+1);return fmtDate(d);}
-  let m=T.match(/(\d{1,2})月(\d{1,2})日/);if(m){let y=base.getFullYear();const mo=+m[1]-1,da=+m[2];let d=new Date(y,mo,da);if(d<new Date(base.getFullYear(),base.getMonth(),base.getDate()))d=new Date(y+1,mo,da);return fmtDate(d);}
-  const DOW={日:0,月:1,火:2,水:3,木:4,金:5,土:6};m=T.match(/([日月火水木金土])曜/);if(m){const target=DOW[m[1]];const nextWeek=/来週|次の週/.test(T);let d=new Date(base);let add=(target-d.getDay()+7)%7;if(add===0)add=7;if(nextWeek)add+=7;d.setDate(d.getDate()+add);return fmtDate(d);}
-  return null;}
-function vsResolveRanges(txt){const T=vsToHankaku(txt).replace(/半/g,'30分');const out=[];const re=/(\d{1,2})時(?:(\d{1,2})分)?\s*(?:から|〜|~|-|ー)\s*(\d{1,2})時(?:(\d{1,2})分)?/g;let m;while((m=re.exec(T))){let s=+m[1]+(m[2]?(+m[2]>=30?0.5:0):0);let e=+m[3]+(m[4]?(+m[4]>=30?0.5:0):0);if(e>s)out.push({start:s,end:e});}return out;}
 function subtractRange(ranges,s,e){const out=[];ranges.forEach(r=>{if(e<=r.start||s>=r.end){out.push(r);return;}if(s>r.start)out.push({start:r.start,end:Math.max(r.start,s)});if(e<r.end)out.push({start:Math.min(r.end,e),end:r.end});});return out.filter(r=>r.end>r.start);}
 function fmtH(h){const hh=Math.floor(h);const mm=(h-hh)===0.5?'30':'00';return hh+':'+mm;}
-function parseShiftText(text){const segs=vsToHankaku(text).split(/[\n。]/).map(s=>s.trim()).filter(Boolean);const acts=[];
-  segs.forEach(raw=>{const staffIds=vsResolveStaff(raw);const targets=staffIds.length?staffIds:staff.filter(s=>s.id!=='s0').map(s=>s.id);const staffLabel=staffIds.length?staffIds.map(id=>stById(id).name).join('・'):'全員';
-    const date=vsResolveDate(raw);const ranges=vsResolveRanges(raw);
-    const isClose=/閉じ|ブロック|打ち合わせ|打合せ|ミーティング|会議|休憩|外出|不在|抜け|中座/.test(raw);
-    const isOff=/(終日|一日|1日).{0,4}(休|オフ)|お休み|休業|休み/.test(raw)&&!ranges.length;
-    if(!date){acts.push({ok:false,raw,msg:'日付が聞き取れませんでした'});return;}
-    if(isOff){acts.push({ok:true,type:'off',targets,staffLabel,date,raw,summary:staffLabel+'／'+date+'／終日お休み'});return;}
-    if(!ranges.length){acts.push({ok:false,raw,msg:'時間が聞き取れませんでした（例：10時から18時）'});return;}
-    if(isClose){acts.push({ok:true,type:'close',targets,staffLabel,date,ranges,raw,summary:staffLabel+'／'+date+'／'+ranges.map(r=>fmtH(r.start)+'〜'+fmtH(r.end)).join('と')+' を閉じる'});return;}
-    acts.push({ok:true,type:'set',targets,staffLabel,date,ranges,raw,summary:staffLabel+'／'+date+'／出勤 '+ranges.map(r=>fmtH(r.start)+'〜'+fmtH(r.end)).join('と')});});
+function vsToHankaku(s){return String(s||'').replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/[：]/g,':');}
+function vsKanjiNum(s){const map={〇:0,零:0,一:1,二:2,三:3,四:4,五:5,六:6,七:7,八:8,九:9,十:10};
+  s=s.replace(/[〇零一二三四五六七八九十]+/g,(m)=>{let n=0,tmp=0,has=false;for(const ch of m){if(ch==='十'){tmp=(tmp||1)*10;n+=tmp;tmp=0;has=true;}else{tmp=map[ch];n+=0;has=true;if(m.indexOf('十')<0){/*単独*/}}}
+    // 簡易: 「十」を含む場合は上で概算。含まないなら各桁連結
+    if(m.indexOf('十')<0){let v=0;for(const ch of m)v=v*10+map[ch];return String(v);} 
+    // 「十」処理をやり直し（正確版）
+    let res=0,cur=0;for(const ch of m){if(ch==='十'){res+=(cur||1)*10;cur=0;}else{cur=map[ch];}}res+=cur;return String(res);});
+  return s;}
+function vsStaffAll(){return staff.filter(s=>s.id!=='s0'&&!s.hidden);}
+function vsResolveStaff(txt){const t=vsToHankaku(txt).toLowerCase();
+  if(/全員|みんな|皆|全部|ぜんいん|スタッフ全員|全スタッフ/.test(txt))return vsStaffAll().map(s=>s.id);
+  const ids=[];staff.filter(s=>s.id!=='s0').forEach(s=>{const al=(STAFF_ALIAS[s.id]||[]).concat([(s.name||'').toLowerCase()]);if(al.some(a=>a&&t.includes(a)))ids.push(s.id);});
+  return ids;}
+function vsAddDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function vsNextDow(base,target,nextWeek){let d=new Date(base);let add=(target-d.getDay()+7)%7;if(add===0)add=7;if(nextWeek)add+=7;d.setDate(d.getDate()+add);return d;}
+// 日付（複数対応）：曜日の複数・期間・相対語を配列で返す
+function vsResolveDates(txt){let T=vsKanjiNum(vsToHankaku(txt));const base=new Date(today);const out=new Set();const DOWM={日:0,月:1,火:2,水:3,木:4,金:5,土:6};
+  const nextWeek=/来週|次の週|翌週/.test(T);const thisWeek=/今週|こんしゅう/.test(T);
+  // 相対語
+  if(/今日|本日|きょう/.test(T))out.add(fmtDate(base));
+  if(/明日|あした|あす/.test(T))out.add(fmtDate(vsAddDays(base,1)));
+  if(/明後日|あさって/.test(T))out.add(fmtDate(vsAddDays(base,2)));
+  if(/明々後日|しあさって/.test(T))out.add(fmtDate(vsAddDays(base,3)));
+  // 期間「M月D日からM月D日」「D日〜D日」「今日から3日間」
+  let m=T.match(/(\d{1,2})月(\d{1,2})日\s*(?:から|〜|~|ー|-)\s*(?:(\d{1,2})月)?(\d{1,2})日/);
+  if(m){const y=base.getFullYear();let a=new Date(y,+m[1]-1,+m[2]);let b=new Date(y,(m[3]?+m[3]:+m[1])-1,+m[4]);if(b<a)b=new Date(y+1,(m[3]?+m[3]:+m[1])-1,+m[4]);for(let d=new Date(a);d<=b;d=vsAddDays(d,1))out.add(fmtDate(d));}
+  // 「N日間」
+  let mp=T.match(/(\d{1,2})日間/);if(mp&&(/今日|本日|きょう/.test(T))){for(let i=0;i<+mp[1];i++)out.add(fmtDate(vsAddDays(base,i)));}
+  // 単一「M月D日」（複数可）
+  let re=/(\d{1,2})月(\d{1,2})日/g,mm;while((mm=re.exec(T))){const y=base.getFullYear();let d=new Date(y,+mm[1]-1,+mm[2]);if(d<new Date(base.getFullYear(),base.getMonth(),base.getDate()))d=new Date(y+1,+mm[1]-1,+mm[2]);out.add(fmtDate(d));}
+  // 「D日」（月省略・今月/来月）
+  const nextMonth=/来月|翌月/.test(T);let re2=/(?:^|[^月\d])(\d{1,2})日(?!間)/g,m2;while((m2=re2.exec(T))){const dd=+m2[1];const mo=nextMonth?base.getMonth()+1:base.getMonth();let d=new Date(base.getFullYear(),mo,dd);if(!nextMonth&&d<new Date(base.getFullYear(),base.getMonth(),base.getDate()))d=new Date(base.getFullYear(),mo+1,dd);out.add(fmtDate(d));}
+  // 曜日（複数・毎週・今週/来週）— 「毎週」は今後8週ぶん
+  const everyW=/毎週|毎/.test(T);
+  const dowMatches=[...T.matchAll(/([日月火水木金土])曜/g)].map(x=>DOWM[x[1]]);
+  // 「月水金」など連続曜日（曜が付かない列挙）
+  if(!dowMatches.length){const seq=T.match(/([日月火水木金土]{2,})(?![曜])/);if(seq){for(const ch of seq[1])if(DOWM[ch]!=null)dowMatches.push(DOWM[ch]);}}
+  if(dowMatches.length){[...new Set(dowMatches)].forEach(tw=>{if(everyW){for(let w=0;w<8;w++){out.add(fmtDate(vsNextDow(vsAddDays(base,w*7-1),tw,false)));}}else{out.add(fmtDate(vsNextDow(base,tw,nextWeek)));}});}
+  // 「今週いっぱい」「来週いっぱい」
+  if(/いっぱい|ずっと|全部/.test(T)&&(thisWeek||nextWeek)){const startOffset=nextWeek?(8-base.getDay())%7+1:0;for(let i=0;i<7;i++){const d=vsAddDays(base,(nextWeek?7:0)+i-((base.getDay()+6)%7));out.add(fmtDate(d));}}
+  return [...out].sort();}
+function vsResolveRanges(txt){let T=vsKanjiNum(vsToHankaku(txt)).replace(/半/g,'30分').replace(/時半/g,'時30分');const out=[];
+  const re=/(\d{1,2})(?:時|:)(\d{1,2})?分?\s*(?:から|〜|~|-|ー|より)\s*(\d{1,2})(?:時|:)(\d{1,2})?分?/g;let m;
+  while((m=re.exec(T))){let s=+m[1]+((m[2]&&+m[2]>=30)?0.5:0);let e=+m[3]+((m[4]&&+m[4]>=30)?0.5:0);if(e>s)out.push({start:s,end:e});}
+  // 「10時まで」「18時から」片方だけ→デフォルト補完
+  if(!out.length){const a=T.match(/(\d{1,2})時\s*(?:から|より)/);const b=T.match(/(\d{1,2})時\s*まで/);if(a&&b)out.push({start:+a[1],end:+b[1]});else if(a)out.push({start:+a[1],end:LAST_RECEPTION});else if(b)out.push({start:OPEN_HOUR,end:+b[1]});}
+  return out;}
+function parseShiftText(text){const segs=vsKanjiNum(vsToHankaku(text)).split(/[\n。、，,]/).map(s=>s.trim()).filter(Boolean);const acts=[];
+  segs.forEach(raw=>{const staffIds=vsResolveStaff(raw);const targets=staffIds.length?staffIds:vsStaffAll().map(s=>s.id);const staffLabel=staffIds.length?staffIds.map(id=>stById(id).name).join('・'):'全員';
+    const ranges=vsResolveRanges(raw);
+    const hasClose=/閉じ|閉め|ブロック|打ち合わせ|打合せ|ミーティング|会議|休憩|外出|抜け|中座|来客|予約不可|受付不可|埋め/.test(raw);
+    const hasOff=/お休み|おやすみ|休み|休業|欠勤|有給|公休|非番|不在|オフ|終日|丸一日|欠勤/.test(raw);
+    let dates=vsResolveDates(raw);
+    if(!dates.length&&(ranges.length||hasOff||hasClose))dates=[fmtDate(today)];
+    if(!dates.length){acts.push({ok:false,raw,msg:'日付が聞き取れませんでした（例：9月30日／明日／来週の火曜／月水金）'});return;}
+    dates.forEach(date=>{
+      if(hasOff&&!ranges.length){acts.push({ok:true,type:'off',targets,staffLabel,date,raw,summary:staffLabel+'／'+mdLabel(date)+'／終日お休み'});return;}
+      if(!ranges.length){acts.push({ok:false,raw,msg:'時間が聞き取れませんでした（例：10時から18時／9時半〜17時）'});return;}
+      if(hasClose){acts.push({ok:true,type:'close',targets,staffLabel,date,ranges,raw,summary:staffLabel+'／'+mdLabel(date)+'／'+ranges.map(r=>fmtH(r.start)+'〜'+fmtH(r.end)).join('と')+' を閉じる'});return;}
+      acts.push({ok:true,type:'set',targets,staffLabel,date,ranges,raw,summary:staffLabel+'／'+mdLabel(date)+'／出勤 '+ranges.map(r=>fmtH(r.start)+'〜'+fmtH(r.end)).join('と')});
+    });
+  });
   return acts;}
 function vsInterpret(){const txt=(byId('vs-text')&&byId('vs-text').value||'').trim();if(!txt){alert('シフトの内容を入力（または音声入力）してください。');return;}state.vsActions=parseShiftText(txt);render();}
 async function vsApply(){const acts=(state.vsActions||[]).filter(a=>a.ok);if(!acts.length){alert('適用できる項目がありません。');return;}
@@ -2443,7 +2485,7 @@ function vsStartVoice(){const SR=window.SpeechRecognition||window.webkitSpeechRe
 function voiceShiftPanel(){const acts=state.vsActions||[];
   const preview=acts.length?`<div class="subhead" style="margin:16px 0 8px">確認（この内容で設定します）</div>`+acts.map(a=>a.ok?`<div class="pass" style="border-color:var(--sage)"><span class="pl">✅ ${a.summary}</span></div>`:`<div class="pass" style="border-color:var(--rose)"><span class="pl">⚠ 「${a.raw}」→ ${a.msg}</span></div>`).join('')+(acts.some(a=>a.ok)?`<button class="btn btn-primary" id="vs-apply" style="width:100%;margin-top:10px">この内容でシフトを設定する</button>`:''):'';
   return `<div class="addform"><div class="subhead" style="margin:0 0 8px">🎤 音声でシフト設定</div>
-  <div class="note" style="margin:0 0 10px">マイクを押して話すか、下の欄に入力してください。1行に1件、複数まとめてOKです。<br>例：「SAKURA 9月30日 10時から18時」「明日はTOMOMIお休み」「今日の14時から15時は打ち合わせで閉じる」「全員 火曜 10時から15時」</div>
+  <div class="note" style="margin:0 0 10px">マイクを押して話すか、下の欄に入力してください。1行に1件、複数まとめてOKです。<br>例：「SAKURA 9月30日 10時から18時」「明日と明後日はTOMOMIお休み」「毎週火曜 10時から15時」「来週の月水金 9時半から17時」「今日の14時から15時は打ち合わせで閉じる」「9月10日から12日までSAKURA不在」</div>
   <button class="btn ${state.vsListening?'btn-primary':'btn-ghost'}" id="vs-mic" style="width:100%;margin-bottom:8px">${state.vsListening?'🎤 聞き取り中…（話してください）':'🎤 マイクで話す'}</button>
   <textarea id="vs-text" rows="4" placeholder="例）SAKURA 9月30日 10時から18時" style="width:100%">${(state.vsText||'').replace(/</g,'&lt;')}</textarea>
   <button class="btn btn-ghost" id="vs-go" style="width:100%;margin-top:8px">内容を確認する</button>
