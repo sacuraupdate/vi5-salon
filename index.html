@@ -838,6 +838,20 @@ button{white-space:normal}
 .tk-duechips{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
 .tk-dchip{border:1px solid var(--line);background:#fff;border-radius:100px;padding:6px 12px;font-family:inherit;font-size:12px;font-weight:700;color:var(--ink-soft);cursor:pointer}
 .tk-dchip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.mymenu{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:6px}
+.mymenu .mrow{margin:0}
+.mymenu .mrow>summary{flex-direction:column;text-align:center;gap:5px;padding:14px 6px}
+.mymenu .mrow>summary .chev{display:none}
+.mymenu .mrow .mic{margin:0 auto}
+.mymenu .mrow .mlbl{font-size:12px;line-height:1.3}
+.mymenu .mrow .mrow-badge{position:absolute;top:8px;right:8px;margin:0}
+.mymenu .mrow{position:relative}
+.mymenu .mrow[open]{grid-column:1/-1}
+.mymenu .mrow[open]>summary{flex-direction:row;text-align:left}
+.mymenu .mrow[open]>summary .chev{display:inline}
+.beautytip{background:var(--paper-2);border-radius:14px;padding:12px 16px;margin:14px 0 4px;display:flex;flex-direction:column;gap:4px}
+.beautytip .bt-h{font-size:12px;font-weight:800;color:var(--gold-deep);letter-spacing:.04em}
+.beautytip .bt-x{font-size:14px;line-height:1.7;color:var(--navy)}
 </style>
 </head>
 <body>
@@ -1228,6 +1242,7 @@ function updateBack(){const b=byId('backbtn');if(b){b.style.display=state.navSta
 const S=()=>DATA.settings;
 
 /* ===== HOME ===== */
+const BEAUTY_TIPS=['まつげは目を保護する大切な毛。こすらず優しく扱うと長持ちします✨','施術後6時間は、まつげ・眉を濡らさないと持ちが良くなります💧','オイルクレンジングはエクステの接着を弱めることも。摩擦は控えめに🌿','眉は「眉山」を意識すると顔がすっきり見えます☝️','水分をとる量が多いほど、肌のうるおいは保たれやすくなります🥤','日焼け止めは冬でも毎日。紫外線は一年中降っています☀️','枕カバーをこまめに替えると、肌トラブルが減ります🛏️','まつげ美容液は「根元」に。毛周期に合わせて続けるのがコツ🌱','睡眠は最高の美容液。同じ時間に寝ると肌が整います😴','ハーブピーリング後はしっかり保湿でつるん肌が続きます🌸','笑顔の表情筋を動かすと、フェイスラインが引き締まります😊','温かい湯船に浸かると血行が良くなり、肌色が明るく見えます♨️','カフェインの摂りすぎはむくみの原因に。お水もこまめに💧','眉メイクは「左右対称」より「自分の骨格に合わせる」のが自然💁','まつげパーマ後3日はビューラーを避けるとカールが長持ち🌀','ビタミンCは肌の味方。野菜・果物を意識して🍊','こすらないスキンケアが、シミ・くすみ予防の第一歩🕊️','寝る前のスマホは控えめに。目元の疲れ・くまの予防に📵','リップは輪郭をぼかすと今っぽく、上品に仕上がります💄','季節の変わり目は肌が敏感に。新しい化粧品は少しずつ🌤️'];function beautyTip(){const d=new Date(today);const doy=Math.floor((d-new Date(d.getFullYear(),0,0))/86400000);return BEAUTY_TIPS[doy%BEAUTY_TIPS.length];}
 function renderHome(){if(textsMigrate())saveData(DATA);
   const active=DATA.campaigns.filter(c=>c.active);
   const camps=active.map(c=>`<div class="camp"><span class="ribbon">CAMPAIGN</span><h3>${c.title}</h3><p>${c.desc}</p></div>`).join('');
@@ -1256,6 +1271,7 @@ function renderHome(){if(textsMigrate())saveData(DATA);
     <div class="hero-photo"><img src="${heroImg}" alt="Vi5"></div>
     <button class="btn btn-book-big" id="hbook">📅 ご予約はこちら</button>
     ${promoCardHtml()}
+    <div class="beautytip"><span class="bt-h">💡 今日の美容豆知識</span><span class="bt-x">${beautyTip()}</span></div>
     ${firstTimeHtml}
     ${rankHtml}
     ${recsHtml}
@@ -1495,7 +1511,7 @@ function menuItemHtml(x){const sel=inCart(x.id);const catObj=categories.find(c=>
   const open=state.menuOpen===x.id;
   const photos=(x.photos&&x.photos.length?x.photos:(x.img?[x.img]:[])).slice(0,3);
   const detail=open?`<div class="mi-detail">${photos.length?`<div class="share-photos" style="margin:0 0 10px">${photos.map(p=>`<div style="background-image:url('${p}')"></div>`).join('')}</div>`:''}<div class="mi-detail-tx">${x.detail||x.desc||'詳細はスタッフまでお気軽にお尋ねください。'}</div></div>`:'';
-  return `<div class="menu-card ${sel?'sel':''} ${open?'open':''}"><div class="mc-tap" data-mpick="${x.id}"><div class="mc-thumb" style="${bg}">${sel?'<span class="mc-chk">✓</span>':''}</div><div class="mc-name">${svcName(x)}</div><div class="mc-meta">${x.price?yen(x.price):'無料'}<span class="mc-min"> / ${x.min}分</span></div></div><div class="mc-foot"><span class="mc-more" data-mexp="${x.id}">${open?'閉じる':'詳細▾'}</span><button class="mc-add ${sel?'on':''}" data-add="${x.id}">${sel?'✓ 選択中':'＋ 選ぶ'}</button></div>${detail}</div>`}
+  return `<div class="menu-item ${sel?'sel':''} ${open?'open':''}"><div class="mi-row" data-mpick="${x.id}"><div class="mi-thumb" style="${bg}"></div><div class="mi-body"><div class="mi-name">${svcName(x)} <span class="mi-more" data-mexp="${x.id}">${open?'閉じる':'詳細▾'}</span></div>${x.desc?`<div class="mi-desc">${x.desc}</div>`:''}<div class="mi-meta">${x.price?yen(x.price):'無料'} ・ 約${x.min}分</div></div><button class="mi-add" data-add="${x.id}"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">${sel?'<path d="M5 13l4 4L19 7"/>':'<path d="M12 5v14M5 12h14"/>'}</svg></button></div>${detail}</div>`}
 function stepBrowse(){
   const chips=[['all','すべて'],['mens','メンズにおすすめ'],...categories.map(c=>[c.id,c.label])];
   const cur=state.openCat||'all';
@@ -1503,12 +1519,12 @@ function stepBrowse(){
   if(state.mpPhone){const ids=favServiceIds(state.mpPhone).slice(0,3).filter(id=>svById(id));if(ids.length&&cur==='all')fav=`<div class="fav-label">よく選ぶメニュー</div>${ids.map(id=>menuItemHtml(svById(id))).join('')}<div style="height:8px"></div>`;}
   let listHtml=promoCardHtml();
   if(cur==='all'){
-    categories.forEach(c=>{let items=services.filter(s=>s.cat===c.id);if(!items.length)return;const sel=state.cart.filter(x=>x.cat===c.id).length;listHtml+=`<div class="subhead" style="margin-top:14px">${c.label}${sel?` <span style="color:var(--gold);font-size:11px;font-weight:700">選択中 ${sel}</span>`:''}</div>`+'<div class="menugrid">'+items.map(menuItemHtml).join('')+'</div>'});
+    categories.forEach(c=>{let items=services.filter(s=>s.cat===c.id);if(!items.length)return;const sel=state.cart.filter(x=>x.cat===c.id).length;listHtml+=`<div class="subhead" style="margin-top:14px">${c.label}${sel?` <span style="color:var(--gold);font-size:11px;font-weight:700">選択中 ${sel}</span>`:''}</div>`+items.map(menuItemHtml).join('')});
   }else if(cur==='mens'){
-    let items=services.filter(isMens);listHtml=items.length?'<div class="menugrid">'+items.map(menuItemHtml).join('')+'</div>':'<div class="empty">メンズにおすすめのメニューがありません</div>';
+    let items=services.filter(isMens);listHtml=items.length?items.map(menuItemHtml).join(''):'<div class="empty">メンズにおすすめのメニューがありません</div>';
   }else{
     let items=services.filter(s=>s.cat===cur);if(state.mpPhone){const f=favServiceIds(state.mpPhone);items=[...items].sort((a,b)=>f.indexOf(b.id)-f.indexOf(a.id))}
-    listHtml=items.length?'<div class="menugrid">'+items.map(menuItemHtml).join('')+'</div>':'<div class="empty">メニューがありません</div>';
+    listHtml=items.length?items.map(menuItemHtml).join(''):'<div class="empty">メニューがありません</div>';
   }
   const aset=new Set();state.cart.forEach(it=>{const sv=svById(it.id);((sv&&sv.addons)||[]).forEach(a=>aset.add(a))});state.cart.forEach(it=>aset.delete(it.id));
   const adds=[...aset].map(svById).filter(Boolean);
@@ -1612,9 +1628,9 @@ function stepBrowsePair(){
   state.cart=active;
   const chips=[['all','すべて'],['mens','メンズにおすすめ'],...categories.map(c=>[c.id,c.label])];const cur=state.openCat||'all';
   let listHtml='';
-  if(cur==='all'){categories.forEach(c=>{let items=services.filter(s=>s.cat===c.id);if(!items.length)return;const sel=active.filter(x=>x.cat===c.id).length;listHtml+=`<div class="subhead" style="margin-top:14px">${c.label}${sel?` <span style="color:var(--gold);font-size:11px;font-weight:700">選択中 ${sel}</span>`:''}</div>`+'<div class="menugrid">'+items.map(menuItemHtml).join('')+'</div>'});}
-  else if(cur==='mens'){let items=services.filter(isMens);listHtml=items.length?'<div class="menugrid">'+items.map(menuItemHtml).join('')+'</div>':'<div class="empty">メンズにおすすめのメニューがありません</div>';}
-  else{let items=services.filter(s=>s.cat===cur);listHtml=items.length?'<div class="menugrid">'+items.map(menuItemHtml).join('')+'</div>':'<div class="empty">メニューがありません</div>';}
+  if(cur==='all'){categories.forEach(c=>{let items=services.filter(s=>s.cat===c.id);if(!items.length)return;const sel=active.filter(x=>x.cat===c.id).length;listHtml+=`<div class="subhead" style="margin-top:14px">${c.label}${sel?` <span style="color:var(--gold);font-size:11px;font-weight:700">選択中 ${sel}</span>`:''}</div>`+items.map(menuItemHtml).join('')});}
+  else if(cur==='mens'){let items=services.filter(isMens);listHtml=items.length?items.map(menuItemHtml).join(''):'<div class="empty">メンズにおすすめのメニューがありません</div>';}
+  else{let items=services.filter(s=>s.cat===cur);listHtml=items.length?items.map(menuItemHtml).join(''):'<div class="empty">メニューがありません</div>';}
   const aset=new Set();active.forEach(it=>{const sv=svById(it.id);((sv&&sv.addons)||[]).forEach(a=>aset.add(a))});active.forEach(it=>aset.delete(it.id));
   const adds=[...aset].map(svById).filter(Boolean);const addHtml=adds.length?`<div class="addon-label">＋ いっしょにいかがですか？</div>`+adds.map(menuItemHtml).join(''):'';
   const selChips=active.length?`<div class="selbar">${active.map(it=>`<span class="selchip" data-rm="${it.id}">${itemName(it)} <b>✕</b></span>`).join('')}</div>`:'';
@@ -1925,13 +1941,14 @@ function renderMypage(){
     ${rebookHtml}
     ${recoHtml}
     <div class="subhead" style="margin-top:14px">メニュー</div>
-    <details class="mrow"><summary><span class="mic">📢</span>サロンからのメッセージ${(()=>{const c=DATA.customers[normPhone(state.mpPhone)];const u=c?(c.notices||[]).filter(n=>!n.read).length:0;return u?`<span class="mrow-badge">${u}</span>`:'';})()}<span class="chev">›</span></summary><div class="mrow-b">${notices?`<div class="nlist" style="margin-top:12px">${notices}</div>`:'<div class="empty">新しいメッセージはありません</div>'}</div></details>
-    <details class="mrow"><summary><span class="mic">🗓</span>ご予約一覧・来店履歴<span class="chev">›</span></summary><div class="mrow-b">${list.length?hist:'<div class="empty">履歴はまだありません</div>'}</div></details>
-    <details class="mrow"><summary><span class="mic">💎</span>ポイント・会員ランク<span class="chev">›</span></summary><div class="mrow-b">${generosityHtml}<div class="subhead" style="margin-top:12px">💡 ランク割引とポイントの違い</div><div class="earn"><div class="earn-row"><span>💳 <b>ランク割引</b>｜毎回のお会計が自動で5%・10%OFF。<b>何度使っても減りません</b></span></div><div class="earn-row"><span>💎 <b>ポイント</b>｜貯めて使う「1pt＝1円」。お支払いから差し引き、<b>使った分は減ります</b></span></div><div class="earn-row"><span>✨ <b>併用OK</b>｜ランク割引後の金額に、さらにポイントが使えます</span></div></div><div class="earn"><div class="earn-t">💎 ポイントの貯め方</div><div class="earn-row"><span>💅 ご来店ごと（お会計に応じて）</span><b>貯まる</b></div><div class="earn-row"><span>🎂 お誕生日に</span><b>+${CONFIG.birthdayBonus.toLocaleString()}</b></div><div class="earn-row"><span>👥 お友達をご紹介</span><b>+${CONFIG.referralBonus}</b></div><div class="earn-row"><span>✉ ご意見箱に投稿</span><b>+${CONFIG.feedbackPoints}</b></div></div>${rankLadderHtml}${expiryHtml}</div></details>
-    <details class="mrow"><summary><span class="mic">🎫</span>回数券<span class="chev">›</span></summary><div class="mrow-b">${passes||'<div class="empty">ご利用中の回数券はありません</div>'}</div></details>
-    <details class="mrow"><summary><span class="mic">🎁</span>クーポン<span class="chev">›</span></summary><div class="mrow-b">${cpn?`<div class="pass"><span class="pl">🎁 ${cpn}</span></div><div class="note" style="margin-top:6px">クーポンは発行から<b>3ヶ月以内</b>にご利用ください。</div>`:'<div class="empty">ご利用可能なクーポンはありません</div>'}</div></details>
-    <details class="mrow"><summary><span class="mic">🎂</span>誕生日特典<span class="chev">›</span></summary><div class="mrow-b">${c.birthday?`<div class="note">🎂 お誕生日：<b>${bdayLabel(c.birthday)}</b><br>お誕生日の<b>前月・当月・翌月</b>の3ヶ月間、<b>1,000円クーポン</b>がご利用いただけます。お誕生日には<b>${CONFIG.birthdayBonus.toLocaleString()}pt</b>もプレゼント🎁</div>`:`<div class="note">🎂 お誕生日が未登録です。ご来店時にスタッフへお伝えください。ご登録いただくと、お誕生日月に<b>1,000円クーポン</b>と<b>${CONFIG.birthdayBonus.toLocaleString()}pt</b>の特典があります。</div>`}</div></details>
-    <details class="mrow"><summary><span class="mic">⚙️</span>会員情報・その他<span class="chev">›</span></summary><div class="mrow-b">${savedHtml}<div class="subhead" style="margin-top:0">パスワード変更</div><div class="composer"><div class="note" style="margin:0 0 10px">仮パスワードでログインした方は、こちらでご自身のパスワードに変更してください。</div><input id="mp-newpw" type="password" placeholder="新しいパスワード（4文字以上）" style="width:100%;font-family:inherit;font-size:14px;border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:var(--paper)"><button class="btn btn-primary" id="mp-pwsave" style="width:100%;margin-top:8px">パスワードを変更</button></div><div class="subhead">ご意見箱</div><div class="composer"><div class="note" style="margin:0 0 10px">気になった点など、小さなことでも構いません。お名前は不要・匿名で届きます。送ってくださった方には${CONFIG.feedbackPoints}ポイントを差し上げます。</div><textarea id="fb-text" placeholder="ご意見・ご感想（匿名で届きます）"></textarea><button class="btn btn-primary" id="fb-send" style="width:100%;margin-top:8px">送信して ${CONFIG.feedbackPoints}pt 受け取る</button></div></div></details>
+<div class="mymenu">    <details class="mrow"><summary><span class="mic">📢</span><span class="mlbl">メッセージ</span>${(()=>{const c=DATA.customers[normPhone(state.mpPhone)];const u=c?(c.notices||[]).filter(n=>!n.read).length:0;return u?`<span class="mrow-badge">${u}</span>`:'';})()}<span class="chev">›</span></summary><div class="mrow-b">${notices?`<div class="nlist" style="margin-top:12px">${notices}</div>`:'<div class="empty">新しいメッセージはありません</div>'}</div></details>
+    <details class="mrow"><summary><span class="mic">🗓</span><span class="mlbl">予約・履歴</span><span class="chev">›</span></summary><div class="mrow-b">${list.length?hist:'<div class="empty">履歴はまだありません</div>'}</div></details>
+    <details class="mrow"><summary><span class="mic">💎</span><span class="mlbl">ポイント</span><span class="chev">›</span></summary><div class="mrow-b">${generosityHtml}<div class="subhead" style="margin-top:12px">💡 ランク割引とポイントの違い</div><div class="earn"><div class="earn-row"><span>💳 <b>ランク割引</b>｜毎回のお会計が自動で5%・10%OFF。<b>何度使っても減りません</b></span></div><div class="earn-row"><span>💎 <b>ポイント</b>｜貯めて使う「1pt＝1円」。お支払いから差し引き、<b>使った分は減ります</b></span></div><div class="earn-row"><span>✨ <b>併用OK</b>｜ランク割引後の金額に、さらにポイントが使えます</span></div></div><div class="earn"><div class="earn-t">💎 ポイントの貯め方</div><div class="earn-row"><span>💅 ご来店ごと（お会計に応じて）</span><b>貯まる</b></div><div class="earn-row"><span>🎂 お誕生日に</span><b>+${CONFIG.birthdayBonus.toLocaleString()}</b></div><div class="earn-row"><span>👥 お友達をご紹介</span><b>+${CONFIG.referralBonus}</b></div><div class="earn-row"><span>✉ ご意見箱に投稿</span><b>+${CONFIG.feedbackPoints}</b></div></div>${rankLadderHtml}${expiryHtml}</div></details>
+    <details class="mrow"><summary><span class="mic">🎫</span><span class="mlbl">回数券</span><span class="chev">›</span></summary><div class="mrow-b">${passes||'<div class="empty">ご利用中の回数券はありません</div>'}</div></details>
+    <details class="mrow"><summary><span class="mic">🎁</span><span class="mlbl">クーポン</span><span class="chev">›</span></summary><div class="mrow-b">${cpn?`<div class="pass"><span class="pl">🎁 ${cpn}</span></div><div class="note" style="margin-top:6px">クーポンは発行から<b>3ヶ月以内</b>にご利用ください。</div>`:'<div class="empty">ご利用可能なクーポンはありません</div>'}</div></details>
+    <details class="mrow"><summary><span class="mic">🎂</span><span class="mlbl">誕生日</span><span class="chev">›</span></summary><div class="mrow-b">${c.birthday?`<div class="note">🎂 お誕生日：<b>${bdayLabel(c.birthday)}</b><br>お誕生日の<b>前月・当月・翌月</b>の3ヶ月間、<b>1,000円クーポン</b>がご利用いただけます。お誕生日には<b>${CONFIG.birthdayBonus.toLocaleString()}pt</b>もプレゼント🎁</div>`:`<div class="note">🎂 お誕生日が未登録です。ご来店時にスタッフへお伝えください。ご登録いただくと、お誕生日月に<b>1,000円クーポン</b>と<b>${CONFIG.birthdayBonus.toLocaleString()}pt</b>の特典があります。</div>`}</div></details>
+    <details class="mrow"><summary><span class="mic">⚙️</span><span class="mlbl">会員情報</span><span class="chev">›</span></summary><div class="mrow-b">${savedHtml}<div class="subhead" style="margin-top:0">パスワード変更</div><div class="composer"><div class="note" style="margin:0 0 10px">仮パスワードでログインした方は、こちらでご自身のパスワードに変更してください。</div><input id="mp-newpw" type="password" placeholder="新しいパスワード（4文字以上）" style="width:100%;font-family:inherit;font-size:14px;border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:var(--paper)"><button class="btn btn-primary" id="mp-pwsave" style="width:100%;margin-top:8px">パスワードを変更</button></div><div class="subhead">ご意見箱</div><div class="composer"><div class="note" style="margin:0 0 10px">気になった点など、小さなことでも構いません。お名前は不要・匿名で届きます。送ってくださった方には${CONFIG.feedbackPoints}ポイントを差し上げます。</div><textarea id="fb-text" placeholder="ご意見・ご感想（匿名で届きます）"></textarea><button class="btn btn-primary" id="fb-send" style="width:100%;margin-top:8px">送信して ${CONFIG.feedbackPoints}pt 受け取る</button></div></div></details>
+    </div>
     <div class="note" style="text-align:center;margin-top:14px">※ご予約の変更・キャンセルは<b style="color:var(--rose)">前日の21時まで</b></div>
     <button class="btn btn-ghost" id="mp-out2" style="width:100%;margin-top:24px">ログアウト</button></div>`;
   const _exitPreview=()=>{const k=state.previewCust;state.previewCust=null;state.mpPhone=null;state.view='admin';state.adminTab='customers';state.custOpen=k;render();};
