@@ -852,6 +852,13 @@ button{white-space:normal}
 .beautytip{background:var(--paper-2);border-radius:14px;padding:12px 16px;margin:14px 0 4px;display:flex;flex-direction:column;gap:4px}
 .beautytip .bt-h{font-size:12px;font-weight:800;color:var(--gold-deep);letter-spacing:.04em}
 .beautytip .bt-x{font-size:14px;line-height:1.7;color:var(--navy)}
+.tipwrap{display:flex;align-items:flex-start;gap:8px;margin:16px 0 6px}
+.tip-face{font-size:38px;flex:none;margin-top:6px}
+.tip-bubble{position:relative;background:var(--gold-bg);border:1.5px solid var(--gold-soft);border-radius:16px;padding:12px 16px;flex:1}
+.tip-bubble:before{content:'';position:absolute;left:-9px;top:18px;width:0;height:0;border-top:8px solid transparent;border-bottom:8px solid transparent;border-right:10px solid var(--gold-soft)}
+.tip-bubble:after{content:'';position:absolute;left:-7px;top:19px;width:0;height:0;border-top:7px solid transparent;border-bottom:7px solid transparent;border-right:8px solid var(--gold-bg)}
+.tip-bubble .tip-h{font-size:12px;font-weight:800;color:var(--gold-deep);margin-bottom:4px;letter-spacing:.03em}
+.tip-bubble .tip-x{font-size:14px;line-height:1.75;color:var(--navy);font-weight:600}
 </style>
 </head>
 <body>
@@ -1236,8 +1243,10 @@ function normDATA(){try{DATA=DATA||{};['customers'].forEach(k=>{if(typeof DATA[k
 function attachInputTools(){try{const excl=['vs-text','shop-bulk','shop-prompt','ch-text','st-pw','mp-newpw'];app.querySelectorAll('textarea').forEach(ta=>{if(!ta.id||excl.indexOf(ta.id)>=0||ta.dataset.tooled)return;const par=ta.parentElement;if(par&&par.querySelector('.mic,.ai,.iat-mic'))return;ta.dataset.tooled='1';const bar=document.createElement('div');bar.className='iat';bar.innerHTML='<button type="button" class="iat-mic">🎤 音声</button><button type="button" class="iat-ai">✨ AIで整える</button>';ta.parentNode.insertBefore(bar,ta.nextSibling);bar.querySelector('.iat-mic').onclick=function(){startVoice(ta.id,this);};bar.querySelector('.iat-ai').onclick=function(){runAi(ta.id,this,'memo');};});}catch(e){}}
 function render(){normDATA();updateNav();updateBack();if(state.view==='home')renderHome();else if(state.view==='book')renderCustomer();else if(state.view==='gallery')renderGallery();else if(state.view==='share')renderShare();else if(state.view==='board')renderBoard();else if(state.view==='staff')renderStaffIntro();else if(state.view==='course')renderCourse();else if(state.view==='care')renderCareDocs();else if(state.view==='mypage')renderMypage();else renderAdmin();attachInputTools();}
 function stepsBar(n){let h='<div class="steps">';for(let i=0;i<4;i++)h+=`<div class="s ${i<=n?'on':''}"></div>`;return h+'</div>'}
-function go(v){if(v!==state.view){state.navStack.push(state.view);if(state.navStack.length>30)state.navStack.shift();}state.view=v;render();window.scrollTo(0,0)}
-function goBack(){if(state.navStack.length){state.view=state.navStack.pop();render();window.scrollTo(0,0)}}
+function go(v){if(v!==state.view){state.navStack.push(state.view);if(state.navStack.length>30)state.navStack.shift();try{history.pushState({v:v},"");}catch(e){}}state.view=v;render();window.scrollTo(0,0)}
+window.addEventListener("popstate",function(){if(state.navStack.length){state.view=state.navStack.pop();}else{state.view="home";}render();window.scrollTo(0,0);});
+try{history.replaceState({v:"home"},"");}catch(e){}
+function goBack(){try{history.back();}catch(e){if(state.navStack.length){state.view=state.navStack.pop();render();window.scrollTo(0,0);}}}
 function updateBack(){const b=byId('backbtn');if(b){b.style.display=state.navStack.length?'block':'none';b.textContent=t('back')}}
 const S=()=>DATA.settings;
 
@@ -1271,7 +1280,7 @@ function renderHome(){if(textsMigrate())saveData(DATA);
     <div class="hero-photo"><img src="${heroImg}" alt="Vi5"></div>
     <button class="btn btn-book-big" id="hbook">📅 ご予約はこちら</button>
     ${promoCardHtml()}
-    <div class="beautytip"><span class="bt-h">💡 今日の美容豆知識</span><span class="bt-x">${beautyTip()}</span></div>
+    <div class="tipwrap"><div class="tip-face">💁‍♀️</div><div class="tip-bubble"><div class="tip-h">💡 今日の美容豆知識</div><div class="tip-x">${beautyTip()}</div></div></div>
     ${firstTimeHtml}
     ${rankHtml}
     ${recsHtml}
