@@ -1826,8 +1826,16 @@ function renderAdmin(){
   if(!state.adminAuthed)return renderStaffLogin();
   let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(staffNameMigrate())_clch=true;if(_clch)saveData(DATA);
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
-  const tabs=[['bookings','予約'],['schedule','シフト'],['customers','顧客'],['menu','メニュー'],['staff','スタッフ'],['broadcast','配信'+(unsent?`(${unsent})`:'')],['tasks','毎日のタスク'],['homedisp','ホーム表示'],['campaigns','告知'],['docs','ケア・同意書'],['feedback','ご意見'],['sales','売上'],['settings','設定']];
-  let inner=({tasks:adminTasks,bookings:adminBookings,calendar:adminCalendar,schedule:adminSchedule,customers:adminCustomers,docs:adminDocs,homedisp:adminHomeDisplay,menu:adminMenu,staff:adminStaff,broadcast:adminBroadcast,campaigns:adminCampaigns,feedback:adminFeedback,sales:adminSales,settings:adminSettings}[state.adminTab])();
+  const tabs=[['bookings','予約'],['schedule','シフト'],['customers','顧客'],['menu','メニュー'],['staff','スタッフ'],['broadcast','配信'+(unsent?`(${unsent})`:'')],['tasks','毎日のタスク'],['homedisp','ホーム・告知'],['sales','売上'],['settings','設定']];
+  const _sec=(t)=>`<div class="subhead" style="margin:26px 0 12px;padding-top:18px;border-top:2px solid var(--line)">${t}</div>`;
+  let inner=({
+    tasks:adminTasks,bookings:adminBookings,calendar:adminCalendar,schedule:adminSchedule,
+    customers:()=>state.custOpen?adminCustomers():(adminCustomers()+_sec('💬 お客様の声（ご意見箱）')+adminFeedback()),
+    menu:adminMenu,staff:adminStaff,broadcast:adminBroadcast,
+    homedisp:()=>adminHomeDisplay()+_sec('📣 告知・キャンペーン')+adminCampaigns(),
+    settings:()=>adminSettings()+_sec('📄 ケア・同意書ファイル')+adminDocs(),
+    sales:adminSales
+  }[state.adminTab]||adminBookings)();
   app.innerHTML=`<div class="fade"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div class="eyebrow" style="margin:0">Salon Admin</div><button class="switch" id="adm-out">ログアウト</button></div><div class="atabs">${tabs.map(t=>`<button data-at="${t[0]}" class="${state.adminTab===t[0]?'active':''}">${t[1]}</button>`).join('')}</div>${adminGuide(state.adminTab)}${inner}</div>`;
   byId('adm-out').onclick=()=>{state.adminAuthed=false;setStaffSession(false);go('home')};
   app.querySelectorAll('[data-at]').forEach(b=>b.onclick=()=>{state.adminTab=b.dataset.at;state.custOpen=null;render()});
@@ -1985,9 +1993,11 @@ function salonMonthCells(y,mo,editable){
 function salonDaysEditor(){
   const m=state.scM,y=m.getFullYear(),mo=m.getMonth();const canPrev=!(y===today.getFullYear()&&mo===today.getMonth());
   const nav=`<div class="cal-head" style="margin-bottom:10px"><button class="cal-nav" id="ml-prev" ${canPrev?'':'disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><div class="cal-title">${y}年 ${mo+1}月</div><button class="cal-nav" id="ml-next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></div>`;
-  return `${nav}<div class="note" style="margin-bottom:10px">日付をタップすると「営業 ↔ 休業」を切り替えできます。<b>火曜も営業する日</b>はタップして「臨時営業」に、臨時でお休みする日は「臨時休」にしてください。ここで営業にした火曜は、「月間シフト」でスタッフの受付時間も入れてください。この設定はホームの営業日カレンダーとお客様の予約画面に反映されます。</div><div class="cal-grid sd-grid">${salonMonthCells(y,mo,true)}</div>`;
+  return `${nav}<div class="addform" style="background:var(--gold-bg);border:1px solid var(--gold-soft);border-radius:14px;padding:14px;margin-bottom:14px"><div class="subhead" style="margin:0 0 10px">➕ 臨時営業日を追加（火曜など定休日を営業に）</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end"><div class="field" style="flex:1;min-width:150px;margin:0"><label>日付</label><input id="od-date" type="date" style="width:100%"></div><div class="field" style="margin:0"><label>開始</label><select id="od-start" style="padding:10px"><option value="6">6:00</option><option value="7">7:00</option><option value="8">8:00</option><option value="9">9:00</option><option value="10" selected>10:00</option><option value="11">11:00</option><option value="12">12:00</option><option value="13">13:00</option><option value="14">14:00</option><option value="15">15:00</option><option value="16">16:00</option><option value="17">17:00</option><option value="18">18:00</option><option value="19">19:00</option><option value="20">20:00</option><option value="21">21:00</option><option value="22">22:00</option></select></div><div class="field" style="margin:0"><label>終了</label><select id="od-end" style="padding:10px"><option value="6">6:00</option><option value="7">7:00</option><option value="8">8:00</option><option value="9">9:00</option><option value="10">10:00</option><option value="11">11:00</option><option value="12">12:00</option><option value="13">13:00</option><option value="14">14:00</option><option value="15">15:00</option><option value="16">16:00</option><option value="17">17:00</option><option value="18" selected>18:00</option><option value="19">19:00</option><option value="20">20:00</option><option value="21">21:00</option><option value="22">22:00</option></select></div><button class="btn btn-primary" id="od-add" style="padding:11px 18px">営業日にする</button></div><div class="note" style="margin:10px 0 0">この日を臨時営業にし、全スタッフの受付時間を上の時間で設定します（後から個別に調整できます）。</div></div><div class="note" style="margin-bottom:10px">日付をタップすると「営業 ↔ 休業」を切り替えできます。<b>火曜も営業する日</b>はタップして「臨時営業」に、臨時でお休みする日は「臨時休」にしてください。ここで営業にした火曜は、「月間シフト」でスタッフの受付時間も入れてください。この設定はホームの営業日カレンダーとお客様の予約画面に反映されます。</div><div class="cal-grid sd-grid">${salonMonthCells(y,mo,true)}</div>`;
 }
 async function salonDayToggle(ds){DATA.settings.openException=DATA.settings.openException||{};const ex=DATA.settings.openException;const cur=ex[ds];const normClosed=new Date(ds+'T00:00:00').getDay()===CLOSED_DOW;if(normClosed){if(cur==='open')delete ex[ds];else ex[ds]='open';}else{if(cur==='closed')delete ex[ds];else ex[ds]='closed';}await saveData(DATA);render();}
+async function addOpenDay(){const ds=byId('od-date').value;if(!ds){alert('日付をお選びください。');return;}const st=parseInt(byId('od-start').value||'10'),en=parseInt(byId('od-end').value||'18');if(!(en>st)){alert('終了は開始より後の時間にしてください。');return;}DATA.settings.openException=DATA.settings.openException||{};DATA.settings.openException[ds]='open';DATA.shiftOverrides=DATA.shiftOverrides||{};staff.filter(s=>s.id!=='s0').forEach(s=>{DATA.shiftOverrides[s.id]=DATA.shiftOverrides[s.id]||{};DATA.shiftOverrides[s.id][ds]={ranges:[{start:st,end:en}]};});await saveData(DATA);alert(ds+' を臨時営業日に設定しました（'+st+':00〜'+en+':00）。');render();}
+
 function shiftMonthList(){
   const sid=state.schedStaff||'s1';const reals=staff.filter(s=>s.id!=='s0');
   const chips=reals.map(s=>`<button class="chip ${sid===s.id?'sel':''}" data-shstaff="${s.id}">${s.name}</button>`).join('');
@@ -2352,7 +2362,7 @@ function bindAdmin(){
   app.querySelectorAll('[data-drng]').forEach(s=>s.onchange=()=>dRngSet(s));
   app.querySelectorAll('[data-dayoff]').forEach(b=>b.onclick=()=>dDayOff(b.dataset.dayoff));
   app.querySelectorAll('[data-setday]').forEach(b=>b.onclick=()=>dSetDay(b.dataset.setday));
-  app.querySelectorAll('[data-sdtoggle]').forEach(b=>b.onclick=()=>salonDayToggle(b.dataset.sdtoggle));
+  app.querySelectorAll('[data-sdtoggle]').forEach(b=>b.onclick=()=>salonDayToggle(b.dataset.sdtoggle));const _oda=byId('od-add');if(_oda)_oda.onclick=addOpenDay;
   app.querySelectorAll('[data-addrng]').forEach(b=>b.onclick=()=>dAddRng(b.dataset.addrng));
   app.querySelectorAll('[data-rmrng]').forEach(b=>b.onclick=()=>dRmRng(b.dataset.rmrng));
   const qff=byId('qf-fill');if(qff)qff.onclick=qfFill;
