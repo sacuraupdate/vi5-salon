@@ -952,7 +952,7 @@ const state={view:'home',step:0,openCat:null,cart:[],
   b:{staff:null,date:null,time:null,name:'',phone:'',companions:[],referrer:'',usePoints:0,haste:null,agreed:false,party2:false,p2name:'',p2phone:'',birthday:'',password:'',b2name:'',b2phone:'',b2birthday:'',b2password:'',options:[],note:''},
   bookMode:'single',pairPerson:1,pairA:null,cartA:[],cartB:[],staffA:null,staffB:null,pairEditing:'A',optA:[],optB:[],
   calMonth:new Date(today.getFullYear(),today.getMonth(),1),
-  adminTab:'tasks',adminFilter:'all',custQuery:'',custOpen:null,taskMode:'work',salesPeriod:'month',schedDate:fmtDate(today),acM:new Date(today.getFullYear(),today.getMonth(),1),acDay:fmtDate(today),
+  adminTab:'bookings',adminFilter:'all',custQuery:'',custOpen:null,taskMode:'work',salesPeriod:'month',schedDate:fmtDate(today),acM:new Date(today.getFullYear(),today.getMonth(),1),acDay:fmtDate(today),
   galleryFilter:'all',boardFilter:'all',boardOpen:false,boardEdit:null,boardPhotos:[],loginFull:false,pendingCust:null,previewCust:null,rescheduleId:null,mpPhone:null,lastBooking:null,pendingPhoto:'',galPostOpen:false,menuEdit:null,menuPhoto:'',menuPhotos:[],menuOpen:null,optEdit:null,bcPhone:'',bcQuery:'',bcTpl:0,adminAuthed:false,
   shareFilter:'all',sharePostOpen:false,sharePhotos:[],shareCmtOpen:null,schedMode:'month',brushMode:'work',brushStart:10,brushEnd:19,heroPending:'',galPhotos:[],finOpen:null,schedStaff:'s1',scM:new Date(today.getFullYear(),today.getMonth(),1),calDay:null,navStack:[],staffEdit:null,lang:'ja',bannerPhoto:'',importStage:'idle',importHeaders:[],importRows:[],importMap:{},rankPhotos:[],recPhotos:[],staffPhotoPending:'',manualOpen:false,manualBook:null,manualCat:'all'};
 const byId=id=>document.getElementById(id);
@@ -1259,7 +1259,7 @@ function menuItemHtml(x){const sel=inCart(x.id);const catObj=categories.find(c=>
   const open=state.menuOpen===x.id;
   const photos=(x.photos&&x.photos.length?x.photos:(x.img?[x.img]:[])).slice(0,3);
   const detail=open?`<div class="mi-detail">${photos.length?`<div class="share-photos" style="margin:0 0 10px">${photos.map(p=>`<div style="background-image:url('${p}')"></div>`).join('')}</div>`:''}<div class="mi-detail-tx">${x.detail||x.desc||'詳細はスタッフまでお気軽にお尋ねください。'}</div></div>`:'';
-  return `<div class="menu-item ${sel?'sel':''} ${open?'open':''}"><div class="mi-row" data-mexp="${x.id}"><div class="mi-thumb" style="${bg}"></div><div class="mi-body"><div class="mi-name">${svcName(x)} <span class="mi-more">${open?'閉じる':'詳細▾'}</span></div>${x.desc?`<div class="mi-desc">${x.desc}</div>`:''}<div class="mi-meta">${x.price?yen(x.price):'無料'} ・ 約${x.min}分</div></div><button class="mi-add" data-add="${x.id}"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">${sel?'<path d="M5 13l4 4L19 7"/>':'<path d="M12 5v14M5 12h14"/>'}</svg></button></div>${detail}</div>`}
+  return `<div class="menu-item ${sel?'sel':''} ${open?'open':''}"><div class="mi-row" data-mpick="${x.id}"><div class="mi-thumb" style="${bg}"></div><div class="mi-body"><div class="mi-name">${svcName(x)} <span class="mi-more" data-mexp="${x.id}">${open?'閉じる':'詳細▾'}</span></div>${x.desc?`<div class="mi-desc">${x.desc}</div>`:''}<div class="mi-meta">${x.price?yen(x.price):'無料'} ・ 約${x.min}分</div></div><button class="mi-add" data-add="${x.id}"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">${sel?'<path d="M5 13l4 4L19 7"/>':'<path d="M12 5v14M5 12h14"/>'}</svg></button></div>${detail}</div>`}
 function stepBrowse(){
   const chips=[['all','すべて'],['mens','メンズにおすすめ'],...categories.map(c=>[c.id,c.label])];
   const cur=state.openCat||'all';
@@ -1285,7 +1285,7 @@ function stepBrowse(){
   app.querySelectorAll('[data-bookmode]').forEach(b=>b.onclick=()=>{const mode=b.dataset.bookmode;if(mode==='pair'){state.bookMode='pair';state.cartA=[...state.cart];state.cartB=[];state.staffA=state.b.staff;state.staffB=null;state.optA=[];state.optB=[];state.pairEditing='A';}else{state.bookMode='single';}render();window.scrollTo(0,0)});
   app.querySelectorAll('[data-fc]').forEach(b=>b.onclick=()=>{state.openCat=b.dataset.fc==='all'?null:b.dataset.fc;state.menuOpen=null;render();window.scrollTo(0,0)});
   app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{state.cart=state.cart.filter(x=>x.id!==b.dataset.rm);render()});
-  app.querySelectorAll('[data-mexp]').forEach(r=>r.onclick=()=>{state.menuOpen=state.menuOpen===r.dataset.mexp?null:r.dataset.mexp;render()});
+  app.querySelectorAll('[data-mexp]').forEach(r=>r.onclick=e=>{e.stopPropagation();state.menuOpen=state.menuOpen===r.dataset.mexp?null:r.dataset.mexp;render()});app.querySelectorAll('[data-mpick]').forEach(r=>r.onclick=()=>{const id=r.dataset.mpick;inCart(id)?state.cart=state.cart.filter(x=>x.id!==id):state.cart.push(svById(id));render()});
   app.querySelectorAll('[data-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();const id=b.dataset.add;inCart(id)?state.cart=state.cart.filter(x=>x.id!==id):state.cart.push(svById(id));render()});
   const n=byId('next');if(n)n.onclick=()=>{state.step=1;render()};
 }
@@ -1539,7 +1539,7 @@ async function confirmBooking(){
   catch(e){alert('予約の送信に失敗しました。通信状況をご確認ください。');return;}
   state.lastBooking={...bk,name:b.name,newCust:!known,referralBonus:referrerPhone?CONFIG.referralBonus:0};pushGCal({...bk,name:b.name},'create');
   await refresh();
-  if(state.rescheduleId){try{await apiOp('cancelOwn',{phone:b.phone,password:localGet('salon:custpw')||'',bookingId:state.rescheduleId});pushGCal({id:state.rescheduleId},'cancel');}catch(e){}state.rescheduleId=null;await refresh();}
+  if(state.rescheduleId){try{await apiOp('cancelOwn',{phone:b.phone,password:localGet('salon:custpw')||'',bookingId:state.rescheduleId});pushGCal((DATA.bookings||[]).find(x=>x.id===state.rescheduleId)||{id:state.rescheduleId},'cancel');}catch(e){}state.rescheduleId=null;await refresh();}
   state.step=4;render();
 }
 function aftercareText(items){
@@ -1703,7 +1703,7 @@ function renderMypage(){
   const _pvb=byId('mp-preview-back');if(_pvb)_pvb.onclick=_exitPreview;
   const mpb=byId('mp-book');if(mpb)mpb.onclick=()=>startBooking();
   const mprb=byId('mp-rebook');if(mprb&&lastBk)mprb.onclick=()=>{startBooking();state.cart=(lastBk.items||[]).map(x=>svById(x&&x.id)).filter(Boolean);if(state.cart.length)state.step=1;render();};
-  app.querySelectorAll('[data-cancelmy]').forEach(b=>b.onclick=async()=>{if(!confirm('この予約をキャンセルしますか？'))return;try{await apiOp('cancelOwn',{phone:state.mpPhone,password:localGet('salon:custpw')||'',bookingId:b.dataset.cancelmy});pushGCal({id:b.dataset.cancelmy},'cancel');}catch(e){alert('キャンセルに失敗しました。');return;}await refresh();render();});
+  app.querySelectorAll('[data-cancelmy]').forEach(b=>b.onclick=async()=>{if(!confirm('この予約をキャンセルしますか？'))return;try{await apiOp('cancelOwn',{phone:state.mpPhone,password:localGet('salon:custpw')||'',bookingId:b.dataset.cancelmy});pushGCal((DATA.bookings||[]).find(x=>x.id===b.dataset.cancelmy)||{id:b.dataset.cancelmy},'cancel');}catch(e){alert('キャンセルに失敗しました。');return;}await refresh();render();});
   app.querySelectorAll('[data-resch]').forEach(b=>b.onclick=()=>{const bk=DATA.bookings.find(x=>x.id===b.dataset.resch);if(!bk)return;if(!confirm('お時間の変更を行います。\nこのあと新しい日時を選んでいただくと、今の予約は自動でキャンセルされ、新しい予約に切り替わります。よろしいですか？'))return;startBooking();state.cart=(bk.items||[]).filter(x=>x.cat!=='option').map(x=>svById(x.id)).filter(Boolean);state.b.staff=stById(bk.staffId);state.b.options=(bk.items||[]).filter(x=>x.cat==='option').map(x=>x.id);state.b.companions=[...(bk.companions||[])];state.b.haste=bk.haste||'';state.b.party2=!!(bk.party&&bk.party.length);state.b.agreed=true;state.b.date=null;state.b.time=null;state.rescheduleId=bk.id;state.step=2;render();window.scrollTo(0,0);});
   app.querySelectorAll('[data-rebookbk]').forEach(b=>b.onclick=()=>{const bk=DATA.bookings.find(x=>x.id===b.dataset.rebookbk);if(!bk)return;startBooking();state.cart=(bk.items||[]).map(x=>svById(x&&x.id)).filter(Boolean);if(state.cart.length)state.step=1;render();window.scrollTo(0,0)});
   const fbs=byId('fb-send');if(fbs)fbs.onclick=async()=>{const el=byId('fb-text');const t=el?el.value.trim():'';if(!t){alert('ご意見をご入力ください。');return;}const fb={id:'fb'+Date.now(),text:t,date:now()};try{await apiOp('addFeedback',{fb,phone:state.mpPhone,points:CONFIG.feedbackPoints,notice:`ご意見をお寄せいただきありがとうございます🙏 ${CONFIG.feedbackPoints}ポイントを差し上げました。`});}catch(e){alert('送信に失敗しました。');return;}await refresh();alert(`送信しました。${CONFIG.feedbackPoints}ポイント差し上げました。ありがとうございます！`);render();};
@@ -1826,7 +1826,7 @@ function renderAdmin(){
   if(!state.adminAuthed)return renderStaffLogin();
   let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(staffNameMigrate())_clch=true;if(_clch)saveData(DATA);
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
-  const tabs=[['tasks','毎日のタスク'],['bookings','予約'],['schedule','シフト'],['customers','顧客'],['docs','ケア・同意書'],['homedisp','ホーム表示'],['menu','メニュー'],['staff','スタッフ'],['broadcast','配信'+(unsent?`(${unsent})`:'')],['campaigns','告知'],['feedback','ご意見'],['sales','売上'],['settings','設定']];
+  const tabs=[['bookings','予約'],['schedule','シフト'],['customers','顧客'],['menu','メニュー'],['staff','スタッフ'],['broadcast','配信'+(unsent?`(${unsent})`:'')],['tasks','毎日のタスク'],['homedisp','ホーム表示'],['campaigns','告知'],['docs','ケア・同意書'],['feedback','ご意見'],['sales','売上'],['settings','設定']];
   let inner=({tasks:adminTasks,bookings:adminBookings,calendar:adminCalendar,schedule:adminSchedule,customers:adminCustomers,docs:adminDocs,homedisp:adminHomeDisplay,menu:adminMenu,staff:adminStaff,broadcast:adminBroadcast,campaigns:adminCampaigns,feedback:adminFeedback,sales:adminSales,settings:adminSettings}[state.adminTab])();
   app.innerHTML=`<div class="fade"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div class="eyebrow" style="margin:0">Salon Admin</div><button class="switch" id="adm-out">ログアウト</button></div><div class="atabs">${tabs.map(t=>`<button data-at="${t[0]}" class="${state.adminTab===t[0]?'active':''}">${t[1]}</button>`).join('')}</div>${adminGuide(state.adminTab)}${inner}</div>`;
   byId('adm-out').onclick=()=>{state.adminAuthed=false;setStaffSession(false);go('home')};
