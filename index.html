@@ -606,6 +606,30 @@ button{white-space:normal}
 .mrow .chev{margin-left:auto;color:#b9bcc4;font-size:20px;font-weight:400;transition:transform .15s}
 .mrow[open] .chev{transform:rotate(90deg)}
 .mrow .mrow-b{padding:2px 16px 16px;border-top:1px solid var(--paper-2)}
+
+/* 担当・目標・操作ログ */
+.mebar{display:flex;align-items:center;justify-content:space-between;background:var(--paper-2);border-radius:10px;padding:8px 12px;margin-bottom:8px;font-size:13px}
+.mebar .me-who{color:var(--ink)}
+.mebar .me-chg{background:none;border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-family:inherit;font-size:12px;color:var(--ink-soft);cursor:pointer}
+.goalbar{background:linear-gradient(135deg,var(--navy),#2c3c63);color:#fff;border-radius:14px;padding:14px 16px;margin-bottom:14px}
+.goalbar .gb-h{font-size:12px;letter-spacing:.08em;color:var(--gold-soft);font-weight:700;margin-bottom:4px}
+.goalbar .gb-t{font-size:17px;font-weight:700;line-height:1.4}
+.goalbar .gb-m{font-size:11px;color:#cfd6e6;margin-top:8px;display:flex;align-items:center;gap:10px}
+.goalbar .gb-edit,.goalbar .gb-set{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:5px 12px;font-family:inherit;font-size:12px;cursor:pointer}
+.goalbar-empty{background:var(--gold-bg);color:var(--navy);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.goalbar-empty .gb-t{font-size:14px}
+.goalbar-empty .gb-set{background:var(--navy);color:#fff;flex:none}
+.mepick{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}
+.mepick-b{flex:1 1 40%;display:flex;flex-direction:column;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:22px 10px;font-family:inherit;font-weight:700;font-size:16px;color:var(--navy);cursor:pointer}
+.mepick-b:active{background:var(--paper-2)}
+
+.actlog{margin-bottom:14px;border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}
+.actlog>summary{list-style:none;padding:11px 14px;font-weight:700;font-size:13px;color:var(--navy);cursor:pointer}
+.actlog>summary::-webkit-details-marker{display:none}
+.actlog-b{padding:4px 14px 12px}
+.actrow{font-size:12.5px;color:var(--ink);padding:7px 0;border-top:1px solid var(--paper-2);display:flex;gap:6px;align-items:baseline}
+.actrow .actt{margin-left:auto;color:var(--ink-soft);font-size:11px;flex:none}
+
 </style>
 </head>
 <body>
@@ -1758,7 +1782,7 @@ function seedChecklist(){let n=0;const it=(text,freq)=>({id:'ck'+(++n),text,freq
 function clItemDone(it){if(it.freq==='daily')return !!it.done;if(!it.lastDone)return false;if(it.freq==='monthly')return it.lastDone.slice(0,7)===fmtDate(today).slice(0,7);return (today-new Date(it.lastDone+'T00:00:00'))/86400000<7;}
 function clDue(it){if(it.freq==='daily')return '';if(!it.lastDone)return it.freq==='weekly'?'今週まだ':'今月まだ';const days=Math.floor((today-new Date(it.lastDone+'T00:00:00'))/86400000);if(it.freq==='weekly'){const left=7-days;return left>=0?`前回${days}日前・あと${left}日`:`⚠前回${days}日前・期限切れ`;}const sm=it.lastDone.slice(0,7)===fmtDate(today).slice(0,7);return sm?`今月済（${days}日前）`:`⚠前回${days}日前・今月未`;}
 function clFindItem(id){for(const mode of ['work','home']){const secs=(DATA.checklist&&DATA.checklist[mode])||[];for(let ci=0;ci<secs.length;ci++){const i=secs[ci].items.find(x=>x.id===id);if(i)return{i,mode,ci};}}return null;}
-function clLog(text){DATA.checklist.log=DATA.checklist.log||[];const ts=new Date().toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});DATA.checklist.log.unshift({ts:Date.now(),text:`${ts} ✓ ${text}`});DATA.checklist.log=DATA.checklist.log.slice(0,150);}
+function clLog(text,who){DATA.checklist.log=DATA.checklist.log||[];const ts=new Date().toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});DATA.checklist.log.unshift({ts:Date.now(),text:`${ts} ✓ ${text}${who?'（'+who+'）':''}`});DATA.checklist.log=DATA.checklist.log.slice(0,150);}
 function menuDescMigrate(){const s=DATA.settings;if((s.menuDescVer||0)>=3)return false;const LC='まつげエクステは<b>フラットラッシュ</b>のみを使用。業界でもっとも軽く衛生的で、抗菌作用があり自まつげへの負担が少ない素材です。カラーは<b>50種類</b>、どの色をお選びいただいても料金は同じ。カールはJ・C・Dほかそれ以上もご用意、太さは0.1・0.15・0.25からお選びいただけます。グルーは業界最短クラスの<b>約1時間</b>で完全に乾くため、施術の1時間後から洗顔いただけます。<br><b>一週間保証</b>（お直しは1週間以内に再度ご予約ください）。';const WC='<b>Wエクステ</b>はフラットラッシュを上下で挟み込む技術で、通常の1本の<b>倍の濃さ</b>の1本に仕上がります。まつげエクステは<b>フラットラッシュ</b>のみを使用。業界でもっとも軽く衛生的で、抗菌作用があり自まつげへの負担が少ない素材です。カラーは<b>50種類</b>、どの色をお選びいただいても料金は同じ。カールはJ・C・Dほかそれ以上もご用意、太さは0.1・0.15・0.25からお選びいただけます。グルーは業界最短クラスの<b>約1時間</b>で完全に乾くため、施術の1時間後から洗顔いただけます。<br><b>一週間保証</b>（お直しは1週間以内に再度ご予約ください）。';const PM='自まつげにやさしい<b>ダメージレスパーマ</b>。ダメージの少ない薬剤を使用し、根元から自然に立ち上げます。<br><b>一週間保証</b>（お直しは1週間以内に再度ご予約ください）。';const D={
   'pm1':{desc:'ダメージレスで上向きカール',detail:'上まつげを根元から上向きに。ビューラーいらずのぱっちりとした目元が続きます。<br>'+PM},
   'pm2':{desc:'上下まとめてぱっちり',detail:'上下のまつげにパーマをかけ、目全体を大きく見せます。<br>'+PM},
@@ -1795,7 +1819,7 @@ function staffNameMigrate(){if(!Array.isArray(DATA.staff))return false;let ch=fa
 function textsMigrate(){const s=DATA.settings;if(!s)return false;if((s.textsMigVer||0)>=1)return false;// clear old default texts from Supabase
 s.texts=s.texts||{};if(s.texts.heroTitle==='バイタリティ溢れる毎日を。')s.texts.heroTitle='';if(s.texts.heroSub==='まつげ・眉・ピーリング・メイク。あなたに似合うを、ここから。')s.texts.heroSub='';s.textsMigVer=1;return true;}
 function checklistRollover(){if(!DATA.checklist||!DATA.checklist.work){DATA.checklist=seedChecklist();return true;}if(DATA.checklist.date!==fmtDate(today)){const cnt=arr=>{let d=0,t=0;(arr||[]).forEach(c=>c.items.forEach(i=>{if(i.freq==='daily'){t++;if(i.done)d++;}}));return[d,t];};const[wd,wt]=cnt(DATA.checklist.work),[hd,ht]=cnt(DATA.checklist.home);DATA.checklist.log=DATA.checklist.log||[];DATA.checklist.log.unshift({ts:Date.now(),text:`【${DATA.checklist.date}】出勤 ${wd}/${wt}・在宅 ${hd}/${ht} 完了`});DATA.checklist.log=DATA.checklist.log.slice(0,150);[...(DATA.checklist.work||[]),...(DATA.checklist.home||[])].forEach(c=>c.items.forEach(i=>{if(i.freq==='daily')i.done=false;}));DATA.checklist.date=fmtDate(today);return true;}return false;}
-async function clToggle(id){const f=clFindItem(id);if(!f)return;const it=f.i;const was=clItemDone(it);const y=window.scrollY;if(it.freq==='daily'){it.done=!it.done;if(it.done){it.lastDone=fmtDate(today);clLog(it.text);}}else{if(was){it.lastDone=null;it.done=false;}else{it.lastDone=fmtDate(today);it.done=true;clLog(it.text);}}await saveData(DATA);render();window.scrollTo(0,y);}
+async function clToggle(id){const f=clFindItem(id);if(!f)return;const it=f.i;const was=clItemDone(it);const y=window.scrollY;if(it.freq==='daily'){it.done=!it.done;if(it.done){it.lastDone=fmtDate(today);it.doneBy=meName();clLog(it.text,meName());logAct('タスク完了：'+it.text);}}else{if(was){it.lastDone=null;it.done=false;}else{it.lastDone=fmtDate(today);it.done=true;clLog(it.text);}}await saveData(DATA);render();window.scrollTo(0,y);}
 async function clAddItem(key){const[mode,ci]=key.split('|');const el=app.querySelector(`[data-clitemin="${mode}|${ci}"]`);if(!el||!el.value.trim())return;const fsel=app.querySelector(`[data-clfreqin="${mode}|${ci}"]`);DATA.checklist[mode][+ci].items.push({id:'ck'+Date.now(),text:el.value.trim(),freq:fsel?fsel.value:'daily',done:false,lastDone:null});await saveData(DATA);render();}
 async function clDelItem(id){const f=clFindItem(id);if(!f)return;const cat=DATA.checklist[f.mode][f.ci];cat.items=cat.items.filter(i=>i.id!==id);await saveData(DATA);render();}
 async function clAddCat(mode){const el=app.querySelector(`[data-clcatin="${mode}"]`);if(!el||!el.value.trim())return;DATA.checklist[mode].push({cat:el.value.trim(),items:[]});await saveData(DATA);render();}
@@ -1822,8 +1846,23 @@ function checklistMigrate(){const cl=DATA.checklist;if(!cl||!cl.work)return fals
   // 手が空いた時 を在宅にも
   if(!cl.home.some(c=>c.cat.includes('手が空いた'))){const ws=cl.work.find(c=>c.cat.includes('手が空いた'));const items=ws?ws.items.map(i=>mk(i.text,i.freq)):[mk('Squareメニュー：並び順・金額・新規・削除','weekly'),mk('BASE：在庫・価格・新商品・クーポン配信','weekly'),mk('口コミ・レビューへの返信','weekly'),mk('消耗品・備品の見直し','monthly')];cl.home.push({cat:'手が空いた時',items});}
   cl.ver=2;return true;}
+/* ===== スタッフ識別・毎月の目標・操作ログ ===== */
+function meName(){const id=localGet('salon:me');if(!id)return '';if(id==='owner')return 'オーナー';const s=stById(id);return (s&&s.name)?s.name:'';}
+function setMe(id){localSet('salon:me',id);render();}
+function logAct(act){try{DATA.activity=DATA.activity||[];DATA.activity.unshift({who:meName()||'不明',act:act,at:Date.now()});DATA.activity=DATA.activity.slice(0,200);}catch(e){}}
+function goalKey(d){d=d||today;return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+function goalLabel(){const d=today;return (d.getMonth()+1)+'月';}
+function thisGoal(){return (DATA.goals&&DATA.goals[goalKey()])||null;}
+async function setGoalPrompt(){const g=thisGoal();const v=prompt('『'+goalLabel()+'の目標』を入力してください（全員の管理画面に1か月間表示されます）。\n例：新規のお客様20名 ／ 店販売上15万円 ／ 口コミ30件',g?g.text:'');if(v===null)return;DATA.goals=DATA.goals||{};if(!v.trim()){delete DATA.goals[goalKey()];logAct(goalLabel()+'の目標を削除');}else{DATA.goals[goalKey()]={text:v.trim(),setBy:meName()||'不明',setAt:Date.now()};logAct(goalLabel()+'の目標を設定');}await saveData(DATA);render();}
+function actAgo(ts){const s=Math.floor((Date.now()-ts)/1000);if(s<60)return 'たった今';if(s<3600)return Math.floor(s/60)+'分前';if(s<86400)return Math.floor(s/3600)+'時間前';return Math.floor(s/86400)+'日前';}
+function renderMePicker(){const reals=staff.filter(s=>s.id!=='s0');
+  return `<div class="fade"><div style="text-align:center;padding:30px 0 10px"><div class="eyebrow">SALON ADMIN</div><h2 style="font-family:'Fraunces',serif;color:var(--navy);margin:8px 0 4px">担当者を選んでください</h2><div class="note">操作した内容が記録され、誰が対応したか分かるようになります。</div></div>
+  <div class="mepick">${reals.map(s=>`<button class="mepick-b" data-me="${s.id}"><span style="font-size:26px">💇</span><span>${s.name}</span></button>`).join('')}<button class="mepick-b" data-me="owner"><span style="font-size:26px">👑</span><span>オーナー</span></button></div>
+  <button class="btn btn-ghost" id="me-logout" style="width:100%;margin-top:18px">← ログアウト</button></div>`;}
+
 function renderAdmin(){
   if(!state.adminAuthed)return renderStaffLogin();
+  if(!localGet('salon:me')){app.innerHTML=renderMePicker();app.querySelectorAll('[data-me]').forEach(b=>b.onclick=()=>setMe(b.dataset.me));const _mo=byId('me-logout');if(_mo)_mo.onclick=()=>{state.adminAuthed=false;setStaff&&0;localDel('salon:staff');localDel('salon:staffpw');render();};return;}
   let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(staffNameMigrate())_clch=true;if(_clch)saveData(DATA);
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
   const tabs=[['bookings','📅','予約'],['schedule','⏰','シフト'],['customers','👥','顧客'],['feedback','💬','ご意見'],['menu','📋','メニュー'],['staff','💇','スタッフ'],['broadcast','✉️','配信'+(unsent?`(${unsent})`:'')],['tasks','✅','毎日のタスク'],['homedisp','🏠','ホーム・告知'],['sales','💰','売上'],['work','💼','VI5 Work'],['settings','⚙️','設定']];
@@ -1836,8 +1875,8 @@ function renderAdmin(){
     settings:()=>adminSettings()+_sec('📄 ケア・同意書ファイル')+adminDocs(),
     sales:adminSales
   }[state.adminTab]||adminBookings)();
-  app.innerHTML=`<div class="fade"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div class="eyebrow" style="margin:0">Salon Admin</div><button class="switch" id="adm-out">ログアウト</button></div><div class="atabs">${tabs.map(t=>t[0]==='work'?`<a class="atbtn atwork" href="https://vi5-work.vercel.app" target="_blank" rel="noopener"><span class="ate">${t[1]}</span><span class="atl">${t[2]}</span></a>`:`<button data-at="${t[0]}" class="atbtn ${state.adminTab===t[0]?'active':''}"><span class="ate">${t[1]}</span><span class="atl">${t[2]}</span></button>`).join('')}</div>${adminGuide(state.adminTab)}${inner}</div>`;
-  byId('adm-out').onclick=()=>{state.adminAuthed=false;setStaffSession(false);go('home')};
+  app.innerHTML=`<div class="fade"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div class="eyebrow" style="margin:0">Salon Admin</div><button class="switch" id="adm-out">ログアウト</button></div><div class="mebar"><span class="me-who">👤 担当：<b>${meName()||'未選択'}</b></span><button class="me-chg" id="me-change">担当を変更</button></div>${(()=>{const g=thisGoal();return g?`<div class="goalbar"><div class="gb-h">🎯 ${goalLabel()}の目標</div><div class="gb-t">${g.text}</div><div class="gb-m">設定：${g.setBy}<button class="gb-edit" id="goal-edit">編集</button></div></div>`:`<div class="goalbar goalbar-empty"><div class="gb-t">🎯 ${goalLabel()}の目標が未設定です</div><button class="gb-set" id="goal-set">目標を設定する</button></div>`;})()}${(()=>{const a=(DATA.activity||[]).slice(0,20);if(!a.length)return '';return `<details class="actlog"><summary>📋 最近のスタッフ操作（${a.length}件）</summary><div class="actlog-b">${a.map(x=>`<div class="actrow"><b>${x.who}</b> ${x.act}<span class="actt">${actAgo(x.at)}</span></div>`).join('')}</div></details>`;})()}<div class="atabs">${tabs.map(t=>t[0]==='work'?`<a class="atbtn atwork" href="https://vi5-work.vercel.app" target="_blank" rel="noopener"><span class="ate">${t[1]}</span><span class="atl">${t[2]}</span></a>`:`<button data-at="${t[0]}" class="atbtn ${state.adminTab===t[0]?'active':''}"><span class="ate">${t[1]}</span><span class="atl">${t[2]}</span></button>`).join('')}</div>${adminGuide(state.adminTab)}${inner}</div>`;
+  byId('adm-out').onclick=()=>{state.adminAuthed=false;setStaffSession(false);go('home')};const _mc=byId('me-change');if(_mc)_mc.onclick=()=>{localDel('salon:me');render();};const _gs=byId('goal-set');if(_gs)_gs.onclick=setGoalPrompt;const _ge=byId('goal-edit');if(_ge)_ge.onclick=setGoalPrompt;
   app.querySelectorAll('[data-at]').forEach(b=>b.onclick=()=>{state.adminTab=b.dataset.at;state.custOpen=null;render()});
   app.querySelectorAll('[data-cltoggle]').forEach(cb=>cb.onchange=()=>clToggle(cb.dataset.cltoggle));
   app.querySelectorAll('[data-cldelitem]').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();clDelItem(b.dataset.cldelitem);});
@@ -2544,7 +2583,7 @@ async function sendBc(){const c=DATA.customers[state.bcPhone];if(!c)return;const
 async function grantCoupon(){const c=DATA.customers[state.bcPhone];if(!c)return;const yenv=parseInt((byId('bc-cyen')||{}).value||'0')||0;if(!yenv){alert('金額を入力してください。');return;}const exp=addMonths(fmtDate(today),3);const msg=`クーポンをプレゼントしました🎁 次回のお会計で¥${yenv}オフをご利用いただけます（${exp.replace(/-/g,'/')}までにご利用ください）。`;if(!confirm(`${c.name}様に¥${yenv}クーポン（有効期限 ${exp.replace(/-/g,'/')}）を付与し、次の内容を送信します。よろしいですか？\n\n${msg}`))return;c.couponYen=(c.couponYen||0)+yenv;c.couponExpiry=exp;pushNotice(c,msg);await saveData(DATA);alert(`${c.name}様に¥${yenv}クーポンを付与しました（${exp.replace(/-/g,'/')}まで）。`);render();}
 async function sendTpl(){const c=DATA.customers[state.bcPhone];if(!c)return;const tp=(S().templates||[])[state.bcTpl||0];if(!tp){alert('テンプレートがありません。');return;}if(!confirm(`${c.name}様に「${tp.cat}」を送信します。よろしいですか？\n\n${tp.text}`))return;pushNotice(c,tp.text);await saveData(DATA);alert(`${c.name}様に「${tp.cat}」を配信しました。`);state.bcPhone='';render();}
 async function markVisited(id){const bk=DATA.bookings.find(x=>x.id===id);if(!bk)return;bk.status='visited';bk.awardedPoints=suggestPoints(bk);await saveData(DATA);if(confirm('ポイントを自動付与しました。ご来店のお礼メッセージを今すぐ送信しますか？（あとで「配信」タブからでも送れます）')){await sendThanks(id);}else{render();}}
-async function sendThanks(id){const bk=DATA.bookings.find(x=>x.id===id);if(!bk)return;const c=DATA.customers[normPhone(bk.phone)];const tp=(S().templates||[]).find(t=>t.cat==='ご来店のお礼')||{text:'本日はご来店ありがとうございました😊'};if(!confirm(`${c.name}様に次の内容を送信します。よろしいですか？\n\n${tp.text}`))return;pushNotice(c,tp.text);bk.thanked=true;if(!bk.salonMessage)bk.salonMessage=tp.text;await saveData(DATA);render();}
+async function sendThanks(id){const bk=DATA.bookings.find(x=>x.id===id);if(!bk)return;const c=DATA.customers[normPhone(bk.phone)];const tp=(S().templates||[]).find(t=>t.cat==='ご来店のお礼')||{text:'本日はご来店ありがとうございました😊'};if(!confirm(`${c.name}様に次の内容を送信します。よろしいですか？\n\n${tp.text}`))return;pushNotice(c,tp.text);bk.thanked=true;if(!bk.salonMessage)bk.salonMessage=tp.text;logAct(c.name+'様へお礼メッセージ送信');await saveData(DATA);render();}
 async function editPts(id){const bk=DATA.bookings.find(x=>x.id===id);if(!bk)return;const inp=prompt('このご来店で付与するポイント数',String(bk.awardedPoints||0));if(inp===null)return;bk.awardedPoints=parseInt(inp||'0')||0;await saveData(DATA);render();}
 async function sendFinish(id){const bk=DATA.bookings.find(x=>x.id===id);if(!bk)return;const el=byId('fin-msg');const t=el?el.value.trim():'';if(!t){alert('メッセージを入力してください。');return;}
   const ptsEl=byId('fin-pts');const pts=ptsEl?(parseInt(ptsEl.value||'0')||0):(bk.awardedPoints||0);
