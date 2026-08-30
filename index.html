@@ -1962,10 +1962,60 @@ function bookingRow(x,i){
   if(DATA.settings.gcal&&x.status!=='cancelled')acts+=`<a href="${gcalUrl(x)}" target="_blank" title="Googleカレンダーに追加" style="display:inline-grid;place-items:center;width:34px;height:34px;border:1px solid var(--line);border-radius:9px;color:var(--gold);text-decoration:none;font-size:15px">📅</a>`;
   return `<div class="booking" style="animation-delay:${i*.04}s"><div class="bk-time">${x.time}</div><div class="bk-body" data-open="${ph}" style="cursor:pointer"><div class="bk-name">${nm} <span style="font-weight:400;color:var(--ink-soft);font-size:11px">様</span> <span style="color:var(--gold);font-size:10px;font-weight:700">履歴 ›</span></div><div class="bk-svc">${svc} / ${stById(x.staffId).name}</div>${tags?`<div class="bk-tags">${tags}</div>`:''}${x.customerMemo?`<div class="bk-note">📝 ${x.customerMemo}</div>`:''}</div><span class="pill ${x.status}">${pillTxt}</span>${acts?`<div class="bk-actions">${acts}</div>`:''}</div>`;
 }
+/* ===== 音声シフト設定 ===== */
+const STAFF_ALIAS={s1:['sakura','さくら','サクラ','桜'],s2:['tomomi','ともみ','トモミ','智美'],s3:['haruka','はるか','ハルカ','遥','春香']};
+function vsResolveStaff(txt){const t=txt.toLowerCase();if(/全員|みんな|全部|ぜんいん/.test(txt))return staff.filter(s=>s.id!=='s0').map(s=>s.id);const ids=[];staff.filter(s=>s.id!=='s0').forEach(s=>{const al=(STAFF_ALIAS[s.id]||[]).concat([(s.name||'').toLowerCase()]);if(al.some(a=>a&&t.includes(a)))ids.push(s.id);});return ids;}
+function vsToHankaku(s){return s.replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));}
+function vsResolveDate(txt){const T=vsToHankaku(txt);const base=new Date(today);
+  if(/今日|本日|きょう/.test(T))return fmtDate(base);
+  if(/明後日|あさって/.test(T)){const d=new Date(base);d.setDate(d.getDate()+2);return fmtDate(d);}
+  if(/明日|あした|あす/.test(T)){const d=new Date(base);d.setDate(d.getDate()+1);return fmtDate(d);}
+  let m=T.match(/(\d{1,2})月(\d{1,2})日/);if(m){let y=base.getFullYear();const mo=+m[1]-1,da=+m[2];let d=new Date(y,mo,da);if(d<new Date(base.getFullYear(),base.getMonth(),base.getDate()))d=new Date(y+1,mo,da);return fmtDate(d);}
+  const DOW={日:0,月:1,火:2,水:3,木:4,金:5,土:6};m=T.match(/([日月火水木金土])曜/);if(m){const target=DOW[m[1]];const nextWeek=/来週|次の週/.test(T);let d=new Date(base);let add=(target-d.getDay()+7)%7;if(add===0)add=7;if(nextWeek)add+=7;d.setDate(d.getDate()+add);return fmtDate(d);}
+  return null;}
+function vsResolveRanges(txt){const T=vsToHankaku(txt).replace(/半/g,'30分');const out=[];const re=/(\d{1,2})時(?:(\d{1,2})分)?\s*(?:から|〜|~|-|ー)\s*(\d{1,2})時(?:(\d{1,2})分)?/g;let m;while((m=re.exec(T))){let s=+m[1]+(m[2]?(+m[2]>=30?0.5:0):0);let e=+m[3]+(m[4]?(+m[4]>=30?0.5:0):0);if(e>s)out.push({start:s,end:e});}return out;}
+function subtractRange(ranges,s,e){const out=[];ranges.forEach(r=>{if(e<=r.start||s>=r.end){out.push(r);return;}if(s>r.start)out.push({start:r.start,end:Math.max(r.start,s)});if(e<r.end)out.push({start:Math.min(r.end,e),end:r.end});});return out.filter(r=>r.end>r.start);}
+function fmtH(h){const hh=Math.floor(h);const mm=(h-hh)===0.5?'30':'00';return hh+':'+mm;}
+function parseShiftText(text){const segs=vsToHankaku(text).split(/[\n。]/).map(s=>s.trim()).filter(Boolean);const acts=[];
+  segs.forEach(raw=>{const staffIds=vsResolveStaff(raw);const targets=staffIds.length?staffIds:staff.filter(s=>s.id!=='s0').map(s=>s.id);const staffLabel=staffIds.length?staffIds.map(id=>stById(id).name).join('・'):'全員';
+    const date=vsResolveDate(raw);const ranges=vsResolveRanges(raw);
+    const isClose=/閉じ|ブロック|打ち合わせ|打合せ|ミーティング|会議|休憩|外出|不在|抜け|中座/.test(raw);
+    const isOff=/(終日|一日|1日).{0,4}(休|オフ)|お休み|休業|休み/.test(raw)&&!ranges.length;
+    if(!date){acts.push({ok:false,raw,msg:'日付が聞き取れませんでした'});return;}
+    if(isOff){acts.push({ok:true,type:'off',targets,staffLabel,date,raw,summary:staffLabel+'／'+date+'／終日お休み'});return;}
+    if(!ranges.length){acts.push({ok:false,raw,msg:'時間が聞き取れませんでした（例：10時から18時）'});return;}
+    if(isClose){acts.push({ok:true,type:'close',targets,staffLabel,date,ranges,raw,summary:staffLabel+'／'+date+'／'+ranges.map(r=>fmtH(r.start)+'〜'+fmtH(r.end)).join('と')+' を閉じる'});return;}
+    acts.push({ok:true,type:'set',targets,staffLabel,date,ranges,raw,summary:staffLabel+'／'+date+'／出勤 '+ranges.map(r=>fmtH(r.start)+'〜'+fmtH(r.end)).join('と')});});
+  return acts;}
+function vsInterpret(){const txt=(byId('vs-text')&&byId('vs-text').value||'').trim();if(!txt){alert('シフトの内容を入力（または音声入力）してください。');return;}state.vsActions=parseShiftText(txt);render();}
+async function vsApply(){const acts=(state.vsActions||[]).filter(a=>a.ok);if(!acts.length){alert('適用できる項目がありません。');return;}
+  DATA.shiftOverrides=DATA.shiftOverrides||{};DATA.settings.openException=DATA.settings.openException||{};
+  acts.forEach(a=>{a.targets.forEach(sid=>{DATA.shiftOverrides[sid]=DATA.shiftOverrides[sid]||{};
+    if(a.type==='off'){DATA.shiftOverrides[sid][a.date]={off:true};}
+    else if(a.type==='set'){DATA.shiftOverrides[sid][a.date]={ranges:a.ranges.map(r=>({start:r.start,end:r.end}))};const dow=new Date(a.date+'T00:00:00').getDay();if(dow===CLOSED_DOW)DATA.settings.openException[a.date]='open';}
+    else if(a.type==='close'){let cur=effectiveShift(sid,a.date).ranges.map(r=>({start:r.start,end:r.end}));if(!cur.length)cur=[{start:OPEN_HOUR,end:LAST_RECEPTION}];a.ranges.forEach(rg=>{cur=subtractRange(cur,rg.start,rg.end);});DATA.shiftOverrides[sid][a.date]={ranges:cur};}
+  });});
+  await saveData(DATA);state.vsActions=null;if(byId('vs-text'))state.vsText='';alert('シフトを設定しました。');render();}
+function vsStartVoice(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert('お使いのブラウザは音声入力に対応していません。Safari／Chromeの最新版をお試しください（テキスト入力でも設定できます）。');return;}
+  const rec=new SR();rec.lang='ja-JP';rec.interimResults=false;rec.continuous=false;state.vsListening=true;render();
+  rec.onresult=e=>{let s='';for(let i=0;i<e.results.length;i++)s+=e.results[i][0].transcript;const ta=byId('vs-text');const prev=ta?ta.value:'';state.vsText=(prev?prev+'\n':'')+s;state.vsListening=false;state.vsActions=parseShiftText(state.vsText);render();};
+  rec.onerror=()=>{state.vsListening=false;render();};rec.onend=()=>{if(state.vsListening){state.vsListening=false;render();}};
+  try{rec.start();}catch(e){state.vsListening=false;}}
+function voiceShiftPanel(){const acts=state.vsActions||[];
+  const preview=acts.length?`<div class="subhead" style="margin:16px 0 8px">確認（この内容で設定します）</div>`+acts.map(a=>a.ok?`<div class="pass" style="border-color:var(--sage)"><span class="pl">✅ ${a.summary}</span></div>`:`<div class="pass" style="border-color:var(--rose)"><span class="pl">⚠ 「${a.raw}」→ ${a.msg}</span></div>`).join('')+(acts.some(a=>a.ok)?`<button class="btn btn-primary" id="vs-apply" style="width:100%;margin-top:10px">この内容でシフトを設定する</button>`:''):'';
+  return `<div class="addform"><div class="subhead" style="margin:0 0 8px">🎤 音声でシフト設定</div>
+  <div class="note" style="margin:0 0 10px">マイクを押して話すか、下の欄に入力してください。1行に1件、複数まとめてOKです。<br>例：「SAKURA 9月30日 10時から18時」「明日はTOMOMIお休み」「今日の14時から15時は打ち合わせで閉じる」「全員 火曜 10時から15時」</div>
+  <button class="btn ${state.vsListening?'btn-primary':'btn-ghost'}" id="vs-mic" style="width:100%;margin-bottom:8px">${state.vsListening?'🎤 聞き取り中…（話してください）':'🎤 マイクで話す'}</button>
+  <textarea id="vs-text" rows="4" placeholder="例）SAKURA 9月30日 10時から18時" style="width:100%">${(state.vsText||'').replace(/</g,'&lt;')}</textarea>
+  <button class="btn btn-ghost" id="vs-go" style="width:100%;margin-top:8px">内容を確認する</button>
+  ${preview}
+  <div class="note" style="margin-top:12px">※音声は聞き間違いがあります。必ず確認欄をチェックしてから設定してください。担当名を言わない場合は「全員」になります。</div></div>`;}
+
 function adminSchedule(){
-  const sw=`<div class="schedmode"><button data-sm="month" class="${state.schedMode==='month'?'on':''}">月間シフト</button><button data-sm="shift" class="${state.schedMode==='shift'?'on':''}">週間シフト</button><button data-sm="day" class="${state.schedMode==='day'?'on':''}">日別状況</button><button data-sm="salon" class="${state.schedMode==='salon'?'on':''}">営業日</button></div>`;
+  const sw=`<div class="schedmode"><button data-sm="month" class="${state.schedMode==='month'?'on':''}">月間シフト</button><button data-sm="shift" class="${state.schedMode==='shift'?'on':''}">週間シフト</button><button data-sm="day" class="${state.schedMode==='day'?'on':''}">日別状況</button><button data-sm="salon" class="${state.schedMode==='salon'?'on':''}">営業日</button><button data-sm="voice" class="${state.schedMode==='voice'?'on':''}">🎤 音声</button></div>`;
   if(state.schedMode==='month'||state.schedMode==='cal')return sw+shiftMonthList();
   if(state.schedMode==='salon')return sw+salonDaysEditor();
+  if(state.schedMode==='voice')return sw+voiceShiftPanel();
   if(state.schedMode==='shift')return sw+shiftEditor();
   const date=state.schedDate;const reals=staff.filter(s=>s.id!=='s0');
   const blocks=reals.map((s,si)=>{const off=isDayOff(s.id,date);let grid;
@@ -2362,7 +2412,7 @@ function bindAdmin(){
   app.querySelectorAll('[data-drng]').forEach(s=>s.onchange=()=>dRngSet(s));
   app.querySelectorAll('[data-dayoff]').forEach(b=>b.onclick=()=>dDayOff(b.dataset.dayoff));
   app.querySelectorAll('[data-setday]').forEach(b=>b.onclick=()=>dSetDay(b.dataset.setday));
-  app.querySelectorAll('[data-sdtoggle]').forEach(b=>b.onclick=()=>salonDayToggle(b.dataset.sdtoggle));const _oda=byId('od-add');if(_oda)_oda.onclick=addOpenDay;
+  app.querySelectorAll('[data-sdtoggle]').forEach(b=>b.onclick=()=>salonDayToggle(b.dataset.sdtoggle));const _oda=byId('od-add');if(_oda)_oda.onclick=addOpenDay;const _vm=byId('vs-mic');if(_vm)_vm.onclick=vsStartVoice;const _vg=byId('vs-go');if(_vg)_vg.onclick=vsInterpret;const _va=byId('vs-apply');if(_va)_va.onclick=vsApply;const _vt=byId('vs-text');if(_vt)_vt.oninput=e=>{state.vsText=e.target.value};
   app.querySelectorAll('[data-addrng]').forEach(b=>b.onclick=()=>dAddRng(b.dataset.addrng));
   app.querySelectorAll('[data-rmrng]').forEach(b=>b.onclick=()=>dRmRng(b.dataset.rmrng));
   const qff=byId('qf-fill');if(qff)qff.onclick=qfFill;
