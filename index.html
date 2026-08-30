@@ -970,6 +970,7 @@ function pushNotice(c,text){c.notices=c.notices||[];c.notices.unshift({text,date
 async function checkBirthdays(){let changed=false;const y=today.getFullYear();
   Object.values(DATA.customers).forEach(c=>{if(c.birthday&&c.birthday.slice(5)===todayMD&&c.bdayYear!==y){c.bonusPoints=(c.bonusPoints||0)+CONFIG.birthdayBonus;c.bdayYear=y;pushNotice(c,(DATA.settings.birthdayMsg||'').replace('{bonus}',CONFIG.birthdayBonus.toLocaleString()));changed=true;}});
   if(changed)await saveData(DATA);}
+async function checkReminders(){let changed=false;const tm=new Date(today);tm.setDate(today.getDate()+1);const tmd=fmtDate(tm);(DATA.bookings||[]).forEach(bk=>{if(!bk||bk.reminded)return;if(bk.status==='cancelled'||bk.status==='visited')return;if(bk.date!==tmd)return;const c=DATA.customers[normPhone(bk.phone)];if(!c)return;const st=stById(bk.staffId);const menu=(bk.items||[]).map(x=>x.name).join('＋');const dow=DOW[new Date(bk.date+'T00:00:00').getDay()];pushNotice(c,`【ご予約リマインド】明日 ${mdLabel(bk.date)}（${dow}）${bk.time}〜／${menu}${st?'／担当 '+st.name:''} でご予約をお待ちしております😊 ご変更・キャンセルは前日21時までにマイページからお願いいたします。`);bk.reminded=true;changed=true;});if(changed)await saveData(DATA);}
 
 /* ===== State ===== */
 const state={view:'home',step:0,openCat:null,cart:[],
@@ -2658,7 +2659,7 @@ const staffBtn=byId('staff-entry');if(staffBtn)staffBtn.onclick=()=>go('admin');
 const backBtn=byId('backbtn');if(backBtn)backBtn.onclick=goBack;
 const acctBtn=byId('acctbtn');if(acctBtn)acctBtn.onclick=()=>go('mypage');
 app.innerHTML='<div class="empty"><div class="big">···</div>読み込み中</div>';
-(async()=>{await loadData();applyTheme();state.lang=await loadLang();document.documentElement.lang=state.lang;const s=localGet('salon:session');if(s&&DATA.customers&&DATA.customers[normPhone(s)]){state.mpPhone=DATA.customers[normPhone(s)].phone;localSet('salon:knownphone',state.mpPhone);localSet('salon:knownname',DATA.customers[normPhone(s)].name);}state.adminAuthed=!!localGet('salon:staff');render();const _bl=document.getElementById('brandHome');if(_bl)_bl.onclick=()=>go('home');})();
+(async()=>{await loadData();applyTheme();state.lang=await loadLang();document.documentElement.lang=state.lang;const s=localGet('salon:session');if(s&&DATA.customers&&DATA.customers[normPhone(s)]){state.mpPhone=DATA.customers[normPhone(s)].phone;localSet('salon:knownphone',state.mpPhone);localSet('salon:knownname',DATA.customers[normPhone(s)].name);}state.adminAuthed=!!localGet('salon:staff');try{await checkBirthdays();}catch(e){}try{await checkReminders();}catch(e){}render();const _bl=document.getElementById('brandHome');if(_bl)_bl.onclick=()=>go('home');})();
 
 </script>
 </body>
