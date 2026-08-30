@@ -179,7 +179,7 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .memo-edit textarea{width:100%;font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:9px;padding:9px 11px;background:var(--paper);resize:vertical;min-height:46px}.memo-edit textarea:focus{outline:none;border-color:var(--gold)}
 .loginbox{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;margin-top:10px;animation:rise .5s both}
 .atabs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
-.atabs button{flex:1 1 28%;border:1px solid var(--line);background:var(--card);font-family:inherit;font-size:12px;font-weight:600;padding:9px 0;border-radius:11px;cursor:pointer;color:var(--ink-soft)}
+.atabs button{flex:1 1 30%;border:1px solid var(--line);background:var(--card);font-family:inherit;font-weight:700;padding:10px 4px;border-radius:12px;cursor:pointer;color:var(--ink-soft);display:flex;flex-direction:column;align-items:center;gap:3px;line-height:1.1}.atabs button .ate{font-size:20px}.atabs button .atl{font-size:11px}
 .atabs button.active{background:var(--navy);color:var(--paper);border-color:var(--navy)}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:20px}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px;animation:rise .5s both}
@@ -1826,7 +1826,7 @@ function renderAdmin(){
   if(!state.adminAuthed)return renderStaffLogin();
   let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(staffNameMigrate())_clch=true;if(_clch)saveData(DATA);
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
-  const tabs=[['bookings','予約'],['schedule','シフト'],['customers','顧客'],['menu','メニュー'],['staff','スタッフ'],['broadcast','配信'+(unsent?`(${unsent})`:'')],['tasks','毎日のタスク'],['homedisp','ホーム・告知'],['sales','売上'],['settings','設定']];
+  const tabs=[['bookings','📅','予約'],['schedule','⏰','シフト'],['customers','👥','顧客'],['menu','📋','メニュー'],['staff','💇','スタッフ'],['broadcast','✉️','配信'+(unsent?`(${unsent})`:'')],['tasks','✅','毎日のタスク'],['homedisp','🏠','ホーム・告知'],['sales','💰','売上'],['settings','⚙️','設定']];
   const _sec=(t)=>`<div class="subhead" style="margin:26px 0 12px;padding-top:18px;border-top:2px solid var(--line)">${t}</div>`;
   let inner=({
     tasks:adminTasks,bookings:adminBookings,calendar:adminCalendar,schedule:adminSchedule,
@@ -1836,7 +1836,7 @@ function renderAdmin(){
     settings:()=>adminSettings()+_sec('📄 ケア・同意書ファイル')+adminDocs(),
     sales:adminSales
   }[state.adminTab]||adminBookings)();
-  app.innerHTML=`<div class="fade"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div class="eyebrow" style="margin:0">Salon Admin</div><button class="switch" id="adm-out">ログアウト</button></div><div class="atabs">${tabs.map(t=>`<button data-at="${t[0]}" class="${state.adminTab===t[0]?'active':''}">${t[1]}</button>`).join('')}</div>${adminGuide(state.adminTab)}${inner}</div>`;
+  app.innerHTML=`<div class="fade"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div class="eyebrow" style="margin:0">Salon Admin</div><button class="switch" id="adm-out">ログアウト</button></div><div class="atabs">${tabs.map(t=>`<button data-at="${t[0]}" class="${state.adminTab===t[0]?'active':''}"><span class="ate">${t[1]}</span><span class="atl">${t[2]}</span></button>`).join('')}</div>${adminGuide(state.adminTab)}${inner}</div>`;
   byId('adm-out').onclick=()=>{state.adminAuthed=false;setStaffSession(false);go('home')};
   app.querySelectorAll('[data-at]').forEach(b=>b.onclick=()=>{state.adminTab=b.dataset.at;state.custOpen=null;render()});
   app.querySelectorAll('[data-cltoggle]').forEach(cb=>cb.onchange=()=>clToggle(cb.dataset.cltoggle));
