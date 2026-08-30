@@ -823,6 +823,9 @@ button{white-space:normal}
 .mc-add.on{background:var(--gold)}
 .menu-card .mi-detail{grid-column:1/-1;padding:0 10px 10px;font-size:12.5px;line-height:1.7;color:#555}
 @media(max-width:360px){.mc-name{font-size:12px}.menugrid{gap:8px}}
+.iat{display:flex;gap:8px;margin:6px 0 4px}
+.iat-mic,.iat-ai{border:1px solid var(--line);background:#fff;border-radius:9px;padding:6px 12px;font-family:inherit;font-size:12px;font-weight:700;color:var(--navy);cursor:pointer}
+.iat-mic.on{background:var(--rose);color:#fff;border-color:var(--rose)}
 </style>
 </head>
 <body>
@@ -1203,7 +1206,8 @@ function updateNav(){const map={home:'nav_home',book:'nav_book',board:'nav_board
 async function setLang(v){state.lang=v;document.documentElement.lang=v;try{if(window.storage)await window.storage.set('salon:lang',v,false)}catch(e){}render()}
 async function loadLang(){try{if(window.storage){const r=await window.storage.get('salon:lang',false);if(r&&r.value)return r.value}}catch(e){}return 'ja'}
 function normDATA(){try{DATA=DATA||{};['customers'].forEach(k=>{if(typeof DATA[k]!=='object'||DATA[k]===null||Array.isArray(DATA[k]))DATA[k]={};});['bookings','blocks','posts','campaigns','shares','boards','feedback'].forEach(k=>{if(!Array.isArray(DATA[k]))DATA[k]=[];});if(!DATA.settings||typeof DATA.settings!=='object')DATA.settings={};if(!Array.isArray(DATA.services)||!DATA.services.length)DATA.services=(typeof SEED_SERVICES!=='undefined')?JSON.parse(JSON.stringify(SEED_SERVICES)):[];if(!Array.isArray(DATA.staff)||!DATA.staff.length)DATA.staff=(typeof SEED_STAFF!=='undefined')?JSON.parse(JSON.stringify(SEED_STAFF)):[];services=DATA.services;staff=DATA.staff;}catch(e){}}
-function render(){normDATA();updateNav();updateBack();if(state.view==='home')renderHome();else if(state.view==='book')renderCustomer();else if(state.view==='gallery')renderGallery();else if(state.view==='share')renderShare();else if(state.view==='board')renderBoard();else if(state.view==='staff')renderStaffIntro();else if(state.view==='course')renderCourse();else if(state.view==='care')renderCareDocs();else if(state.view==='mypage')renderMypage();else renderAdmin();}
+function attachInputTools(){try{const excl=['vs-text','shop-bulk','shop-prompt','ch-text','st-pw','mp-newpw'];app.querySelectorAll('textarea').forEach(ta=>{if(!ta.id||excl.indexOf(ta.id)>=0||ta.dataset.tooled)return;const par=ta.parentElement;if(par&&par.querySelector('.mic,.ai,.iat-mic'))return;ta.dataset.tooled='1';const bar=document.createElement('div');bar.className='iat';bar.innerHTML='<button type="button" class="iat-mic">🎤 音声</button><button type="button" class="iat-ai">✨ AIで整える</button>';ta.parentNode.insertBefore(bar,ta.nextSibling);bar.querySelector('.iat-mic').onclick=function(){startVoice(ta.id,this);};bar.querySelector('.iat-ai').onclick=function(){runAi(ta.id,this,'memo');};});}catch(e){}}
+function render(){normDATA();updateNav();updateBack();if(state.view==='home')renderHome();else if(state.view==='book')renderCustomer();else if(state.view==='gallery')renderGallery();else if(state.view==='share')renderShare();else if(state.view==='board')renderBoard();else if(state.view==='staff')renderStaffIntro();else if(state.view==='course')renderCourse();else if(state.view==='care')renderCareDocs();else if(state.view==='mypage')renderMypage();else renderAdmin();attachInputTools();}
 function stepsBar(n){let h='<div class="steps">';for(let i=0;i<4;i++)h+=`<div class="s ${i<=n?'on':''}"></div>`;return h+'</div>'}
 function go(v){if(v!==state.view){state.navStack.push(state.view);if(state.navStack.length>30)state.navStack.shift();}state.view=v;render();window.scrollTo(0,0)}
 function goBack(){if(state.navStack.length){state.view=state.navStack.pop();render();window.scrollTo(0,0)}}
@@ -2885,9 +2889,7 @@ function startVoice(elId,btn){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){alert('この端末では音声認識が使えません。キーボードのマイク（音声入力）をご利用ください。');return;}
   if(recog){recog.stop();recog=null;btn.classList.remove('on');return;}
-  recog=new SR();recog.lang='ja-JP';recog.interimResults=false;recog.continuous=true;recogTarget=elId;btn.classList.add('on');
-  recog.onresult=e=>{let txt='';for(let i=e.resultIndex;i<e.results.length;i++)txt+=e.results[i][0].transcript;const el=byId(elId);if(el)el.value=(el.value?el.value+' ':'')+txt};
-  recog.onend=()=>{btn.classList.remove('on');recog=null};recog.start();
+  recog=new SR();recog.lang='ja-JP';recog.interimResults=true;recog.continuous=true;recogTarget=elId;btn.classList.add('on');btn.textContent='🎤 聞き取り中…（タップで停止）';const _base=(byId(elId)?byId(elId).value:'');let _fin='';recog.onresult=e=>{let interim='';for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)_fin+=e.results[i][0].transcript;else interim+=e.results[i][0].transcript;}const el=byId(elId);if(el)el.value=(_base?_base+' ':'')+_fin+interim;};recog.onerror=(ev)=>{if(ev&&ev.error==='no-speech')return;btn.classList.remove('on');btn.textContent='🎤 音声';recog=null;};recog.onend=()=>{if(recog&&recogTarget===elId){try{recog.start();return;}catch(e){}}btn.classList.remove('on');btn.textContent='🎤 音声';recog=null;};recog.start();
 }
 async function aiPolish(rough,mode){
   const sys=mode==='memo'?'あなたは美容サロンのアシスタントです。スタッフが音声でざっくり入力したカウンセリングのメモを、後から読み返せるよう簡潔に整理された日本語にまとめ直してください。事実のみ、絵文字は不要。短い箇条書きでも構いません。出力は本文のみ。':(mode==='campaign'?'あなたは美容サロンの広報担当です。入力されたざっくりした内容を、お客様向けのお知らせ文に整えてください。必ず丁寧な敬語（です・ます調、尊敬語・謙譲語を適切に使う）で、2〜3文・適度に絵文字。失礼のない上品な文体に。出力は本文のみ。':'あなたは美容サロンのスタッフです。入力内容を、お客様にお送りする文章に整えてください。必ず丁寧な敬語（です・ます調、尊敬語・謙譲語を適切に使う）で、温かく上品な文体に。なれなれしい表現やタメ口は使わない。適度に絵文字を使い3〜4文程度。出力は本文のみ。');
