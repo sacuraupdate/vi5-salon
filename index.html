@@ -645,6 +645,36 @@ button{white-space:normal}
 .annbar .ann-r{background:var(--paper-2);border:1px solid var(--line);border-radius:100px;padding:3px 9px;font-family:inherit;font-size:12px;cursor:pointer}
 .annbar .ann-r.on{background:var(--gold-bg);border-color:var(--gold-soft)}
 .annbar .ann-del{margin-left:auto;background:none;border:none;color:var(--rose);font-size:11px;cursor:pointer}
+.chtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chtabs button{border:1px solid var(--line);background:#fff;border-radius:100px;padding:7px 14px;font-family:inherit;font-size:13px;font-weight:700;color:var(--ink-soft);cursor:pointer}
+.chtabs button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.chlist{background:var(--paper-2);border-radius:14px;padding:12px;max-height:420px;overflow-y:auto;margin-bottom:10px}
+.chmsg{margin-bottom:12px;max-width:88%}
+.chmsg.mine{margin-left:auto;text-align:right}
+.chby{font-size:11px;color:var(--ink-soft);margin-bottom:3px}
+.chbub{display:inline-block;background:#fff;border-radius:14px;padding:9px 12px;text-align:left;box-shadow:0 1px 3px rgba(30,42,71,.08)}
+.chmsg.mine .chbub{background:var(--navy);color:#fff}
+.chmsg.mine .chbub .chu{color:var(--gold-lt,#E6C963);color:#E6C963}
+.cht{font-size:14px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.chu{display:inline-block;font-size:12.5px;margin-top:4px;color:var(--navy);font-weight:700}
+.chimgs{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.chimgs img{width:84px;height:84px;object-fit:cover;border-radius:8px;cursor:pointer}
+.chmeta{display:flex;gap:5px;align-items:center;margin-top:4px;flex-wrap:wrap;font-size:11px}
+.chmsg.mine .chmeta{justify-content:flex-end}
+.chr{background:#fff;border:1px solid var(--line);border-radius:100px;padding:2px 8px;font-family:inherit;font-size:12px;cursor:pointer}
+.chr.on{background:var(--gold-bg);border-color:var(--gold-soft)}
+.chread{color:var(--ink-soft);font-size:10.5px}
+.chcomp textarea,.chcomp input{width:100%;font-family:inherit;font-size:14px;border:1px solid var(--line);border-radius:11px;padding:10px 12px;background:#fff;margin-bottom:6px}
+.chbtns{display:flex;gap:8px}
+.chimgbtn{flex:none;display:flex;align-items:center;border:1px solid var(--line);border-radius:11px;padding:0 14px;font-size:13px;font-weight:700;color:var(--navy);cursor:pointer;background:#fff}
+.chbtns .btn{flex:1}
+.chstgs{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
+.chstg{position:relative}
+.chstg img{width:56px;height:56px;object-fit:cover;border-radius:8px}
+.chstg button{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:var(--rose);color:#fff;font-size:11px;cursor:pointer;line-height:1}
+.chzoom{position:fixed;inset:0;background:rgba(20,25,40,.92);z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:20px}
+.chzoom img{max-width:96%;max-height:84%;border-radius:10px}
+.chzoom-x{color:#fff;margin-top:14px;font-weight:700}
 </style>
 </head>
 <body>
@@ -1875,6 +1905,53 @@ function actAgo(ts){const s=Math.floor((Date.now()-ts)/1000);if(s<60)return 'た
 async function annReact(id,emo){const a=(DATA.announcements||[]).find(x=>x.id===id);if(!a)return;a.reactions=a.reactions||{};a.reactions[emo]=a.reactions[emo]||[];const me=meName()||'不明';const i=a.reactions[emo].indexOf(me);if(i>=0)a.reactions[emo].splice(i,1);else a.reactions[emo].push(me);await saveData(DATA);render();}
 async function annPost(){const t=byId('ann-text').value.trim();const u=(byId('ann-url').value||'').trim();if(!t){alert('お知らせの内容をご入力ください。');return;}DATA.announcements=DATA.announcements||[];DATA.announcements.unshift({id:'an'+Date.now(),text:t,url:u,by:meName()||'不明',at:Date.now(),reactions:{}});logAct('お知らせを投稿');state.annOpen=false;await saveData(DATA);render();}
 async function annDel(id){if(!confirm('このお知らせを削除しますか？'))return;DATA.announcements=(DATA.announcements||[]).filter(x=>x.id!==id);logAct('お知らせを削除');await saveData(DATA);render();}
+/* ===== 業務データ(別保管)とチャット ===== */
+let WORK=null;
+async function loadWork(){if(WORK)return WORK;
+  try{const r=await fetch(KV_URL+'?key=eq.salon:work&select=value',{headers:KV_H});
+    if(r.ok){const j=await r.json();if(Array.isArray(j)&&j.length){let v=j[0].value;
+      for(let i=0;i<4;i++){if(typeof v==='string'){try{v=JSON.parse(v);continue}catch(e){break}}if(Array.isArray(v)){v=v[0];continue}break;}
+      if(v&&typeof v==='object'&&!Array.isArray(v))WORK=v;}}}catch(e){}
+  if(!WORK)WORK={};
+  WORK.chats=WORK.chats||{};WORK.tasks=WORK.tasks||[];WORK.reports=WORK.reports||[];WORK.clock=WORK.clock||[];WORK.pay=WORK.pay||{};
+  return WORK;}
+async function saveWork(){if(!WORK)return;
+  try{const r=await fetch(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:work',value:JSON.stringify(WORK)})});
+    if(!r.ok)throw new Error('w-'+r.status);}
+  catch(e){alert('業務データの保存に失敗しました。通信状況をご確認ください。');}}
+function wkCompress(file,cb){const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{const mx=900;let w=img.width,hh=img.height;if(w>mx){hh=Math.round(hh*mx/w);w=mx;}const cv=document.createElement('canvas');cv.width=w;cv.height=hh;cv.getContext('2d').drawImage(img,0,0,w,hh);cb(cv.toDataURL('image/jpeg',0.72));};img.src=e.target.result;};r.readAsDataURL(file);}
+function chatRooms(){const me=localGet('salon:me');const reals=staff.filter(s=>s.id!=='s0');const rooms=[{id:'all',label:'👥 全体'}];
+  if(me&&me!=='owner'){reals.filter(s=>s.id!==me).forEach(s=>rooms.push({id:'dm:'+[me,s.id].sort().join('|'),label:'💬 '+s.name}));}
+  return rooms;}
+async function chSend(){const t=(byId('ch-text').value||'').trim();const u=(byId('ch-url').value||'').trim();const imgs=state.chatImgs||[];
+  if(!t&&!imgs.length&&!u){alert('メッセージを入力してください。');return;}
+  await loadWork();const room=state.chatRoom||'all';WORK.chats[room]=WORK.chats[room]||[];
+  WORK.chats[room].push({id:'m'+Date.now(),by:meName()||'不明',at:Date.now(),text:t,url:u,imgs:imgs.slice(0,10),reads:[meName()||'不明'],reacts:{}});
+  if(WORK.chats[room].length>200)WORK.chats[room]=WORK.chats[room].slice(-200);
+  state.chatImgs=[];state.chatDraft='';await saveWork();render();}
+async function chReact(id,emo){const room=state.chatRoom||'all';const m=(WORK.chats[room]||[]).find(x=>x.id===id);if(!m)return;
+  m.reacts=m.reacts||{};m.reacts[emo]=m.reacts[emo]||[];const me=meName()||'不明';
+  const i=m.reacts[emo].indexOf(me);if(i>=0)m.reacts[emo].splice(i,1);else m.reacts[emo].push(me);
+  await saveWork();render();}
+function chPick(e){const cur=(state.chatImgs||[]).length;const files=[...e.target.files].slice(0,Math.max(0,10-cur));
+  files.forEach(f=>wkCompress(f,d=>{state.chatImgs=state.chatImgs||[];if(state.chatImgs.length<10){state.chatImgs.push(d);render();}}));e.target.value='';}
+function adminChat(){
+  if(!WORK){loadWork().then(()=>render());return '<div class="empty" style="padding:40px 0">💬 チャットを読み込み中…</div>';}
+  const rooms=chatRooms();if(!state.chatRoom)state.chatRoom='all';
+  if(!rooms.some(r=>r.id===state.chatRoom))state.chatRoom='all';
+  const me=meName()||'不明';
+  const msgs=(WORK.chats[state.chatRoom]||[]).slice(-60);
+  const tabsH=rooms.map(r=>`<button data-chr="${r.id}" class="${state.chatRoom===r.id?'on':''}">${r.label}</button>`).join('');
+  const list=msgs.length?msgs.map(m=>{const mine=m.by===me;const reads=(m.reads||[]).filter(n=>n!==m.by);
+    return `<div class="chmsg ${mine?'mine':''}"><div class="chby">${m.by} ・ ${actAgo(m.at)}</div><div class="chbub">${m.text?`<div class="cht">${m.text}</div>`:''}${m.url?`<a href="${m.url}" target="_blank" rel="noopener" class="chu">🔗 リンクを開く</a>`:''}${(m.imgs&&m.imgs.length)?`<div class="chimgs">${m.imgs.map(im=>`<img src="${im}" class="chpic" data-chzoom="1">`).join('')}</div>`:''}</div><div class="chmeta">${['👍','✅','😊'].map(e2=>{const who=((m.reacts||{})[e2]||[]);return `<button class="chr ${who.includes(me)?'on':''}" data-chreact="${m.id}|${e2}" title="${who.join('、')}">${e2}${who.length||''}</button>`;}).join('')}${reads.length?`<span class="chread">既読 ${reads.join('・')}</span>`:''}</div></div>`;}).join('')
+    :'<div class="empty">まだメッセージがありません。最初のひとことをどうぞ😊</div>';
+  const staged=(state.chatImgs||[]).length?`<div class="chstgs">${state.chatImgs.map((d,i)=>`<div class="chstg"><img src="${d}"><button data-chrm="${i}">✕</button></div>`).join('')}<span class="note">${state.chatImgs.length}/10枚</span></div>`:'';
+  const zoom=state.chatZoom?`<div class="chzoom" id="ch-zoomclose"><img src="${state.chatZoom}"><div class="chzoom-x">✕ 閉じる</div></div>`:'';
+  return `${zoom}<div class="chtabs">${tabsH}</div><div class="chlist" id="chlist">${list}</div>
+  <div class="chcomp">${staged}<textarea id="ch-text" rows="2" placeholder="メッセージを入力（Enterで改行）">${(state.chatDraft||'').replace(/</g,'&lt;')}</textarea><input id="ch-url" placeholder="リンクを添付（任意）https://...">
+  <div class="chbtns"><label class="chimgbtn">📷 画像を追加<input type="file" id="ch-img" accept="image/*" multiple hidden></label><button class="btn btn-primary" id="ch-send">送信</button></div>
+  <div class="note" style="margin-top:6px">画像は最大10枚（自動で軽量化されます）。個人チャットは相手とあなただけが見られます。</div></div>`;}
+
 function renderMePicker(){const reals=staff.filter(s=>s.id!=='s0');
   return `<div class="fade"><div style="text-align:center;padding:30px 0 10px"><div class="eyebrow">SALON ADMIN</div><h2 style="font-family:'Fraunces',serif;color:var(--navy);margin:8px 0 4px">担当者を選んでください</h2><div class="note">操作した内容が記録され、誰が対応したか分かるようになります。</div></div>
   <div class="mepick">${reals.map(s=>`<button class="mepick-b" data-me="${s.id}"><span style="font-size:26px">💇</span><span>${s.name}</span></button>`).join('')}<button class="mepick-b" data-me="owner"><span style="font-size:26px">👤</span><span>ゲスト</span></button></div>
@@ -1885,7 +1962,7 @@ function renderAdmin(){
   if(!localGet('salon:me')){app.innerHTML=renderMePicker();app.querySelectorAll('[data-me]').forEach(b=>b.onclick=()=>setMe(b.dataset.me));const _mo=byId('me-logout');if(_mo)_mo.onclick=()=>{state.adminAuthed=false;setStaff&&0;localDel('salon:staff');localDel('salon:staffpw');render();};return;}
   let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(staffNameMigrate())_clch=true;if(_clch)saveData(DATA);
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
-  const tabs=[['bookings','📅','予約'],['schedule','⏰','シフト'],['customers','👥','顧客'],['feedback','💬','ご意見'],['menu','📋','メニュー'],['staff','💇','スタッフ'],['broadcast','✉️','配信'+(unsent?`(${unsent})`:'')],['tasks','✅','毎日のタスク'],['homedisp','🏠','ホーム・告知'],['sales','💰','売上'],['work','💼','VI5 Work'],['settings','⚙️','設定']];
+  const tabs=[['bookings','📅','予約'],['schedule','⏰','シフト'],['customers','👥','顧客'],['feedback','💬','ご意見'],['menu','📋','メニュー'],['staff','💇','スタッフ'],['broadcast','✉️','配信'+(unsent?`(${unsent})`:'')],['tasks','✅','毎日のタスク'],['homedisp','🏠','ホーム・告知'],['sales','💰','売上'],['chat','💬','チャット'],['settings','⚙️','設定']];
   const _sec=(t)=>`<div class="subhead" style="margin:26px 0 12px;padding-top:18px;border-top:2px solid var(--line)">${t}</div>`;
   let inner=({
     tasks:adminTasks,bookings:adminBookings,calendar:adminCalendar,schedule:adminSchedule,
@@ -1893,10 +1970,10 @@ function renderAdmin(){
     menu:adminMenu,staff:adminStaff,broadcast:adminBroadcast,
     homedisp:()=>adminHomeDisplay()+_sec('📣 告知・キャンペーン')+adminCampaigns(),
     settings:()=>adminSettings()+_sec('📄 ケア・同意書ファイル')+adminDocs(),
-    sales:adminSales
+    sales:adminSales,chat:adminChat
   }[state.adminTab]||adminBookings)();
   app.innerHTML=`<div class="fade"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div class="eyebrow" style="margin:0">Salon Admin</div><button class="switch" id="adm-out">ログアウト</button></div><div class="mebar"><span class="me-who">👤 担当：<b>${meName()||'未選択'}</b></span><button class="me-chg" id="me-change">担当を変更</button></div>${(()=>{const all=(DATA.announcements||[]);const list=all.slice(0,3);const form=state.annOpen?`<div class="annform"><textarea id="ann-text" rows="2" placeholder="全員へのお知らせを入力"></textarea><input id="ann-url" placeholder="リンク（任意）https://..." style="margin-top:6px"><div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-primary" id="ann-post" style="flex:1;padding:10px">投稿する</button><button class="btn btn-ghost" id="ann-cancel" style="flex:1;padding:10px">やめる</button></div></div>`:``;return `<div class="annbar"><div class="ann-h"><span>📢 みんなへのお知らせ</span><button class="ann-add" id="ann-open">${state.annOpen?`閉じる`:`＋投稿`}</button></div>${form}${list.length?list.map(a=>`<div class="ann"><div class="ann-t">${a.text}</div>${a.url?`<a class="ann-u" href="${a.url}" target="_blank" rel="noopener">🔗 リンクを開く</a>`:``}<div class="ann-m"><b>${a.by}</b> ・ ${actAgo(a.at)}${[`👍`,`✅`,`😊`].map(e=>{const who=((a.reactions||{})[e]||[]);return `<button class="ann-r ${who.includes(meName())?`on`:``}" data-annr="${a.id}|${e}" title="${who.join(`、`)}">${e}${who.length||``}</button>`;}).join(``)}${(meName()===a.by||meName()===`SAKURA`)?`<button class="ann-del" data-anndel="${a.id}">削除</button>`:``}</div></div>`).join(``):`<div class="note" style="padding:4px 0 2px">お知らせはまだありません。「＋投稿」から全員に伝えられます。</div>`}${all.length>3?`<div class="note" style="text-align:right">ほか${all.length-3}件</div>`:``}</div>`;})()}${(()=>{const g=thisGoal();return g?`<div class="goalbar"><div class="gb-h">🎯 ${goalLabel()}の目標</div><div class="gb-t">${g.text}</div><div class="gb-m">設定：${g.setBy}<button class="gb-edit" id="goal-edit">編集</button></div></div>`:`<div class="goalbar goalbar-empty"><div class="gb-t">🎯 ${goalLabel()}の目標が未設定です</div><button class="gb-set" id="goal-set">目標を設定する</button></div>`;})()}${(()=>{const a=(DATA.activity||[]).slice(0,20);if(!a.length)return '';return `<details class="actlog"><summary>📋 最近のスタッフ操作（${a.length}件）</summary><div class="actlog-b">${a.map(x=>`<div class="actrow"><b>${x.who}</b> ${x.act}<span class="actt">${actAgo(x.at)}</span></div>`).join('')}</div></details>`;})()}<div class="atabs">${tabs.map(t=>t[0]==='work'?`<a class="atbtn atwork" href="https://vi5-work.vercel.app" target="_blank" rel="noopener"><span class="ate">${t[1]}</span><span class="atl">${t[2]}</span></a>`:`<button data-at="${t[0]}" class="atbtn ${state.adminTab===t[0]?'active':''}"><span class="ate">${t[1]}</span><span class="atl">${t[2]}</span></button>`).join('')}</div>${adminGuide(state.adminTab)}${inner}</div>`;
-  byId('adm-out').onclick=()=>{state.adminAuthed=false;setStaffSession(false);go('home')};const _mc=byId('me-change');if(_mc)_mc.onclick=()=>{localDel('salon:me');render();};const _ao=byId('ann-open');if(_ao)_ao.onclick=()=>{state.annOpen=!state.annOpen;render();};const _ac=byId('ann-cancel');if(_ac)_ac.onclick=()=>{state.annOpen=false;render();};const _ap=byId('ann-post');if(_ap)_ap.onclick=annPost;app.querySelectorAll('[data-annr]').forEach(b=>b.onclick=()=>{const[id,emo]=b.dataset.annr.split('|');annReact(id,emo);});app.querySelectorAll('[data-anndel]').forEach(b=>b.onclick=()=>annDel(b.dataset.anndel));const _gs=byId('goal-set');if(_gs)_gs.onclick=setGoalPrompt;const _ge=byId('goal-edit');if(_ge)_ge.onclick=setGoalPrompt;
+  byId('adm-out').onclick=()=>{state.adminAuthed=false;setStaffSession(false);go('home')};const _mc=byId('me-change');if(_mc)_mc.onclick=()=>{localDel('salon:me');render();};const _ao=byId('ann-open');if(_ao)_ao.onclick=()=>{state.annOpen=!state.annOpen;render();};const _ac=byId('ann-cancel');if(_ac)_ac.onclick=()=>{state.annOpen=false;render();};const _ap=byId('ann-post');if(_ap)_ap.onclick=annPost;app.querySelectorAll('[data-annr]').forEach(b=>b.onclick=()=>{const[id,emo]=b.dataset.annr.split('|');annReact(id,emo);});app.querySelectorAll('[data-anndel]').forEach(b=>b.onclick=()=>annDel(b.dataset.anndel));app.querySelectorAll('[data-chr]').forEach(b=>b.onclick=()=>{state.chatRoom=b.dataset.chr;render();});const _cs2=byId('ch-send');if(_cs2)_cs2.onclick=chSend;const _ci2=byId('ch-img');if(_ci2)_ci2.onchange=chPick;const _ct2=byId('ch-text');if(_ct2)_ct2.oninput=e=>state.chatDraft=e.target.value;app.querySelectorAll('[data-chrm]').forEach(b=>b.onclick=()=>{state.chatImgs.splice(parseInt(b.dataset.chrm),1);render();});app.querySelectorAll('[data-chreact]').forEach(b=>b.onclick=()=>{const p=b.dataset.chreact.split('|');chReact(p[0],p[1]);});app.querySelectorAll('[data-chzoom]').forEach(im=>im.onclick=()=>{state.chatZoom=im.src;render();});const _cz2=byId('ch-zoomclose');if(_cz2)_cz2.onclick=()=>{state.chatZoom=null;render();};if(state.adminTab==='chat'&&WORK){const _rm=state.chatRoom||'all';const _me=meName()||'不明';let _chg=false;(WORK.chats[_rm]||[]).forEach(m=>{m.reads=m.reads||[];if(!m.reads.includes(_me)){m.reads.push(_me);_chg=true;}});if(_chg)saveWork();const _l=byId('chlist');if(_l)_l.scrollTop=_l.scrollHeight;}const _gs=byId('goal-set');if(_gs)_gs.onclick=setGoalPrompt;const _ge=byId('goal-edit');if(_ge)_ge.onclick=setGoalPrompt;
   app.querySelectorAll('[data-at]').forEach(b=>b.onclick=()=>{state.adminTab=b.dataset.at;state.custOpen=null;render()});
   app.querySelectorAll('[data-cltoggle]').forEach(cb=>cb.onchange=()=>clToggle(cb.dataset.cltoggle));
   app.querySelectorAll('[data-cldelitem]').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();clDelItem(b.dataset.cldelitem);});
