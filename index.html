@@ -932,7 +932,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260901h';
+const APP_REV='r20260901i';
 (async function(){try{
   const r=await fetch('/index.html',{method:'HEAD',cache:'no-store'});
   const et=(r.headers.get('etag')||r.headers.get('last-modified')||'').trim();
@@ -1192,6 +1192,7 @@ function mergeProtect(d,srv){/* サーバー実データと統合：顧客・シ
   if(srv.customers){d.customers=Object.assign({},srv.customers,d.customers||{});}
   if(srv.shiftOverrides){d.shiftOverrides=d.shiftOverrides||{};for(const sid in srv.shiftOverrides){d.shiftOverrides[sid]=Object.assign({},srv.shiftOverrides[sid],d.shiftOverrides[sid]||{});}}
   if(Array.isArray(srv.bookings)){d.bookings=d.bookings||[];const ids={};d.bookings.forEach(b=>{if(b&&b.id)ids[b.id]=1;});srv.bookings.forEach(b=>{if(b&&b.id&&!ids[b.id])d.bookings.push(b);});}
+  if(Array.isArray(srv.boards)){d.boards=d.boards||[];const bids={};d.boards.forEach(b=>{if(b&&b.id)bids[b.id]=1;});srv.boards.forEach(b=>{if(b&&b.id&&!bids[b.id])d.boards.push(b);});}
   return d;}
 async function backupSoon(d){/* 曜日別の自動バックアップ（1日1回・失敗しても本処理に影響なし） */
   try{const mk='vi5:bakday';const tag=fmtDate(today);if(localGet(mk)===tag)return;const dow=new Date().getDay();
@@ -1547,6 +1548,8 @@ function renderCareDocs(){
   const acc=(ic,t,body)=>`<details class="faq" style="margin-bottom:8px"><summary>${ic} ${t}</summary><div class="faq-a">${body}</div></details>`;
   const catU=S().catalogUrl||'';
   const first=[
+    acc('🛁','ビューティールームのご案内（無料・使い放題）',`当店には<b>ビューティールーム</b>がございます。メイク用品・スキンケア・ヘアケア・ヘアセット用品まで、<b>最新アイテムがすべて使い放題</b>です。<br>施術を受けられる方は、<b>施術の前でも後でも</b>ご自由にお使いいただけます。商品を試してから買えるので、<b>自分に合うものが分かる</b>のがおすすめポイントです✨`),
+    acc('🛍','店内ショップのご案内',`オンラインショップの商品の<b>一部は店舗でもご購入いただけます</b>（サロン価格でお得にご提供）。全商品はオンラインショップに揃っています。<br>事前にお問い合わせいただければ、<b>店舗へのお取り置き</b>も可能です。${S().lineUrl?`<br><a href="${S().lineUrl}" target="_blank" style="color:var(--gold);font-weight:700">💬 お取り置きのご相談（公式LINE）</a>`:``}${S().shopUrl?` ／ <a href="${S().shopUrl}" target="_blank" style="color:var(--gold);font-weight:700">🛍 オンラインショップを見る</a>`:``}`),
     acc('👁','まつ毛メニューの方','できるだけ<b>アイメイクをしていない状態</b>でお越しください（マスカラ・アイライナー・つけまつ毛はお控えください）。コンタクトレンズは外せるとより安心です。'),
     acc('✏️','眉メニューの方','眉は剃ったり抜いたりせず、<b>生やした状態</b>でお越しください。骨格に合わせて一番きれいな形に整えるため、量が多いほど仕上がりの幅が広がります。'),
     acc('🌿','フェイスメニューの方','店内にクレンジング・洗顔のご用意はありますが、基本的にお湯が出ないため、<b>すっぴんでのご来店をおすすめ</b>します。'),
@@ -1624,6 +1627,12 @@ function boardCard(p){
   const foot=`<div class="share-foot"><button class="likebtn ${liked?'on':''}" data-like="${p.id}"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.4-8.6C.6 9.3 2.3 5.5 6 5.5c2.2 0 3.3 1.3 4 2.3.7-1 1.8-2.3 4-2.3 3.7 0 5.4 3.8 3.4 6.9C19 16.5 12 21 12 21z"/></svg>${p.likes||0}</button><button class="cmtbtn" data-cmt="${p.id}">💬 コメント ${(p.comments||[]).length||''}</button></div>`;
   return `<div class="share"><span class="share-cat">${c.ic} ${c.label}</span><div class="bd-title">${p.title||''}</div><div class="share-text">${p.text||''}</div>${ph}${area}${contact}${address}${url}${foot}${cmts}${edit}</div>`;
 }
+async function boardDirect(mut){/* 裏方サーバー無しで掲示板を保存する予備ルート */
+  const srv=await directLoad();if(!srv)throw new Error('load');
+  srv.boards=srv.boards||[];mut(srv.boards);
+  const r=await fetchT(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:data',value:JSON.stringify(srv)})});
+  if(!r.ok)throw new Error('save');
+  DATA.boards=srv.boards;}
 async function saveBoard(){
   const title=byId('bd-title').value.trim();const text=byId('bd-text').value.trim();
   if(!title){alert('お店・事業の名前をご入力ください。');return;}
@@ -1635,13 +1644,16 @@ async function saveBoard(){
   try{
     if(editing)await apiOp('editBoard',{post,phone:state.mpPhone||'',staffPw});
     else await apiOp('addBoard',{post,phone:state.mpPhone||'',staffPw});
-  }catch(e){alert('保存に失敗しました。掲示板を使うにはサロンのバックエンド（Edge Function）の更新が必要です。');return;}
+  }catch(e){
+    try{await boardDirect(bl=>{if(editing){const ix=bl.findIndex(x=>x.id===post.id);if(ix>=0)bl[ix]=post;else bl.unshift(post);}else bl.unshift(post);});}
+    catch(e2){alert('保存に失敗しました。通信状況をご確認のうえ、もう一度お試しください。');return;}
+  }
   state.boardEdit=null;state.boardPhotos=[];await refresh();alert(editing?'更新しました。':'投稿しました。');render();
 }
 async function delBoard(id){
   if(!confirm('この投稿を削除しますか？'))return;
   const staffPw=state.adminAuthed?(localGet('salon:staffpw')||''):'';
-  try{await apiOp('delBoard',{id,phone:state.mpPhone||'',staffPw});}catch(e){alert('削除に失敗しました。');return;}
+  try{await apiOp('delBoard',{id,phone:state.mpPhone||'',staffPw});}catch(e){try{await boardDirect(bl=>{const ix=bl.findIndex(x=>x.id===id);if(ix>=0)bl.splice(ix,1);});state.boardEdit=null;await refresh();render();return;}catch(e2){}alert('削除に失敗しました。');return;}
   await refresh();render();
 }
 async function toggleLike(id){
