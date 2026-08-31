@@ -932,7 +932,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260901f';
+const APP_REV='r20260901g';
 (async function(){try{
   const r=await fetch('/index.html',{method:'HEAD',cache:'no-store'});
   const et=(r.headers.get('etag')||r.headers.get('last-modified')||'').trim();
@@ -1543,8 +1543,26 @@ function docCard(x){
 }
 function renderCareDocs(){
   const docs=(S().docs||[]);
-  const grp=(cat,label,ic)=>{const d=docs.filter(x=>x.cat===cat);return `<div class="sec-label"><span class="t">${ic} ${label}</span></div>${d.length?d.map(docCard).join(''):'<div class="note" style="margin-bottom:16px">ただいま準備中です。</div>'}`;};
-  app.innerHTML=`<div class="fade"><div class="eyebrow">Guide</div><div class="h-title">はじめての方へ・ケア・同意書</div><div class="h-sub">初めてご来店の方へのご案内、施術後のアフターケア、同意書をご確認いただけます。画像・PDFで開けます。</div>${grp('firstvisit','初めてご来店される方へ','👋')}${grp('aftercare','アフターケアについて','🧴')}${grp('consent','同意書','📝')}<div class="note" style="margin-top:8px">ご不明な点は公式LINEよりお気軽にお問い合わせください。</div></div>`;
+  const grp=(cat)=>{const d=docs.filter(x=>x.cat===cat);return d.length?`<div class="note" style="margin:6px 0 2px">📎 くわしい資料（画像・PDF）</div>${d.map(docCard).join('')}`:'';};
+  const acc=(ic,t,body)=>`<details class="faq" style="margin-bottom:8px"><summary>${ic} ${t}</summary><div class="faq-a">${body}</div></details>`;
+  const catU=S().catalogUrl||'';
+  const first=[
+    acc('👁','まつ毛メニューの方','できるだけ<b>アイメイクをしていない状態</b>でお越しください（マスカラ・アイライナー・つけまつ毛はお控えください）。コンタクトレンズは外せるとより安心です。'),
+    acc('✏️','眉メニューの方','眉は剃ったり抜いたりせず、<b>生やした状態</b>でお越しください。骨格に合わせて一番きれいな形に整えるため、量が多いほど仕上がりの幅が広がります。'),
+    acc('🌿','フェイスメニューの方','店内にクレンジング・洗顔のご用意はありますが、基本的にお湯が出ないため、<b>すっぴんでのご来店をおすすめ</b>します。'),
+    acc('💇','ヘアセットの方','ワックス・オイルなど<b>何も付けていない状態</b>でお越しください。お好きな髪飾り・アクセサリーがあればぜひお持ちください。'),
+    acc('💄','メイクメニューの方','<b>すっぴんでお越しください。</b>普段お使いの道具のお持ち込みも歓迎です。'),
+    acc('🎓','メイク講習の方','なりたいイメージの<b>お好きな動画やお写真</b>をお持ちください。道具は当店にもご用意がありますので、手ぶらでも大丈夫です。')
+  ].join('');
+  const after=[
+    acc('👁','まつ毛のアフターケア','施術後<b>6時間は濡らさない</b>ようにし、こすらず優しく扱ってください。オイルクレンジングは接着を弱めることがあるためお控えめに。うつ伏せ寝・ビューラーも持ちを悪くします。'),
+    acc('✏️','眉のアフターケア','当日は長風呂・サウナ・激しい運動をお控えください。施術部位はこすらず、<b>保湿と日焼け対策</b>を。赤みが出た場合は冷やすと落ち着きます。'),
+    acc('🌿','フェイスのアフターケア','当日はメイク・入浴を控えめにし、<b>いつも以上の保湿</b>を心がけてください。日焼け止めは必須です。ピリつき・赤みは数日で落ち着きます。'),
+    acc('💇','ヘアセットのアフターケア','崩れが気になる時はピンで留め直す程度に。スプレーで軽く整えると長持ちします。'),
+    acc('💄','メイクのアフターケア','オフの際はクレンジングでこすらず優しく落としてください。')
+  ].join('')+(catU?`<a class="btn btn-ghost" href="${catU}" target="_blank" rel="noopener" style="width:100%;display:block;text-align:center;text-decoration:none;margin-top:8px">📖 カタログでメニュー別のくわしいアフターケアを見る</a>`:'');
+  const consent=`<div class="terms" style="margin-bottom:8px"><b>ご予約・施術に関する同意事項</b>${TERMS.split('\n').join('<br>')}</div><div class="note">✓ 会員登録時にご同意いただいているため、<b>当日の同意書のご記入は不要</b>です。</div>`;
+  app.innerHTML=`<div class="fade"><div class="eyebrow">Guide</div><div class="h-title">はじめての方へ・ケア・同意書</div><div class="h-sub">ご来店前の準備、施術後のアフターケア、同意書の内容をご確認いただけます。</div><div class="sec-label"><span class="t">👋 初めてご来店される方へ（メニュー別のご案内）</span></div>${first}${grp('firstvisit')}<div class="sec-label"><span class="t">🧴 アフターケアについて</span></div>${after}${grp('aftercare')}<div class="sec-label"><span class="t">📝 同意書</span></div>${consent}${grp('consent')}<div class="note" style="margin-top:8px">ご不明な点は公式LINEよりお気軽にお問い合わせください。</div></div>`;
 }
 function renderStaffIntro(){
   const reals=DATA.staff.filter(x=>x.id!=='s0'&&!x.hidden);
