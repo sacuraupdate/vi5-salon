@@ -932,7 +932,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260901i';
+const APP_REV='r20260901j';
 (async function(){try{
   const r=await fetch('/index.html',{method:'HEAD',cache:'no-store'});
   const et=(r.headers.get('etag')||r.headers.get('last-modified')||'').trim();
@@ -1560,6 +1560,7 @@ function renderCareDocs(){
   const after=[
     acc('👁','まつ毛のアフターケア','<b>まつ毛エクステ</b>：施術後<b>1時間は濡らさない</b>ようにし、こすらず優しく扱ってください。オイルクレンジングは接着を弱めることがあるためお控えめに。<br><b>まつ毛パーマ</b>：すぐに濡らしていただいて大丈夫ですが、<b>当日のマスカラはできるだけお避けください</b>。'),
     acc('✏️','眉のアフターケア','施術後は<b>しっかりと保湿</b>してあげてください。こすらず優しく扱っていただくと、きれいな状態が長持ちします。'),
+    acc('🪡','インクメイクのアフターケア','施術後<b>1週間</b>は施術部位を<b>こすらず、清潔に</b>保ってください。かさぶたは<b>絶対に剥がさず</b>、自然に取れるのを待ちましょう。お渡しする軟膏（ワセリン等）で保護し、<b>プール・サウナ・激しい運動・飲酒は1週間程度お控えください</b>。紫外線対策も色持ちのポイントです。定着まで2〜4週間かかり、薄くなった場合はリタッチで整えられます。くわしくはカタログもご覧ください。'),
     acc('🌿','フェイスのアフターケア','施術後はお肌が<b>とても浸透しやすい状態</b>になっています。普段お使いでないスキンケアを試したり、<b>パックをするのもおすすめ</b>です。'),
     acc('💇','ヘアセットのアフターケア','崩れが気になる時はピンで留め直す程度に。スプレーで軽く整えると長持ちします。'),
     acc('💄','メイクのアフターケア','オフの際はクレンジングでこすらず優しく落としてください。')
@@ -1984,16 +1985,26 @@ function startBooking(){
   go('book');
 }
 const CANCEL_TXT='前日の21時まで';function cancelPolicyText(){return CANCEL_TXT;}function canModifyBk(b){return Date.now()<(new Date(b.date+'T00:00:00').getTime()-3*3600*1000);}
+async function registerDirect(cust,referrerPhone,referrerNotice,referrerBonus){
+  const srv=await directLoad();if(!srv)throw new Error('load');
+  srv.customers=srv.customers||{};
+  if(srv.customers[cust.phone])throw Object.assign(new Error('exists'),{code:'exists'});
+  srv.customers[cust.phone]=cust;
+  if(referrerPhone&&srv.customers[referrerPhone]){const rc=srv.customers[referrerPhone];rc.bonusPoints=(rc.bonusPoints||0)+(referrerBonus||0);rc.notices=rc.notices||[];rc.notices.unshift({text:referrerNotice||'',date:fmtDate(today),read:false});}
+  const r=await fetchT(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:data',value:JSON.stringify(srv)})});
+  if(!r.ok)throw new Error('save');
+  DATA.customers=srv.customers;}
 function renderMypage(){
   if(!state.mpPhone){
     const lineU=(S().lineUrl)||'';
     const knownP=localGet('salon:knownphone');const knownN=localGet('salon:knownname')||'';
     if(state.mpReg){
-      const r=state.regB||(state.regB={name:'',phone:'',birthday:'',password:'',referrer:''});
+      const r=state.regB||(state.regB={name:'',kana:'',phone:'',birthday:'',password:'',referrer:''});
       app.innerHTML=`<div class="fade"><div class="eyebrow">Member</div><div class="h-title">新規ご登録</div>
       <div class="h-sub">ご登録は<b>初回のみ</b>。お名前・電話番号・生年月日・パスワードだけでOKです。ご予約はあとからでも大丈夫です。</div>
       <div class="loginbox">
         <div class="field"><label>お名前</label><input id="rg-name" value="${r.name}" placeholder="例：山田 花子"></div>
+        <div class="field"><label>ふりがな</label><input id="rg-kana" value="${r.kana||''}" placeholder="例：やまだ はなこ"></div>
         <div class="field"><label>電話番号（ハイフンなし）</label><input id="rg-phone" inputmode="tel" value="${r.phone}" placeholder="09012345678"></div>
         <div class="field two"><div><label>生年月日</label><input id="rg-bday" inputmode="numeric" value="${r.birthday}" placeholder="例）19900615（数字8桁）"></div><div><label>パスワード <span class="opt">(4文字以上)</span></label><input id="rg-pw" type="password" value="${r.password}" placeholder="マイページ用"></div></div>
         <div class="field"><label>ご紹介者の電話番号 <span class="opt">(任意・ご紹介でお互いに${CONFIG.referralBonus}pt)</span></label><input id="rg-ref" inputmode="tel" value="${r.referrer}" placeholder="090..."></div>
@@ -2004,7 +2015,7 @@ function renderMypage(){
       </div>
       <div class="signup-promo">🎁 <b>新規ご登録で${CONFIG.signupBonus}ポイント</b>プレゼント！<br>さらに、これまでにご来店・ご紹介いただいているお客様には、<b>ご登録後1週間以内</b>に、これまでのご来店回数などをもとに<b>ポイントを追加で付与</b>いたします。</div>
       </div>`;
-      const grab=()=>{r.name=byId('rg-name').value;r.phone=byId('rg-phone').value;r.birthday=byId('rg-bday').value;r.password=byId('rg-pw').value;r.referrer=byId('rg-ref').value;};
+      const grab=()=>{r.name=byId('rg-name').value;r.kana=(byId('rg-kana')?byId('rg-kana').value:'');r.phone=byId('rg-phone').value;r.birthday=byId('rg-bday').value;r.password=byId('rg-pw').value;r.referrer=byId('rg-ref').value;};
       byId('rg-back').onclick=()=>{grab();state.mpReg=false;render();};
       byId('rg-book').onclick=()=>{grab();state.mpReg=false;state.b.name=r.name;state.b.phone=r.phone;state.b.birthday=r.birthday;state.b.password=r.password;state.b.referrer=r.referrer;startBooking();};
       byId('rg-go').onclick=async()=>{grab();
@@ -2015,10 +2026,13 @@ function renderMypage(){
         r.birthday=normBday(r.birthday);if(!r.birthday){alert('生年月日は数字8桁（例：19900615）でご入力ください。');return;}
         if(!r.password||r.password.length<4){alert('パスワード（マイページ用）は4文字以上でご設定ください。');return;}
         const rk=normPhone(r.referrer);const hasRef=!!(rk&&rk!==phone);
-        const cust={phone:phone,name:r.name.trim(),password:r.password,referredBy:hasRef?rk:null,bonusPoints:CONFIG.signupBonus+(hasRef?CONFIG.referralBonus:0),joined:fmtDate(today),discount:null,birthday:r.birthday,saved:[],couponYen:0,notices:[{text:`ご登録ありがとうございます🎁 会員登録特典として ${CONFIG.signupBonus}ポイント をプレゼントしました。`,date:fmtDate(today),read:false}],salonNote:'',passes:[],bdayYear:0};
+        const cust={phone:phone,name:r.name.trim(),kana:(r.kana||'').trim(),password:r.password,referredBy:hasRef?rk:null,bonusPoints:CONFIG.signupBonus+(hasRef?CONFIG.referralBonus:0),joined:fmtDate(today),discount:null,birthday:r.birthday,saved:[],couponYen:0,notices:[{text:`ご登録ありがとうございます🎁 会員登録特典として ${CONFIG.signupBonus}ポイント をプレゼントしました。`,date:fmtDate(today),read:false}],salonNote:'',passes:[],bdayYear:0};
         if(hasRef)cust.notices.unshift({text:`ご紹介でのご登録ありがとうございます🎁 ${CONFIG.referralBonus}ポイントを差し上げました。`,date:fmtDate(today),read:false});
         try{await apiOp('register',{customer:cust,phone:phone,referrerPhone:hasRef?rk:null,referrerNotice:hasRef?`お友達をご紹介いただきありがとうございます🎁 ${CONFIG.referralBonus}ポイントを差し上げました。`:'',referrerBonus:CONFIG.referralBonus});}
-        catch(e){alert('登録に失敗しました。通信状況をご確認ください。');return;}
+        catch(e){
+          try{await registerDirect(cust,hasRef?rk:null,`お友達をご紹介いただきありがとうございます🎁 ${CONFIG.referralBonus}ポイントを差し上げました。`,CONFIG.referralBonus);}
+          catch(e2){if(e2&&e2.code==='exists'){alert('この電話番号はすでにご登録があります。ログインをお試しください。');}else{alert('登録に失敗しました。お手数ですが少し時間をおいて、もう一度お試しください。');}return;}
+        }
         state.mpReg=false;
         try{await doCustomerLogin(phone,r.password);state.regB=null;setTimeout(()=>alert(`ご登録ありがとうございます！${CONFIG.signupBonus}ポイントをプレゼントしました🎁`),50);}
         catch(e){if(e.status===401){alert('この電話番号はすでにご登録があります。パスワードでログインしてください。お忘れの場合は公式LINEへご連絡ください。');render();}else{alert('ご登録は完了しました。ログイン画面からログインしてください。');render();}}
@@ -2868,7 +2882,7 @@ async function doImport(){const m={name:+byId('imp-name').value,phone:+byId('imp
 function needsRecord(c){const cutoff=fmtDate(new Date(today.getTime()-60*86400000));return DATA.bookings.some(b=>normPhone(b.phone)===normPhone(c.phone)&&b.status==='visited'&&b.date>=cutoff&&!(b.staffComment&&b.staffComment.trim()));}
 function adminCustomers(){
   if(state.custOpen)return custDetail(state.custOpen);
-  const q=state.custQuery.trim();const nq=normPhone(q);let entries=Object.values(DATA.customers);if(q)entries=entries.filter(c=>c.name.includes(q)||normPhone(c.phone).includes(nq));
+  const q=state.custQuery.trim();const nq=normPhone(q);let entries=Object.values(DATA.customers);if(q)entries=entries.filter(c=>c.name.includes(q)||(c.kana||'').includes(q)||normPhone(c.phone).includes(nq));
   const bdays=Object.values(DATA.customers).filter(c=>c.birthday&&c.birthday.slice(5,7)===curMonth.slice(5)).sort((a,b)=>a.birthday.slice(5).localeCompare(b.birthday.slice(5)));
   const bdayHtml=(!q&&bdays.length)?`<div class="subhead" style="margin-top:0">🎂 今月のお誕生日</div>${bdays.map(c=>`<div class="bday-row"><div class="bd"><div class="bn">${c.name} 様</div><div class="bdt">${bdayLabel(c.birthday)}</div></div><div class="ba"><button data-bpt="${normPhone(c.phone)}">${CONFIG.birthdayBonus}ptプレゼント</button><button data-bmsg="${normPhone(c.phone)}">メッセージ</button></div></div>`).join('')}<div class="note">お誕生日当日になると自動でメッセージ配信とポイント付与が行われます。手動でも配信できます。</div>`:'';
   entries.sort((a,b)=>{const na=needsRecord(a)?1:0,nb=needsRecord(b)?1:0;if(na!==nb)return nb-na;return pointBalance(b.phone)-pointBalance(a.phone);});
@@ -2892,7 +2906,7 @@ function custDetail(key){
   const rankSection=`<div class="subhead">会員ランク（毎回の割引）</div><div class="disc-set">${ranks}</div><div class="note" style="margin-top:8px">設定：<b>${RANK_LABEL[c.rank||0]}</b>${(c.rank||0)!==effectiveRank(c)?` ／ 現在の適用：<b>${RANK_LABEL[effectiveRank(c)]}</b>（3ヶ月以上未来店のため自動で下がっています）`:''}${lv?` ／ 最終来店 ${lv.replace(/-/g,'/')}（${monthsNo}ヶ月前）`:' ／ 来店履歴なし'}。ご来店または再設定で期間がリセットされます。</div><div class="composer" style="margin-top:8px"><textarea id="rank-memo" placeholder="ランクの理由メモ（例：累計ご利用○万円）">${c.rankMemo||''}</textarea><div class="comp-tools"><button id="rank-memo-save">メモを保存</button></div></div>`;
   const composer=`<div class="subhead">お客様へメッセージ</div><div class="composer"><textarea id="cmp-msg" placeholder="音声でOK。例：今日はありがとう、次は3週間後くらいに来てね、持ち良くするコツも伝えた"></textarea><div class="comp-tools"><button class="mic" id="cmp-mic">🎤 音声入力</button><button class="ai" id="cmp-ai">✨ AIで整える</button><label class="photobtn"><input type="file" id="cmp-img" accept="image/*" multiple hidden>📷 写真</label></div>${(state.msgImgs&&state.msgImgs.length)?`<div class="chstgs">${state.msgImgs.map((d,i)=>`<div class="chstg"><img src="${d}"><button data-msgrm="${i}">✕</button></div>`).join(``)}<span class="note">${state.msgImgs.length}/5枚</span></div>`:``}<button class="btn btn-primary" id="cmp-send" style="width:100%">このお客様に送信</button><div class="note" style="margin-top:10px">ざっくり話した内容をAIが絵文字付きの丁寧な文章に整えます。送信するとお客様のマイページに表示されます。</div></div>
     <div class="subhead">スタッフメモ（お客様の印象・社内用）</div><div class="composer"><textarea id="cmp-note" placeholder="音声でOK。施術中に感じたことやカウンセリング内容をメモ">${c.salonNote||''}</textarea><div class="comp-tools"><button class="mic" id="note-mic">🎤 音声入力</button><button class="ai" id="note-ai">✨ AIで整える</button><button id="note-save">保存</button></div></div><div class="subhead" style="margin-top:18px">📒 施術カルテ（履歴）</div><div class="addform" style="margin-bottom:10px"><textarea id="kt-text" rows="4" placeholder="例）施術：まつげエクステ120本／Cカール0.15・ブラウン／仕上がり◎お客様も満足／注意：左目しみやすい・オイルNG／次回：3週間後・Dカール希望"></textarea><div class="comp-tools"><button class="mic" id="kt-mic">🎤 音声入力</button><button class="ai" id="kt-ai">✨ AIで整える</button><label class="photobtn"><input type="file" id="kt-img" accept="image/*" multiple hidden>📷 写真</label></div>${(state.karteImgs&&state.karteImgs.length)?`<div class="chstgs">${state.karteImgs.map((d,i)=>`<div class="chstg"><img src="${d}"><button data-ktrm="${i}">✕</button></div>`).join(``)}<span class="note">${state.karteImgs.length}/3枚</span></div>`:``}<button class="btn btn-primary" id="kt-add" style="width:100%;margin-top:8px">カルテに追加（日付・担当は自動記録）</button><div class="note" style="margin-top:6px">💌 保存すると、直近のご来店に対して<b>お礼メッセージを自動でお客様に送信</b>します。</div></div>${(()=>{const wl=((typeof WORK!==`undefined`&&WORK&&WORK.karte&&WORK.karte[key])||[]).map((k,i)=>({...k,_s:`w`,_i:i}));const cl=(c.karte||[]).map((k,i)=>({...k,_s:`c`,_i:i}));const all=wl.concat(cl).sort((a,b)=>b.at-a.at);if(!all.length)return `<div class="empty">カルテはまだありません</div>`;return all.map(k=>`<div class="hist"><div class="hist-amount" style="font-size:12px;color:var(--ink-soft)">${new Date(k.at).toLocaleDateString(`ja-JP`)}　✍️ ${k.by||``} <button data-ktdel2="${k._s}|${k._i}" style="float:right;background:none;border:none;color:var(--rose);cursor:pointer;font-size:12px">削除</button></div>${k.text?`<div style="font-size:13.5px;line-height:1.7;white-space:pre-wrap">${k.text}</div>`:``}${(k.imgs&&k.imgs.length)?`<div class="chimgs">${k.imgs.map(im=>`<img src="${im}" data-chzoom="1">`).join(``)}</div>`:``}</div>`).join(``);})()}`;
-  return `<button class="backlink" id="cust-back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>顧客一覧</button><div class="mp-hero" style="margin-bottom:18px"><div class="mp-hello">${c.phone}${c.birthday?` ・ 🎂${bdayLabel(c.birthday)}`:''}${ref?` ・ 紹介：${ref}様`:''}</div><div class="mp-name">${c.name} 様 ${custDiscount(c).label?`<span class="disc-badge">${custDiscount(c).label}</span>`:''}</div><div class="mp-ptlabel">保有ポイント</div><div class="mp-pt">${bal.toLocaleString()}<small>pt</small></div><div class="mp-meta">来店 ${custBookings(c.phone).length}回 ・ 登録 ${c.joined||'-'}${couponLine(c)?` ・ ${couponLine(c)}`:''}${referred.length?` ・ 紹介した方：${referred.join('、')}様`:''}</div></div>
+  return `<button class="backlink" id="cust-back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>顧客一覧</button><div class="mp-hero" style="margin-bottom:18px"><div class="mp-hello">${c.phone}${c.birthday?` ・ 🎂${bdayLabel(c.birthday)}`:''}${ref?` ・ 紹介：${ref}様`:''}</div><div class="mp-name">${c.name} 様 ${custDiscount(c).label?`<span class="disc-badge">${custDiscount(c).label}</span>`:''}</div>${c.kana?`<div class="note" style="margin:-4px 0 4px">ふりがな：${c.kana}</div>`:''}<div class="mp-ptlabel">保有ポイント</div><div class="mp-pt">${bal.toLocaleString()}<small>pt</small></div><div class="mp-meta">来店 ${custBookings(c.phone).length}回 ・ 登録 ${c.joined||'-'}${couponLine(c)?` ・ ${couponLine(c)}`:''}${referred.length?` ・ 紹介した方：${referred.join('、')}様`:''}</div></div>
     ${composer}
     <div class="subhead">配信したメッセージ履歴</div>${(c.notices||[]).length?(c.notices||[]).map(n=>`<div class="hist" style="padding:11px 13px"><div class="hist-staff" style="margin:0 0 5px">${n.date} ・ ${n.read?'既読':'未読'}</div><div style="font-size:13px;color:var(--ink);line-height:1.6">${n.text}</div></div>`).join(''):'<div class="note">まだ配信はありません</div>'}
     <div class="subhead">特別割引</div><div class="disc-set">${ds}</div>
