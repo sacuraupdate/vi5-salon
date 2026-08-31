@@ -9,9 +9,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,400&family=Hanken+Grotesk:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{--paper:#FFFFFF;--paper-2:#F5F6F8;--navy:#1E2A47;--ink:#1E2430;--ink-soft:#6E727C;--line:#E6E8EC;--gold:#C9A227;--gold-soft:#E6C963;--gold-bg:#FBF3E0;--gold-deep:#9E7C1E;--gold-grad:linear-gradient(135deg,#B8860B 0%,#E6C766 18%,#FFF3B0 36%,#D4AF37 52%,#FFF3B0 66%,#C9A227 84%,#9E7C1E 100%);--card:#FFFFFF;--sage:#3F5A46;--rose:#C4362F;--red:#C4362F;--shadow:rgba(30,42,71,.08);}
-*{margin:0;padding:0;box-sizing:border-box}
+*{margin:0;padding:0;box-sizing:border-box}html,body{max-width:100%;overflow-x:hidden}img{max-width:100%;height:auto}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 body{font-family:"Hanken Grotesk","Zen Kaku Gothic New",sans-serif;background:#FFFFFF;color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh;}
-.wrap{max-width:760px;margin:0 auto;padding:0 18px 90px;}
+.wrap{max-width:760px;margin:0 auto;padding:0 18px calc(90px + env(safe-area-inset-bottom));width:100%}
 header{padding:26px 0 8px;text-align:center;position:relative;}
 .brand{font-family:"Fraunces",serif;font-weight:600;font-size:30px;letter-spacing:.06em;color:var(--navy);}
 .brand .dot{color:var(--gold)}
@@ -874,6 +874,7 @@ button{white-space:normal}
 .ft-acc .ft-arrow{transition:transform .2s;color:var(--gold-deep)}
 .ft-acc[open] .ft-arrow{transform:rotate(180deg)}
 .shiftsubmit{background:var(--gold-bg);border:1.5px solid var(--gold-soft);border-radius:12px;padding:12px;margin-bottom:12px}
+.slot,.cal-day{font-family:inherit;cursor:pointer;background:none}.slot[disabled],.cal-day[disabled]{cursor:default}
 </style>
 </head>
 <body>
@@ -1587,7 +1588,7 @@ function stepDate(){
   if(state.bookMode==='pair')return stepDatePair();
   const sid=state.b.staff.id;const m=state.calMonth,y=m.getFullYear(),mo=m.getMonth();const startDow=new Date(y,mo,1).getDay(),days=new Date(y,mo+1,0).getDate();const canPrev=!(y===today.getFullYear()&&mo===today.getMonth());
   let cells='';['日','月','火','水','木','金','土'].forEach((d,i)=>cells+=`<div class="cal-dow ${i===0?'sun':''}">${d}</div>`);for(let i=0;i<startDow;i++)cells+='<div></div>';
-  for(let d=1;d<=days;d++){const dd=new Date(y,mo,d);const ds=fmtDate(dd);const closedDay=salonClosed(ds)||(sid!=='s0'?!staffWorks(sid,ds):!anyStaffWorks(ds));const dis=dd<today?'dis':(closedDay?'closed':'');const sel=state.b.date===ds?'sel':'';cells+=`<div class="cal-day ${dis} ${sel}" ${dis?'':`data-date="${ds}"`}>${d}</div>`}
+  for(let d=1;d<=days;d++){const dd=new Date(y,mo,d);const ds=fmtDate(dd);const closedDay=salonClosed(ds)||(sid!=='s0'?!staffWorks(sid,ds):!anyStaffWorks(ds));const dis=dd<today?'dis':(closedDay?'closed':'');const sel=state.b.date===ds?'sel':'';cells+=`<button type="button" class="cal-day ${dis} ${sel}" ${dis?'disabled aria-disabled="true"':`data-date="${ds}"`} aria-label="${mdLabel(ds)}${dis?' 予約不可':' 予約可能'}" ${sel?'aria-pressed="true"':''}>${d}</button>`}
   let slotHtml='';
   if(state.b.date){
     const totalMin=state.cart.reduce((s,x)=>s+(x.min||0),0);
@@ -1601,7 +1602,7 @@ function stepDate(){
       const inTime=slotTime>=cutoff;
       const staffOpen=sid!=='s0'?staffSlotOpen30(sid,state.b.date,mm):anyStaffSlot30(state.b.date,mm);
       const open=staffOpen&&inTime;const full=!open;const sel=state.b.time===t?'sel':'';
-      opts+=`<div class="slot ${full?'full':''} ${sel}" ${full?'':`data-slot="${t}"`}>${t}</div>`;shown++;
+      opts+=`<button type="button" class="slot ${full?'full':''} ${sel}" ${full?'disabled aria-disabled="true"':`data-slot="${t}"`} aria-label="${t}${full?' 予約不可':' 予約可能'}" ${sel?'aria-pressed="true"':''}>${t}</button>`;shown++;
     }
     const slotsBlock=shown?`<div class="slots">${opts}</div>`:'<div class="note">この日にご予約いただける時間がありません。別の日をお選びください。</div>';
     slotHtml=`<div class="slot-wrap"><div class="slot-label">開始時間（21:00までに終わる枠のみ・ご予約は3時間前まで）</div>${slotsBlock}<div class="note" style="margin-top:8px">選択中のメニュー所要 約${totalMin}分。本日分は現在時刻の3時間後以降のみご予約いただけます。</div></div>`;
