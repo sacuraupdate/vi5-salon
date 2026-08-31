@@ -906,6 +906,7 @@ button{white-space:normal}
 .menusearch{margin:6px 0 12px}
 .menusearch input{width:100%;font-family:inherit;font-size:15px;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff}
 .menusearch input:focus{border-color:var(--gold);outline:none}
+.staff-next{font-size:12px;font-weight:700;color:var(--gold-deep);margin-top:5px;background:var(--gold-bg);display:inline-block;padding:3px 10px;border-radius:100px}
 </style>
 </head>
 <body>
@@ -1070,7 +1071,7 @@ const SEED_STAFF=[
   {id:'s1',name:'佐藤 ミナ',role:'アイデザイナー',color:'#1E2A47',photo:'',intro:'まつげ・眉のデザインが得意。ナチュラルで長持ちする仕上がりを大切にしています。',services:['pm1','pm2','pm3','br1','br2','le0','le1','le2','le3','le4','le5','wl1','wl2','wl3','wl4','wl5','cs1']},
   {id:'s2',name:'田中 ユウ',role:'エステティシャン',color:'#9C5B6B',photo:'',intro:'ピーリングや肌管理が専門。お肌の状態に合わせたケアをご提案します。',services:['pe1','pe2','tk1','tk2','cs1']},
   {id:'s3',name:'鈴木 アオイ',role:'ヘア&メイク',color:'#5F7355',photo:'',intro:'ヘアセット・メイクを担当。なりたい印象に寄り添います。',services:['mk1','mk2','mk3','mk4','br1','cs1']},
-  {id:'s0',name:'指名なし',role:'おまかせ',color:'#8A7E66',photo:'',intro:'ご予約に空きのあるスタッフが、責任を持って対応いたします。',services:[]}];
+  {id:'s0',name:'指名なし',role:'おまかせ',color:'#8A7E66',photo:'',intro:'指名なし＝最短で予約しやすい！空きのあるスタッフが責任を持って対応します。',services:[]}];
 let staff=SEED_STAFF;
 const companionOpts=[{id:'pet',label:'ペット同伴',ic:'🐾'},{id:'kids',label:'お子様同伴',ic:'🧒'},{id:'guest',label:'付き添いあり',ic:'👤'}];
 const hasteOpts=[{id:'hurry',label:'急いでいる',ic:'⚡'},{id:'relaxed',label:'特に急いでいない',ic:'🌿'}];
@@ -1596,11 +1597,12 @@ function stepBrowse(){
   app.querySelectorAll('[data-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();const id=b.dataset.add;inCart(id)?state.cart=state.cart.filter(x=>x.id!==id):state.cart.push(svById(id));render()});
   const n=byId('next');if(n)n.onclick=()=>{state.step=1;render()};
 }
+function nextAvailLabel(sid){try{const base=new Date(today);for(let d=0;d<21;d++){const dd=new Date(base);dd.setDate(base.getDate()+d);const ds=fmtDate(dd);if(typeof salonClosed==='function'&&salonClosed(ds))continue;for(let mm=OPEN_HOUR*60;mm<=LAST_RECEPTION*60;mm+=30){const okslot=sid!=='s0'?staffSlotOpen30(sid,ds,mm):anyStaffSlot30(ds,mm);if(okslot){const t=minToTime(mm);return (d===0?'本日':d===1?'明日':mdLabel(ds))+' '+t+'〜';}}}return '空き枠は要確認';}catch(e){return '';}}
 function stepStaff(){
   const cartIds=state.cart.map(x=>x.id);
   const eligible=p=>p.id==='s0'?true:(!p.hidden&&(p.services||[]).length>0&&cartIds.every(id=>(p.services||[]).includes(id)));
-  const cards=staff.filter(p=>p.id==='s0'||(!p.hidden&&(p.services||[]).length>0)).map((p,i)=>{const ok=eligible(p);const sel=ok&&state.b.staff&&state.b.staff.id===p.id;const initial=p.id==='s0'?'?':nameInitial(p.name);const bg=p.photo?`background-image:url('${p.photo}')`:`background:${p.color}`;
-    return `<div class="staff ${sel?'sel':''}" ${ok?`data-staff="${p.id}"`:''} style="${ok?'':'opacity:.45'};animation-delay:${i*.06}s"><div class="photo" style="${bg}">${p.photo?'':initial}<div class="staff-check"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div></div><div class="staff-body"><div class="staff-top"><span class="staff-name">${p.name}</span><span class="staff-role">${p.role}</span></div><div class="staff-intro">${ok?p.intro:'選択中のメニューは担当外です。'}</div>${(ok&&p.quals)?`<div class="quals">${p.quals.split(/[,、]/).map(q=>q.trim()).filter(Boolean).map(q=>`<span class="qual">🏅 ${q}</span>`).join('')}</div>`:''}${ok&&state.cart.length?`<div class="staff-intro" style="color:var(--gold);font-weight:700;margin-top:4px">この内容で ${yen(cartTotal(p.id))}</div>`:''}</div></div>`}).join('');
+  const cards=staff.filter(p=>p.id==='s0'||(!p.hidden&&(p.services||[]).length>0)).sort((a,b)=>{if(a.id==='s0')return -1;if(b.id==='s0')return 1;return (eligible(b)?1:0)-(eligible(a)?1:0);}).map((p,i)=>{const ok=eligible(p);const sel=ok&&state.b.staff&&state.b.staff.id===p.id;const initial=p.id==='s0'?'?':nameInitial(p.name);const bg=p.photo?`background-image:url('${p.photo}')`:`background:${p.color}`;
+    return `<div class="staff ${sel?'sel':''}" ${ok?`data-staff="${p.id}"`:''} style="${ok?'':'opacity:.45'};animation-delay:${i*.06}s"><div class="photo" style="${bg}">${p.photo?'':initial}<div class="staff-check"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div></div><div class="staff-body"><div class="staff-top"><span class="staff-name">${p.name}</span><span class="staff-role">${p.role}</span></div><div class="staff-intro">${ok?p.intro:'選択中のメニューは担当外です。'}</div>${ok?`<div class="staff-next">🕐 最短 ${nextAvailLabel(p.id)}</div>`:''}${(ok&&p.quals)?`<div class="quals">${p.quals.split(/[,、]/).map(q=>q.trim()).filter(Boolean).map(q=>`<span class="qual">🏅 ${q}</span>`).join('')}</div>`:''}${ok&&state.cart.length?`<div class="staff-intro" style="color:var(--gold);font-weight:700;margin-top:4px">この内容で ${yen(cartTotal(p.id))}</div>`:''}</div></div>`}).join('');
   app.innerHTML=stepsBar(1)+`<div class="fade"><div class="eyebrow">Step 02</div><div class="h-title">${t('selectStaff')}</div><div class="h-sub">${t('staffSub')}</div>${cards}</div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">${t('backBtn')}</button><button class="btn btn-primary" id="next" ${state.b.staff?'':'disabled'}>${t('ctaNextDate')}</button></div>`;
   app.querySelectorAll('[data-staff]').forEach(b=>b.onclick=()=>{state.b.staff=stById(b.dataset.staff);state.b.date=null;state.b.time=null;render()});
   byId('back').onclick=()=>{state.step=0;render()};byId('next').onclick=()=>{
