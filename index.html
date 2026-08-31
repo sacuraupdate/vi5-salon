@@ -907,6 +907,13 @@ button{white-space:normal}
 .menusearch input{width:100%;font-family:inherit;font-size:15px;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff}
 .menusearch input:focus{border-color:var(--gold);outline:none}
 .staff-next{font-size:12px;font-weight:700;color:var(--gold-deep);margin-top:5px;background:var(--gold-bg);display:inline-block;padding:3px 10px;border-radius:100px}
+.cal-day.avail{position:relative}
+.cal-day.avail::after{content:'';position:absolute;bottom:5px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--gold)}
+.cal-day.sel::after{background:#fff}
+.quick3{margin:4px 0 14px;background:var(--gold-bg);border:1px solid var(--gold-soft);border-radius:12px;padding:10px 12px}
+.quick3 .q3-h{font-size:12px;font-weight:800;color:var(--gold-deep);margin-bottom:8px}
+.quick3 .q3-btns{display:flex;gap:8px;flex-wrap:wrap}
+.quick3 .q3-btn{background:#fff;border:1.5px solid var(--gold);color:var(--navy);border-radius:100px;padding:8px 14px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
 </style>
 </head>
 <body>
@@ -1598,6 +1605,7 @@ function stepBrowse(){
   const n=byId('next');if(n)n.onclick=()=>{state.step=1;render()};
 }
 function nextAvailLabel(sid){try{const base=new Date(today);for(let d=0;d<21;d++){const dd=new Date(base);dd.setDate(base.getDate()+d);const ds=fmtDate(dd);if(typeof salonClosed==='function'&&salonClosed(ds))continue;for(let mm=OPEN_HOUR*60;mm<=LAST_RECEPTION*60;mm+=30){const okslot=sid!=='s0'?staffSlotOpen30(sid,ds,mm):anyStaffSlot30(ds,mm);if(okslot){const t=minToTime(mm);return (d===0?'本日':d===1?'明日':mdLabel(ds))+' '+t+'〜';}}}return '空き枠は要確認';}catch(e){return '';}}
+function next3Slots(sid){const out=[];try{const base=new Date(today);for(let d=0;d<21&&out.length<3;d++){const dd=new Date(base);dd.setDate(base.getDate()+d);const ds=fmtDate(dd);if(typeof salonClosed==='function'&&salonClosed(ds))continue;for(let mm=OPEN_HOUR*60;mm<=LAST_RECEPTION*60&&out.length<3;mm+=30){const okslot=sid!=='s0'?staffSlotOpen30(sid,ds,mm):anyStaffSlot30(ds,mm);if(okslot){const hh=String(Math.floor(mm/60)).padStart(2,'0'),mi=String(mm%60).padStart(2,'0');out.push({date:ds,time:hh+':'+mi,label:(d===0?'本日':d===1?'明日':mdLabel(ds))+' '+hh+':'+mi});}}}}catch(e){}return out;}
 function stepStaff(){
   const cartIds=state.cart.map(x=>x.id);
   const eligible=p=>p.id==='s0'?true:(!p.hidden&&(p.services||[]).length>0&&cartIds.every(id=>(p.services||[]).includes(id)));
@@ -1614,7 +1622,7 @@ function stepDate(){
   if(state.bookMode==='pair')return stepDatePair();
   const sid=state.b.staff.id;const m=state.calMonth,y=m.getFullYear(),mo=m.getMonth();const startDow=new Date(y,mo,1).getDay(),days=new Date(y,mo+1,0).getDate();const canPrev=!(y===today.getFullYear()&&mo===today.getMonth());
   let cells='';['日','月','火','水','木','金','土'].forEach((d,i)=>cells+=`<div class="cal-dow ${i===0?'sun':''}">${d}</div>`);for(let i=0;i<startDow;i++)cells+='<div></div>';
-  for(let d=1;d<=days;d++){const dd=new Date(y,mo,d);const ds=fmtDate(dd);const closedDay=salonClosed(ds)||(sid!=='s0'?!staffWorks(sid,ds):!anyStaffWorks(ds));const dis=dd<today?'dis':(closedDay?'closed':'');const sel=state.b.date===ds?'sel':'';cells+=`<button type="button" class="cal-day ${dis} ${sel}" ${dis?'disabled aria-disabled="true"':`data-date="${ds}"`} aria-label="${mdLabel(ds)}${dis?' 予約不可':' 予約可能'}" ${sel?'aria-pressed="true"':''}>${d}</button>`}
+  for(let d=1;d<=days;d++){const dd=new Date(y,mo,d);const ds=fmtDate(dd);const closedDay=salonClosed(ds)||(sid!=='s0'?!staffWorks(sid,ds):!anyStaffWorks(ds));const dis=dd<today?'dis':(closedDay?'closed':'');const avail=(!dis&&!closedDay)?'avail':'';const sel=state.b.date===ds?'sel':'';cells+=`<button type="button" class="cal-day ${dis} ${avail} ${sel}" ${dis?'disabled aria-disabled="true"':`data-date="${ds}"`} aria-label="${mdLabel(ds)}${dis?' 予約不可':' 予約可能'}" ${sel?'aria-pressed="true"':''}>${d}</button>`}
   let slotHtml='';
   if(state.b.date){
     const totalMin=state.cart.reduce((s,x)=>s+(x.min||0),0);
@@ -1633,10 +1641,10 @@ function stepDate(){
     const slotsBlock=shown?`<div class="slots">${opts}</div>`:'<div class="note">この日にご予約いただける時間がありません。別の日をお選びください。</div>';
     slotHtml=`<div class="slot-wrap"><div class="slot-label">開始時間（21:00までに終わる枠のみ・ご予約は3時間前まで）</div>${slotsBlock}<div class="note" style="margin-top:8px">選択中のメニュー所要 約${totalMin}分。本日分は現在時刻の3時間後以降のみご予約いただけます。</div></div>`;
   }
-  app.innerHTML=stepsBar(2)+`<div class="fade"><div class="eyebrow">Step 03</div><div class="h-title">${t('selectDate')}</div><div class="h-sub">${state.b.staff.name} ／ 営業 9:00〜（最終受付 21:00）・火曜定休</div><div class="cal"><div class="cal-head"><button class="cal-nav" id="prev" ${canPrev?'':'disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><div class="cal-title">${y}年 ${mo+1}月</div><button class="cal-nav" id="nextm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></div><div class="cal-grid">${cells}</div><div class="cal-legend">グレーの日は定休日・スタッフのお休みです</div></div>${slotHtml}</div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">${t('backBtn')}</button><button class="btn btn-primary" id="next" ${state.b.date&&state.b.time?'':'disabled'}>${t('ctaNextInfo')}</button></div>`;
+  app.innerHTML=stepsBar(2)+`<div class="fade"><div class="eyebrow">Step 03</div><div class="h-title">${t('selectDate')}</div><div class="h-sub">${state.b.staff.name} ／ 営業 9:00〜（最終受付 21:00）・火曜定休</div><div class="cal"><div class="cal-head"><button class="cal-nav" id="prev" ${canPrev?'':'disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><div class="cal-title">${y}年 ${mo+1}月</div><button class="cal-nav" id="nextm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></div>${(()=>{const sid=(state.b.staff&&state.b.staff.id)||'s0';const c3=next3Slots(sid);if(!c3.length)return '';return `<div class="quick3"><div class="q3-h">🕐 最短のご予約候補</div><div class="q3-btns">`+c3.map(x=>`<button type="button" class="q3-btn" data-q3="${x.date}|${x.time}">${x.label}〜</button>`).join('')+`</div></div>`;})()}<div class="cal-grid">${cells}</div><div class="cal-legend">🟡 空きあり／🔵 選択中／グレー＝定休・お休み</div></div>${slotHtml}</div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">${t('backBtn')}</button><button class="btn btn-primary" id="next" ${state.b.date&&state.b.time?'':'disabled'}>${t('ctaNextInfo')}</button></div>`;
   const pv=byId('prev');if(pv&&canPrev)pv.onclick=()=>{state.calMonth=new Date(y,mo-1,1);render()};byId('nextm').onclick=()=>{state.calMonth=new Date(y,mo+1,1);render()};
   app.querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>{state.b.date=b.dataset.date;state.b.time=null;render()});
-  app.querySelectorAll('.slot[data-slot]').forEach(b=>b.onclick=()=>{state.b.time=b.dataset.slot;render()});
+  app.querySelectorAll('.slot[data-slot]').forEach(b=>b.onclick=()=>{state.b.time=b.dataset.slot;render()});app.querySelectorAll('[data-q3]').forEach(b=>b.onclick=()=>{const p=b.dataset.q3.split('|');state.b.date=p[0];state.b.time=p[1];render();window.scrollTo(0,0);});
   byId('back').onclick=()=>{state.step=1;render()};byId('next').onclick=()=>{state.step=3;render()};
 }
 function itemsLines(staffId){return state.cart.map(x=>`${itemName(x)} <span class="sub">${yen(priceFor(x.id,staffId))}</span>`).join('<br>')}
@@ -1748,7 +1756,7 @@ function stepDatePair(){
   app.innerHTML=stepsBar(2)+`<div class="fade"><div class="eyebrow">Step 03</div><div class="h-title">${t('selectDate')}</div><div class="h-sub">👥 ${state.staffA.name}（お一人目）＋ ${state.staffB.name}（お二人目）</div>${warnPair}<div class="cal"><div class="cal-head"><button class="cal-nav" id="prev" ${canPrev?'':'disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><div class="cal-title">${y}年 ${mo+1}月</div><button class="cal-nav" id="nextm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></div><div class="cal-grid">${cells}</div><div class="cal-legend">グレーの日はおふたりのどちらかがお休みです</div></div>${slotHtml}</div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">${t('backBtn')}</button><button class="btn btn-primary" id="next" ${state.b.date&&state.b.time?'':'disabled'}>${t('ctaNextInfo')}</button></div>`;
   const pv=byId('prev');if(pv&&canPrev)pv.onclick=()=>{state.calMonth=new Date(y,mo-1,1);render()};byId('nextm').onclick=()=>{state.calMonth=new Date(y,mo+1,1);render()};
   app.querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>{state.b.date=b.dataset.date;state.b.time=null;render()});
-  app.querySelectorAll('.slot[data-slot]').forEach(b=>b.onclick=()=>{state.b.time=b.dataset.slot;render()});
+  app.querySelectorAll('.slot[data-slot]').forEach(b=>b.onclick=()=>{state.b.time=b.dataset.slot;render()});app.querySelectorAll('[data-q3]').forEach(b=>b.onclick=()=>{const p=b.dataset.q3.split('|');state.b.date=p[0];state.b.time=p[1];render();window.scrollTo(0,0);});
   byId('back').onclick=()=>{state.step=1;render()};byId('next').onclick=()=>{state.step=3;render()};
 }
 function stepInfoPair(){
