@@ -875,6 +875,13 @@ button{white-space:normal}
 .ft-acc[open] .ft-arrow{transform:rotate(180deg)}
 .shiftsubmit{background:var(--gold-bg);border:1.5px solid var(--gold-soft);border-radius:12px;padding:12px;margin-bottom:12px}
 .slot,.cal-day{font-family:inherit;cursor:pointer;background:none}.slot[disabled],.cal-day[disabled]{cursor:default}
+.nav{display:flex;gap:4px;padding:5px;background:var(--paper-2);border:1px solid var(--line);border-radius:14px;margin:18px auto 12px;max-width:520px;justify-content:space-between}
+.nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;border:none;background:none;font-family:inherit;font-size:11px;font-weight:700;padding:8px 4px;border-radius:10px;cursor:pointer;color:var(--ink-soft)}
+.nav button .nv-ic{font-size:19px}
+.nav button.active{background:var(--navy);color:#fff}
+.moremenu{max-width:520px;margin:0 auto 20px;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.moremenu button{display:block;width:100%;text-align:left;border:none;background:#fff;border-bottom:1px solid var(--paper-2);padding:14px 16px;font-family:inherit;font-size:14px;font-weight:600;color:var(--navy);cursor:pointer}
+.moremenu button:last-child{border-bottom:none}
 </style>
 </head>
 <body>
@@ -883,15 +890,7 @@ button{white-space:normal}
     <button class="hdr-share" id="hdr-share" title="友だち・家族に教える">💌 教える</button><div class="brand" id="brandHome" style="cursor:pointer">Vi5<span class="dot">.</span></div>
     <button class="acct" id="acctbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span class="acctcol"><span id="acctlbl">マイページ</span><span class="acctpts" id="acctpts"></span></span><span class="acctbadge" id="acctbadge" style="display:none"></span></button>
     <div class="tagline" id="tagline" style="display:none"></div>
-    <nav class="nav" id="nav">
-      <button data-view="home" class="active">ホーム</button>
-      <button data-view="book">予約</button>
-      <button data-view="course">講習</button>
-      <button data-view="shop">ショップ</button>
-      <button data-view="board">紹介ボード</button>
-      <button data-view="staff">スタッフ紹介</button>
-      <button data-view="care">ケア・同意書</button>
-    </nav>
+    <nav class="nav" id="nav"><button data-view="home" class="active" aria-label="ホーム"><span class="nv-ic">🏠</span><span class="nv-t">ホーム</span></button><button data-view="book" aria-label="予約"><span class="nv-ic">📅</span><span class="nv-t">予約</span></button><button data-view="mypage" aria-label="マイページ"><span class="nv-ic">👤</span><span class="nv-t">マイページ</span></button><button data-nav="line" aria-label="公式LINE"><span class="nv-ic">💬</span><span class="nv-t">LINE</span></button><button data-nav="more" aria-label="その他メニュー"><span class="nv-ic">⋯</span><span class="nv-t">その他</span></button></nav><div class="moremenu" id="moremenu" style="display:none"><button data-view="course">🎓 講習・スクール</button><button data-nav="shopx">🛍 オンラインショップ</button><button data-view="board">📌 紹介ボード</button><button data-view="staff">💇 スタッフ紹介</button><button data-view="care">📄 ケア・同意書</button></div>
     <button class="topback" id="backbtn" style="display:none">← 戻る</button>
   </header>
   <main id="app"></main>
@@ -1247,7 +1246,7 @@ const optTotal=arr=>optItemsOf(arr).reduce((s,o)=>s+(o.price||0),0);
 const optChips=(arr,attr)=>{const list=(S().options||[]);if(!list.length)return '<div class="note" style="margin:0">追加できるオプションはありません。</div>';return `<div class="optchips">${list.map(o=>`<button class="optchip ${(arr||[]).includes(o.id)?'on':''}" data-${attr}="${o.id}">${o.name}<span>${o.price?'+'+yen(o.price):'無料'}${o.min?'・'+o.min+'分':''}</span></button>`).join('')}</div>`};
 const nav=byId('nav');
 function unreadCount(){if(!state.mpPhone)return 0;const c=DATA.customers[normPhone(state.mpPhone)];return c?(c.notices||[]).filter(n=>!n.read).length:0}
-function updateNav(){const map={home:'nav_home',book:'nav_book',board:'nav_board',shop:'nav_shop'};nav.querySelectorAll('button').forEach(b=>{b.classList.toggle('active',b.dataset.view===state.view);if(map[b.dataset.view])b.textContent=t(map[b.dataset.view])});
+function updateNav(){nav.querySelectorAll('button').forEach(b=>{b.classList.toggle('active',b.dataset.view===state.view)});
   const acct=byId('acctbtn');if(acct)acct.classList.toggle('active',state.view==='mypage');
   const lbl=byId('acctlbl');const pts=byId('acctpts');const c=state.mpPhone&&DATA.customers[normPhone(state.mpPhone)];if(lbl)lbl.textContent=c?(c.name+t('sama')):t('account');if(pts)pts.textContent=c?('★ '+pointBalance(c.phone).toLocaleString()+'pt'):'';
   const bd=byId('acctbadge');if(bd){const u=unreadCount();if(u){bd.style.display='inline-grid';bd.textContent=u}else bd.style.display='none'}
@@ -3266,7 +3265,7 @@ function exportCSV(){
   const esc=v=>'"'+String(v).replace(/"/g,'""')+'"';const csv='\uFEFF'+[head,...rows].map(r=>r.map(esc).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='vi5_予約一覧.csv';a.click();
 }
 /* ===== init ===== */
-nav.querySelectorAll('button').forEach(b=>b.onclick=()=>{if(b.dataset.view==='shop'){const u=(S().shopUrl)||'';if(u)window.open(u,'_blank');else alert('オンラインショップのURLが未設定です。サロン管理 → ホーム表示 → オンラインショップURL からご登録ください。');return;}if(b.dataset.view==='course'){const u=(S().courseUrl)||'';if(u){window.open(u,'_blank');return;}}go(b.dataset.view)});
+[...(nav?nav.querySelectorAll('button'):[]),...document.querySelectorAll('#moremenu button')].forEach(b=>b.onclick=()=>{const nv=b.dataset.nav;if(nv==='line'){const u=(S().lineUrl)||'';if(u)window.open(u,'_blank');else alert('公式LINEのURLが未設定です。');return;}if(nv==='more'){const mm=byId('moremenu');if(mm)mm.style.display=mm.style.display==='none'?'block':'none';return;}if(nv==='shopx'){const u=(S().shopUrl)||'';if(u)window.open(u,'_blank');else alert('オンラインショップのURLが未設定です。');return;}if(b.dataset.view==='shop'){const u=(S().shopUrl)||'';if(u)window.open(u,'_blank');else alert('オンラインショップのURLが未設定です。');return;}if(b.dataset.view==='course'){const u=(S().courseUrl)||'';if(u){window.open(u,'_blank');return;}}if(byId('moremenu'))byId('moremenu').style.display='none';go(b.dataset.view)});app.querySelectorAll('#moremenu button').forEach&&0;
 const staffBtn=byId('staff-entry');if(staffBtn)staffBtn.onclick=()=>go('admin');
 const backBtn=byId('backbtn');if(backBtn)backBtn.onclick=goBack;const _hsh=byId('hdr-share');if(_hsh)_hsh.onclick=shareSalon;
 const acctBtn=byId('acctbtn');if(acctBtn)acctBtn.onclick=()=>go('mypage');
