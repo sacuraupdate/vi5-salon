@@ -903,6 +903,9 @@ button{white-space:normal}
 .pwwrap input{width:100%;padding-right:44px}
 .pwtoggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;cursor:pointer;padding:6px}
 .regsub{background:#fff;color:var(--navy);border:1.5px solid var(--gold);font-weight:700}
+.menusearch{margin:6px 0 12px}
+.menusearch input{width:100%;font-family:inherit;font-size:15px;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff}
+.menusearch input:focus{border-color:var(--gold);outline:none}
 </style>
 </head>
 <body>
@@ -1569,9 +1572,9 @@ function stepBrowse(){
   const cur=state.openCat||'all';
   let fav='';
   if(state.mpPhone){const ids=favServiceIds(state.mpPhone).slice(0,3).filter(id=>svById(id));if(ids.length&&cur==='all')fav=`<div class="fav-label">よく選ぶメニュー</div>${ids.map(id=>menuItemHtml(svById(id))).join('')}<div style="height:8px"></div>`;}
-  let listHtml=promoCardHtml();
+  const _mq=(state.menuQuery||'').trim();const _match=s=>!_mq||((s.name||'')+(s.desc||'')).toLowerCase().includes(_mq.toLowerCase());let listHtml=promoCardHtml();
   if(cur==='all'){
-    categories.forEach(c=>{let items=services.filter(s=>s.cat===c.id);if(!items.length)return;const sel=state.cart.filter(x=>x.cat===c.id).length;listHtml+=`<div class="subhead" style="margin-top:14px">${c.label}${sel?` <span style="color:var(--gold);font-size:11px;font-weight:700">選択中 ${sel}</span>`:''}</div>`+items.map(menuItemHtml).join('')});
+    categories.forEach(c=>{let items=services.filter(s=>s.cat===c.id&&_match(s));if(!items.length)return;const sel=state.cart.filter(x=>x.cat===c.id).length;listHtml+=`<div class="subhead" style="margin-top:14px">${c.label}${sel?` <span style="color:var(--gold);font-size:11px;font-weight:700">選択中 ${sel}</span>`:''}</div>`+items.map(menuItemHtml).join('')});
   }else if(cur==='mens'){
     let items=services.filter(isMens);listHtml=items.length?items.map(menuItemHtml).join(''):'<div class="empty">メンズにおすすめのメニューがありません</div>';
   }else{
@@ -1585,11 +1588,11 @@ function stepBrowse(){
   const chipHtml=`<div class="gfilter">${chips.map(x=>`<button data-fc="${x[0]}" class="${cur===x[0]?'active':''}">${x[1]}</button>`).join('')}</div>`;
   const modeBar=`<div class="bookmode"><button class="${state.bookMode==='single'?'on':''}" data-bookmode="single">お一人で予約</button><button class="${state.bookMode==='pair'?'on':''}" data-bookmode="pair">👥 おふたりで予約</button></div>`;
   const pairBanner=state.bookMode==='pair'?`<div class="pairbanner">👥 おふたりでご予約 ・ <b>${state.pairPerson===1?'お一人目':'お二人目'}</b>のメニュー${state.pairPerson===2&&state.pairA?`<span class="pb-a">お一人目：${state.pairA.cart.map(x=>itemName(x)).join('・')||'(未選択)'} ／ ${state.pairA.staff.name}</span>`:''}</div>`:'';
-  app.innerHTML=`<div class="fade"><div class="eyebrow">Step 01</div><div class="h-title">${t('selectMenu')}</div><div class="h-sub">${t('menuSub')}</div>${modeBar}${pairBanner}${selChips}${fav}${listHtml}${addHtml}</div>`+cartBar(t('ctaNextStaff'),state.cart.length>0);
+  app.innerHTML=`<div class="fade"><div class="eyebrow">Step 01</div><div class="h-title">${t('selectMenu')}</div><div class="h-sub">${t('menuSub')}</div>${modeBar}${pairBanner}<div class="menusearch"><input id="menu-q" type="search" value="${(state.menuQuery||'').replace(/"/g,'&quot;')}" placeholder="🔍 メニュー名で検索（例：まつげ、眉、ピーリング）" aria-label="メニュー検索"></div>${selChips}${fav}${listHtml}${_mq&&!/選択中/.test(listHtml)&&listHtml.indexOf('menu-item')<0?'<div class="empty">「'+_mq+'」に一致するメニューがありません</div>':''}${addHtml}</div>`+cartBar(t('ctaNextStaff'),state.cart.length>0);
   app.querySelectorAll('[data-bookmode]').forEach(b=>b.onclick=()=>{const mode=b.dataset.bookmode;if(mode==='pair'){state.bookMode='pair';state.cartA=[...state.cart];state.cartB=[];state.staffA=state.b.staff;state.staffB=null;state.optA=[];state.optB=[];state.pairEditing='A';}else{state.bookMode='single';}render();window.scrollTo(0,0)});
   app.querySelectorAll('[data-fc]').forEach(b=>b.onclick=()=>{state.openCat=b.dataset.fc==='all'?null:b.dataset.fc;state.menuOpen=null;render();window.scrollTo(0,0)});
   app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{state.cart=state.cart.filter(x=>x.id!==b.dataset.rm);render()});
-  app.querySelectorAll('[data-mexp]').forEach(r=>r.onclick=e=>{e.stopPropagation();state.menuOpen=state.menuOpen===r.dataset.mexp?null:r.dataset.mexp;render()});app.querySelectorAll('[data-mpick]').forEach(r=>r.onclick=()=>{const id=r.dataset.mpick;inCart(id)?state.cart=state.cart.filter(x=>x.id!==id):state.cart.push(svById(id));render()});app.querySelectorAll('[data-cattg]').forEach(el=>el.onclick=()=>{state.catOpen=state.catOpen||{};state.catOpen[el.dataset.cattg]=!state.catOpen[el.dataset.cattg];render()});
+  app.querySelectorAll('[data-mexp]').forEach(r=>r.onclick=e=>{e.stopPropagation();state.menuOpen=state.menuOpen===r.dataset.mexp?null:r.dataset.mexp;render()});app.querySelectorAll('[data-mpick]').forEach(r=>r.onclick=()=>{const id=r.dataset.mpick;const _mqe=byId('menu-q');if(_mqe)_mqe.oninput=e=>{state.menuQuery=e.target.value;render();const el=byId('menu-q');if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length);}catch(_){}}};inCart(id)?state.cart=state.cart.filter(x=>x.id!==id):state.cart.push(svById(id));render()});app.querySelectorAll('[data-cattg]').forEach(el=>el.onclick=()=>{state.catOpen=state.catOpen||{};state.catOpen[el.dataset.cattg]=!state.catOpen[el.dataset.cattg];render()});
   app.querySelectorAll('[data-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();const id=b.dataset.add;inCart(id)?state.cart=state.cart.filter(x=>x.id!==id):state.cart.push(svById(id));render()});
   const n=byId('next');if(n)n.onclick=()=>{state.step=1;render()};
 }
