@@ -1881,15 +1881,7 @@ function stepDone(){
 }
 
 /* ===== マイページ ===== */
-async function doCustomerLogin(phone,pw){
-  const j=await api({action:'customer',phone:normPhone(phone),password:pw});
-  DATA=j.data;services=DATA.services;staff=DATA.staff;
-  const c=DATA.customers[normPhone(phone)];
-  state.mpPhone=c.phone;state.loginFull=false;
-  localSet('salon:session',c.phone);localSet('salon:custpw',pw);
-  localSet('salon:knownphone',c.phone);localSet('salon:knownname',c.name);
-  render();
-}
+async function doCustomerLogin(phone,pw){const P=normPhone(phone);try{const j=await api({action:'customer',phone:P,password:pw});DATA=j.data;services=DATA.services;staff=DATA.staff;}catch(e){if(e&&e.status===401)throw e;let d=null;try{d=await directLoad();}catch(_e){}if(!d||!d.customers)throw (e||new Error('net'));const cc=d.customers[P];if(!cc)throw Object.assign(new Error('nocust'),{status:404});if(String(cc.password==null?'':cc.password)!==String(pw))throw Object.assign(new Error('badpw'),{status:401});DATA=d;services=DATA.services;staff=DATA.staff;}const c=DATA.customers[P];if(!c)throw Object.assign(new Error('nocust'),{status:404});state.mpPhone=c.phone;state.loginFull=false;localSet('salon:session',c.phone);localSet('salon:custpw',pw);localSet('salon:knownphone',c.phone);localSet('salon:knownname',c.name);render();}
 function startBooking(){
   state.bookMode='single';state.pairPerson=1;state.pairA=null;state.cart=[];state.cartA=[];state.cartB=[];state.staffA=null;state.staffB=null;state.optA=[];state.optB=[];state.pairEditing='A';state.b.options=[];state.b.usePoints=0;state.b.companions=[];state.b.haste='';state.openCat=null;state.step=0;
   if(state.mpPhone){const c=DATA.customers[normPhone(state.mpPhone)];if(c){state.b.name=c.name;state.b.phone=c.phone;}}
