@@ -146,7 +146,7 @@ header{padding:26px 0 8px;text-align:center;position:relative;}
 .sum-row{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}
 .sum-row:last-child{border-bottom:none}.sum-row .k{color:var(--ink-soft);font-size:12.5px;white-space:nowrap}.sum-row .v{font-weight:600;text-align:right}
 .sum-list{font-weight:600;text-align:right;line-height:1.7}.sum-list .sub{font-weight:400;color:var(--ink-soft);font-size:12px}.sum-total .v{font-family:"Fraunces",serif;font-size:21px;color:var(--navy)}.sum-row .v.disc{color:var(--rose)}.sum-row .v.pt{color:var(--gold)}
-.terms{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:11.5px;color:var(--ink-soft);line-height:1.7;max-height:150px;overflow-y:auto;margin-bottom:12px}.terms b{color:var(--navy);display:block;margin-bottom:6px;font-size:12px}
+.terms{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;font-size:13.5px;color:var(--ink);line-height:1.9;max-height:340px;overflow-y:auto;margin-bottom:12px}.terms b{color:var(--navy);display:block;margin-bottom:6px;font-size:12px}
 .agree{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:600;margin-bottom:6px}
 .agree .box{width:22px;height:22px;border-radius:7px;border:1.5px solid var(--line);display:grid;place-items:center;flex-shrink:0;transition:all .2s}
 .agree.on .box{background:var(--navy);border-color:var(--navy)}.agree .box svg{width:13px;height:13px;stroke:#fff;stroke-width:3;opacity:0;transition:opacity .2s}.agree.on .box svg{opacity:1}
@@ -914,6 +914,7 @@ button{white-space:normal}
 .quick3 .q3-h{font-size:12px;font-weight:800;color:var(--gold-deep);margin-bottom:8px}
 .quick3 .q3-btns{display:flex;gap:8px;flex-wrap:wrap}
 .quick3 .q3-btn{background:#fff;border:1.5px solid var(--gold);color:var(--navy);border-radius:100px;padding:8px 14px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.cancel-note{background:#FFF1EF;border:1px solid var(--rose);border-radius:10px;padding:10px 14px;margin:6px 0 12px;font-size:13.5px;color:var(--rose);font-weight:600}
 </style>
 </head>
 <body>
@@ -1670,7 +1671,7 @@ function stepInfo(){
     <div class="field"><label>同伴について <span class="opt">(該当があれば選択)</span></label><div class="chips">${chips}</div></div>
     <div class="field"><label>オプション <span class="opt">(必要に応じて追加)</span></label>${optChips(b.options,'opt')}</div>
     <div class="field"><label>ご要望・ご連絡事項 <span class="opt">(任意)</span></label><textarea id="f-note" placeholder="アレルギー、当日のご希望、その他お伝えしたいことがあればご記入ください。">${b.note||''}</textarea></div>
-    <div class="field"><label>同意書</label><div class="terms"><b>ご予約・施術に関する同意事項</b>${TERMS.split('\n').join('<br>')}</div><div class="agree ${b.agreed?'on':''}" id="agree"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>上記に同意して予約します</div></div>
+    <div class="cancel-note">🕐 ご予約の<b>変更・キャンセルは前日の21時まで</b>、マイページから承ります。</div><div class="field"><label>同意書</label><div class="terms"><b>ご予約・施術に関する同意事項</b>${TERMS.split('\n').join('<br>')}</div><div class="agree ${b.agreed?'on':''}" id="agree"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>上記に同意して予約します</div></div>
   </div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">戻る</button><button class="btn btn-primary" id="confirm" ${b.agreed?'':'disabled'}>この内容で予約する</button></div>`;
   byId('f-name').oninput=e=>state.b.name=e.target.value;
   byId('f-phone').oninput=e=>{state.b.phone=e.target.value;const c=DATA.customers[normPhone(e.target.value)];if(c)state.b.name=c.name;softInfo()};
@@ -2384,15 +2385,15 @@ function adminShop(){
   <div class="tkform" style="margin-top:10px"><input id="shop-name" placeholder="商品名"><div style="display:flex;gap:8px"><select id="shop-type"><option value="oos">🔴 欠品</option><option value="price">💰 価格変更</option><option value="new">🆕 新商品</option><option value="end">🗑 販売終了</option><option value="rec">⭐ おすすめ</option></select></div><input id="shop-note" placeholder="メモ（新価格・入荷予定・おすすめ理由など）"><button class="btn btn-primary" id="shop-add">1件 登録する</button></div>
   <div class="subhead" style="margin:14px 0 8px">対応中（${open.length}件）</div>${open.length?open.map(row).join(''):'<div class="empty">対応待ちはありません🎉</div>'}
   ${done.length?`<div class="subhead" style="margin:14px 0 8px">完了ずみ</div>${done.map(row).join('')}`:''}`;}
-const INTRO_VER='2';
+const INTRO_VER='3';
 function renderIntro(){
   const secs=[
    ["📱","まずはアプリを入れよう","このページをスマホのホーム画面に追加すると、アプリのように使えます。iPhoneは共有ボタン→「ホーム画面に追加」、Androidはメニュー→「ホーム画面に追加」。追加したアイコンから開いて、設定で通知をオンにしてください。"],
    ["👤","まず「担当者」を選ぶ","管理画面に入ったら、上の「担当を変更」から必ず自分の名前を選んでください。誰が操作したか記録され、給与や打刻が正しく反映されます。"],
-   ["⏰","毎日の流れ（打刻）","出勤（店舗 or 在宅を選ぶ）→ 休憩（何回でもOK）→ 業務報告 → 退勤。打刻はすべてこのアプリで行います（Squareは不要）。在宅は自動で手当がつきます。"],
-   ["💬","連絡はチャットで","スタッフの連絡はすべて「💬チャット」で行います（LINEのように使えます・画像/既読/スタンプ対応）。専用チャットやBiyoWorkはもう使いません。"],
+   ["⏰","打刻はこのアプリに一本化","Squareでの打刻は終了しました。打刻・休憩・退勤はすべてこのアプリで行います。休憩は必要なだけ何回でも記録OK。「在宅中」「休憩中」などの古いステータスボタンは使いません。"],
+   ["💬","連絡はこのアプリのチャットに統一","スタッフの連絡はすべて「💬チャット」で（LINEのように使えます・画像/既読/スタンプ）。Vi5 Work・旧専用チャット・BiyoWorkはもう使いません。すべてこのアプリに統一します。"],
    ["✅","タスクを確認","「✅タスク」に、毎日のタスクと自分の個人タスクがあります。未完了は一覧の左のチェックで完了できます。期日が近いものは赤く表示されます。"],
-   ["📅","シフトは20日まで","翌月のシフトは前月20日までに入力。「シフト→🎤音声」で話すだけでも入力でき、Googleカレンダーにも自動反映されます。未提出だとタブに印がつきます。"],
+   ["📅","シフトは前月20日まで＋提出","翌月のシフトは前月20日までに入力し、「📤自分のシフトを提出」を押すと自分の分だけGoogleカレンダーに自動反映されます（音声入力もOK）。未提出だとタブに印がつきます。"],
    ["🛍","ショップは週1更新","「🛍ショップ」で欠品・価格変更を管理。週1回は必ず更新。やり方（ChatGPTのプロンプト）も画面内にあります。"],
    ["💴","給与・明細","「💴給与」は自分のパスワードで保護。打刻から自動計算され、毎月10日にお支払い、確定はオーナーです。交通費・購入品はここで申告します。"],
    ["❓","困ったら","各ページの上に「使い方」の説明が出ます。まず画面の説明を読めば、たいていのことは分かるようになっています😊"]
