@@ -7,6 +7,16 @@ const SECRET_PW = '5555';
 const SUPA_URL = 'https://tehcaufdztgpbrknpshk.supabase.co';
 const SUPA_KEY = 'sb_publishable_CnOCyO9QU69K47vbbLRkYg__cEv53CJ';
 
+function classify(name){const n=String(name||'');
+  const R=[[/UV|日焼|サンスクリーン|BBクリーム/i,'UV対策'],
+  [/シャンプー|トリートメント|ヘアオイル|ヘアミルク|頭皮|スカルプ|ヘアケア|つるりん/i,'ヘアケア'],
+  [/ドライヤー|アイロン|美顔器|脱毛|MYTREX|マイトレックス|ヤーマン|KINUJO|絹女|リフト|EMS|スチーマー|ブラシ/i,'美容機器'],
+  [/ファンデ|リップ|アイシャドウ|アイライナー|マスカラ|チーク|コンシーラー|下地|パウダー|メイク/i,'メイク'],
+  [/サプリ|酵素|ファスティング|プロテイン|茶|ドリンク|インナー|エステプロ|Esthe Pro|ハーブ/i,'インナーケア'],
+  [/フェム|デリケート/i,'フェムケア'],
+  [/チケット|ギフト|回数券/i,'ギフト・チケット'],
+  [/化粧水|美容液|クリーム|乳液|パック|洗顔|クレンジング|セラム|ローション|エッセンス|スキンケア|V3|エクソソーム/i,'スキンケア']];
+  for(const[r,c]of R)if(r.test(n))return c;return 'その他';}
 function dec(s){return String(s||'').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'");}
 function parseList(html, origin, secret) {
   const out = [];
@@ -106,8 +116,8 @@ module.exports = async (req, res) => {
     for (const it of pub.concat(sec)) {
       if (!it.name && !it.img) continue;
       const ex = d.eshop.products.find(p => p.baseId === it.baseId);
-      if (ex) { if (it.name) ex.name = it.name; if (it.price) ex.price = it.price; if (it.img) ex.img = it.img; ex.url = it.url; updated++; }
-      else { d.eshop.products.push({ id: 'ep' + it.baseId, baseId: it.baseId, name: it.name, price: it.price, img: it.img, url: it.url, cat: it.secret ? '限定' : '', pw: it.secret ? SECRET_PW : '' }); added++; }
+      if (ex) { if (it.name) ex.name = it.name; if (it.price) ex.price = it.price; if (it.img) ex.img = it.img; ex.url = it.url; if (!ex.cat) ex.cat = it.secret ? '限定' : classify(it.name); updated++; }
+      else { d.eshop.products.push({ id: 'ep' + it.baseId, baseId: it.baseId, name: it.name, price: it.price, img: it.img, url: it.url, cat: it.secret ? '限定' : classify(it.name), pw: it.secret ? SECRET_PW : '' }); added++; }
     }
     d.eshop.syncedAt = Date.now();
     if (added || updated) await saveData(d);
