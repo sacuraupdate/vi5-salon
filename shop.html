@@ -116,7 +116,9 @@ async function load(){
   try{const d=await kv('salon:data');PRODUCTS=((d&&d.eshop&&d.eshop.products)||[]).filter(p=>!p.hide);}catch(e){}
   byId('loading').textContent=PRODUCTS.length?'':'';
   draw();
-  if(!PRODUCTS.length)ensureSync();
+  if(!PRODUCTS.length){ensureSync();}
+  else{try{const uncat=PRODUCTS.filter(p=>!p.cat||p.cat==='その他').length;
+    if(uncat>PRODUCTS.length*0.5&&!sessionStorage.getItem('vi5shop:recat')){sessionStorage.setItem('vi5shop:recat','1');fetch('/api/base-sync').then(async()=>{const d=await kv('salon:data');PRODUCTS=((d&&d.eshop&&d.eshop.products)||[]).filter(p=>!p.hide);draw();}).catch(()=>{});}}catch(e){}}
 }
 async function ensureSync(){
   const st=byId('loading');
@@ -135,7 +137,8 @@ async function ensureSync(){
 }
 function visible(p){return !p.pw||unlocked.includes(String(p.pw))}
 function draw(){
-  const cats=[...new Set(PRODUCTS.filter(visible).map(p=>p.cat).filter(Boolean))];
+  const _cc={};PRODUCTS.filter(visible).forEach(p=>{if(p.cat)_cc[p.cat]=(_cc[p.cat]||0)+1;});
+  const cats=Object.keys(_cc).sort((a,b)=>_cc[b]-_cc[a]);
   byId('cats').innerHTML=[['all','すべて'],...cats.map(c=>[c,c])].map(x=>`<button data-c="${x[0]}" class="${cat===x[0]?'on':''}">${x[1]}</button>`).join('');
   document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{cat=b.dataset.c;draw()});
   const locked=PRODUCTS.filter(p=>p.pw&&!visible(p)).length;
