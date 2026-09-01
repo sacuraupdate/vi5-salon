@@ -85,7 +85,7 @@ header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.94);backdro
 </div>
 <div class="wrap">
   <input class="search" id="q" type="search" placeholder="🔍 商品名で検索">
-  <div class="cats" id="cats"></div>
+  <div class="cats" id="cats"></div><div class="cats" id="sorts" style="padding-bottom:6px"></div>
   <div class="lock" id="lockbox" style="display:none">
     <b>🔒 限定商品があります（<span id="lockn"></span>点）</b>
     <p>パスワードをお持ちの方は入力すると表示されます。</p>
@@ -107,7 +107,8 @@ header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.94);backdro
 const SUPA='https://tehcaufdztgpbrknpshk.supabase.co';
 const KEY='sb_publishable_CnOCyO9QU69K47vbbLRkYg__cEv53CJ';
 const H={apikey:KEY,Authorization:'Bearer '+KEY};
-let PRODUCTS=[],cart=[],unlocked=[],cat='all',q='',method='store',view='cart';
+let PRODUCTS=[],cart=[],unlocked=[],cat='all',q='',method='store',view='cart',sort='rec',detailId=null;
+try{const sv=JSON.parse(localStorage.getItem('vi5shop:cust')||'{}');if(sv.name)var _pre=sv;}catch(e){}
 const yen=n=>'¥'+Number(n||0).toLocaleString();
 const byId=i=>document.getElementById(i);
 async function kv(key){const r=await fetch(SUPA+'/rest/v1/kv?key=eq.'+key+'&select=value',{headers:H});if(!r.ok)throw 0;const j=await r.json();if(!j.length)return null;let v=j[0].value;for(let i=0;i<4;i++){if(typeof v==='string'){try{v=JSON.parse(v);continue}catch(e){break}}if(Array.isArray(v)){v=v[0];continue}break}return v}
@@ -139,22 +140,27 @@ function draw(){
   document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{cat=b.dataset.c;draw()});
   const locked=PRODUCTS.filter(p=>p.pw&&!visible(p)).length;
   byId('lockbox').style.display=locked?'':'none';byId('lockn').textContent=locked;
-  const list=PRODUCTS.filter(visible).filter(p=>cat==='all'||p.cat===cat).filter(p=>!q||(p.name||'').toLowerCase().includes(q));
+  byId('sorts').innerHTML=[['rec','おすすめ順'],['low','価格が安い順'],['high','価格が高い順']].map(x=>`<button data-s="${x[0]}" class="${sort===x[0]?'on':''}">${x[1]}</button>`).join('');
+  document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{sort=b.dataset.s;draw()});
+  let list=PRODUCTS.filter(visible).filter(p=>cat==='all'||p.cat===cat).filter(p=>!q||(p.name||'').toLowerCase().includes(q));
+  if(sort==='low')list=list.slice().sort((a,b)=>(a.price||0)-(b.price||0));
+  if(sort==='high')list=list.slice().sort((a,b)=>(b.price||0)-(a.price||0));
   byId('grid').innerHTML=list.map(p=>{
-    const n=cart.filter(x=>x.id===p.id).length;
-    return `<div class="card"><div class="im" style="background-image:url('${(p.img||'').replace(/'/g,'%27')}')"></div><div class="bd">
-    ${p.pw?'<span class="lk">🔒 限定</span>':''}<div class="nm">${p.name||''}</div>
+    const it=cart.find(x=>x.id===p.id);
+    return `<div class="card"><div class="im" data-d="${p.id}" style="background-image:url('${(p.img||'').replace(/'/g,'%27')}')"></div><div class="bd">
+    ${p.pw?'<span class="lk">🔒 限定</span>':''}<div class="nm" data-d="${p.id}">${p.name||''}</div>
     <div class="pr">${p.price?yen(p.price):'価格はお問い合わせ'}<small>（税込）</small></div>
-    ${p.oos?'<button class="btn ghost" disabled>在庫切れ</button>':`<button class="btn ${n?'navy':''} add" data-a="${p.id}">${n?'✓ カートに追加済み':'カートに入れる'}</button>`}
+    ${p.oos?'<button class="btn ghost" disabled>在庫切れ</button>':`<button class="btn ${it?'navy':''} add" data-a="${p.id}">${it?'✓ 追加済み（'+it.qty+'）':'カートに入れる'}</button>`}
     </div></div>`;}).join('');
   document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{
-    const p=PRODUCTS.find(x=>x.id===b.dataset.a);const i=cart.findIndex(x=>x.id===p.id);
-    if(i>=0)cart.splice(i,1);else cart.push({id:p.id,name:p.name,price:p.price||0});
+    const p=PRODUCTS.find(x=>x.id===b.dataset.a);const it=cart.find(x=>x.id===p.id);
+    if(it)it.qty++;else cart.push({id:p.id,name:p.name,price:p.price||0,qty:1});
     draw();
   });
+  document.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{detailId=b.dataset.d;view='detail';openModal();});
   const bar=byId('bar');bar.classList.toggle('on',cart.length>0);
-  byId('barn').textContent=cart.length;byId('bart').textContent=yen(cart.reduce((a,x)=>a+x.price,0));
-  const cn=byId('cartn');cn.style.display=cart.length?'':'none';cn.textContent=cart.length;
+  const qn=cart.reduce((a,x)=>a+(x.qty||1),0);byId('barn').textContent=qn;byId('bart').textContent=yen(cart.reduce((a,x)=>a+x.price*(x.qty||1),0));
+  const cn=byId('cartn');cn.style.display=cart.length?'':'none';cn.textContent=cart.reduce((a,x)=>a+(x.qty||1),0);
 }
 byId('q').oninput=e=>{q=e.target.value.trim().toLowerCase();draw()};
 byId('unlock').onclick=()=>{const v=byId('pw').value.trim();if(!v)return;
@@ -166,7 +172,18 @@ byId('modal').onclick=e=>{if(e.target===byId('modal'))closeModal();};
 byId('opencart').onclick=()=>{view='cart';openModal();};
 byId('tocheck').onclick=()=>{view='cart';openModal();};
 function drawSheet(){
-  const total=cart.reduce((a,x)=>a+x.price,0);
+  const total=cart.reduce((a,x)=>a+x.price*(x.qty||1),0);
+  if(view==='detail'){const p=PRODUCTS.find(x=>x.id===detailId);if(!p){closeModal();return;}
+    const it=cart.find(x=>x.id===p.id);
+    byId('sheet').innerHTML=`<div style="border-radius:16px;overflow:hidden;margin-bottom:14px"><div style="aspect-ratio:1;background:var(--cream) url('${(p.img||'').replace(/'/g,'%27')}') center/cover"></div></div>
+    ${p.pw?'<span class="lk">🔒 限定商品</span>':''}<h2 style="margin-bottom:6px">${p.name||''}</h2>
+    <div class="pr" style="font-size:20px;color:var(--navy);font-weight:700">${p.price?yen(p.price):'価格はお問い合わせ'} <small style="font-size:12px;color:var(--soft);font-weight:400">（税込）</small></div>
+    ${p.desc?`<p style="font-size:13.5px;color:var(--soft);line-height:2;margin:10px 0">${p.desc}</p>`:''}
+    <button class="btn navy" style="width:100%;margin-top:14px" id="d-add">${it?'✓ さらに1点追加する（現在'+it.qty+'点）':'カートに入れる'}</button>
+    <button class="btn ghost" style="width:100%;margin-top:8px" id="d-close">閉じる</button>`;
+    byId('d-add').onclick=()=>{const it2=cart.find(x=>x.id===p.id);if(it2)it2.qty++;else cart.push({id:p.id,name:p.name,price:p.price||0,qty:1});draw();drawSheet();};
+    byId('d-close').onclick=closeModal;return;
+  }
   if(view==='done'){
     byId('sheet').innerHTML=`<div class="done"><div class="big">🌷</div><h3>ご注文ありがとうございます</h3>
     <p>${method==='store'?'ご来店時にお渡しいたします。<br>お支払いは店頭にてお願いいたします。':'送料とお支払い方法について、<br>サロンより折り返しご連絡いたします。'}</p>
@@ -175,14 +192,16 @@ function drawSheet(){
   if(!cart.length){byId('sheet').innerHTML='<h2>🛒 カート</h2><div class="empty">カートは空です</div>';return;}
   if(view==='cart'){
     byId('sheet').innerHTML=`<h2>🛒 カート</h2>
-    ${cart.map((x,i)=>`<div class="li"><span>${x.name}</span><span>${yen(x.price)} <span class="x" data-r="${i}">✕</span></span></div>`).join('')}
+    ${cart.map((x,i)=>`<div class="li"><span style="flex:1">${x.name}</span><span style="display:flex;align-items:center;gap:8px"><button class="btn ghost" data-m="${i}" style="padding:4px 12px">−</button><b>${x.qty||1}</b><button class="btn ghost" data-p2="${i}" style="padding:4px 12px">＋</button><span style="min-width:70px;text-align:right">${yen(x.price*(x.qty||1))}</span><span class="x" data-r="${i}">✕</span></span></div>`).join('')}
     <div class="tot"><span>合計（税込）</span><span>${yen(total)}</span></div>
     <button class="btn navy" style="width:100%" id="go2">ご注文手続きへ</button>`;
     document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{cart.splice(+b.dataset.r,1);draw();drawSheet();});
+    document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const x=cart[+b.dataset.m];if(x.qty>1)x.qty--;else cart.splice(+b.dataset.m,1);draw();drawSheet();});
+    document.querySelectorAll('[data-p2]').forEach(b=>b.onclick=()=>{cart[+b.dataset.p2].qty++;draw();drawSheet();});
     byId('go2').onclick=()=>{view='form';drawSheet();};return;
   }
   byId('sheet').innerHTML=`<h2>🧾 ご注文手続き</h2>
-  <div class="tot" style="border-bottom:1px solid var(--line)"><span>合計 ${cart.length}点（税込）</span><span>${yen(total)}</span></div>
+  <div class="tot" style="border-bottom:1px solid var(--line)"><span>合計 ${cart.reduce((a,x)=>a+(x.qty||1),0)}点（税込）</span><span>${yen(total)}</span></div>
   <div class="fld"><label>お名前</label><input id="f-name" autocomplete="name"></div>
   <div class="fld"><label>電話番号</label><input id="f-phone" inputmode="tel" autocomplete="tel"></div>
   <div class="fld"><label>お受け取り方法</label><div class="meth">
@@ -196,15 +215,16 @@ function drawSheet(){
   byId('m-ship').onclick=()=>{method='ship';keep();drawSheet();};
   byId('send').onclick=send;
 }
-let saved={name:'',phone:'',addr:'',note:''};
+let saved=(typeof _pre!=='undefined'&&_pre)?{name:_pre.name||'',phone:_pre.phone||'',addr:_pre.addr||'',note:''}:{name:'',phone:'',addr:'',note:''};
 function keep(){['name','phone','addr','note'].forEach(k=>{const el=byId('f-'+k);if(el)saved[k]=el.value;});}
 const _ds=drawSheet;drawSheet=function(){_ds();['name','phone','addr','note'].forEach(k=>{const el=byId('f-'+k);if(el)el.value=saved[k]||'';});};
 async function send(){
   keep();
   if(!saved.name.trim()||!saved.phone.trim()){alert('お名前と電話番号をご入力ください。');return;}
   if(method==='ship'&&!saved.addr.trim()){alert('お届け先のご住所をご入力ください。');return;}
+  try{localStorage.setItem('vi5shop:cust',JSON.stringify({name:saved.name.trim(),phone:saved.phone,addr:saved.addr}));}catch(e){}
   const order={id:'O'+Date.now(),at:Date.now(),name:saved.name.trim(),phone:saved.phone.replace(/[^0-9]/g,''),
-    items:cart.slice(),total:cart.reduce((a,x)=>a+x.price,0),
+    items:cart.map(x=>({id:x.id,name:x.name,price:x.price,qty:x.qty||1})),total:cart.reduce((a,x)=>a+x.price*(x.qty||1),0),
     method:method==='ship'?'配送希望':'店頭受け取り',addr:method==='ship'?saved.addr.trim():'',note:saved.note.trim(),status:'new',via:'shop-site'};
   try{
     const wk=(await kv('salon:work'))||{};wk.orders=wk.orders||[];wk.orders.unshift(order);
