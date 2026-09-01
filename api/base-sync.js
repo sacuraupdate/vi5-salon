@@ -16,25 +16,39 @@ async function fx(url, headers) {
   const text = (r.status >= 300 && r.status < 400) ? '' : await r.text();
   return { text, cookies, loc: r.headers.get('location'), status: r.status };
 }
-async function secretCookie() {
+async function secretCookie(diag) {
   const jar = [];
-  const lp = await fx(SEC + '/secret_ec/secret_ec_auths/login');
-  jar.push(...lp.cookies);
-  const tok = (lp.text.match(/name="authenticity_token"[^>]*value="([^"]+)"/) || lp.text.match(/name="csrf-token"\s+content="([^"]+)"/) || [])[1] || '';
-  const pwField = (lp.text.match(/name="(secret_ec_auth\[password\]|password)"/) || [, 'password'])[1];
+  const addCk = cks => { for (const c of cks||[]) { const v=c.split(';')[0]; const k=v.split('=')[0]; const ix=jar.findIndex(x=>x.split('=')[0]===k); if(ix>=0)jar[ix]=v; else jar.push(v); } };
+  // ゲート画面（トップ）を取得し、パスワードフォームを解読
+  let gate = await fx(SEC + '/');
+  addCk(gate.cookies);
+  if (!gate.text && gate.loc) { gate = await fx(gate.loc.startsWith('http')?gate.loc:SEC+gate.loc, { Cookie: jar.join('; ') }); addCk(gate.cookies); }
+  const html = gate.text || '';
+  const pwIn = html.match(/<input[^>]*type=["']password["'][^>]*>/i);
+  const formM = pwIn ? (() => { const i = html.indexOf(pwIn[0]); const fs = html.lastIndexOf('<form', i); const fe = html.indexOf('</form>', i); return fs>=0&&fe>i ? html.slice(fs, fe) : ''; })() : '';
+  if (diag) diag.secForm = strip(formM).slice(0,200) + ' | inputs:' + [...formM.matchAll(/<input[^>]*name=["']([^"']+)["']/g)].map(m=>m[1]).join(',');
+  if (!formM) { if (diag) diag.secGate = strip(html).slice(0, 160); throw new Error('pw form not found'); }
+  const action = (formM.match(/action=["']([^"']*)["']/) || [,'/secret_ec/secret_ec_auths/login'])[1] || '/';
+  const url = action.startsWith('http') ? action : SEC + (action.startsWith('/')?action:'/'+action);
   const body = new URLSearchParams();
-  if (tok) body.set('authenticity_token', tok);
-  body.set(pwField, SECRET_PW);
-  const r = await fetch(SEC + '/secret_ec/secret_ec_auths/login', {
+  for (const m of formM.matchAll(/<input[^>]*>/g)) {
+    const tag = m[0];
+    const nm = (tag.match(/name=["']([^"']+)["']/) || [])[1]; if (!nm) continue;
+    const tp = (tag.match(/type=["']([^"']+)["']/) || [,'text'])[1];
+    const val = (tag.match(/value=["']([^"']*)["']/) || [,''])[1];
+    body.set(nm, tp === 'password' ? SECRET_PW : dec(val));
+  }
+  const meta = html.match(/name=["']csrf-token["']\s+content=["']([^"']+)["']/);
+  const r = await fetch(url, {
     method: 'POST', redirect: 'manual',
-    headers: Object.assign({}, UA, { 'Content-Type': 'application/x-www-form-urlencoded', 'Cookie': jar.join('; '), 'Referer': SEC + '/secret_ec/secret_ec_auths/login' }),
+    headers: Object.assign({}, UA, { 'Content-Type': 'application/x-www-form-urlencoded', 'Cookie': jar.join('; '), 'Referer': SEC + '/', 'Origin': SEC }, meta?{'X-CSRF-Token':meta[1]}:{}),
     body: body.toString()
   });
-  for (const c of (r.headers.getSetCookie ? r.headers.getSetCookie() : [])) {
-    const v = c.split(';')[0]; const k = v.split('=')[0];
-    const ix = jar.findIndex(x => x.split('=')[0] === k);
-    if (ix >= 0) jar[ix] = v; else jar.push(v);
-  }
+  addCk(r.headers.getSetCookie ? r.headers.getSetCookie() : []);
+  if (diag) diag.secPost = r.status + '->' + (r.headers.get('location') || '');
+  // リダイレクト先を1回踏んでセッション確立
+  const loc = r.headers.get('location');
+  if (loc) { const r2 = await fx(loc.startsWith('http')?loc:SEC+loc, { Cookie: jar.join('; ') }); addCk(r2.cookies); }
   return jar.join('; ');
 }
 async function idsFromSitemap(origin, headers) {
@@ -69,12 +83,40 @@ function parseItemPage(html, origin, id) {
   const ld = html.match(/"price"\s*:\s*"?([\d.]+)"?/); if (ld) price = Math.round(parseFloat(ld[1]));
   if (!price) { const p2 = html.match(/[¥￥]\s?([\d,]{2,9})/); if (p2) price = parseInt(p2[1].replace(/,/g, '')); }
   if (!price) { const p3 = html.match(/([\d,]{3,9})\s*円/); if (p3) price = parseInt(p3[1].replace(/,/g, '')); }
-  let cat = '';
-  const cm = html.match(/href="[^"]*\/categories\/\d+[^"]*"[^>]*>([\s\S]{0,120}?)<\/a>/);
-  if (cm) cat = strip(cm[1]);
+  let cat='';
   let desc = strip((html.match(/property="og:description"\s+content="([^"]+)"/) || [])[1] || '').slice(0, 140);
   const oos = /(売り切れ|SOLD\s*OUT|在庫切れ)/i.test(html);
   return { baseId: id, name, img, price, cat, desc, oos, url: origin + '/items/' + id };
+}
+async function catCatalog(origin, headers, sampleId) {
+  // 全カテゴリ(ID+名前)を、任意の1ページのナビから抽出
+  const tryPages = [origin + '/', sampleId ? origin + '/items/' + sampleId : null].filter(Boolean);
+  const cats = [];
+  for (const u of tryPages) {
+    try {
+      const r = await fx(u, headers);
+      for (const m of r.text.matchAll(/<a[^>]*href="(?:https?:\/\/[^"]*)?\/categories\/(\d+)[^"]*"[^>]*>([\s\S]{0,150}?)<\/a>/g)) {
+        const name = strip(m[2]); if (!name || name.length > 40) continue;
+        if (!cats.some(c => c.id === m[1])) cats.push({ id: m[1], name });
+      }
+      if (cats.length >= 3) break;
+    } catch (e) {}
+  }
+  return cats;
+}
+async function catMembership(origin, headers, cats, budgetUntil) {
+  const map = {};
+  await pool(cats, 8, async (c) => {
+    for (let p = 1; p <= 12; p++) {
+      if (Date.now() > budgetUntil) return;
+      const r = await fx(origin + '/categories/' + c.id + '?page=' + p, headers);
+      if (!r.text) break;
+      let added = 0;
+      for (const m of r.text.matchAll(/\/items\/(\d+)/g)) { if (!map[m[1]]) { map[m[1]] = c.name; added++; } else if (map[m[1]] !== c.name) {} }
+      if (!added) break;
+    }
+  });
+  return map;
 }
 async function pool(arr, n, fn) {
   const q = arr.slice(); const ws = [];
@@ -123,12 +165,20 @@ module.exports = async (req, res) => {
     // ---- 非公開ショップ ----
     let secIds = [], ck = '', secErr = '';
     try {
-      ck = await secretCookie();
+      ck = await secretCookie(diag);
       secIds = await idsFromSitemap(SEC, { Cookie: ck });
       if (!secIds.length) secIds = await idsFromList(SEC, { Cookie: ck });
       if (!secIds.length) secErr = 'secret: no items (login failed?)';
     } catch (e) { secErr = 'secret: ' + String(e && e.message); }
     diag.secIds = secIds.length; diag.secErr = secErr;
+
+    // ---- 本物のカテゴリ所属マップ ----
+    const pubCats = await catCatalog(PUB, null, pubIds[0]);
+    diag.pubCats = pubCats.map(c => c.name);
+    const pubMap = await catMembership(PUB, null, pubCats, t0 + 30000);
+    diag.pubMapped = Object.keys(pubMap).length;
+    let secMap = {};
+    if (secIds.length) { try { const secCats = await catCatalog(SEC, { Cookie: ck }, secIds[0]); secMap = await catMembership(SEC, { Cookie: ck }, secCats, t0 + 40000); } catch (e) {} }
 
     const jobs = [];
     for (const id of pubIds) { const k = known[id]; if (!(k && k.name && k.cat && k.price)) jobs.push({ id, secret: false }); }
@@ -148,16 +198,25 @@ module.exports = async (req, res) => {
       if (ex) {
         if (it.name) ex.name = it.name; if (it.price) ex.price = it.price; if (it.img) ex.img = it.img;
         if (!ex.desc && it.desc) ex.desc = it.desc; ex.oos = it.oos; ex.url = it.url;
-        if (!ex.catManual && it.cat) ex.cat = it.cat;
+
         updated++;
       } else {
         const np = { id: 'ep' + job.id, baseId: job.id, name: it.name, price: it.price, img: it.img, desc: it.desc, oos: it.oos, url: it.url,
-          cat: it.cat || (job.secret ? '限定' : 'その他'), pw: job.secret ? SECRET_PW : '' };
+          cat: '', pw: job.secret ? SECRET_PW : '' };
         d.eshop.products.push(np); known[job.id] = np; added++;
       }
     });
+    // 全商品にカテゴリ適用（手動設定は保持）
+    let recat = 0;
+    for (const p of d.eshop.products) {
+      if (p.catManual) continue;
+      const real = p.pw ? (secMap[p.baseId] || '') : (pubMap[p.baseId] || '');
+      const nc = real || (p.pw ? '限定' : 'その他');
+      if (p.cat !== nc) { p.cat = nc; recat++; }
+    }
+    diag.recat = recat;
     d.eshop.syncedAt = Date.now();
-    if (added || updated) await saveData(d);
+    if (added || updated || recat) await saveData(d);
     diag.added = added; diag.updated = updated; diag.fetched = fetched;
     diag.total = d.eshop.products.length;
     diag.cats = [...new Set(d.eshop.products.map(p => p.cat).filter(Boolean))];
