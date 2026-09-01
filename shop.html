@@ -255,6 +255,7 @@ async function send(){
   cart=[];draw();view='done';drawSheet();
 }
 load();
+if(/[?&]debug=1/.test(location.search)){(async()=>{try{const dg=await kv('salon:diag');const el=document.createElement('pre');el.style.cssText='background:#111;color:#8f8;font-size:10px;padding:10px;border-radius:10px;overflow:auto;max-height:300px;white-space:pre-wrap;word-break:break-all;margin:10px 0';el.textContent=JSON.stringify(dg,null,1);document.querySelector('.wrap').prepend(el);}catch(e){}})();}
 </script>
 </body>
 </html>
