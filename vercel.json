@@ -1,13 +1,43 @@
 {
   "rewrites": [
-    { "source": "/shop", "destination": "/index.html" }
+    {
+      "source": "/shop",
+      "destination": "/shop.html"
+    }
   ],
   "headers": [
-    { "source": "/", "headers": [ { "key": "Cache-Control", "value": "no-store, must-revalidate" } ] },
-    { "source": "/shop", "headers": [ { "key": "Cache-Control", "value": "no-store, must-revalidate" } ] },
-    { "source": "/index.html", "headers": [ { "key": "Cache-Control", "value": "no-store, must-revalidate" } ] }
+    {
+      "source": "/",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/shop",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/index.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, must-revalidate"
+        }
+      ]
+    }
   ],
   "crons": [
-    { "path": "/api/base-sync", "schedule": "0 18 * * *" }
+    {
+      "path": "/api/base-sync",
+      "schedule": "0 18 * * *"
+    }
   ]
 }
