@@ -20,7 +20,10 @@ function parseList(html, origin, secret) {
     let name = '';
     const alt = seg.match(/alt="([^"]{2,120})"/); if (alt) name = dec(alt[1]);
     if (!name) { const t = seg.match(/title="([^"]{2,120})"/); if (t) name = dec(t[1]); }
-    const pr = seg.match(/[¥￥]\s?([\d,]{2,9})/);
+    if (!name) { const t2 = seg.match(/class="[^"]*(?:item|product)[^"]*(?:name|title|ttl)[^"]*"[^>]*>\s*([^<]{2,120})/); if (t2) name = dec(t2[1].trim()); }
+    if (!name) { const t3 = seg.match(/\/items\/\d+"[^>]*>\s*([^<]{2,120})\s*</); if (t3 && !/^\s*$/.test(t3[1])) name = dec(t3[1].trim()); }
+    let pr = seg.match(/[¥￥]\s?([\d,]{2,9})/);
+    if (!pr) pr = seg.match(/([\d,]{3,9})\s*円/);
     const price = pr ? parseInt(pr[1].replace(/,/g, '')) : 0;
     out.push({ baseId: id, name, price, img, url: origin + '/items/' + id, secret: !!secret });
   }
