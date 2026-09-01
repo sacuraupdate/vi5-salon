@@ -39,5 +39,10 @@
       "path": "/api/base-sync",
       "schedule": "0 18 * * *"
     }
-  ]
+  ],
+  "functions": {
+    "api/base-sync.js": {
+      "maxDuration": 60
+    }
+  }
 }
