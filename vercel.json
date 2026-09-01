@@ -1,6 +1,28 @@
 {
   "rewrites": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "api",
+          "value": "sync"
+        }
+      ],
+      "destination": "/api/base-sync"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "api",
+          "value": "diag"
+        }
+      ],
+      "destination": "/api/diag"
+    },
+    {
       "source": "/shop",
       "destination": "/shop.html"
     }
