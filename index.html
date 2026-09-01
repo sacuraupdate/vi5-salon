@@ -943,7 +943,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260902d';
+const APP_REV='r20260902e';
 (async function(){try{
   const r=await fetch('/index.html',{method:'HEAD',cache:'no-store'});
   const et=(r.headers.get('etag')||r.headers.get('last-modified')||'').trim();
@@ -2595,7 +2595,7 @@ function adminEshopBlock(){
   const seen=parseInt(localGet('seen:orders')||'0');
   const products=((DATA.eshop&&DATA.eshop.products)||[]);
   const st={new:'🆕新規',doing:'対応中',done:'✅受渡済',cancel:'キャンセル'};
-  const rows=orders.slice(0,30).map(o=>`<div class="addform" style="margin:0 0 8px;padding:10px 12px"><div style="display:flex;justify-content:space-between;font-weight:700"><span>${o.name}様（${o.phone}）</span><span>${yen(o.total)}</span></div><div class="note" style="margin:2px 0 6px">${new Date(o.at).toLocaleString('ja-JP')} ・ ${o.method}${o.note?` ・ ${o.note}`:''}</div><div style="font-size:13px;margin-bottom:8px">${o.items.map(x=>x.name).join('、')}</div><div class="chips">${Object.keys(st).map(k=>`<button class="chip ${o.status===k?'sel':''}" data-ost="${o.id}|${k}">${st[k]}</button>`).join('')}</div></div>`).join('');
+  const rows=orders.slice(0,30).map(o=>`<div class="addform" style="margin:0 0 8px;padding:10px 12px"><div style="display:flex;justify-content:space-between;font-weight:700"><span>${o.name}様（${o.phone}）</span><span>${yen(o.total)}</span></div><div class="note" style="margin:2px 0 6px">${new Date(o.at).toLocaleString('ja-JP')} ・ ${o.method}${o.note?` ・ ${o.note}`:''}</div><div style="font-size:13px;margin-bottom:8px">${o.items.map(x=>x.name+((x.qty||1)>1?'×'+x.qty:'')).join('、')}${o.addr?`<div class="note" style="margin-top:4px">📦 ${o.addr}</div>`:''}</div><div class="chips">${Object.keys(st).map(k=>`<button class="chip ${o.status===k?'sel':''}" data-ost="${o.id}|${k}">${st[k]}</button>`).join('')}</div></div>`).join('');
   const prows=products.map(p=>`<div style="display:flex;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)"><div style="width:38px;height:38px;border-radius:8px;background-image:url('${(p.img||'').replace(/'/g,"%27")}');background-size:cover;flex-shrink:0"></div><input data-epn="${p.id}" value="${(p.name||'').replace(/"/g,'&quot;')}" style="flex:2;min-width:0"><input data-epp="${p.id}" value="${p.price||''}" inputmode="numeric" placeholder="価格" style="width:70px"><input data-epw="${p.id}" value="${p.pw||''}" placeholder="🔒PW" style="width:64px"><button class="evdel" data-epd="${p.id}">削除</button></div>`).join('');
   return `<div class="subhead" style="margin:0 0 8px">🧾 オンラインショップの注文 ${orders.filter(o=>o.at>seen).length?`<span class="tbnum" style="position:static">${orders.filter(o=>o.at>seen).length}</span>`:''}</div>${rows||'<div class="empty">まだ注文はありません</div>'}
   <details class="faq" style="margin:14px 0"><summary>🛍 ショップ商品の管理（${products.length}点）</summary><div class="faq-a">
