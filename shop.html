@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vi5 ONLINE SHOP｜サロン専売品オンラインショップ</title>
+<meta name="description" content="ビューティーサロンVi5の公式オンラインショップ。サロン専売のスキンケア・ヘアケア・美容機器を、知識と資格を持つスタッフがご案内します。">
+<meta property="og:title" content="Vi5 ONLINE SHOP">
+<meta property="og:description" content="サロン専売品の公式オンラインショップ。店頭受け取りなら送料無料。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://vi5-salon.vercel.app/shop">
+<meta property="og:image" content="https://vi5-salon.vercel.app/hero.jpg">
+<meta name="theme-color" content="#1E2A47">
+<link rel="preconnect" href="https://tehcaufdztgpbrknpshk.supabase.co">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#1E2A47;--gold:#C9A227;--gold-soft:#E0C578;--cream:#F7F4EC;--ink:#23262E;--soft:#787F8F;--line:#E7E9EF;--rose:#C64F5E}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Zen Kaku Gothic New',sans-serif;color:var(--ink);background:#fff}
+header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.hd{max-width:1080px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:14px 16px}
+.logo{font-family:'Fraunces',serif;font-size:26px;color:var(--navy);text-decoration:none}
+.logo small{font-size:11px;letter-spacing:.22em;color:var(--gold);display:block;font-family:'Zen Kaku Gothic New'}
+.cartbtn{position:relative;background:var(--navy);color:#fff;border:none;border-radius:24px;padding:10px 18px;font-size:14px;font-weight:700;font-family:inherit}
+.cartbtn b{position:absolute;top:-6px;right:-6px;background:var(--rose);border-radius:20px;padding:1px 7px;font-size:12px}
+.hero{background:var(--cream);text-align:center;padding:34px 16px 30px}
+.hero h1{font-family:'Fraunces',serif;font-size:26px;color:var(--navy);font-weight:500}
+.hero p{font-size:13px;color:var(--soft);margin-top:8px;line-height:1.9}
+.wrap{max-width:1080px;margin:0 auto;padding:16px}
+.search{width:100%;border:1.5px solid var(--line);border-radius:14px;padding:13px 16px;font-size:15px;font-family:inherit;margin-bottom:12px}
+.cats{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;-webkit-overflow-scrolling:touch}
+.cats button{flex-shrink:0;border:1.5px solid var(--line);background:#fff;border-radius:22px;padding:9px 16px;font-size:13px;font-family:inherit;color:var(--ink)}
+.cats button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.lock{border:1.5px solid var(--gold);background:var(--cream);border-radius:16px;padding:14px;margin:12px 0}
+.lock b{font-size:14px}.lock p{font-size:12.5px;color:var(--soft);margin:4px 0 10px}
+.lock .row{display:flex;gap:8px}
+.lock input{flex:1;border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;font-size:15px;font-family:inherit}
+.btn{background:var(--gold);color:#fff;border:none;border-radius:12px;padding:11px 18px;font-size:14px;font-weight:700;font-family:inherit}
+.btn.navy{background:var(--navy)}.btn.ghost{background:#fff;color:var(--navy);border:1.5px solid var(--line)}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:14px}
+@media(min-width:720px){.grid{grid-template-columns:repeat(4,1fr)}}
+.card{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;display:flex;flex-direction:column}
+.card .im{aspect-ratio:1;background-size:cover;background-position:center;background-color:var(--cream)}
+.card .bd{padding:10px 12px 12px;display:flex;flex-direction:column;flex:1}
+.card .nm{font-size:13px;font-weight:700;line-height:1.5;flex:1}
+.card .pr{font-size:15px;color:var(--navy);font-weight:700;margin:7px 0}
+.card .pr small{font-size:11px;color:var(--soft);font-weight:400}
+.card .add{width:100%}
+.lk{font-size:11px;color:var(--gold);font-weight:700}
+.empty{text-align:center;color:var(--soft);padding:60px 20px;font-size:14px}
+.foot{border-top:1px solid var(--line);margin-top:40px;padding:28px 16px 90px;text-align:center;font-size:12px;color:var(--soft);line-height:2}
+.foot a{color:var(--navy)}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom));display:none;align-items:center;justify-content:space-between;z-index:60}
+.bar.on{display:flex}
+.bar .tt{font-size:14px}.bar .tt b{font-size:18px;color:var(--navy)}
+.modal{position:fixed;inset:0;background:rgba(20,25,40,.5);z-index:80;display:none;align-items:flex-end;justify-content:center}
+.modal.on{display:flex}
+.sheet{background:#fff;border-radius:22px 22px 0 0;width:100%;max-width:640px;max-height:88vh;overflow-y:auto;padding:20px 18px calc(24px + env(safe-area-inset-bottom))}
+.sheet h2{font-family:'Fraunces',serif;font-size:20px;color:var(--navy);margin-bottom:12px}
+.li{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px;gap:10px}
+.li .x{color:var(--rose);font-weight:700;padding:4px 8px}
+.tot{display:flex;justify-content:space-between;padding:14px 0;font-weight:700;font-size:16px}
+.fld{margin:12px 0}.fld label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}
+.fld input,.fld textarea{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px 13px;font-size:16px;font-family:inherit}
+.fld textarea{min-height:74px}
+.meth{display:flex;flex-direction:column;gap:8px}
+.meth button{text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:12px 14px;font-size:14px;font-family:inherit}
+.meth button.on{border-color:var(--gold);background:var(--cream);font-weight:700}
+.done{text-align:center;padding:30px 10px}
+.done .big{font-size:44px}
+.done h3{font-family:'Fraunces',serif;color:var(--navy);font-size:20px;margin:10px 0}
+.done p{font-size:13.5px;color:var(--soft);line-height:2}
+.notice{background:var(--cream);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--soft);line-height:1.9;margin-top:10px}
+</style>
+</head>
+<body>
+<header><div class="hd">
+  <a class="logo" href="/shop">Vi5<small>ONLINE SHOP</small></a>
+  <button class="cartbtn" id="opencart">🛒 カート<b id="cartn" style="display:none"></b></button>
+</div></header>
+<div class="hero">
+  <h1>サロンが選んだ、本物だけ。</h1>
+  <p>知識・資格を持つスタッフがご案内する、サロン専売品のオンラインショップ。<br>店頭受け取りなら送料無料です。</p>
+</div>
+<div class="wrap">
+  <input class="search" id="q" type="search" placeholder="🔍 商品名で検索">
+  <div class="cats" id="cats"></div>
+  <div class="lock" id="lockbox" style="display:none">
+    <b>🔒 限定商品があります（<span id="lockn"></span>点）</b>
+    <p>パスワードをお持ちの方は入力すると表示されます。</p>
+    <div class="row"><input id="pw" type="password" placeholder="パスワード"><button class="btn" id="unlock">表示する</button></div>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="loading">商品を読み込んでいます…</div>
+</div>
+<div class="foot">
+  Vi5 — 大阪府大阪市北区西天満1-2-25 スクエア北浜3階<br>
+  ご予約・お問い合わせは <a href="/">Vi5 予約サイト</a> または公式LINEへ
+</div>
+<div class="bar" id="bar">
+  <div class="tt"><span id="barn"></span>点 <b id="bart"></b></div>
+  <button class="btn navy" id="tocheck">ご注文へ進む</button>
+</div>
+<div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
+<script>
+const SUPA='https://tehcaufdztgpbrknpshk.supabase.co';
+const KEY='sb_publishable_CnOCyO9QU69K47vbbLRkYg__cEv53CJ';
+const H={apikey:KEY,Authorization:'Bearer '+KEY};
+let PRODUCTS=[],cart=[],unlocked=[],cat='all',q='',method='store',view='cart';
+const yen=n=>'¥'+Number(n||0).toLocaleString();
+const byId=i=>document.getElementById(i);
+async function kv(key){const r=await fetch(SUPA+'/rest/v1/kv?key=eq.'+key+'&select=value',{headers:H});if(!r.ok)throw 0;const j=await r.json();if(!j.length)return null;let v=j[0].value;for(let i=0;i<4;i++){if(typeof v==='string'){try{v=JSON.parse(v);continue}catch(e){break}}if(Array.isArray(v)){v=v[0];continue}break}return v}
+async function load(){
+  try{const d=await kv('salon:data');PRODUCTS=((d&&d.eshop&&d.eshop.products)||[]).filter(p=>!p.hide);}catch(e){}
+  byId('loading').textContent=PRODUCTS.length?'':'商品は準備中です。もうしばらくお待ちください。';
+  draw();
+}
+function visible(p){return !p.pw||unlocked.includes(String(p.pw))}
+function draw(){
+  const cats=[...new Set(PRODUCTS.filter(visible).map(p=>p.cat).filter(Boolean))];
+  byId('cats').innerHTML=[['all','すべて'],...cats.map(c=>[c,c])].map(x=>`<button data-c="${x[0]}" class="${cat===x[0]?'on':''}">${x[1]}</button>`).join('');
+  document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{cat=b.dataset.c;draw()});
+  const locked=PRODUCTS.filter(p=>p.pw&&!visible(p)).length;
+  byId('lockbox').style.display=locked?'':'none';byId('lockn').textContent=locked;
+  const list=PRODUCTS.filter(visible).filter(p=>cat==='all'||p.cat===cat).filter(p=>!q||(p.name||'').toLowerCase().includes(q));
+  byId('grid').innerHTML=list.map(p=>{
+    const n=cart.filter(x=>x.id===p.id).length;
+    return `<div class="card"><div class="im" style="background-image:url('${(p.img||'').replace(/'/g,'%27')}')"></div><div class="bd">
+    ${p.pw?'<span class="lk">🔒 限定</span>':''}<div class="nm">${p.name||''}</div>
+    <div class="pr">${p.price?yen(p.price):'価格はお問い合わせ'}<small>（税込）</small></div>
+    ${p.oos?'<button class="btn ghost" disabled>在庫切れ</button>':`<button class="btn ${n?'navy':''} add" data-a="${p.id}">${n?'✓ カートに追加済み':'カートに入れる'}</button>`}
+    </div></div>`;}).join('');
+  document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{
+    const p=PRODUCTS.find(x=>x.id===b.dataset.a);const i=cart.findIndex(x=>x.id===p.id);
+    if(i>=0)cart.splice(i,1);else cart.push({id:p.id,name:p.name,price:p.price||0});
+    draw();
+  });
+  const bar=byId('bar');bar.classList.toggle('on',cart.length>0);
+  byId('barn').textContent=cart.length;byId('bart').textContent=yen(cart.reduce((a,x)=>a+x.price,0));
+  const cn=byId('cartn');cn.style.display=cart.length?'':'none';cn.textContent=cart.length;
+}
+byId('q').oninput=e=>{q=e.target.value.trim().toLowerCase();draw()};
+byId('unlock').onclick=()=>{const v=byId('pw').value.trim();if(!v)return;
+  if(PRODUCTS.some(p=>String(p.pw)===v)){unlocked.push(v);byId('pw').value='';draw();}
+  else alert('パスワードが違います。');};
+function openModal(){byId('modal').classList.add('on');drawSheet();}
+function closeModal(){byId('modal').classList.remove('on');}
+byId('modal').onclick=e=>{if(e.target===byId('modal'))closeModal();};
+byId('opencart').onclick=()=>{view='cart';openModal();};
+byId('tocheck').onclick=()=>{view='cart';openModal();};
+function drawSheet(){
+  const total=cart.reduce((a,x)=>a+x.price,0);
+  if(view==='done'){
+    byId('sheet').innerHTML=`<div class="done"><div class="big">🌷</div><h3>ご注文ありがとうございます</h3>
+    <p>${method==='store'?'ご来店時にお渡しいたします。<br>お支払いは店頭にてお願いいたします。':'送料とお支払い方法について、<br>サロンより折り返しご連絡いたします。'}</p>
+    <button class="btn navy" style="margin-top:16px" onclick="location.reload()">ショップにもどる</button></div>`;return;
+  }
+  if(!cart.length){byId('sheet').innerHTML='<h2>🛒 カート</h2><div class="empty">カートは空です</div>';return;}
+  if(view==='cart'){
+    byId('sheet').innerHTML=`<h2>🛒 カート</h2>
+    ${cart.map((x,i)=>`<div class="li"><span>${x.name}</span><span>${yen(x.price)} <span class="x" data-r="${i}">✕</span></span></div>`).join('')}
+    <div class="tot"><span>合計（税込）</span><span>${yen(total)}</span></div>
+    <button class="btn navy" style="width:100%" id="go2">ご注文手続きへ</button>`;
+    document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{cart.splice(+b.dataset.r,1);draw();drawSheet();});
+    byId('go2').onclick=()=>{view='form';drawSheet();};return;
+  }
+  byId('sheet').innerHTML=`<h2>🧾 ご注文手続き</h2>
+  <div class="tot" style="border-bottom:1px solid var(--line)"><span>合計 ${cart.length}点（税込）</span><span>${yen(total)}</span></div>
+  <div class="fld"><label>お名前</label><input id="f-name" autocomplete="name"></div>
+  <div class="fld"><label>電話番号</label><input id="f-phone" inputmode="tel" autocomplete="tel"></div>
+  <div class="fld"><label>お受け取り方法</label><div class="meth">
+    <button id="m-store" class="${method==='store'?'on':''}">🏬 店頭受け取り（送料無料・お支払いは店頭で）</button>
+    <button id="m-ship" class="${method==='ship'?'on':''}">📦 配送（送料・お支払い方法は折り返しご案内）</button></div></div>
+  <div class="fld" id="addrbox" style="display:${method==='ship'?'':'none'}"><label>お届け先ご住所</label><textarea id="f-addr" autocomplete="street-address"></textarea></div>
+  <div class="fld"><label>ご要望など（任意）</label><textarea id="f-note"></textarea></div>
+  <button class="btn navy" style="width:100%" id="send">この内容で注文する</button>
+  <div class="notice">ご注文後、内容確認のご連絡を差し上げる場合があります。店頭受け取りのお取り置きは1週間です。</div>`;
+  byId('m-store').onclick=()=>{method='store';keep();drawSheet();};
+  byId('m-ship').onclick=()=>{method='ship';keep();drawSheet();};
+  byId('send').onclick=send;
+}
+let saved={name:'',phone:'',addr:'',note:''};
+function keep(){['name','phone','addr','note'].forEach(k=>{const el=byId('f-'+k);if(el)saved[k]=el.value;});}
+const _ds=drawSheet;drawSheet=function(){_ds();['name','phone','addr','note'].forEach(k=>{const el=byId('f-'+k);if(el)el.value=saved[k]||'';});};
+async function send(){
+  keep();
+  if(!saved.name.trim()||!saved.phone.trim()){alert('お名前と電話番号をご入力ください。');return;}
+  if(method==='ship'&&!saved.addr.trim()){alert('お届け先のご住所をご入力ください。');return;}
+  const order={id:'O'+Date.now(),at:Date.now(),name:saved.name.trim(),phone:saved.phone.replace(/[^0-9]/g,''),
+    items:cart.slice(),total:cart.reduce((a,x)=>a+x.price,0),
+    method:method==='ship'?'配送希望':'店頭受け取り',addr:method==='ship'?saved.addr.trim():'',note:saved.note.trim(),status:'new',via:'shop-site'};
+  try{
+    const wk=(await kv('salon:work'))||{};wk.orders=wk.orders||[];wk.orders.unshift(order);
+    const r=await fetch(SUPA+'/rest/v1/kv?on_conflict=key',{method:'POST',headers:{...H,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:work',value:JSON.stringify(wk)})});
+    if(!r.ok)throw 0;
+  }catch(e){alert('送信に失敗しました。通信状況をご確認のうえ、もう一度お試しください。');return;}
+  cart=[];draw();view='done';drawSheet();
+}
+load();
+</script>
+</body>
+</html>
