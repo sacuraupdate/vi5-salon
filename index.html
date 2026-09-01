@@ -943,7 +943,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260902c';
+const APP_REV='r20260902d';
 (async function(){try{
   const r=await fetch('/index.html',{method:'HEAD',cache:'no-store'});
   const et=(r.headers.get('etag')||r.headers.get('last-modified')||'').trim();
@@ -3591,7 +3591,7 @@ function exportCSV(){
   const esc=v=>'"'+String(v).replace(/"/g,'""')+'"';const csv='\uFEFF'+[head,...rows].map(r=>r.map(esc).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='vi5_予約一覧.csv';a.click();
 }
 /* ===== init ===== */
-[...(nav?nav.querySelectorAll('button'):[]),...document.querySelectorAll('#moremenu button')].forEach(b=>b.onclick=()=>{const nv=b.dataset.nav;if(nv==='line'){const u=(S().lineUrl)||'';if(u)window.open(u,'_blank');else alert('公式LINEのURLが未設定です。');return;}if(nv==='review'){const u=(S().reviewUrl)||'https://g.page/r/CUd3JdEySI5iEAE/review';window.open(u,'_blank');return;}if(nv==='more'){const mm=byId('moremenu');if(mm)mm.style.display=mm.style.display==='none'?'block':'none';return;}if(nv==='shopx'){go('eshop');return;}if(b.dataset.view==='shop'){const u=(S().shopUrl)||'';if(u)window.open(u,'_blank');else alert('オンラインショップのURLが未設定です。');return;}if(b.dataset.view==='course'){const u=(S().courseUrl)||'';if(u){window.open(u,'_blank');return;}}if(byId('moremenu'))byId('moremenu').style.display='none';go(b.dataset.view)});app.querySelectorAll('#moremenu button').forEach&&0;
+[...(nav?nav.querySelectorAll('button'):[]),...document.querySelectorAll('#moremenu button')].forEach(b=>b.onclick=()=>{const nv=b.dataset.nav;if(nv==='line'){const u=(S().lineUrl)||'';if(u)window.open(u,'_blank');else alert('公式LINEのURLが未設定です。');return;}if(nv==='review'){const u=(S().reviewUrl)||'https://g.page/r/CUd3JdEySI5iEAE/review';window.open(u,'_blank');return;}if(nv==='more'){const mm=byId('moremenu');if(mm)mm.style.display=mm.style.display==='none'?'block':'none';return;}if(nv==='shopx'){location.href='/shop';return;}if(b.dataset.view==='shop'){const u=(S().shopUrl)||'';if(u)window.open(u,'_blank');else alert('オンラインショップのURLが未設定です。');return;}if(b.dataset.view==='course'){const u=(S().courseUrl)||'';if(u){window.open(u,'_blank');return;}}if(byId('moremenu'))byId('moremenu').style.display='none';go(b.dataset.view)});app.querySelectorAll('#moremenu button').forEach&&0;
 const staffBtn=byId('staff-entry');if(staffBtn)staffBtn.onclick=()=>go('admin');
 const backBtn=byId('backbtn');if(backBtn)backBtn.onclick=goBack;const _hsh=byId('hdr-share');if(_hsh)_hsh.onclick=shareSalon;
 const acctBtn=byId('acctbtn');if(acctBtn)acctBtn.onclick=()=>go('mypage');
