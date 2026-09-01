@@ -15,7 +15,7 @@ function classify(name){const n=String(name||'');
   [/サプリ|酵素|ファスティング|プロテイン|茶|ドリンク|インナー|エステプロ|Esthe Pro|ハーブ/i,'インナーケア'],
   [/フェム|デリケート/i,'フェムケア'],
   [/チケット|ギフト|回数券/i,'ギフト・チケット'],
-  [/化粧水|美容液|クリーム|乳液|パック|洗顔|クレンジング|セラム|ローション|エッセンス|スキンケア|V3|エクソソーム/i,'スキンケア']];
+  [/化粧水|美容液|クリーム|乳液|パック|洗顔|クレンジング|セラム|ローション|エッセンス|スキンケア|石けん|石鹸|ソープ|ミスト|V3|エクソソーム/i,'スキンケア']];
   for(const[r,c]of R)if(r.test(n))return c;return 'その他';}
 function dec(s){return String(s||'').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'");}
 function parseList(html, origin, secret) {
@@ -66,17 +66,48 @@ async function secretCookie() {
   }
   return jar.join('; ');
 }
-async function collect(origin, headers, secret, maxPages) {
+async function collectPages(baseUrl, headers, secret, maxPages) {
   const items = [];
-  for (let p = 1; p <= (maxPages || 30); p++) {
-    const r = await fx(origin + '/items/all?page=' + p, headers);
+  const sep = baseUrl.indexOf('?') >= 0 ? '&' : '?';
+  for (let p = 1; p <= (maxPages || 60); p++) {
+    const r = await fx(baseUrl + sep + 'page=' + p, headers);
     if (!r.text) break;
-    const got = parseList(r.text, origin, secret);
+    const got = parseList(r.text, baseUrl.split('/').slice(0,3).join('/'), secret);
     let added = 0;
     for (const it of got) if (!items.some(x => x.baseId === it.baseId)) { items.push(it); added++; }
-    if (!added || r.text.indexOf('page=' + (p + 1)) < 0) break;
+    if (!added) break; // 新しい商品が出なくなったら終わり（ページ送り表記に依存しない）
   }
   return items;
+}
+async function catList(origin, headers) {
+  const r = await fx(origin + '/', headers);
+  const cats = []; const re = /href="(?:https?:\/\/[^"]*)?\/categories\/(\d+)[^"]*"[^>]*>\s*([^<]{1,60}?)\s*</g; let m;
+  while ((m = re.exec(r.text))) {
+    const name = dec(m[2]).replace(/\s+/g, ' ').trim();
+    if (!name || /すべて|ALL\s*ITEM|一覧|^>|^</i.test(name)) continue;
+    if (!cats.some(c => c.id === m[1])) cats.push({ id: m[1], name });
+  }
+  return cats;
+}
+async function pool(arr, n, fn) {
+  const q = arr.slice(); const ws = [];
+  for (let i = 0; i < n; i++) ws.push((async () => { while (q.length) { const x = q.shift(); try { await fn(x); } catch (e) {} } })());
+  await Promise.all(ws);
+}
+async function collectShop(origin, headers, secret) {
+  const catMap = {};
+  try {
+    const cats = await catList(origin, headers);
+    await pool(cats, 8, async (c) => {
+      const its = await collectPages(origin + '/categories/' + c.id, headers, secret, 15);
+      for (const it of its) if (!catMap[it.baseId]) catMap[it.baseId] = { name: c.name, item: it };
+    });
+  } catch (e) {}
+  const all = await collectPages(origin + '/items/all', headers, secret, 60);
+  // カテゴリページにしか出ない商品も合流
+  for (const id in catMap) if (!all.some(x => x.baseId === id)) all.push(catMap[id].item);
+  for (const it of all) it.baseCat = catMap[it.baseId] ? catMap[it.baseId].name : '';
+  return all;
 }
 async function loadData() {
   const r = await fetch(SUPA_URL + '/rest/v1/kv?key=eq.salon:data&select=value', { headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY } });
@@ -101,11 +132,11 @@ async function saveData(d) {
 }
 module.exports = async (req, res) => {
   try {
-    const pub = await collect(PUB, null, false, 30);
+    const pub = await collectShop(PUB, null, false);
     let sec = [], secErr = '';
     try {
       const ck = await secretCookie();
-      sec = await collect(SEC, { Cookie: ck }, true, 20);
+      sec = await collectShop(SEC, { Cookie: ck }, true);
       if (!sec.length) secErr = 'secret empty (login?)';
     } catch (e) { secErr = String(e && e.message); }
     const d = await loadData();
@@ -116,8 +147,8 @@ module.exports = async (req, res) => {
     for (const it of pub.concat(sec)) {
       if (!it.name && !it.img) continue;
       const ex = d.eshop.products.find(p => p.baseId === it.baseId);
-      if (ex) { if (it.name) ex.name = it.name; if (it.price) ex.price = it.price; if (it.img) ex.img = it.img; ex.url = it.url; if (!ex.cat) ex.cat = it.secret ? '限定' : classify(it.name); updated++; }
-      else { d.eshop.products.push({ id: 'ep' + it.baseId, baseId: it.baseId, name: it.name, price: it.price, img: it.img, url: it.url, cat: it.secret ? '限定' : classify(it.name), pw: it.secret ? SECRET_PW : '' }); added++; }
+      if (ex) { if (it.name) ex.name = it.name; if (it.price) ex.price = it.price; if (it.img) ex.img = it.img; ex.url = it.url; if (!ex.catManual) { if (it.baseCat) ex.cat = it.baseCat; else if (!ex.cat) ex.cat = it.secret ? '限定' : classify(it.name); } updated++; }
+      else { d.eshop.products.push({ id: 'ep' + it.baseId, baseId: it.baseId, name: it.name, price: it.price, img: it.img, url: it.url, cat: it.baseCat || (it.secret ? '限定' : classify(it.name)), pw: it.secret ? SECRET_PW : '' }); added++; }
     }
     d.eshop.syncedAt = Date.now();
     if (added || updated) await saveData(d);
