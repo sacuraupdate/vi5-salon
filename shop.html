@@ -93,8 +93,8 @@ header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.94);backdro
   <input class="search" id="q" type="search" placeholder="🔍 商品名で検索">
   <div style="font-size:13px;font-weight:700;margin:2px 0 8px;color:var(--navy)">カテゴリーから探す</div><div class="cattiles" id="cats"></div><div class="cats" id="sorts" style="padding-bottom:6px"></div>
   <div class="lock" id="lockbox" style="display:none">
-    <b>🔒 限定商品があります（<span id="lockn"></span>点）</b>
-    <p>パスワードをお持ちの方は入力すると表示されます。</p>
+    <b>🔒 サロン限定商品（<span id="lockn"></span>点）</b>
+    <p>どなたでもご覧いただけます。<b>ご購入にはパスワードが必要</b>です（会員のお客様にお伝えしています）。</p>
     <div class="row"><input id="pw" type="password" placeholder="パスワード"><button class="btn" id="unlock">表示する</button></div>
   </div>
   <div class="grid" id="grid"></div>
@@ -140,26 +140,29 @@ async function ensureSync(){
   }catch(e){st.textContent='通信エラーで取り込めませんでした。電波の良い場所でページを開き直してください。';}
   draw();
 }
-function visible(p){return !p.pw||unlocked.includes(String(p.pw))}
+function canBuy(p){return !p.pw||unlocked.includes(String(p.pw))}
+function dispCat(p){return p.pw?'サロン限定':(p.cat||'その他')}
+function catIcon(c){const M=[[/限定/,'🔒','#F6E7EC'],[/シャンプー|トリートメント|ヘア|スタイリング|つるりん/,'🧴','#E3F0FA'],[/サプリ|酵素|ダイエット|インナー|プロテイン/,'💊','#EAF6EA'],[/ティ|茶|ハーブ/,'🍵','#EFF6E9'],[/UV|日焼/,'☀️','#FFF3DC'],[/スキン|美容液|化粧水|クレンジング|洗顔|パック|エクソソーム/,'✨','#FDEDF2'],[/コスメ|メイク|ファンデ|リップ/,'💄','#FCE9F0'],[/美顔|ドライヤー|機器|脱毛|MYTREX|ヤーマン|KINUJO/,'💆‍♀️','#EDEAF8'],[/ギフト|チケット|回数券/,'🎁','#FFF0E6'],[/フェム|デリケート/,'🌸','#FDEFF4'],[/ボディ|ハンド/,'🧖‍♀️','#EAF4F1'],[/エステプロ|ラボ/,'🌿','#E9F4EC'],[/すべて/,'🛍','#F3EFE4']];
+  for(const[r,e,b]of M)if(r.test(c))return[e,b];return['🧺','#F1F2F6'];}
 function draw(){
-  const _cc={};PRODUCTS.filter(visible).forEach(p=>{if(p.cat)_cc[p.cat]=(_cc[p.cat]||0)+1;});
-  const cats=Object.keys(_cc).sort((a,b)=>_cc[b]-_cc[a]);
-  const catImg=c=>{const p=PRODUCTS.find(x=>visible(x)&&x.cat===c&&x.img);return p?p.img:''};
-  byId('cats').innerHTML=[['all','すべて',(PRODUCTS.find(x=>visible(x)&&x.img)||{}).img||''],...cats.map(c=>[c,c,catImg(c)])].map(x=>`<button class="cattile ${cat===x[0]?'on':''}" data-c="${x[0]}"><span class="ci" style="background-image:url('${(x[2]||'').replace(/'/g,'%27')}')"></span><span class="cl">${x[1]}</span></button>`).join('');
+  const _cc={};PRODUCTS.forEach(p=>{const c=dispCat(p);_cc[c]=(_cc[c]||0)+1;});
+  const cats=Object.keys(_cc).filter(c=>c!=='サロン限定').sort((a,b)=>_cc[b]-_cc[a]);
+  if(_cc['サロン限定'])cats.push('サロン限定');
+  byId('cats').innerHTML=[['all','すべて'],...cats.map(c=>[c,c])].map(x=>{const[e,b]=catIcon(x[1]);return `<button class="cattile ${cat===x[0]?'on':''}" data-c="${x[0]}"><span class="ci" style="background:${b};display:flex;align-items:center;justify-content:center;font-size:30px">${e}</span><span class="cl">${x[1]}</span></button>`;}).join('');
   document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{cat=b.dataset.c;draw()});
-  const locked=PRODUCTS.filter(p=>p.pw&&!visible(p)).length;
+  const locked=PRODUCTS.filter(p=>p.pw&&!canBuy(p)).length;
   byId('lockbox').style.display=locked?'':'none';byId('lockn').textContent=locked;
   byId('sorts').innerHTML=[['rec','おすすめ順'],['low','価格が安い順'],['high','価格が高い順']].map(x=>`<button data-s="${x[0]}" class="${sort===x[0]?'on':''}">${x[1]}</button>`).join('');
   document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{sort=b.dataset.s;draw()});
-  let list=PRODUCTS.filter(visible).filter(p=>cat==='all'||p.cat===cat).filter(p=>!q||(p.name||'').toLowerCase().includes(q));
+  let list=PRODUCTS.filter(p=>cat==='all'||dispCat(p)===cat).filter(p=>!q||(p.name||'').toLowerCase().includes(q));
   if(sort==='low')list=list.slice().sort((a,b)=>(a.price||0)-(b.price||0));
   if(sort==='high')list=list.slice().sort((a,b)=>(b.price||0)-(a.price||0));
   byId('grid').innerHTML=list.map(p=>{
     const it=cart.find(x=>x.id===p.id);
     return `<div class="card"><div class="im" data-d="${p.id}" style="background-image:url('${(p.img||'').replace(/'/g,'%27')}')"></div><div class="bd">
-    ${p.pw?'<span class="lk">🔒 限定</span>':''}<div class="nm" data-d="${p.id}">${p.name||''}</div>
+    ${p.pw?'<span class="lk">🔒 サロン限定</span>':''}<div class="nm" data-d="${p.id}">${p.name||''}</div>
     <div class="pr">${p.price?yen(p.price):'価格はお問い合わせ'}<small>（税込）</small></div>
-    ${p.oos?'<button class="btn ghost addmini" disabled>在庫切れ</button>':`<button class="btn addmini ${it?'navy':''}" data-a="${p.id}">${it?'✓ '+it.qty+'点':'＋ カート'}</button>`}
+    ${p.oos?'<button class="btn ghost addmini" disabled>在庫切れ</button>':(p.pw&&!canBuy(p)?`<button class="btn ghost addmini" data-pwask="${p.id}" style="color:var(--gold);border-color:var(--gold)">🔒 購入はPW</button>`:`<button class="btn addmini ${it?'navy':''}" data-a="${p.id}">${it?'✓ '+it.qty+'点':'＋ カート'}</button>`)}
     </div></div>`;}).join('');
   document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{
     const p=PRODUCTS.find(x=>x.id===b.dataset.a);const it=cart.find(x=>x.id===p.id);
@@ -167,6 +170,7 @@ function draw(){
     draw();
   });
   document.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{detailId=b.dataset.d;view='detail';openModal();});
+  document.querySelectorAll('[data-pwask]').forEach(b=>b.onclick=()=>{const lb=byId('lockbox');if(lb){lb.scrollIntoView({behavior:'smooth',block:'center'});const pi=byId('pw');if(pi){pi.focus();lb.style.boxShadow='0 0 0 3px var(--gold)';setTimeout(()=>{lb.style.boxShadow='';},1200);}}});
   const bar=byId('bar');bar.classList.toggle('on',cart.length>0);
   const qn=cart.reduce((a,x)=>a+(x.qty||1),0);byId('barn').textContent=qn;byId('bart').textContent=yen(cart.reduce((a,x)=>a+x.price*(x.qty||1),0));
   const cn=byId('cartn');cn.style.display=cart.length?'':'none';cn.textContent=cart.reduce((a,x)=>a+(x.qty||1),0);
@@ -188,9 +192,10 @@ function drawSheet(){
     ${p.pw?'<span class="lk">🔒 限定商品</span>':''}<h2 style="margin-bottom:6px">${p.name||''}</h2>
     <div class="pr" style="font-size:20px;color:var(--navy);font-weight:700">${p.price?yen(p.price):'価格はお問い合わせ'} <small style="font-size:12px;color:var(--soft);font-weight:400">（税込）</small></div>
     ${p.desc?`<p style="font-size:13.5px;color:var(--soft);line-height:2;margin:10px 0">${p.desc}</p>`:''}
-    <button class="btn navy" style="width:100%;margin-top:14px" id="d-add">${it?'✓ さらに1点追加する（現在'+it.qty+'点）':'カートに入れる'}</button>
+    ${(p.pw&&!canBuy(p))?`<div class="lock" style="margin-top:14px"><b>🔒 ご購入にはパスワードが必要です</b><p>会員のお客様にお伝えしているパスワードをご入力ください。</p><div class="row"><input id="d-pw" type="password" placeholder="パスワード"><button class="btn" id="d-unlock">入力する</button></div></div>`:`<button class="btn navy" style="width:100%;margin-top:14px" id="d-add">${it?'✓ さらに1点追加する（現在'+it.qty+'点）':'カートに入れる'}</button>`}
     <button class="btn ghost" style="width:100%;margin-top:8px" id="d-close">閉じる</button>`;
-    byId('d-add').onclick=()=>{const it2=cart.find(x=>x.id===p.id);if(it2)it2.qty++;else cart.push({id:p.id,name:p.name,price:p.price||0,qty:1});draw();drawSheet();};
+    const da=byId('d-add');if(da)da.onclick=()=>{const it2=cart.find(x=>x.id===p.id);if(it2)it2.qty++;else cart.push({id:p.id,name:p.name,price:p.price||0,qty:1});draw();drawSheet();};
+    const du=byId('d-unlock');if(du)du.onclick=()=>{const v=(byId('d-pw').value||'').trim();if(!v)return;if(PRODUCTS.some(x=>String(x.pw)===v)){unlocked.push(v);draw();drawSheet();}else alert('パスワードが違います。');};
     byId('d-close').onclick=closeModal;return;
   }
   if(view==='done'){
