@@ -113,7 +113,23 @@ const byId=i=>document.getElementById(i);
 async function kv(key){const r=await fetch(SUPA+'/rest/v1/kv?key=eq.'+key+'&select=value',{headers:H});if(!r.ok)throw 0;const j=await r.json();if(!j.length)return null;let v=j[0].value;for(let i=0;i<4;i++){if(typeof v==='string'){try{v=JSON.parse(v);continue}catch(e){break}}if(Array.isArray(v)){v=v[0];continue}break}return v}
 async function load(){
   try{const d=await kv('salon:data');PRODUCTS=((d&&d.eshop&&d.eshop.products)||[]).filter(p=>!p.hide);}catch(e){}
-  byId('loading').textContent=PRODUCTS.length?'':'商品は準備中です。もうしばらくお待ちください。';
+  byId('loading').textContent=PRODUCTS.length?'':'';
+  draw();
+  if(!PRODUCTS.length)ensureSync();
+}
+async function ensureSync(){
+  const st=byId('loading');
+  st.textContent='初回準備中：BASEから商品を取り込んでいます…（1分ほどかかります。このままお待ちください）';
+  try{
+    const r=await fetch('/api/base-sync');const j=await r.json().catch(()=>null);
+    if(j&&j.ok){
+      try{const d=await kv('salon:data');PRODUCTS=((d&&d.eshop&&d.eshop.products)||[]).filter(p=>!p.hide);}catch(e){}
+      if(PRODUCTS.length){st.textContent='';draw();return;}
+      st.textContent='取り込み完了しましたが商品が0件でした（公開'+(j.public||0)+'件／非公開'+(j.secret||0)+'件'+(j.secretError?('・'+j.secretError):'')+'）。この画面をスクショして開発担当にお送りください。';
+    }else{
+      st.textContent='取り込みエラー：'+((j&&j.error)||'応答なし')+'。この画面をスクショして開発担当にお送りください。';
+    }
+  }catch(e){st.textContent='通信エラーで取り込めませんでした。電波の良い場所でページを開き直してください。';}
   draw();
 }
 function visible(p){return !p.pw||unlocked.includes(String(p.pw))}
