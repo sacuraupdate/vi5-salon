@@ -10,6 +10,7 @@ const UA = { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS 
 
 function dec(s){return String(s||'').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#0?39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#\d+;/g,'');}
 function strip(s){return dec(String(s||'').replace(/<[^>]*>/g,' ')).replace(/\s+/g,' ').trim();}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 async function fx(url, headers) {
   const r = await fetch(url, { headers: Object.assign({}, UA, headers || {}), redirect: 'manual' });
   const cookies = (r.headers.getSetCookie ? r.headers.getSetCookie() : []).map(c => c.split(';')[0]);
@@ -106,7 +107,8 @@ async function catCatalog(origin, headers, sampleId) {
 }
 async function catMembership(origin, headers, cats, budgetUntil) {
   const map = {};
-  await pool(cats, 8, async (c) => {
+  await pool(cats, 4, async (c) => {
+    await sleep(120);
     for (let p = 1; p <= 12; p++) {
       if (Date.now() > budgetUntil) return;
       const r = await fx(origin + '/categories/' + c.id + '?page=' + p, headers);
@@ -158,9 +160,13 @@ module.exports = async (req, res) => {
     const known = {}; d.eshop.products.forEach(p => { if (p.baseId) known[p.baseId] = p; });
 
     // ---- 公開ショップ ----
-    let pubIds = await idsFromSitemap(PUB);
+    const smProbe = await fx(PUB + '/sitemap.xml');
+    diag.smStatus = smProbe.status;
+    let pubIds = [];
+    { let m; const re=/\/items\/(\d+)/g; const seen=new Set(); while((m=re.exec(smProbe.text)))seen.add(m[1]); pubIds=[...seen]; }
     if (!pubIds.length) pubIds = await idsFromList(PUB);
     diag.pubIds = pubIds.length;
+    if (!pubIds.length) diag.blocked = 'BASE側が一時ブロック中の可能性（時間をおいて自動回復します）';
 
     // ---- 非公開ショップ ----
     let secIds = [], ck = '', secErr = '';
@@ -186,7 +192,8 @@ module.exports = async (req, res) => {
     diag.jobs = jobs.length;
 
     let added = 0, updated = 0, fetched = 0;
-    await pool(jobs, 10, async (job) => {
+    await pool(jobs, 4, async (job) => {
+      await sleep(150);
       if (Date.now() - t0 > 45000) return; // 時間内で打ち切り→次回続きから
       const origin = job.secret ? SEC : PUB;
       const r = await fx(origin + '/items/' + job.id, job.secret ? { Cookie: ck } : null);
@@ -206,15 +213,16 @@ module.exports = async (req, res) => {
         d.eshop.products.push(np); known[job.id] = np; added++;
       }
     });
-    // 全商品にカテゴリ適用（手動設定は保持）
+    // 全商品にカテゴリ適用（手動設定は保持・マップが取れた時だけ／取れていない時は現状維持）
     let recat = 0;
+    const pubOk = Object.keys(pubMap).length >= 10;
+    const secOk = Object.keys(secMap).length >= 1;
     for (const p of d.eshop.products) {
       if (p.catManual) continue;
-      const real = p.pw ? (secMap[p.baseId] || '') : (pubMap[p.baseId] || '');
-      const nc = real || (p.pw ? '限定' : 'その他');
-      if (p.cat !== nc) { p.cat = nc; recat++; }
+      if (p.pw) { if (secOk && secMap[p.baseId] && p.cat !== secMap[p.baseId]) { p.cat = secMap[p.baseId]; recat++; } }
+      else if (pubOk) { const nc = pubMap[p.baseId] || 'その他'; if (p.cat !== nc) { p.cat = nc; recat++; } }
     }
-    diag.recat = recat;
+    diag.recat = recat; diag.pubOk = pubOk;
     d.eshop.syncedAt = Date.now();
     if (added || updated || recat) await saveData(d);
     diag.added = added; diag.updated = updated; diag.fetched = fetched;
