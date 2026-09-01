@@ -12,7 +12,7 @@ function parseList(html, origin) {
   while ((m = re.exec(html))) { if (!ids.includes(m[1])) ids.push(m[1]); }
   for (const id of ids) {
     const pos = html.indexOf('/items/' + id);
-    const seg = html.slice(Math.max(0, pos - 600), pos + 1600);
+    const seg = html.slice(pos, pos + 1800);const segB = html.slice(Math.max(0, pos - 400), pos);
     const img = (seg.match(/https:\/\/baseec-img-mng\.akamaized\.net\/images\/item\/[^"'\s\\]+/) || [''])[0]
       .replace(/&amp;/g, '&');
     let name = '';
