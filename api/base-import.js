@@ -19,7 +19,8 @@ function parseList(html, origin) {
     const alt = seg.match(/alt="([^"]{2,80})"/);
     if (alt) name = alt[1];
     if (!name) { const t = seg.match(/title="([^"]{2,80})"/); if (t) name = t[1]; }
-    const pr = seg.match(/[¥￥]\s?([\d,]{2,9})/);
+    let pr = seg.match(/[¥￥]\s?([\d,]{2,9})/);
+    if (!pr) pr = seg.match(/([\d,]{3,9})\s*円/);
     const price = pr ? parseInt(pr[1].replace(/,/g, '')) : 0;
     if (!out.some(x => x.baseId === id)) out.push({ baseId: id, name: name, price: price, img: img, url: origin + '/items/' + id });
   }
