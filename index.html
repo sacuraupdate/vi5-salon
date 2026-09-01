@@ -3,7 +3,18 @@
 <head>
 <meta charset="UTF-8"><!-- deploy:force-2024-vi5 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vi5 — 予約 & 管理</title>
+<title>Vi5｜北浜のビューティーサロン — 24時間ネット予約</title>
+<meta name="description" content="大阪・北浜のビューティーサロンVi5。まつ毛・眉スタイリング・漢方ハーブピーリング・ヘアセット・メイク。24時間いつでもスマホからご予約いただけます。">
+<meta property="og:title" content="Vi5｜北浜のビューティーサロン">
+<meta property="og:description" content="24時間いつでもスマホでかんたん予約。まつ毛・眉・ハーブピーリング・ヘアセット・メイク。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://vi5-salon.vercel.app/">
+<meta property="og:image" content="https://vi5-salon.vercel.app/hero.jpg">
+<meta property="og:site_name" content="Vi5">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://vi5-salon.vercel.app/hero.jpg">
+<meta name="theme-color" content="#1E2A47">
+<link rel="preconnect" href="https://tehcaufdztgpbrknpshk.supabase.co">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,400&family=Hanken+Grotesk:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
@@ -927,12 +938,12 @@ button{white-space:normal}
     <nav class="nav" id="nav"><button data-view="home" class="active" aria-label="ホーム"><span class="nv-ic">🏠</span><span class="nv-t">ホーム</span></button><button data-view="book" aria-label="予約"><span class="nv-ic">📅</span><span class="nv-t">予約</span></button><button data-view="course" aria-label="講習"><span class="nv-ic">🎓</span><span class="nv-t">講習</span></button><button data-nav="shopx" aria-label="ショップ"><span class="nv-ic">🛍</span><span class="nv-t">ショップ</span></button><button data-view="board" aria-label="紹介ボード"><span class="nv-ic">📌</span><span class="nv-t">紹介</span></button><button data-view="staff" aria-label="スタッフ紹介"><span class="nv-ic">💇</span><span class="nv-t">スタッフ</span></button><button data-view="care" aria-label="ケア・同意書"><span class="nv-ic">📄</span><span class="nv-t">ケア</span></button><button data-nav="line" aria-label="お問い合わせ"><span class="nv-ic">💬</span><span class="nv-t">お問い合わせ</span></button><button data-nav="review" aria-label="口コミ"><span class="nv-ic">⭐</span><span class="nv-t">口コミ</span></button></nav>
     <button class="topback" id="backbtn" style="display:none">← 戻る</button>
   </header>
-  <main id="app"></main>
+  <main id="app"><div style="text-align:center;padding:120px 20px;color:#6E727C;font-family:sans-serif"><div style="font-size:34px;color:#1E2A47;font-weight:700;letter-spacing:.06em">Vi5</div><div style="margin-top:10px;font-size:14px">読み込んでいます…</div></div></main>
   <footer class="sitefoot"><button id="staff-entry">サロン管理（スタッフ専用）</button></footer>
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260901m';
+const APP_REV='r20260901n';
 (async function(){try{
   const r=await fetch('/index.html',{method:'HEAD',cache:'no-store'});
   const et=(r.headers.get('etag')||r.headers.get('last-modified')||'').trim();
@@ -1347,6 +1358,17 @@ const optTotal=arr=>optItemsOf(arr).reduce((s,o)=>s+(o.price||0),0);
 const optChips=(arr,attr)=>{const list=(S().options||[]);if(!list.length)return '<div class="note" style="margin:0">追加できるオプションはありません。</div>';return `<div class="optchips">${list.map(o=>`<button class="optchip ${(arr||[]).includes(o.id)?'on':''}" data-${attr}="${o.id}">${o.name}<span>${o.price?'+'+yen(o.price):'無料'}${o.min?'・'+o.min+'分':''}</span></button>`).join('')}</div>`};
 const nav=byId('nav');
 function unreadCount(){if(!state.mpPhone)return 0;const c=DATA.customers[normPhone(state.mpPhone)];return c?(c.notices||[]).filter(n=>!n.read).length:0}
+function updateFloatBook(){
+  let fb=document.getElementById('floatbook');
+  const custViews=['home','gallery','share','board','staff','course','care'];
+  const show=custViews.includes(state.view);
+  if(show&&!fb){fb=document.createElement('button');fb.id='floatbook';fb.textContent='📅 ご予約';
+    fb.style.cssText='position:fixed;right:16px;bottom:18px;z-index:60;background:var(--gold);color:#fff;border:none;border-radius:40px;padding:14px 22px;font-size:15px;font-weight:700;box-shadow:0 6px 18px rgba(30,42,71,.25);font-family:inherit';
+    fb.onclick=()=>{try{startBooking();}catch(e){state.view='book';render();}};
+    document.body.appendChild(fb);}
+  if(fb)fb.style.display=show?'':'none';
+  if(fb&&state.view==='home')fb.style.display='none';/* ホームには大ボタンがあるため非表示 */
+}
 function updateNav(){if(nav)nav.style.display=(state.view==='admin')?'none':'';nav.querySelectorAll('button').forEach(b=>{b.classList.toggle('active',b.dataset.view===state.view)});
   const acct=byId('acctbtn');if(acct)acct.classList.toggle('active',state.view==='mypage');
   const lbl=byId('acctlbl');const pts=byId('acctpts');const c=state.mpPhone&&DATA.customers[normPhone(state.mpPhone)];if(lbl)lbl.textContent=c?(c.name+t('sama')):t('account');if(pts)pts.textContent=c?('★ '+pointBalance(c.phone).toLocaleString()+'pt'):'';
@@ -1357,7 +1379,7 @@ async function setLang(v){state.lang=v;document.documentElement.lang=v;try{if(wi
 async function loadLang(){try{if(window.storage){const r=await window.storage.get('salon:lang',false);if(r&&r.value)return r.value}}catch(e){}return 'ja'}
 function normDATA(){try{linksMigrate();staffAddMigrate();}catch(_e){}try{DATA=DATA||{};['customers'].forEach(k=>{if(typeof DATA[k]!=='object'||DATA[k]===null||Array.isArray(DATA[k]))DATA[k]={};});['bookings','blocks','posts','campaigns','shares','boards','feedback'].forEach(k=>{if(!Array.isArray(DATA[k]))DATA[k]=[];});if(!DATA.settings||typeof DATA.settings!=='object')DATA.settings={};if(!Array.isArray(DATA.services)||!DATA.services.length)DATA.services=(typeof SEED_SERVICES!=='undefined')?JSON.parse(JSON.stringify(SEED_SERVICES)):[];if(!Array.isArray(DATA.staff)||!DATA.staff.length)DATA.staff=(typeof SEED_STAFF!=='undefined')?JSON.parse(JSON.stringify(SEED_STAFF)):[];services=DATA.services;staff=DATA.staff;}catch(e){}}
 function attachInputTools(){try{const excl=['vs-text','shop-bulk','shop-prompt','ch-text','st-pw','mp-newpw'];app.querySelectorAll('textarea').forEach(ta=>{if(!ta.id||excl.indexOf(ta.id)>=0||ta.dataset.tooled)return;const par=ta.parentElement;if(par&&par.querySelector('.mic,.ai,.iat-mic'))return;ta.dataset.tooled='1';const bar=document.createElement('div');bar.className='iat';bar.innerHTML='<button type="button" class="iat-mic">🎤 音声</button><button type="button" class="iat-ai">✨ AIで整える</button>';ta.parentNode.insertBefore(bar,ta.nextSibling);bar.querySelector('.iat-mic').onclick=function(){startVoice(ta.id,this);};bar.querySelector('.iat-ai').onclick=function(){runAi(ta.id,this,'memo');};});}catch(e){}}
-function render(){normDATA();updateNav();updateBack();if(state.view==='home')renderHome();else if(state.view==='book')renderCustomer();else if(state.view==='gallery')renderGallery();else if(state.view==='share')renderShare();else if(state.view==='board')renderBoard();else if(state.view==='staff')renderStaffIntro();else if(state.view==='course')renderCourse();else if(state.view==='care')renderCareDocs();else if(state.view==='mypage')renderMypage();else renderAdmin();attachInputTools();_pushHistory();}
+function render(){normDATA();updateNav();updateBack();updateFloatBook();if(state.view==='home')renderHome();else if(state.view==='book')renderCustomer();else if(state.view==='gallery')renderGallery();else if(state.view==='share')renderShare();else if(state.view==='board')renderBoard();else if(state.view==='staff')renderStaffIntro();else if(state.view==='course')renderCourse();else if(state.view==='care')renderCareDocs();else if(state.view==='mypage')renderMypage();else renderAdmin();attachInputTools();_pushHistory();}
 function stepsBar(n){let h='<div class="steps">';for(let i=0;i<4;i++)h+=`<div class="s ${i<=n?'on':''}"></div>`;return h+'</div>'}
 function go(v){state.view=v;render();window.scrollTo(0,0)}
 var _hLast="",_hRestoring=false;
@@ -1748,6 +1770,13 @@ function stepDate(){
 }
 function itemsLines(staffId){return state.cart.map(x=>`${itemName(x)} <span class="sub">${yen(priceFor(x.id,staffId))}</span>`).join('<br>')}
 function dateLabel(){return `${mdLabel(state.b.date)} ${state.b.time}`}
+function previsitNote(){const cats=new Set(state.cart.map(x=>x.cat));const L=[];
+  if(cats.has('perm')||cats.has('lash')||cats.has('wlash'))L.push('👁 まつ毛：できるだけアイメイクなしでお越しください');
+  if(cats.has('brow'))L.push('✏️ 眉：剃らず・抜かず、生やした状態でお越しください');
+  if(cats.has('peel'))L.push('🌿 フェイス：すっぴんでのご来店がおすすめです');
+  if(cats.has('makeup'))L.push('💄 メイク：すっぴんでお越しください（道具は当店にもあります）');
+  if(!L.length)return '';
+  return `<div class="field"><label>ご来店前のお願い</label><div class="note" style="border:1.5px solid var(--gold);border-radius:12px;padding:10px 12px;margin:0;line-height:1.9">${L.join('<br>')}</div></div>`;}
 function stepInfo(){
   if(state.bookMode==='pair')return stepInfoPair();
   const b=state.b;if(!b.phone&&state.mpPhone){const lc=DATA.customers[normPhone(state.mpPhone)];if(lc){b.phone=lc.phone;b.name=b.name||lc.name;}}
@@ -1761,7 +1790,7 @@ function stepInfo(){
   const newFields=!known?`<div class="field two"><div><label>生年月日</label><input id="f-bday" inputmode="numeric" value="${b.birthday}" placeholder="例）19900615（数字8桁）"></div><div><label>パスワード <span class="opt">(マイページ用)</span></label><input id="f-pw" type="password" value="${b.password}" placeholder="4文字以上"></div></div><div class="field"><label>ご紹介者の電話番号 <span class="opt">(任意・紹介でお互いに${CONFIG.referralBonus}pt)</span></label><input id="f-ref" value="${b.referrer}" inputmode="tel" placeholder="090-..."></div><div class="note" style="margin-top:-2px;color:var(--gold)">※ 会員登録は<b>初回のみ</b>（お名前・電話番号・生年月日・パスワード）。ご登録で<b>${CONFIG.signupBonus}ポイント</b>プレゼント🎁 パスワードはマイページのログインに使います。お忘れの場合は公式LINEへご連絡ください。次回以降はログインするだけでOKです。</div>`:'';
   const party='';
   app.innerHTML=stepsBar(3)+`<div class="fade"><div class="eyebrow">Step 04</div><div class="h-title">${t('confirmT')}</div><div class="h-sub">${t('confirmSub')}</div>${recog}
-    <div class="summary"><div class="sum-row"><span class="k">メニュー</span><span class="sum-list">${itemsLines(b.staff&&b.staff.id)}</span></div><div class="sum-row"><span class="k">所要時間</span><span class="v">約${cartMin()}分</span></div><div class="sum-row"><span class="k">担当</span><span class="v">${b.staff.name}</span></div><div class="sum-row"><span class="k">日時</span><span class="v">${dateLabel()}</span></div><div class="sum-row"><span class="k">小計</span><span class="v">${yen(gross)}</span></div>${rate>0?`<div class="sum-row"><span class="k">${dd.label}</span><span class="v disc">-${yen(gross-afterDisc)}</span></div>`:''}${coupon>0?`<div class="sum-row"><span class="k">クーポン</span><span class="v disc">-${yen(coupon)}</span></div>`:''}${use>0?`<div class="sum-row"><span class="k">ポイント利用</span><span class="v pt">-${yen(use)}</span></div>`:''}<div class="sum-row sum-total"><span class="k">お支払い</span><span class="v">${yen(payment)}</span></div></div>
+    <div class="summary"><div class="sum-row"><span class="k">メニュー</span><span class="sum-list">${itemsLines(b.staff&&b.staff.id)}</span></div><div class="sum-row"><span class="k">所要時間</span><span class="v">約${cartMin()}分</span></div><div class="sum-row"><span class="k">ご退店目安</span><span class="v">約${cartMin()+15}分後（お会計・お見送り含む）</span></div><div class="sum-row"><span class="k">担当</span><span class="v">${b.staff.name}</span></div><div class="sum-row"><span class="k">日時</span><span class="v">${dateLabel()}</span></div><div class="sum-row"><span class="k">小計</span><span class="v">${yen(gross)}</span></div>${rate>0?`<div class="sum-row"><span class="k">${dd.label}</span><span class="v disc">-${yen(gross-afterDisc)}</span></div>`:''}${coupon>0?`<div class="sum-row"><span class="k">クーポン</span><span class="v disc">-${yen(coupon)}</span></div>`:''}${use>0?`<div class="sum-row"><span class="k">ポイント利用</span><span class="v pt">-${yen(use)}</span></div>`:''}<div class="sum-row sum-total"><span class="k">お支払い</span><span class="v">${yen(payment)}</span></div></div>
     <div class="field"><label>お名前</label><input id="f-name" value="${b.name||(known?known.name:'')}" placeholder="山田 花子"></div>
     <div class="field"><label>電話番号 <span class="opt">(登録済みなら自動で会員情報を表示)</span></label><input id="f-phone" value="${b.phone}" inputmode="tel" placeholder="09012345678（ハイフンなし）"></div>
     ${useField}${newFields}
@@ -1769,7 +1798,7 @@ function stepInfo(){
     <div class="field"><label>同伴について <span class="opt">(該当があれば選択)</span></label><div class="chips">${chips}</div></div>
     <div class="field"><label>オプション <span class="opt">(必要に応じて追加)</span></label>${optChips(b.options,'opt')}</div>
     <div class="field"><label>ご要望・ご連絡事項 <span class="opt">(任意)</span></label><textarea id="f-note" placeholder="アレルギー、当日のご希望、その他お伝えしたいことがあればご記入ください。">${b.note||''}</textarea></div>
-    <div class="cancel-note">🕐 ご予約の<b>変更・キャンセルは前日の21時まで</b>、マイページから承ります。</div><div class="field"><label>同意書</label><div class="terms"><b>ご予約・施術に関する同意事項</b>${TERMS.split('\n').join('<br>')}</div><div class="agree ${b.agreed?'on':''}" id="agree"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>上記に同意して予約します</div></div>
+    ${previsitNote()}<div class="cancel-note">🕐 ご予約の<b>変更・キャンセルは前日の21時まで</b>、マイページから承ります。</div><div class="field"><label>同意書</label><div class="terms"><b>ご予約・施術に関する同意事項</b>${TERMS.split('\n').join('<br>')}</div><div class="agree ${b.agreed?'on':''}" id="agree"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>上記に同意して予約します</div></div>
   </div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">戻る</button><button class="btn btn-primary" id="confirm" ${b.agreed?'':'disabled'}>この内容で予約する</button></div>`;
   byId('f-name').oninput=e=>state.b.name=e.target.value;
   byId('f-phone').oninput=e=>{state.b.phone=e.target.value;const c=DATA.customers[normPhone(e.target.value)];if(c)state.b.name=c.name;softInfo()};
@@ -1974,7 +2003,7 @@ function stepDone(){
   app.innerHTML=`<div class="done"><div class="done-check"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div><h2>ご予約を承りました</h2><p>${c.name} 様、ありがとうございます。<br>確認のご連絡を ${bk.phone} 宛に差し上げます。</p><div class="code">${bk.id}</div>
     <div class="ptgain">${loggedIn?`${earned>0?`今回の獲得予定 <b>+${earned.toLocaleString()}pt</b><br>`:`<span style="color:var(--ink-soft)">初回ご来店のため通常ポイントは2回目から付与されます。</span><br>`}${bk.referralBonus?`ご紹介ボーナス <b>+${bk.referralBonus}pt</b><br>`:''}現在の保有ポイント <b>${bal.toLocaleString()}pt</b>`:`ポイントはご来店時に加算されます。${bk.referralBonus?`<br>ご紹介ボーナス <b>+${bk.referralBonus}pt</b>`:''}<br><span style="color:var(--ink-soft)">マイページにログインすると保有ポイントを確認できます。</span>`}</div>
     <div class="summary" style="text-align:left"><div class="sum-row"><span class="k">メニュー</span><span class="sum-list">${bk.items.map(x=>`${itemName(x)} <span class="sub">${yen(x.price)}</span>`).join('<br>')}</span></div><div class="sum-row"><span class="k">担当</span><span class="v">${stById(bk.staffId).name}</span></div><div class="sum-row"><span class="k">日時</span><span class="v">${mdLabel(bk.date)} ${bk.time}</span></div>${partyTxt}<div class="sum-row sum-total"><span class="k">お支払い</span><span class="v">${yen(bkPayment(bk))}</span></div></div>
-    ${loggedIn?rankBox:''}${policyBox}<button class="btn btn-primary" id="again" style="width:100%">${t('toHome')}</button></div>`;
+    ${loggedIn?rankBox:''}${previsitNote.call?(()=>{const a=S().address||'';const mu='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(a||'vi5 北浜');return `<div class="summary" style="text-align:left"><div class="sum-row"><span class="k">📍 アクセス</span><span class="sum-list">${a}<br><a href="${mu}" target="_blank" style="color:var(--gold);font-weight:700">Googleマップで道順を見る</a></span></div></div>`;})():''}${policyBox}<button class="btn btn-primary" id="again" style="width:100%">${t('toHome')}</button></div>`;
   byId('again').onclick=()=>{state.cart=[];state.openCat=null;state.bookMode='single';state.pairPerson=1;state.pairA=null;state.cartA=[];state.cartB=[];state.staffA=null;state.staffB=null;state.optA=[];state.optB=[];state.pairEditing='A';state.b.options=[];state.b={staff:null,date:null,time:null,name:'',phone:'',companions:[],referrer:'',usePoints:0,haste:null,agreed:false,party2:false,p2name:'',p2phone:'',birthday:'',password:'',b2name:'',b2phone:'',b2birthday:'',b2password:'',options:[]};state.calMonth=new Date(today.getFullYear(),today.getMonth(),1);state.step=0;go('home')};
 }
 
