@@ -123,21 +123,28 @@ async function load(){
   byId('loading').textContent=PRODUCTS.length?'':'';
   draw();
   if(!PRODUCTS.length){ensureSync();}
-  else{try{if(!sessionStorage.getItem('vi5shop:sync')){sessionStorage.setItem('vi5shop:sync','1');fetch('/api/base-sync').then(async r=>{const j=await r.json().catch(()=>null);const d=await kv('salon:data');PRODUCTS=((d&&d.eshop&&d.eshop.products)||[]).filter(p=>!p.hide);draw();if(j&&j.remaining>0){fetch('/api/base-sync').then(async()=>{const d2=await kv('salon:data');PRODUCTS=((d2&&d2.eshop&&d2.eshop.products)||[]).filter(p=>!p.hide);draw();}).catch(()=>{});}}).catch(()=>{});}}catch(e){}}
+  else{syncLoop(false);}
 }
-async function ensureSync(){
+async function ensureSync(){await syncLoop(true);}
+async function syncLoop(showEmpty){
+  if(window._syncing)return;window._syncing=true;
   const st=byId('loading');
-  st.textContent='初回準備中：BASEから商品を取り込んでいます…（1分ほどかかります。このままお待ちください）';
+  let last=null;
   try{
-    const r=await fetch('/api/base-sync');const j=await r.json().catch(()=>null);
-    if(j&&j.ok){
+    for(let round=1;round<=10;round++){
+      if(st)st.textContent=(PRODUCTS.length?('商品を追加取り込み中…（現在'+PRODUCTS.length+'点・'+round+'回目）'):'BASEから商品を取り込んでいます…（1〜2分。このままお待ちください）');
+      const r=await fetch('/api/base-sync');last=await r.json().catch(()=>null);
       try{const d=await kv('salon:data');PRODUCTS=((d&&d.eshop&&d.eshop.products)||[]).filter(p=>!p.hide);}catch(e){}
-      if(PRODUCTS.length){st.textContent='';draw();return;}
-      st.textContent='取り込み完了しましたが商品が0件でした（公開'+(j.public||0)+'件／非公開'+(j.secret||0)+'件'+(j.secretError?('・'+j.secretError):'')+'）。この画面をスクショして開発担当にお送りください。';
-    }else{
-      st.textContent='取り込みエラー：'+((j&&j.error)||'応答なし')+'。この画面をスクショして開発担当にお送りください。';
+      draw();
+      if(!last||!last.ok)break;
+      if(!last.remaining||last.remaining<=0)break;
     }
-  }catch(e){st.textContent='通信エラーで取り込めませんでした。電波の良い場所でページを開き直してください。';}
+  }catch(e){}
+  window._syncing=false;
+  if(st){
+    if(PRODUCTS.length){st.innerHTML='<span style="font-size:11px;color:#aab">同期完了：商品 '+PRODUCTS.length+'点'+(last&&last.secErr?'（非公開側：'+last.secErr+'）':'')+'</span>';}
+    else if(showEmpty){st.textContent='商品を取り込めませんでした（'+((last&&(last.error||last.secErr))||'応答なし')+'）。この画面をスクショして開発担当にお送りください。';}
+  }
   draw();
 }
 function canBuy(p){return !p.pw||unlocked.includes(String(p.pw))}
