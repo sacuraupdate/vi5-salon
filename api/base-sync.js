@@ -215,7 +215,7 @@ module.exports = async (req, res) => {
     });
     // 全商品にカテゴリ適用（手動設定は保持・マップが取れた時だけ／取れていない時は現状維持）
     let recat = 0;
-    const pubOk = Object.keys(pubMap).length >= 10;
+    const pubCnt=d.eshop.products.filter(p=>!p.pw).length;const pubOk = Object.keys(pubMap).length >= Math.min(10, Math.max(2, Math.ceil(pubCnt*0.3)));
     const secOk = Object.keys(secMap).length >= 1;
     for (const p of d.eshop.products) {
       if (p.catManual) continue;
