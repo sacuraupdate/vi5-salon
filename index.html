@@ -932,7 +932,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260901k';
+const APP_REV='r20260901m';
 (async function(){try{
   const r=await fetch('/index.html',{method:'HEAD',cache:'no-store'});
   const et=(r.headers.get('etag')||r.headers.get('last-modified')||'').trim();
@@ -1399,7 +1399,7 @@ function renderHome(){if(textsMigrate())saveData(DATA);loadWeather();
   const menuTiles=menuPics.length?`<div class="sec-label"><span class="t">メニュー</span><button class="more" id="menumore">すべて見る →</button></div><div class="mtile-grid">${menuPics.map(s2=>`<button class="mtile" data-mtile="1"><div class="mtile-img" style="${s2.img?`background-image:url('${s2.img}')`:'background:linear-gradient(135deg,var(--navy),#33436b)'}">${s2.img?'':'<span class="mtile-mono">Vi5</span>'}</div><div class="mtile-b"><div class="mtile-n">${svcName(s2)}</div><div class="mtile-p">${s2.price?yen(s2.price):'—'}</div></div></button>`).join('')}</div>`:'';
   app.innerHTML=`<div class="fade">${bannerHtml}
     <div class="hero-photo"><img src="${heroImg}" alt="Vi5"></div>
-    <button class="btn btn-book-big" id="hbook">📅 ご予約はこちら</button>${homeTopBlock()}
+    <button class="btn btn-book-big" id="hbook">📅 ご予約はこちら</button><div class="tipwrap" style="margin:10px 0 4px"><div class="tip-bubble" style="flex:1"><div class="tip-h">💁‍♀️ 今日の美容豆知識</div><div class="tip-x">${beautyTip()}</div></div>${weatherHtml()}</div>${homeTopBlock()}
     ${(S().noticeBar)?`<div class="noticebar">📢 ${S().noticeBar}</div>`:''}
     ${promoCardHtml()}
     
@@ -1415,7 +1415,7 @@ function renderHome(){if(textsMigrate())saveData(DATA);loadWeather();
       <details><summary>予約はどこからできますか？</summary><div class="faq-a">画面上部のメニュー「予約」から、24時間いつでもご予約いただけます。メニュー→担当→日時を選ぶだけ。情報の入力は初回のみです。</div></details>
       <details><summary>予約の変更・キャンセルは？</summary><div class="faq-a">マイページの「次回のご予約」から、<b>前日の21時まで</b>「🕐時間を変更」「キャンセル」ができます。それ以降は公式LINEへご連絡ください。</div></details>
       <details><summary>マイページはどうやってログインしますか？</summary><div class="faq-a">電話番号とパスワードでログインできます。はじめての方は「予約」または「マイページ」の<b>新規ご登録</b>から、お名前・電話番号・生年月日・パスワードをご登録ください。パスワードをお忘れの場合は公式LINEへご連絡ください。</div></details>
-      <details><summary>ポイントはどうやって貯まりますか？</summary><div class="faq-a">ご来店ごと、お誕生日、お友達のご紹介などで貯まります。ポイントは<b>ご予約メニュー（施術料金）のお支払いにのみ</b>ご利用いただけます。商品との交換・現金へのお引き換えはできません。なお、<b>同じ当店に通われている方へポイントをお贈りいただくこと</b>は可能です。残高はマイページでいつでも確認できます。</div></details>
+      <details><summary>ポイントはどうやって貯まりますか？</summary><div class="faq-a">ご来店ごと、お誕生日、お友達のご紹介などで貯まります。ポイントは<b>ご来店時に店頭でお申し付けいただくと、施術料金のお支払いに</b>ご利用いただけます（1pt=¥1）。商品との交換・現金へのお引き換えはできません。なお、<b>同じ当店に通われている方へポイントをお贈りいただくこと</b>は可能です。残高はマイページでいつでも確認できます。</div></details>
       <details><summary>会員ランクの割引とポイントは何が違いますか？</summary><div class="faq-a"><b>ランク割引</b>は毎回のお会計が自動で5%・10%OFFになる特典で、何度使っても減りません。<b>ポイント</b>は貯めて使う「1pt＝1円」で、お支払いから差し引くと使った分は減ります。ランク割引後の金額に、さらにポイントを併用することもできます。</div></details>
       <details><summary>会員ランクとは？</summary><div class="faq-a">通常会員／シルバー会員（毎回5%OFF）／ゴールド会員（毎回10%OFF）があります。ランクはマイページに表示されます。</div></details>
       <details><summary>お問い合わせはどこへ？</summary><div class="faq-a">施術中はお電話に出られないため、<b>公式LINE</b>へお願いいたします。${s.lineUrl?`<a href="${s.lineUrl}" target="_blank" style="color:var(--gold);font-weight:700"> 公式LINEを開く</a>`:''}</div></details>
@@ -1427,7 +1427,6 @@ function renderHome(){if(textsMigrate())saveData(DATA);loadWeather();
   app.querySelectorAll('[data-mtile]').forEach(b=>b.onclick=()=>startBooking());const _mm=byId('menumore');if(_mm)_mm.onclick=()=>startBooking();
   const _gs=byId('goshare');if(_gs)_gs.onclick=()=>go('share');
   const box=byId('bannerbox');if(box){const slides=[...box.querySelectorAll('.banner-slide')];const dots=[...box.querySelectorAll('.bn-dots i')];if(slides.length>1){clearInterval(window._bnr);let idx=0;window._bnr=setInterval(()=>{slides[idx].classList.remove('on');if(dots[idx])dots[idx].classList.remove('on');idx=(idx+1)%slides.length;slides[idx].classList.add('on');if(dots[idx])dots[idx].classList.add('on');},4500);}}
-  app.insertAdjacentHTML('beforeend',`<div class="sec-label" style="margin-top:20px"><span class="t">今日の豆知識・天気</span></div><div class="tipwrap"><div class="tip-bubble" style="flex:1"><div class="tip-h">💁‍♀️ 今日の美容豆知識</div><div class="tip-x">${beautyTip()}</div></div>${weatherHtml()}</div>`);
 }
 function bannerInRange(b){const t=fmtDate(today);if(b.from&&t<b.from)return false;if(b.to&&t>b.to)return false;return true}
 
