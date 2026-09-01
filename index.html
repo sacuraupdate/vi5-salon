@@ -943,7 +943,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260902b';
+const APP_REV='r20260902c';
 (async function(){try{
   const r=await fetch('/index.html',{method:'HEAD',cache:'no-store'});
   const et=(r.headers.get('etag')||r.headers.get('last-modified')||'').trim();
@@ -1376,6 +1376,8 @@ const state={view:'home',step:0,openCat:null,cart:[],
   adminTab:'todo',adminFilter:'all',custQuery:'',custOpen:null,taskMode:'work',salesPeriod:'month',schedDate:fmtDate(today),acM:new Date(today.getFullYear(),today.getMonth(),1),acDay:fmtDate(today),
   galleryFilter:'all',boardFilter:'all',boardOpen:false,boardEdit:null,boardPhotos:[],loginFull:false,pendingCust:null,previewCust:null,rescheduleId:null,mpPhone:null,lastBooking:null,pendingPhoto:'',galPostOpen:false,menuEdit:null,menuPhoto:'',menuPhotos:[],menuOpen:null,optEdit:null,bcPhone:'',bcQuery:'',bcTpl:0,adminAuthed:false,
   shareFilter:'all',sharePostOpen:false,sharePhotos:[],shareCmtOpen:null,schedMode:'month',brushMode:'work',brushStart:10,brushEnd:19,heroPending:'',galPhotos:[],finOpen:null,schedStaff:'s1',scM:new Date(today.getFullYear(),today.getMonth(),1),calDay:null,navStack:[],staffEdit:null,lang:'ja',bannerPhoto:'',importStage:'idle',importHeaders:[],importRows:[],importMap:{},rankPhotos:[],recPhotos:[],staffPhotoPending:'',manualOpen:false,manualBook:null,manualCat:'all'};
+try{if(location.pathname==='/shop'||/[?&]p=shop/.test(location.search))state.view='eshop';}catch(_e){}
+
 const byId=id=>document.getElementById(id);
 const app=byId('app');
 function priceFor(svId,staffId){const sv=svById(svId);const base=sv?sv.price:0;if(!staffId)return base;const st=stById(staffId);if(st&&st.prices&&st.prices[svId]!=null&&st.prices[svId]!=='')return parseInt(st.prices[svId])||0;return base}
