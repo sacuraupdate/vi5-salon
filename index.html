@@ -943,7 +943,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260901p';
+const APP_REV='r20260901q';
 (async function(){try{
   const r=await fetch('/index.html',{method:'HEAD',cache:'no-store'});
   const et=(r.headers.get('etag')||r.headers.get('last-modified')||'').trim();
@@ -1243,19 +1243,22 @@ function shrinkDataURL(du,mx,q){return new Promise(res=>{try{
     const out=cv.toDataURL('image/jpeg',q||0.66);res(out.length<du.length?out:du);}catch(e){res(du);}};
   img.onerror=()=>res(du);img.src=du;
 }catch(e){res(du);}});}
-async function imageShrinkMigrate(){/* 保存済み画像を一度だけ軽量化して表示を高速化 */
+async function walkShrink(root){let n=0,before=0,after=0;const seen=new Set();
+  async function go(o,depth){if(!o||typeof o!=='object'||depth>7||seen.has(o))return;seen.add(o);
+    if(Array.isArray(o)){for(let i2=0;i2<o.length;i2++){const v=o[i2];
+      if(typeof v==='string'&&v.indexOf('data:image')===0&&v.length>90000){const nv=await shrinkDataURL(v,720,0.66);if(nv&&nv!==v){before+=v.length;after+=nv.length;o[i2]=nv;n++;}}
+      else if(v&&typeof v==='object')await go(v,depth+1);}}
+    else{for(const k in o){const v=o[k];
+      if(typeof v==='string'&&v.indexOf('data:image')===0&&v.length>90000){const nv=await shrinkDataURL(v,720,0.66);if(nv&&nv!==v){before+=v.length;after+=nv.length;o[k]=nv;n++;}}
+      else if(v&&typeof v==='object')await go(v,depth+1);}}}
+  await go(root,0);return {n:n,before:before,after:after};}
+async function imageShrinkMigrate(){/* データ内の全画像（メニュー・スタッフ・カルテ・チャット等）を一度だけ軽量化 */
   if(state._shrunkTried||!state.adminAuthed)return;state._shrunkTried=true;
   try{
-    if((DATA._imgV||0)>=1)return;
-    let before=0,after=0,n=0;
-    async function proc(o,k){const v=o[k];if(typeof v==='string'&&v.indexOf('data:image')===0&&v.length>90000){const nv=await shrinkDataURL(v,720,0.66);if(nv&&nv!==v){before+=v.length;after+=nv.length;o[k]=nv;n++;}}}
-    for(const sv of (DATA.services||[])){await proc(sv,'img');if(Array.isArray(sv.photos))for(let i=0;i<sv.photos.length;i++)await proc(sv.photos,i);}
-    for(const st of (DATA.staff||[])){await proc(st,'photo');}
-    for(const p of (DATA.posts||[])){await proc(p,'img');if(Array.isArray(p.photos))for(let i=0;i<p.photos.length;i++)await proc(p.photos,i);}
-    for(const b of (DATA.boards||[])){if(Array.isArray(b.photos))for(let i=0;i<b.photos.length;i++)await proc(b.photos,i);}
-    if(DATA.settings&&Array.isArray(DATA.settings.banners))for(const bn of DATA.settings.banners){await proc(bn,'img');}
-    DATA._imgV=1;
-    if(n){await saveData(DATA);state._rescueMsg='🚀 保存画像を軽量化しました（'+n+'枚・'+(before/1048576).toFixed(1)+'MB → '+(after/1048576).toFixed(1)+'MB）。お客様側の表示が速くなります。';render();}
+    let tn=0,tb=0,ta=0;
+    if((DATA._imgV||0)<2){const r1=await walkShrink(DATA);DATA._imgV=2;if(r1.n){tn+=r1.n;tb+=r1.before;ta+=r1.after;await saveData(DATA);}}
+    try{await loadWork();if(WORK&&(WORK._imgV||0)<1){const r2=await walkShrink(WORK);WORK._imgV=1;if(r2.n){tn+=r2.n;tb+=r2.before;ta+=r2.after;}await saveWork();}}catch(_e){}
+    if(tn){state._rescueMsg='🚀 保存画像を軽量化しました（'+tn+'枚・'+(tb/1048576).toFixed(1)+'MB → '+(ta/1048576).toFixed(1)+'MB）。全ページの表示が速くなります。';render();}
   }catch(_e){}
 }
 async function autoRescue(){
