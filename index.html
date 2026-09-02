@@ -2903,7 +2903,7 @@ function bkDur(x){return (x.items||[]).reduce((a,i)=>a+(i.min||0),0)||60;}
 function bkStartMs(x){return new Date(x.date+'T'+x.time+':00').getTime();}
 function nowPanel(){const t=fmtDate(today);const nowMs=Date.now();const td=(DATA.bookings||[]).filter(x=>x.date===t&&x.status!=='cancelled').sort((a,b)=>a.time.localeCompare(b.time));
   const inProg=td.filter(x=>x.status!=='visited'&&bkStartMs(x)<=nowMs&&nowMs<bkStartMs(x)+bkDur(x)*60000);
-  const late=td.filter(x=>x.status==='confirmed'&&nowMs>bkStartMs(x)+10*60000&&!inProg.includes(x)&&nowMs<bkStartMs(x)+bkDur(x)*60000+120*60000);
+  const late=td.filter(x=>x.status==='confirmed'&&nowMs>bkStartMs(x)+10*60000&&!inProg.includes(x)&&nowMs<bkStartMs(x)+bkDur(x)*60000+240*60000);
   const next=td.filter(x=>x.status!=='visited'&&bkStartMs(x)>nowMs).slice(0,2);
   const done=td.filter(x=>x.status==='visited').length;
   const card=(x,label,color)=>{const c=DATA.customers[normPhone(x.phone)];return `<div style="border:2px solid ${color};border-radius:16px;padding:10px 12px;margin:0 0 10px;background:#fff"><div style="display:flex;justify-content:space-between;align-items:center"><b style="color:${color}">${label}</b><span style="font-size:12px;color:var(--ink-soft)">${x.time}〜 ・ ${stById(x.staffId).name}</span></div><div style="font-size:15px;font-weight:700;margin:4px 0 2px">${c?c.name:x.phone} 様</div><div style="font-size:13px;color:var(--ink-soft)">${x.items.map(i=>i.name).join('＋')}</div>${bkCustInfo(x,c)}<div class="bk-actions" style="justify-content:flex-start;margin-top:6px">${x.status==='confirmed'?`<button class="chip" data-visit="${x.id}" style="border-color:#3F5A46;color:#2C4433;font-weight:700">✓ 来店済みにする</button>`:''}</div></div>`;};
