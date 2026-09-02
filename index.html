@@ -949,7 +949,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260902v';
+const APP_REV='r20260902w';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1061,7 +1061,8 @@ function monthsBetween(d1,d2){const a=new Date(d1),b=new Date(d2);return (b.getF
 function cadenceRank(c){const ph=normPhone(c.phone);const bks=DATA.bookings.filter(b=>normPhone(b.phone)===ph&&b.status!=='cancelled');if(!bks.length)return 0;const todayS=fmtDate(today);const past=bks.filter(b=>b.date<todayS).map(b=>b.date).sort();const upcoming=bks.filter(b=>b.date>=todayS).map(b=>b.date).sort();if(!upcoming.length||!past.length)return 0;const gap=(new Date(upcoming[0])-new Date(past[past.length-1]))/86400000;if(gap<=38)return 2;if(gap<=46)return 1;return 0;}
 function effectiveRank(c){return c.rank||0}
 function rankRate(c){return RANK_RATE[effectiveRank(c)]||0}
-function custDiscount(c){if(!c)return{rate:0,label:''};const fr=c.discount?CONFIG.discounts[c.discount]:0;const rr=rankRate(c);if(rr>0&&rr>=fr)return{rate:rr,label:RANK_LABEL[effectiveRank(c)]+' '+Math.round(rr*100)+'%OFF'};if(fr>0)return{rate:fr,label:DISC_LABEL[c.discount]};return{rate:0,label:''}}
+function custDiscount(c){if(!c)return{rate:0,label:''};const fr=c.discount?(CONFIG.discounts[c.discount]||0):0;if(fr>0)return{rate:fr,label:DISC_LABEL[c.discount]}; /* 家族・知人割はランクと無関係 */const rr=rankRate(c);if(rr>0)return{rate:rr,label:RANK_LABEL[effectiveRank(c)]+' '+Math.round(rr*100)+'%OFF'};return{rate:0,label:''}}
+function isFixedDisc(c){return !!(c&&c.discount&&(CONFIG.discounts[c.discount]||0)>0);}
 function couponVal(c){if(!c||!(c.couponYen>0))return 0;if(c.couponExpiry&&fmtDate(today)>c.couponExpiry)return 0;return c.couponYen}
 function addMonths(ds,n){const d=new Date(ds);d.setMonth(d.getMonth()+n);return fmtDate(d)}
 function couponLine(c){const v=couponVal(c);if(!v)return '';return c.couponExpiry?`クーポン ¥${v}（${c.couponExpiry.replace(/-/g,'/')}まで）`:`クーポン ¥${v}`}
@@ -1305,6 +1306,18 @@ async function autoRescue(){
     render();
   }catch(_e){}
 }
+async function deleteCustomerDirect(k,name){
+  const srv=await directLoad();if(!srv)throw new Error('load');
+  srv.customers=srv.customers||{};delete srv.customers[k];srv.deletedCust=srv.deletedCust||{};srv.deletedCust[k]=Date.now();
+  const r=await fetchT(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:data',value:JSON.stringify(srv)})});
+  if(!r.ok)throw new Error('save');
+  delete DATA.customers[k];DATA.deletedCust=DATA.deletedCust||{};DATA.deletedCust[k]=Date.now();
+  try{const cc=localStorage.getItem('vi5:lastgood');if(cc){const o=JSON.parse(cc);if(o&&o.d&&o.d.customers){delete o.d.customers[k];o.d.deletedCust=o.d.deletedCust||{};o.d.deletedCust[k]=Date.now();localStorage.setItem('vi5:lastgood',JSON.stringify(o));}}}catch(e){}
+  try{const cc=localStorage.getItem('vi5:datacache');if(cc){const o=JSON.parse(cc);if(o&&o.d&&o.d.customers){delete o.d.customers[k];localStorage.setItem('vi5:datacache',JSON.stringify(o));}}}catch(e){}
+  logAct((name||k)+'様を顧客リストから削除');}
+async function confirmDeleteCustomer(k){const c=DATA.customers[k];if(!c)return;if(!confirm(c.name+'様（'+c.phone+'）を顧客リストから削除します。\n予約履歴は残ります。元に戻せません。よろしいですか？'))return;if(!confirm('本当に削除しますか？'))return;
+  try{await deleteCustomerDirect(k,c.name);}catch(e){alert('削除に失敗しました。通信状況をご確認ください。');return;}
+  if(state.custOpen===k)state.custOpen=null;alert(c.name+'様を削除しました。');render();}
 async function rescueCheck(){
   const found=[];
   for(const _k of ['vi5:lastgood','vi5:datacache']){try{const cc=localStorage.getItem(_k);if(cc){const o=JSON.parse(cc);const d=o&&o.d;if(d&&d.customers&&Object.keys(d.customers).length){found.push({label:'この端末の保存データ（'+(o.at?new Date(o.at).toLocaleString('ja-JP'):'日時不明')+'）',d:d});}}}catch(_e){}}
@@ -1489,7 +1502,7 @@ function homeTopBlock(){const key=state.mpPhone?normPhone(state.mpPhone):'';cons
   const msgBox=unread.length?`<div class="ht-msg" style="background:linear-gradient(135deg,#fff3f5,#fff);border:2px solid var(--rose);border-radius:16px;padding:12px 14px;margin:0 0 10px;box-shadow:0 6px 18px rgba(198,79,94,.15)"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b style="color:var(--rose)">💌 サロンからメッセージが届いています（${unread.length}件）</b><button class="chip" data-readall="1" style="border-color:var(--rose);color:var(--rose)">既読にする</button></div>${unread.slice(0,3).map(n=>`<div style="font-size:13.5px;line-height:1.8;padding:6px 0;border-top:1px dashed #f0c8d0">${(n.text||'').replace(/</g,'&lt;').slice(0,160)}${(n.text||'').length>160?'…':''}<div class="note" style="margin:0">${n.date||''}</div></div>`).join('')}${unread.length>3?`<div class="note" style="margin:4px 0 0">ほか${unread.length-3}件はマイページで</div>`:''}</div>`:'';
   const vis=(DATA.bookings||[]).filter(b=>normPhone(b.phone)===key&&b.status==='visited').sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));
   const lastV=vis[0];const ym=fmtDate(today).slice(0,7);const monthV=vis.filter(b=>b.date.slice(0,7)===ym).length;const rk=effectiveRank(c);
-  const rankLine=rk>=2?'🥇 ゴールド会員（10%OFF）':rk===1?`🥈 シルバー会員（5%OFF）・今月${monthV}回来店${monthV<2?'／あと'+(2-monthV)+'回でゴールド10%OFF':''}`:`今月${monthV}回来店${monthV<1?'／今月1回のご来店でシルバー5%OFF':'／あと'+Math.max(0,2-monthV)+'回でゴールド10%OFF'}`;
+  const rankLine=isFixedDisc(c)?('💛 '+(DISC_LABEL[c.discount]||'特別価格')+'（いつでも適用・来店回数に関係なくずっとこの価格です）'):rk>=2?'🥇 ゴールド会員（10%OFF）':rk===1?`🥈 シルバー会員（5%OFF）・今月${monthV}回来店${monthV<2?'／あと'+(2-monthV)+'回でゴールド10%OFF':''}`:`今月${monthV}回来店${monthV<1?'／今月1回のご来店でシルバー5%OFF':'／あと'+Math.max(0,2-monthV)+'回でゴールド10%OFF'}`;
   const days=lastV?Math.floor((Date.now()-new Date(lastV.date+'T00:00:00').getTime())/86400000):null;
   const due=lastV?(days>=28?`<span style="color:var(--rose);font-weight:700">そろそろお手入れの時期です（前回から${days}日）</span>`:`前回から${days}日・次回は${mdLabel(fmtDate(new Date(new Date(lastV.date).getTime()+35*86400000)))}頃がおすすめ`):'';
   const rebook=lastV?`<button class="btn btn-primary" id="ht-rebook" style="width:100%;margin-top:8px">🔁 前回と同じメニューで予約（${lastV.items.map(i=>i.name).join('＋').slice(0,22)}）</button>`:'';
@@ -3220,7 +3233,7 @@ function adminCustomers(){
   const nrCount=entries.filter(needsRecord).length;
   const nrNote=(!q&&nrCount)?`<div class="nr-summary">📝 施術記録が未入力のお客様が <b>${nrCount}名</b> います（一覧の上に表示しています）。カルテを開いて「お客様へのコメント」を記録してください。</div>`:'';
   const cards=entries.map((c,i)=>{const fav=favMenus(c.phone).slice(0,3);const vc=custBookings(c.phone).length;const nr=needsRecord(c);let bdg='';const dl=custDiscount(c).label;if(dl)bdg+=`<span class="tag disc">${dl}</span>`;if(usedPoints(c.phone))bdg+=`<span class="tag">pt利用あり</span>`;if(c.referredBy&&DATA.customers[c.referredBy])bdg+=`<span class="tag">紹介入会：${DATA.customers[c.referredBy].name}様</span>`;if(couponVal(c)>0)bdg+=`<span class="tag disc">クーポン¥${couponVal(c)}</span>`;
-    return `<div class="cust ${nr?'needrec':''}" data-cust="${normPhone(c.phone)}" style="animation-delay:${i*.03}s">${nr?'<div class="nr-flag">📝 施術記録が未入力です</div>':''}<div class="cust-top"><div><div class="cust-name">${c.name}</div><div class="cust-phone">${c.phone} ・ 来店${vc}回${c.birthday?` ・ 🎂${bdayLabel(c.birthday)}`:''}</div></div><div class="cust-pt"><div class="n">${pointBalance(c.phone).toLocaleString()}</div><div class="l">pt</div></div></div>${fav.length?`<div class="cust-fav">よく選ぶ：<b>${fav.join('、')}</b></div>`:''}${bdg?`<div class="cust-badges">${bdg}</div>`:''}</div>`}).join('');
+    return `<div class="cust ${nr?'needrec':''}" data-cust="${normPhone(c.phone)}" style="animation-delay:${i*.03}s">${nr?'<div class="nr-flag">📝 施術記録が未入力です</div>':''}<div class="cust-top"><div><div class="cust-name">${c.name}</div><div class="cust-phone">${c.phone} ・ 来店${vc}回${c.birthday?` ・ 🎂${bdayLabel(c.birthday)}`:''}</div></div><div class="cust-pt"><div class="n">${pointBalance(c.phone).toLocaleString()}</div><div class="l">pt</div></div><button class="evdel" data-cdel="${normPhone(c.phone)}" style="margin-left:6px;align-self:flex-start" title="削除">🗑</button></div>${fav.length?`<div class="cust-fav">よく選ぶ：<b>${fav.join('、')}</b></div>`:''}${bdg?`<div class="cust-badges">${bdg}</div>`:''}</div>`}).join('');
   const importUI=`<div class="addform" style="margin-bottom:14px"><div class="subhead" style="margin:0 0 10px">📥 CSVから顧客を一括取り込み（RESERVA等）</div>${state.importStage==='map'?impMapUI():`<label class="fileinput">📄 CSVファイルを選ぶ<input type="file" id="imp-file" accept=".csv,text/csv"></label><div class="note" style="margin-top:8px">RESERVAの「顧客データCSV」または「予約一覧CSV」を選んでください。氏名・電話番号があれば取り込めます。（文字化けする場合も自動で調整します）</div>`}</div>`;
   const newCustUI=`<button class="btn btn-primary" id="cust-newbtn" style="width:100%;margin:0 0 12px">＋ 新規のお客様を登録（予約なしでOK）</button>${state.custNew?`<div class="addform" style="margin-bottom:14px"><div class="subhead" style="margin:0 0 10px">新規のお客様を登録</div><div class="field"><label>お名前</label><input id="nc-name" placeholder="例：山田 花子"></div><div class="field"><label>電話番号</label><input id="nc-phone" inputmode="tel" placeholder="09012345678（ハイフンなし）"></div><div class="field"><label>生年月日 <span class="opt">(お誕生日特典に使います)</span></label><input id="nc-bday" type="date"></div><div class="field"><label>パスワード <span class="opt">(空欄なら電話番号の下4桁。お客様が後で変更できます)</span></label><input id="nc-pw" placeholder="任意"></div><div class="note" style="margin:0 0 10px">登録特典として <b>${CONFIG.signupBonus}pt</b> が自動で付きます。</div><div style="display:flex;gap:9px"><button class="btn btn-ghost" id="nc-cancel">やめる</button><button class="btn btn-primary" id="nc-save">登録する</button></div></div>`:''}`;
   return `<div class="searchbar"><input id="cust-q" value="${state.custQuery}" placeholder="お名前・電話番号で検索"></div>${newCustUI}${nrNote}${refHtml}${bdayHtml}<div class="subhead">顧客一覧</div>${entries.length?cards:'<div class="empty">該当する顧客が見つかりません</div>'}`;
@@ -3245,8 +3258,8 @@ function custDetail(key){
     <div class="field"><label>お誕生日</label><input id="ce-bday" type="date" value="${c.birthday||''}"></div>
     <button class="btn btn-primary" id="ce-save" style="width:100%">保存する</button>
     <div class="note" style="margin-top:10px">電話番号を変えると、ご予約履歴・カルテ・ポイントもそのまま新しい番号に引き継がれます。</div>
-    <button class="btn btn-ghost" id="ce-del" style="width:100%;margin-top:14px;color:var(--rose);border-color:var(--rose)">🗑 この顧客を削除する</button>
-  </div></details><div class="mp-ptlabel">保有ポイント</div><div class="mp-pt">${bal.toLocaleString()}<small>pt</small></div><div class="mp-meta">来店 ${custBookings(c.phone).length}回 ・ 登録 ${c.joined||'-'}${couponLine(c)?` ・ ${couponLine(c)}`:''}${referred.length?` ・ 紹介した方：${referred.join('、')}様`:''}</div></div>${(()=>{const su=(c.storeUsed||[]);return `<div class="addform" style="margin:10px 0;padding:12px 14px"><b>🎫 店頭でのポイント利用を記録</b><div class="note" style="margin:4px 0 8px">カルテ用の記録です。記録すると保有ポイントから自動で差し引かれます。</div><div style="display:flex;gap:8px"><input id="use-store-pt" type="number" min="1" inputmode="numeric" placeholder="使用ポイント数" style="flex:1"><button class="btn btn-primary" id="use-store-save" style="white-space:nowrap">記録する</button></div>${su.length?`<div class="note" style="margin-top:8px">これまでの店頭利用：${su.slice(-6).map(x=>`${x.date} <b>${x.pts}pt</b>${x.by?`（${x.by}）`:``}`).join(" ／ ")}</div>`:``}</div>`;})()}
+  </div></details>
+  <button class="btn btn-ghost" id="ce-del" style="width:100%;margin:2px 0 10px;color:var(--rose);border-color:var(--rose)">🗑 この顧客を削除する</button><div class="mp-ptlabel">保有ポイント</div><div class="mp-pt">${bal.toLocaleString()}<small>pt</small></div><div class="mp-meta">来店 ${custBookings(c.phone).length}回 ・ 登録 ${c.joined||'-'}${couponLine(c)?` ・ ${couponLine(c)}`:''}${referred.length?` ・ 紹介した方：${referred.join('、')}様`:''}</div></div>${(()=>{const su=(c.storeUsed||[]);return `<div class="addform" style="margin:10px 0;padding:12px 14px"><b>🎫 店頭でのポイント利用を記録</b><div class="note" style="margin:4px 0 8px">カルテ用の記録です。記録すると保有ポイントから自動で差し引かれます。</div><div style="display:flex;gap:8px"><input id="use-store-pt" type="number" min="1" inputmode="numeric" placeholder="使用ポイント数" style="flex:1"><button class="btn btn-primary" id="use-store-save" style="white-space:nowrap">記録する</button></div>${su.length?`<div class="note" style="margin-top:8px">これまでの店頭利用：${su.slice(-6).map(x=>`${x.date} <b>${x.pts}pt</b>${x.by?`（${x.by}）`:``}`).join(" ／ ")}</div>`:``}</div>`;})()}
     ${composer}
     <div class="subhead">配信したメッセージ履歴</div>${(c.notices||[]).length?(c.notices||[]).map(n=>`<div class="hist" style="padding:11px 13px"><div class="hist-staff" style="margin:0 0 5px">${n.date} ・ ${n.read?'既読':'未読'}</div><div style="font-size:13px;color:var(--ink);line-height:1.6">${n.text}</div></div>`).join(''):'<div class="note">まだ配信はありません</div>'}
     <div class="subhead">特別割引</div><div class="disc-set">${ds}</div>
@@ -3477,6 +3490,7 @@ function bindAdmin(){
   const impgo=byId('imp-go');if(impgo)impgo.onclick=()=>{if(confirm(`顧客データを取り込みます。よろしいですか？`))doImport();};
   const impc=byId('imp-cancel');if(impc)impc.onclick=()=>{state.importStage='idle';state.importRows=[];state.importHeaders=[];render();};
   app.querySelectorAll('[data-cust]').forEach(b=>b.onclick=()=>{state.custOpen=b.dataset.cust;render()});
+  app.querySelectorAll('[data-cdel]').forEach(b=>b.onclick=e=>{e.stopPropagation();confirmDeleteCustomer(b.dataset.cdel);});
   const _cnb=byId('cust-newbtn');if(_cnb)_cnb.onclick=()=>{state.custNew=!state.custNew;render()};
   const _ncc=byId('nc-cancel');if(_ncc)_ncc.onclick=()=>{state.custNew=false;render()};
   const _df=byId('doc-file');if(_df)_df.onchange=e=>{const f=e.target.files[0];if(!f)return;if(f.size>4*1024*1024){alert('ファイルが大きすぎます（4MB以下にしてください）。');return;}const r=new FileReader();r.onload=()=>{state.docFiles=state.docFiles||[];state.docFiles.push({kind:(f.type||'').includes('pdf')?'pdf':'image',data:r.result,name:f.name,label:''});render();};r.readAsDataURL(f);};
@@ -3605,7 +3619,7 @@ function bindAdmin(){
   c.name=nn;c.kana=nk;c.birthday=nb;
   if(np!==oldKey){c.phone=np;DATA.customers[np]=c;delete DATA.customers[oldKey];DATA.deletedCust=DATA.deletedCust||{};DATA.deletedCust[oldKey]=Date.now();(DATA.bookings||[]).forEach(b=>{if(normPhone(b.phone)===oldKey)b.phone=np;});(DATA.referrals||[]).forEach(r=>{if(r.newPhone===oldKey)r.newPhone=np;if(r.refPhone===oldKey)r.refPhone=np;});try{await loadWork();if(WORK&&WORK.karte&&WORK.karte[oldKey]){WORK.karte[np]=(WORK.karte[np]||[]).concat(WORK.karte[oldKey]);delete WORK.karte[oldKey];await saveWork();}}catch(e){}state.custOpen=np;}
   logAct(c.name+'様の情報を編集');await saveData(DATA);alert('保存しました。');render();};
-  const _ced=byId('ce-del');if(_ced)_ced.onclick=async()=>{const k=state.custOpen;const c=DATA.customers[k];if(!c)return;if(!confirm(c.name+'様を顧客リストから削除します。よろしいですか？\n（ご予約履歴は残ります。元に戻せません）'))return;if(!confirm('本当に削除しますか？'))return;delete DATA.customers[k];DATA.deletedCust=DATA.deletedCust||{};DATA.deletedCust[k]=Date.now();logAct(c.name+'様を顧客リストから削除');await saveData(DATA);state.custOpen=null;alert('削除しました。');render();};
+  const _ced=byId('ce-del');if(_ced)_ced.onclick=()=>confirmDeleteCustomer(state.custOpen);
   app.querySelectorAll('#use-store-save').forEach(bt=>bt.onclick=async()=>{const el9=byId('use-store-pt');const v9=parseInt((el9&&el9.value)||'0')||0;if(!v9){alert('使用ポイント数を入力してください。');return;}const bal9=pointBalance(c.phone);if(v9>bal9){alert('保有ポイント（'+bal9.toLocaleString()+'pt）を超えています。');return;}c.storeUsed=c.storeUsed||[];c.storeUsed.push({date:fmtDate(today),pts:v9,by:meName()||''});await saveData(DATA);try{logAct(c.name+'様 店頭ポイント利用 '+v9+'pt を記録');}catch(_e){}render();});
   const finmic=byId('fin-mic');if(finmic)finmic.onclick=()=>startVoice('fin-msg',finmic);
   const finai=byId('fin-ai');if(finai)finai.onclick=()=>runAi('fin-msg',finai,'message');
