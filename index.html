@@ -944,7 +944,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260902n';
+const APP_REV='r20260902p';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -2066,8 +2066,8 @@ async function confirmPair(){
   const pid='P'+Date.now();
   const itemsA=state.cartA.map(x=>({id:x.id,cat:x.cat,name:x.name,min:x.min,price:priceFor(x.id,state.staffA.id)})).concat(optBkItems(state.optA));
   const itemsB=state.cartB.map(x=>({id:x.id,cat:x.cat,name:x.name,min:x.min,price:priceFor(x.id,state.staffB.id)})).concat(optBkItems(state.optB));
-  const bkA={id:'B-'+Date.now(),phone:b.phone,items:itemsA,staffId:state.staffA.id,date:b.date,time:b.time,companions:[...b.companions],haste:b.haste,party:[{name:b.b2name,phone:b.b2phone}],pointsUsed:use,couponUsed:coupon,discountRate:rateA,salonMessage:'',customerMemo:(b.note||''),status:'pending',pairId:pid,pairRole:'A'};
-  const bkB={id:'B-'+(Date.now()+1),phone:b.b2phone,items:itemsB,staffId:state.staffB.id,date:b.date,time:b.time,companions:[],haste:b.haste,party:[{name:b.name,phone:b.phone}],pointsUsed:0,couponUsed:0,discountRate:0,salonMessage:'',customerMemo:(b.note||''),status:'pending',pairId:pid,pairRole:'B'};
+  const bkA={id:'B-'+Date.now(),phone:b.phone,items:itemsA,staffId:state.staffA.id,date:b.date,time:b.time,companions:[...b.companions],haste:b.haste,party:[{name:b.b2name,phone:b.b2phone}],pointsUsed:use,couponUsed:coupon,discountRate:rateA,salonMessage:'',customerMemo:(b.note||''),status:'confirmed',pairId:pid,pairRole:'A'};
+  const bkB={id:'B-'+(Date.now()+1),phone:b.b2phone,items:itemsB,staffId:state.staffB.id,date:b.date,time:b.time,companions:[],haste:b.haste,party:[{name:b.name,phone:b.phone}],pointsUsed:0,couponUsed:0,discountRate:0,salonMessage:'',customerMemo:(b.note||''),status:'confirmed',pairId:pid,pairRole:'B'};
   const passesAddA=[];state.cartA.forEach(it=>{if(it.pass)passesAddA.push({label:it.pass.label,total:it.pass.count,remaining:it.pass.count})});
   const passesAddB=[];state.cartB.forEach(it=>{if(it.pass)passesAddB.push({label:it.pass.label,total:it.pass.count,remaining:it.pass.count})});
   try{
@@ -2090,7 +2090,7 @@ async function confirmBooking(){
   const rate=custDiscount(known).rate;const gross=cartTotal(b.staff.id)+optTotal(b.options);const afterDisc=Math.round(gross*(1-rate));
   const use=loggedIn?Math.min(b.usePoints||0,pointBalance(b.phone),afterDisc):0;const coupon=loggedIn?Math.min(couponVal(known),afterDisc-use):0;
   const id='B-'+(DATA.nextId||1047);const party=b.party2?[{name:'ご一緒の方',phone:''}]:[];
-  const bk={id,phone:b.phone,items:state.cart.map(x=>({id:x.id,cat:x.cat,name:x.name,min:x.min,price:priceFor(x.id,b.staff.id)})).concat(optBkItems(b.options)),staffId:b.staff.id,date:b.date,time:b.time,companions:[...b.companions],haste:b.haste,party,pointsUsed:use,couponUsed:coupon,discountRate:rate,salonMessage:'',customerMemo:(b.note||''),status:'pending'};
+  const bk={id,phone:b.phone,items:state.cart.map(x=>({id:x.id,cat:x.cat,name:x.name,min:x.min,price:priceFor(x.id,b.staff.id)})).concat(optBkItems(b.options)),staffId:b.staff.id,date:b.date,time:b.time,companions:[...b.companions],haste:b.haste,party,pointsUsed:use,couponUsed:coupon,discountRate:rate,salonMessage:'',customerMemo:(b.note||''),status:'confirmed'};
   const passesAdd=[];state.cart.forEach(it=>{if(it.pass)passesAdd.push({label:it.pass.label,total:it.pass.count,remaining:it.pass.count})});
   try{await apiOp('createBooking',{booking:bk,customer:newCustObj,phone:b.phone,couponUsed:coupon,passesAdd:passesAdd,referrerPhone:referrerPhone,referrerNotice:referrerNotice,referrerBonus:CONFIG.referralBonus,nextId:(DATA.nextId||1047)+1});}
   catch(e){alert('予約の送信に失敗しました。通信状況をご確認ください。');return;}
