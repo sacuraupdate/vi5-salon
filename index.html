@@ -949,7 +949,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260902u';
+const APP_REV='r20260902v';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1068,7 +1068,7 @@ function couponLine(c){const v=couponVal(c);if(!v)return '';return c.couponExpir
 const OPEN_HOUR=9,LAST_RECEPTION=21,CLOSED_DOW=2;
 const IMG='https://s3.ap-northeast-1.amazonaws.com/img35h189/ooohvi5/menu/';
 const categories=[
-  {id:'addon',label:'追加メニュー（オプション）',mono:'＋',ph:'#8A7A5A'},
+  {id:'addon',label:'オプションメニュー',mono:'＋',ph:'#8A7A5A'},
   {id:'perm',label:'まつげ・眉パーマ',mono:'パ',ph:'#3A4660'},
   {id:'lash',label:'まつげエクステ',mono:'ま',ph:'#9C7B4A'},
   {id:'wlash',label:'Wまつげエクステ',mono:'Ｗ',ph:'#6B5B8A'},
@@ -1353,9 +1353,8 @@ function addonMigrate(){DATA.services=DATA.services||[];let ch=false;
   const t=(DATA.staff||[]).find(x=>x.id==='s2');if(t){t.prices=t.prices||{};for(const[id,,,price,,freeT]of ADD){const want=freeT?'0':String(price);if(t.prices[id]!==want){t.prices[id]=want;ch=true;}}}
   const sk=(DATA.staff||[]).find(x=>x.id==='s1');if(sk){sk.prices=sk.prices||{};for(const[id,,,price]of ADD){if(sk.prices[id]==null||sk.prices[id]===''){sk.prices[id]=String(price);ch=true;}}}
   if(ch){services=DATA.services;staff=DATA.staff;}return ch;}
-function addonAvailable(staffId){const adds=(DATA.services||[]).filter(x=>x.cat==='addon');if(!adds.length)return [];
-  if(staffId==='s2'){const hasPeel=state.cart.some(x=>x.id==='pe1'||x.id==='pe2'||x.cat==='peel');return hasPeel?adds:[];}
-  if(staffId==='s1')return adds;return [];}
+function addonAvailable(staffId){const adds=(DATA.services||[]).filter(x=>x.cat==='addon');if(!adds.length)return [];return (staffId==='s1'||staffId==='s2')?adds:[];}
+function cartHasMain(){return state.cart.some(x=>x.cat!=='addon');}
 function custNoMigrate(){const cs=DATA.customers||{};let n=DATA.nextCustNo||1;let ch=false;const list=Object.values(cs).filter(c=>c&&!c.no).sort((a,b)=>String(a.joined||'').localeCompare(String(b.joined||'')));for(const c of list){c.no=n++;ch=true;}if(DATA.nextCustNo!==n){DATA.nextCustNo=n;ch=true;}return ch;}
 function custNoLabel(c){return c&&c.no?('No.'+String(c.no).padStart(4,'0')):'';}
 function linksMigrate(){const s=(DATA.settings=DATA.settings||{});const DEF={
@@ -1863,21 +1862,21 @@ function menuItemHtml(x){const sel=inCart(x.id);const catObj=categories.find(c=>
   const detail=open?`<div class="mi-detail">${photos.length?`<div class="share-photos" style="margin:0 0 10px">${photos.map(p=>`<div style="background-image:url('${p}')"></div>`).join('')}</div>`:''}<div class="mi-detail-tx">${x.detail||x.desc||'詳細はスタッフまでお気軽にお尋ねください。'}</div></div>`:'';
   return `<div class="menu-item ${sel?'sel':''} ${open?'open':''}"><div class="mi-row" data-mpick="${x.id}"><div class="mi-thumb" style="${bg}"></div><div class="mi-body"><div class="mi-name">${svcName(x)} <span class="mi-more" data-mexp="${x.id}">${open?'閉じる':'詳細▾'}</span></div>${x.desc?`<div class="mi-desc">${x.desc}</div>`:''}<div class="mi-meta">${x.price?yen(x.price):'無料'} ・ 約${x.min}分</div></div><button class="mi-add" data-add="${x.id}"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">${sel?'<path d="M5 13l4 4L19 7"/>':'<path d="M12 5v14M5 12h14"/>'}</svg></button></div>${detail}</div>`}
 function stepBrowse(){
-  const chips=[['all','すべて'],['mens','メンズにおすすめ'],...categories.filter(c=>c.id!=='addon'&&services.some(s=>s.cat===c.id)).map(c=>[c.id,c.label])];
+  const chips=[['all','すべて'],['mens','メンズにおすすめ'],...categories.filter(c=>services.some(s=>s.cat===c.id)).map(c=>[c.id,c.label])];
   const cur=state.openCat||'all';
   let fav='';
   if(state.mpPhone){const ids=favServiceIds(state.mpPhone).slice(0,3).filter(id=>svById(id));if(ids.length&&cur==='all')fav=`<div class="fav-label">よく選ぶメニュー</div>${ids.map(id=>menuItemHtml(svById(id))).join('')}<div style="height:8px"></div>`;}
   const _mq=(state.menuQuery||'').trim();const _match=s=>!_mq||((s.name||'')+(s.desc||'')).toLowerCase().includes(_mq.toLowerCase());let listHtml=promoCardHtml();
   if(cur==='all'&&!_mq){
-    const ICO={perm:'🌀',lash:'👁',wlash:'✨',brow:'✏️',peel:'🌿',makeup:'💄',ticket:'🎫',consult:'💬',nail:'💅',hair:'💇‍♀️'};
-    listHtml+=`<div class="note" style="margin:6px 0 8px">カテゴリをタップするとメニューが表示されます</div><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">${categories.filter(c=>c.id!=='addon'&&services.some(s=>s.cat===c.id)).map(c=>{const n=services.filter(s=>s.cat===c.id).length;const sel=state.cart.filter(x=>x.cat===c.id).length;return `<button data-fc="${c.id}" style="text-align:left;border:1.5px solid ${sel?'var(--gold)':'var(--line)'};background:${sel?'var(--gold-bg,#fdf6e3)':'#fff'};border-radius:16px;padding:14px 12px;font-family:inherit"><div style="font-size:26px">${ICO[c.id]||c.mono}</div><div style="font-weight:700;font-size:14px;margin-top:6px;color:var(--navy)">${c.label}</div><div style="font-size:11px;color:var(--ink-soft);margin-top:2px">${n}メニュー${sel?` ・ <b style="color:var(--gold)">選択中${sel}</b>`:''}</div></button>`;}).join('')}</div>`;
+    listHtml+=`<div class="note" style="margin:6px 0 8px">カテゴリをタップするとメニューが表示されます</div><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">${categories.filter(c=>services.some(s=>s.cat===c.id)).map(c=>{const n=services.filter(s=>s.cat===c.id).length;const sel=state.cart.filter(x=>x.cat===c.id).length;const isOpt=c.id==='addon';const locked=isOpt&&!cartHasMain();return `<button data-fc="${c.id}" style="text-align:left;border:1.5px solid ${sel?'var(--gold)':(isOpt?'var(--gold-soft)':'var(--line)')};background:${sel?'var(--gold-bg,#fdf6e3)':(isOpt?'#fffdf7':'#fff')};border-radius:16px;padding:14px 12px;font-family:inherit;opacity:${locked?'.6':'1'}"><div style="font-weight:700;font-size:15px;color:var(--navy)">${c.label}</div><div style="font-size:11px;color:var(--ink-soft);margin-top:4px">${n}メニュー${sel?` ・ <b style="color:var(--gold)">選択中${sel}</b>`:''}${locked?'<br>先に施術メニューをお選びください':''}${isOpt&&!locked?'<br>何個でも追加OK':''}</div></button>`;}).join('')}</div>`;
   }else if(cur==='all'){
     categories.forEach(c=>{if(c.id==='addon')return;let items=services.filter(s=>s.cat===c.id&&_match(s));if(!items.length)return;const sel=state.cart.filter(x=>x.cat===c.id).length;listHtml+=`<div class="subhead" style="margin-top:14px">${c.label}${sel?` <span style="color:var(--gold);font-size:11px;font-weight:700">選択中 ${sel}</span>`:''}</div>`+items.map(menuItemHtml).join('')});
   }else if(cur==='mens'){
     let items=services.filter(isMens);listHtml=items.length?items.map(menuItemHtml).join(''):'<div class="empty">メンズにおすすめのメニューがありません</div>';
   }else{
     let items=services.filter(s=>s.cat===cur);if(state.mpPhone){const f=favServiceIds(state.mpPhone);items=[...items].sort((a,b)=>f.indexOf(b.id)-f.indexOf(a.id))}
-    listHtml=`<button class="chip" data-fc="all" style="margin:0 0 10px">← カテゴリ一覧へ</button><div class="subhead" style="margin-top:0">${catLabel(cur)}</div>`+(items.length?items.map(menuItemHtml).join(''):'<div class="empty">メニューがありません</div>');
+    const optNote=cur==='addon'?(cartHasMain()?`<div class="note" style="margin:0 0 10px;border:1.5px solid var(--gold);border-radius:12px;padding:10px 12px">施術メニューに<b>何個でも追加できます</b>。<b>TOMOMI指名の場合は無料</b>（ヘッドスパ20分・30分は通常料金）／SAKURA指名の場合は表示の料金です。</div>`:`<div class="note" style="margin:0 0 10px;border:1.5px solid var(--rose);border-radius:12px;padding:10px 12px;color:var(--rose)">オプションメニューは、先に施術メニューを選んでから追加できます。</div>`):'';
+    listHtml=`<button class="chip" data-fc="all" style="margin:0 0 10px">← カテゴリ一覧へ</button><div class="subhead" style="margin-top:0">${catLabel(cur)}</div>${optNote}`+(items.length?items.map(menuItemHtml).join(''):'<div class="empty">メニューがありません</div>');
   }
   const aset=new Set();state.cart.forEach(it=>{const sv=svById(it.id);((sv&&sv.addons)||[]).forEach(a=>aset.add(a))});state.cart.forEach(it=>aset.delete(it.id));
   const adds=[...aset].map(svById).filter(Boolean);
@@ -1891,7 +1890,7 @@ function stepBrowse(){
   app.querySelectorAll('[data-fc]').forEach(b=>b.onclick=()=>{state.openCat=b.dataset.fc==='all'?null:b.dataset.fc;state.menuOpen=null;render();window.scrollTo(0,0)});
   app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{state.cart=state.cart.filter(x=>x.id!==b.dataset.rm);render()});
   app.querySelectorAll('[data-mexp]').forEach(r=>r.onclick=e=>{e.stopPropagation();state.menuOpen=state.menuOpen===r.dataset.mexp?null:r.dataset.mexp;render()});app.querySelectorAll('[data-mpick]').forEach(r=>r.onclick=()=>{const id=r.dataset.mpick;const _mqe=byId('menu-q');if(_mqe)_mqe.oninput=e=>{state.menuQuery=e.target.value;render();const el=byId('menu-q');if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length);}catch(_){}}};inCart(id)?state.cart=state.cart.filter(x=>x.id!==id):state.cart.push(svById(id));render()});app.querySelectorAll('[data-cattg]').forEach(el=>el.onclick=()=>{state.catOpen=state.catOpen||{};state.catOpen[el.dataset.cattg]=!state.catOpen[el.dataset.cattg];render()});
-  app.querySelectorAll('[data-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();const id=b.dataset.add;inCart(id)?state.cart=state.cart.filter(x=>x.id!==id):state.cart.push(svById(id));render()});
+  app.querySelectorAll('[data-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();const id=b.dataset.add;const sv=svById(id);if(sv&&sv.cat==='addon'&&!inCart(id)&&!cartHasMain()){alert('オプションメニューは、先に施術メニューをお選びいただいてから追加できます。');return;}inCart(id)?state.cart=state.cart.filter(x=>x.id!==id):state.cart.push(sv);if(!cartHasMain())state.cart=state.cart.filter(x=>x.cat!=='addon');render()});
   const n=byId('next');if(n)n.onclick=()=>{state.step=1;render()};
 }
 function nextAvailLabel(sid){try{const base=new Date(today);for(let d=0;d<21;d++){const dd=new Date(base);dd.setDate(base.getDate()+d);const ds=fmtDate(dd);if(typeof salonClosed==='function'&&salonClosed(ds))continue;for(let mm=OPEN_HOUR*60;mm<=LAST_RECEPTION*60;mm+=30){const okslot=sid!=='s0'?staffSlotOpen30(sid,ds,mm):anyStaffSlot30(ds,mm);if(okslot){const t=minToTime(mm);return (d===0?'本日':d===1?'明日':mdLabel(ds))+' '+t+'〜';}}}return '空き枠は要確認';}catch(e){return '';}}
@@ -1941,7 +1940,7 @@ function itemsLines(staffId){return state.cart.map(x=>`${itemName(x)} <span clas
 function dateLabel(){return `${mdLabel(state.b.date)} ${state.b.time}`}
 function addonPanel(){const st=state.b&&state.b.staff;if(!st)return '';const adds=addonAvailable(st.id);if(!adds.length)return '';
   const free=st.id==='s2';
-  return `<div class="field"><label>＋ 追加メニュー（オプション） ${free?`<span class="opt" style="color:var(--gold)">TOMOMI指名特典：ピーリングと一緒なら無料（ヘッドスパ20分・30分は通常料金）</span>`:''}</label>${adds.map(a=>{const on=inCart(a.id);const p=priceFor(a.id,st.id);return `<button type="button" class="chip ${on?'sel':''}" data-addon="${a.id}" style="display:flex;justify-content:space-between;width:100%;margin:0 0 6px;text-align:left"><span>${on?'✓ ':''}${a.name}<span style="color:var(--ink-soft);font-size:11px"> ・ ${a.min}分</span></span><b style="${p===0?'color:var(--gold)':''}">${p===0?'無料':yen(p)}</b></button>`;}).join('')}</div>`;}
+  return `<div class="field"><label>＋ 追加メニュー（オプション） ${free?`<span class="opt" style="color:var(--gold)">TOMOMI指名特典：オプション無料（ヘッドスパ20分・30分は通常料金）</span>`:''}</label>${adds.map(a=>{const on=inCart(a.id);const p=priceFor(a.id,st.id);return `<button type="button" class="chip ${on?'sel':''}" data-addon="${a.id}" style="display:flex;justify-content:space-between;width:100%;margin:0 0 6px;text-align:left"><span>${on?'✓ ':''}${a.name}<span style="color:var(--ink-soft);font-size:11px"> ・ ${a.min}分</span></span><b style="${p===0?'color:var(--gold)':''}">${p===0?'無料':yen(p)}</b></button>`;}).join('')}</div>`;}
 function previsitNote(){const cats=new Set(state.cart.map(x=>x.cat));const L=[];
   if(cats.has('perm')||cats.has('lash')||cats.has('wlash'))L.push('👁 まつ毛：できるだけアイメイクなしでお越しください');
   if(cats.has('brow'))L.push('✏️ 眉：剃らず・抜かず、生やした状態でお越しください');
@@ -1991,7 +1990,7 @@ function stepBrowsePair(){
   state.pairEditing=state.pairEditing||'A';
   const active=state.pairEditing==='A'?state.cartA:state.cartB;
   state.cart=active;
-  const chips=[['all','すべて'],['mens','メンズにおすすめ'],...categories.filter(c=>c.id!=='addon'&&services.some(s=>s.cat===c.id)).map(c=>[c.id,c.label])];const cur=state.openCat||'all';
+  const chips=[['all','すべて'],['mens','メンズにおすすめ'],...categories.filter(c=>services.some(s=>s.cat===c.id)).map(c=>[c.id,c.label])];const cur=state.openCat||'all';
   let listHtml='';
   if(cur==='all'){categories.forEach(c=>{let items=services.filter(s=>s.cat===c.id);if(!items.length)return;const sel=active.filter(x=>x.cat===c.id).length;listHtml+=`<div class="subhead" style="margin-top:14px">${c.label}${sel?` <span style="color:var(--gold);font-size:11px;font-weight:700">選択中 ${sel}</span>`:''}</div>`+items.map(menuItemHtml).join('')});}
   else if(cur==='mens'){let items=services.filter(isMens);listHtml=items.length?items.map(menuItemHtml).join(''):'<div class="empty">メンズにおすすめのメニューがありません</div>';}
