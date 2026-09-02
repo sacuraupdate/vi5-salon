@@ -949,7 +949,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260903a';
+const APP_REV='r20260903b';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1362,8 +1362,8 @@ function addonMigrate(){DATA.services=DATA.services||[];let ch=false;
     ['ad4','安眠×炭酸ドライヘッドスパ（10分）',10,1500,'疲労回復・血行促進・リフトアップ',true],
     ['ad5','安眠×炭酸ドライヘッドスパ（20分）',20,2000,'疲労回復・血行促進・リフトアップ',false],
     ['ad6','熟睡×炭酸ドライヘッドスパ（30分）',30,3000,'疲労回復・血行促進・リフトアップ',false]];
-  for(const[id,name,min,price,desc]of ADD){if(!DATA.services.some(x=>x.id===id)){DATA.services.push({id,name,cat:'addon',min,price,desc,addon:true,pair:false});ch=true;}}
-  const t=(DATA.staff||[]).find(x=>x.id==='s2');if(t){t.prices=t.prices||{};for(const[id,,,price,,freeT]of ADD){const want=freeT?'0':String(price);if(t.prices[id]!==want){t.prices[id]=want;ch=true;}}}
+  for(const[id,name,min,price,desc,freeT]of ADD){const ex=DATA.services.find(x=>x.id===id);if(!ex){DATA.services.push({id,name,cat:'addon',min,price,desc,addon:true,pair:false,freeWithPeel:!!freeT});ch=true;}else if(ex.freeWithPeel!==!!freeT){ex.freeWithPeel=!!freeT;ch=true;}}
+  const t=(DATA.staff||[]).find(x=>x.id==='s2');if(t){t.prices=t.prices||{};for(const[id,,,price]of ADD){const want=String(price);if(t.prices[id]!==want){t.prices[id]=want;ch=true;}}}
   const sk=(DATA.staff||[]).find(x=>x.id==='s1');if(sk){sk.prices=sk.prices||{};for(const[id,,,price]of ADD){if(sk.prices[id]==null||sk.prices[id]===''){sk.prices[id]=String(price);ch=true;}}}
   if(ch){services=DATA.services;staff=DATA.staff;}return ch;}
 function addonAvailable(staffId){const adds=(DATA.services||[]).filter(x=>x.cat==='addon');if(!adds.length)return [];return (staffId==='s1'||staffId==='s2')?adds:[];}
@@ -1425,7 +1425,8 @@ try{if(location.pathname==='/shop'||/[?&]p=shop/.test(location.search))state.vie
 
 const byId=id=>document.getElementById(id);
 const app=byId('app');
-function priceFor(svId,staffId){const sv=svById(svId);const base=sv?sv.price:0;if(!staffId)return base;const st=stById(staffId);if(st&&st.prices&&st.prices[svId]!=null&&st.prices[svId]!=='')return parseInt(st.prices[svId])||0;return base}
+function addonFreeNow(sv,staffId){if(!sv||sv.cat!=='addon'||staffId!=='s2'||!sv.freeWithPeel)return false;return (state.cart||[]).some(x=>x.id==='pe1'||x.id==='pe2'||x.cat==='peel');}
+function priceFor(svId,staffId){const sv=svById(svId);const base=sv?sv.price:0;if(sv&&sv.cat==='addon'&&addonFreeNow(sv,staffId))return 0;if(!staffId)return base;const st=stById(staffId);if(st&&st.prices&&st.prices[svId]!=null&&st.prices[svId]!=='')return parseInt(st.prices[svId])||0;return base}
 const cartTotal=(staffId)=>state.cart.reduce((s,x)=>s+priceFor(x.id,staffId),0);
 const cartMin=()=>state.cart.reduce((s,x)=>s+x.min,0);
 const inCart=id=>state.cart.some(x=>x.id===id);
@@ -1888,7 +1889,7 @@ function stepBrowse(){
     let items=services.filter(isMens);listHtml=items.length?items.map(menuItemHtml).join(''):'<div class="empty">メンズにおすすめのメニューがありません</div>';
   }else{
     let items=services.filter(s=>s.cat===cur);if(state.mpPhone){const f=favServiceIds(state.mpPhone);items=[...items].sort((a,b)=>f.indexOf(b.id)-f.indexOf(a.id))}
-    const optNote=cur==='addon'?(cartHasMain()?`<div class="note" style="margin:0 0 10px;border:1.5px solid var(--gold);border-radius:12px;padding:10px 12px">施術メニューに<b>何個でも追加できます</b>。<b>TOMOMI指名の場合は無料</b>（ヘッドスパ20分・30分は通常料金）／SAKURA指名の場合は表示の料金です。</div>`:`<div class="note" style="margin:0 0 10px;border:1.5px solid var(--rose);border-radius:12px;padding:10px 12px;color:var(--rose)">オプションメニューは、先に施術メニューを選んでから追加できます。</div>`):'';
+    const optNote=cur==='addon'?(cartHasMain()?`<div class="note" style="margin:0 0 10px;border:1.5px solid var(--gold);border-radius:12px;padding:10px 12px">施術メニューに<b>何個でも追加できます</b>（担当：SAKURA・TOMOMI）。<b>TOMOMI指名でハーブピーリングまたはニードルピーリングをご予約の方はオプション無料</b>（ヘッドスパ20分・30分は通常料金）。それ以外は表示の料金です。</div>`:`<div class="note" style="margin:0 0 10px;border:1.5px solid var(--rose);border-radius:12px;padding:10px 12px;color:var(--rose)">オプションメニューは、先に施術メニューを選んでから追加できます。</div>`):'';
     listHtml=`<button class="chip" data-fc="all" style="margin:0 0 10px">← カテゴリ一覧へ</button><div class="subhead" style="margin-top:0">${catLabel(cur)}</div>${optNote}`+(items.length?items.map(menuItemHtml).join(''):'<div class="empty">メニューがありません</div>');
   }
   const aset=new Set();state.cart.forEach(it=>{const sv=svById(it.id);((sv&&sv.addons)||[]).forEach(a=>aset.add(a))});state.cart.forEach(it=>aset.delete(it.id));
@@ -1952,8 +1953,8 @@ function stepDate(){
 function itemsLines(staffId){return state.cart.map(x=>`${itemName(x)} <span class="sub">${yen(priceFor(x.id,staffId))}</span>`).join('<br>')}
 function dateLabel(){return `${mdLabel(state.b.date)} ${state.b.time}`}
 function addonPanel(){const st=state.b&&state.b.staff;if(!st)return '';const adds=addonAvailable(st.id);if(!adds.length)return '';
-  const free=st.id==='s2';
-  return `<div class="field"><label>＋ 追加メニュー（オプション） ${free?`<span class="opt" style="color:var(--gold)">TOMOMI指名特典：オプション無料（ヘッドスパ20分・30分は通常料金）</span>`:''}</label>${adds.map(a=>{const on=inCart(a.id);const p=priceFor(a.id,st.id);return `<button type="button" class="chip ${on?'sel':''}" data-addon="${a.id}" style="display:flex;justify-content:space-between;width:100%;margin:0 0 6px;text-align:left"><span>${on?'✓ ':''}${a.name}<span style="color:var(--ink-soft);font-size:11px"> ・ ${a.min}分</span></span><b style="${p===0?'color:var(--gold)':''}">${p===0?'無料':yen(p)}</b></button>`;}).join('')}</div>`;}
+  const free=st.id==='s2'&&(state.cart||[]).some(x=>x.id==='pe1'||x.id==='pe2'||x.cat==='peel');
+  return `<div class="field"><label>＋ 追加メニュー（オプション） ${free?`<span class="opt" style="color:var(--gold)">TOMOMI指名×ハーブ/ニードルピーリングご予約特典：オプション無料（ヘッドスパ20分・30分は通常料金）</span>`:''}</label>${adds.map(a=>{const on=inCart(a.id);const p=priceFor(a.id,st.id);return `<button type="button" class="chip ${on?'sel':''}" data-addon="${a.id}" style="display:flex;justify-content:space-between;width:100%;margin:0 0 6px;text-align:left"><span>${on?'✓ ':''}${a.name}<span style="color:var(--ink-soft);font-size:11px"> ・ ${a.min}分</span></span><b style="${p===0?'color:var(--gold)':''}">${p===0?'無料':yen(p)}</b></button>`;}).join('')}</div>`;}
 function previsitNote(){const cats=new Set(state.cart.map(x=>x.cat));const L=[];
   if(cats.has('perm')||cats.has('lash')||cats.has('wlash'))L.push('👁 まつ毛：できるだけアイメイクなしでお越しください');
   if(cats.has('brow'))L.push('✏️ 眉：剃らず・抜かず、生やした状態でお越しください');
