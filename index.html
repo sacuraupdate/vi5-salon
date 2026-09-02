@@ -14,6 +14,11 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://vi5-salon.vercel.app/hero.jpg">
 <meta name="theme-color" content="#1E2A47">
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Vi5">
+<link rel="apple-touch-icon" href="/icon-180.png">
 <link rel="preconnect" href="https://tehcaufdztgpbrknpshk.supabase.co">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -944,7 +949,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260902r';
+const APP_REV='r20260902s';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1382,7 +1387,7 @@ const state={view:'home',step:0,openCat:null,cart:[],
   b:{staff:null,date:null,time:null,name:'',phone:'',companions:[],referrer:'',usePoints:0,haste:null,agreed:false,party2:false,p2name:'',p2phone:'',birthday:'',password:'',b2name:'',b2phone:'',b2birthday:'',b2password:'',options:[],note:''},
   bookMode:'single',pairPerson:1,pairA:null,cartA:[],cartB:[],staffA:null,staffB:null,pairEditing:'A',optA:[],optB:[],
   calMonth:new Date(today.getFullYear(),today.getMonth(),1),
-  adminTab:'todo',adminFilter:'all',custQuery:'',custOpen:null,taskMode:'work',salesPeriod:'month',schedDate:fmtDate(today),acM:new Date(today.getFullYear(),today.getMonth(),1),acDay:fmtDate(today),
+  adminTab:'todo',adminFilter:'today',custQuery:'',custOpen:null,taskMode:'work',salesPeriod:'month',schedDate:fmtDate(today),acM:new Date(today.getFullYear(),today.getMonth(),1),acDay:fmtDate(today),
   galleryFilter:'all',boardFilter:'all',boardOpen:false,boardEdit:null,boardPhotos:[],loginFull:false,pendingCust:null,previewCust:null,rescheduleId:null,mpPhone:null,lastBooking:null,pendingPhoto:'',galPostOpen:false,menuEdit:null,menuPhoto:'',menuPhotos:[],menuOpen:null,optEdit:null,bcPhone:'',bcQuery:'',bcTpl:0,adminAuthed:false,
   shareFilter:'all',sharePostOpen:false,sharePhotos:[],shareCmtOpen:null,schedMode:'month',brushMode:'work',brushStart:10,brushEnd:19,heroPending:'',galPhotos:[],finOpen:null,schedStaff:'s1',scM:new Date(today.getFullYear(),today.getMonth(),1),calDay:null,navStack:[],staffEdit:null,lang:'ja',bannerPhoto:'',importStage:'idle',importHeaders:[],importRows:[],importMap:{},rankPhotos:[],recPhotos:[],staffPhotoPending:'',manualOpen:false,manualBook:null,manualCat:'all'};
 try{if(location.pathname==='/shop'||/[?&]p=shop/.test(location.search))state.view='eshop';}catch(_e){}
@@ -1413,6 +1418,19 @@ function showToast(t){try{let el=document.getElementById('vi5toast');if(!el){el=
   if(lastN===null){lastN=n;return;}
   if(n>lastN){pingNewBooking(n);showToast('🔔 新着予約 '+n+'件');if(!userBusy())render();}
   lastN=n;}catch(e){}},60000);})();
+let _installPrompt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();_installPrompt=e;});
+function isStandalone(){return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;}
+function installBtnHtml(label){if(isStandalone())return '';return `<button class="btn btn-ghost" data-install="1" style="width:100%;margin-top:8px">📲 ${label||'ホーム画面に追加（アプリのように使う）'}</button>`;}
+function showInstallGuide(){const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if(_installPrompt){_installPrompt.prompt();return;}
+  const box=document.createElement('div');box.id='instguide';box.style.cssText='position:fixed;inset:0;background:rgba(20,25,40,.55);z-index:1000;display:flex;align-items:flex-end;justify-content:center';
+  box.innerHTML=`<div style="background:#fff;border-radius:22px 22px 0 0;width:100%;max-width:560px;padding:22px 20px 34px;font-family:inherit"><div style="font-size:18px;font-weight:700;color:#1E2A47;margin-bottom:8px">📲 ホーム画面に追加する</div>
+  ${ios?`<div style="font-size:14px;line-height:2"><b>①</b> 画面下（または上）の <span style="display:inline-block;border:1.5px solid #1E2A47;border-radius:6px;padding:0 6px;font-weight:700">共有</span> ボタン（□から↑が出ているマーク）をタップ<br><b>②</b> 下にスクロールして <b>「ホーム画面に追加」</b> をタップ<br><b>③</b> 右上の <b>「追加」</b> をタップ</div><div style="font-size:12px;color:#787F8F;margin-top:8px">※ Safariで開いている時のみ表示されます。LINEやInstagramの中で開いている場合は、右下の「…」→「Safariで開く」を先に押してください。</div>`
+  :`<div style="font-size:14px;line-height:2"><b>①</b> 右上の <b>「⋮」</b> メニューをタップ<br><b>②</b> <b>「ホーム画面に追加」</b>（または「アプリをインストール」）をタップ<br><b>③</b> <b>「追加」</b> をタップ</div>`}
+  <div style="font-size:13px;color:#1E2A47;background:#F7F4EC;border-radius:12px;padding:10px 12px;margin-top:12px">追加すると、ホーム画面のアイコンから1タップで開けて、アプリのようにフルスクリーンで使えます。</div>
+  <button style="width:100%;margin-top:14px;background:#1E2A47;color:#fff;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:700;font-family:inherit" onclick="document.getElementById('instguide').remove()">閉じる</button></div>`;
+  box.onclick=e=>{if(e.target===box)box.remove();};document.body.appendChild(box);}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-install]');if(b){e.preventDefault();showInstallGuide();}});
 function updateFloatBook(){
   let fb=document.getElementById('floatbook');
   const custViews=['home','gallery','share','board','staff','course','care'];
@@ -1457,7 +1475,7 @@ function homeTopBlock(){const key=state.mpPhone?normPhone(state.mpPhone):'';cons
   const days=lastV?Math.floor((Date.now()-new Date(lastV.date+'T00:00:00').getTime())/86400000):null;
   const due=lastV?(days>=28?`<span style="color:var(--rose);font-weight:700">そろそろお手入れの時期です（前回から${days}日）</span>`:`前回から${days}日・次回は${mdLabel(fmtDate(new Date(new Date(lastV.date).getTime()+35*86400000)))}頃がおすすめ`):'';
   const rebook=lastV?`<button class="btn btn-primary" id="ht-rebook" style="width:100%;margin-top:8px">🔁 前回と同じメニューで予約（${lastV.items.map(i=>i.name).join('＋').slice(0,22)}）</button>`:'';
-  return `${msgBox}<div class="hometop"><div class="ht-next" style="display:block;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:8px"><div style="font-size:12px;color:var(--ink-soft)">✨ ${c.name}様へ</div><div style="font-size:13px;margin-top:3px">${rankLine}</div>${due?`<div style="font-size:13px;margin-top:3px">🗓 ${due}</div>`:''}</div>${nb?`<div class="ht-next"><span class="ht-l">📅 次回のご予約</span><span class="ht-v">${mdLabel(nb.date)} ${nb.time}〜</span></div>`:`<div class="ht-next"><span class="ht-l">📅 次回のご予約</span><span class="ht-v" style="color:var(--ink-soft)">まだありません</span></div>`}<div class="ht-pt"><span class="ht-l">💎 保有ポイント</span><span class="ht-v" style="color:var(--gold-deep)">${bal.toLocaleString()}pt</span></div>${rebook}<button class="btn btn-ghost" id="ht-mypage" style="width:100%;margin-top:8px">マイページを開く</button></div>`;}return `<div class="hometop"><div class="ht-guest">ご予約は会員登録がおすすめ（登録で500ptプレゼント🎁）</div><div class="ht-btns"><button class="ht-reg" id="ht-reg">✨ 新規登録</button><button class="ht-login" id="ht-login">👤 ログイン</button></div></div>`;}
+  return `${msgBox}<div class="hometop"><div class="ht-next" style="display:block;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:8px"><div style="font-size:12px;color:var(--ink-soft)">✨ ${c.name}様へ</div><div style="font-size:13px;margin-top:3px">${rankLine}</div>${due?`<div style="font-size:13px;margin-top:3px">🗓 ${due}</div>`:''}</div>${nb?`<div class="ht-next"><span class="ht-l">📅 次回のご予約</span><span class="ht-v">${mdLabel(nb.date)} ${nb.time}〜</span></div>`:`<div class="ht-next"><span class="ht-l">📅 次回のご予約</span><span class="ht-v" style="color:var(--ink-soft)">まだありません</span></div>`}<div class="ht-pt"><span class="ht-l">💎 保有ポイント</span><span class="ht-v" style="color:var(--gold-deep)">${bal.toLocaleString()}pt</span></div>${rebook}<button class="btn btn-ghost" id="ht-mypage" style="width:100%;margin-top:8px">マイページを開く</button>${installBtnHtml()}</div>`;}return `<div class="hometop"><div class="ht-guest">ご予約は会員登録がおすすめ（登録で500ptプレゼント🎁）</div><div class="ht-btns"><button class="ht-reg" id="ht-reg">✨ 新規登録</button><button class="ht-login" id="ht-login">👤 ログイン</button></div>${installBtnHtml()}</div>`;}
 function renderHome(){if(textsMigrate())saveData(DATA);loadWeather();
   const active=DATA.campaigns.filter(c=>c.active);
   const camps=active.map(c=>`<div class="camp"><span class="ribbon">CAMPAIGN</span><h3>${c.title}</h3><p>${c.desc}</p></div>`).join('');
@@ -2752,7 +2770,7 @@ function todayDash(chatN,todoN){
   const isOwner=(meName()==='SAKURA');
   const oal=((WORK&&WORK.ownerAlerts)||[]);const unread=oal.filter(a=>!a.read).length;
   const bell=isOwner?`<div class="addform" style="margin:0 0 10px;padding:12px 14px;border:1.5px solid ${unread?'var(--gold)':'var(--line)'}"><div style="display:flex;justify-content:space-between;align-items:center"><b>🔔 スタッフからのお知らせ${unread?` <span class="tbnum" style="position:static">${unread}</span>`:''}</b>${oal.length?`<button class="chip" data-oaread="1">既読にする</button>`:''}</div>${oal.slice(0,6).map(a=>`<div style="font-size:13px;padding:7px 0;border-bottom:1px solid var(--line);${a.read?'color:var(--soft)':''}">${a.read?'':'🔴 '}${a.text}<div class="note" style="margin:2px 0 0">${new Date(a.at).toLocaleString('ja-JP')}</div></div>`).join('')||'<div class="note" style="margin:6px 0 0">新しいお知らせはありません</div>'}</div>`:'';
-  return `<div style="margin:4px 0 2px"><div class="note" style="margin:0">${gr}</div><div style="font-family:'Fraunces',serif;font-size:26px;color:var(--navy);font-weight:600;margin:0 0 4px">${nm}さん</div></div>${bell}${badges}${bkCard}${tiles}${note}`;
+  return `<div style="margin:4px 0 2px"><div class="note" style="margin:0">${gr}</div><div style="font-family:'Fraunces',serif;font-size:26px;color:var(--navy);font-weight:600;margin:0 0 4px">${nm}さん</div></div>${bell}${bkCard}${note}${installBtnHtml('スタッフ用にホーム画面へ追加（1タップで管理画面）')}`;
 }
 function renderAdmin(){
   if(!state.adminAuthed)return renderStaffLogin();
@@ -2881,15 +2899,31 @@ async function saveHomeDisplay(){
   state.rankPhotos=[];state.recPhotos=[];
   await saveData(DATA);alert('保存しました。');render();
 }
+function bkDur(x){return (x.items||[]).reduce((a,i)=>a+(i.min||0),0)||60;}
+function bkStartMs(x){return new Date(x.date+'T'+x.time+':00').getTime();}
+function nowPanel(){const t=fmtDate(today);const nowMs=Date.now();const td=(DATA.bookings||[]).filter(x=>x.date===t&&x.status!=='cancelled').sort((a,b)=>a.time.localeCompare(b.time));
+  const inProg=td.filter(x=>x.status!=='visited'&&bkStartMs(x)<=nowMs&&nowMs<bkStartMs(x)+bkDur(x)*60000);
+  const late=td.filter(x=>x.status==='confirmed'&&nowMs>bkStartMs(x)+10*60000&&!inProg.includes(x)&&nowMs<bkStartMs(x)+bkDur(x)*60000+120*60000);
+  const next=td.filter(x=>x.status!=='visited'&&bkStartMs(x)>nowMs).slice(0,2);
+  const done=td.filter(x=>x.status==='visited').length;
+  const card=(x,label,color)=>{const c=DATA.customers[normPhone(x.phone)];return `<div style="border:2px solid ${color};border-radius:16px;padding:10px 12px;margin:0 0 10px;background:#fff"><div style="display:flex;justify-content:space-between;align-items:center"><b style="color:${color}">${label}</b><span style="font-size:12px;color:var(--ink-soft)">${x.time}〜 ・ ${stById(x.staffId).name}</span></div><div style="font-size:15px;font-weight:700;margin:4px 0 2px">${c?c.name:x.phone} 様</div><div style="font-size:13px;color:var(--ink-soft)">${x.items.map(i=>i.name).join('＋')}</div>${bkCustInfo(x,c)}<div class="bk-actions" style="justify-content:flex-start;margin-top:6px">${x.status==='confirmed'?`<button class="chip" data-visit="${x.id}" style="border-color:#3F5A46;color:#2C4433;font-weight:700">✓ 来店済みにする</button>`:''}</div></div>`;};
+  let h='';
+  inProg.forEach(x=>h+=card(x,'💆 いま施術中','#3F5A46'));
+  late.forEach(x=>h+=card(x,'⚠️ 未来店（'+Math.floor((nowMs-bkStartMs(x))/60000)+'分経過）','var(--rose)'));
+  if(next.length){const x=next[0];const c=DATA.customers[normPhone(x.phone)];const mins=Math.round((bkStartMs(x)-nowMs)/60000);h+=`<div style="border:1.5px solid var(--gold);border-radius:16px;padding:10px 12px;margin:0 0 10px;background:#fffdf7"><div style="display:flex;justify-content:space-between"><b style="color:var(--gold-deep,#9c7a12)">⏭ 次のご予約（あと${mins<60?mins+'分':Math.floor(mins/60)+'時間'+(mins%60?mins%60+'分':'')}）</b><span style="font-size:12px;color:var(--ink-soft)">${x.time}〜 ・ ${stById(x.staffId).name}</span></div><div style="font-size:15px;font-weight:700;margin:4px 0 2px">${c?c.name:x.phone} 様 <button class="chip" data-bkinfo="${x.id}" style="margin-left:6px">${state.bkInfoOpen===x.id?'▲ 閉じる':'▼ お客様情報'}</button></div><div style="font-size:13px;color:var(--ink-soft)">${x.items.map(i=>i.name).join('＋')}</div>${state.bkInfoOpen===x.id?bkCustInfo(x,c):''}</div>`;}
+  const summary=`<div style="display:flex;gap:8px;margin:0 0 12px"><div class="stat" style="flex:1"><div class="n">${td.length}</div><div class="l">本日の予約</div></div><div class="stat" style="flex:1"><div class="n">${done}</div><div class="l">来店済み</div></div><div class="stat" style="flex:1"><div class="n">${td.filter(x=>x.status!=='visited').length}</div><div class="l">残り</div></div></div>`;
+  if(!h&&!td.length)h='<div class="note" style="margin:0 0 12px">本日のご予約はありません。</div>';
+  else if(!h)h='<div class="note" style="margin:0 0 12px">本日のご予約はすべて完了しています。お疲れさまでした🌸</div>';
+  return `<div class="subhead" style="margin-top:0">🕐 いま（${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}）</div>${summary}${h}`;}
 function adminBookings(){
   if(state.manualOpen)return manualBookForm();
   const t=fmtDate(today);const todays=DATA.bookings.filter(x=>x.date===t);const pending=DATA.bookings.filter(x=>x.status==='pending').length;const revenue=DATA.bookings.filter(x=>x.date===t&&x.status==='visited').reduce((s,x)=>s+bkPayment(x),0);
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));
   const task=unsent.length?`<div class="thanks-box"><div class="subhead" style="margin-top:0">📮 お礼メッセージ 未送信（${unsent.length}件）</div><div class="note" style="margin:0 0 10px">ご来店のお礼です。「お礼を送信」を押すと、<b>お客様のマイページに「サロンより」として表示</b>されます（アプリ内表示。SMS・LINEには届きません）。<b>来店後2日以内</b>を目安に。</div>${unsent.map(b=>{const c=DATA.customers[normPhone(b.phone)];const days=Math.floor((Date.now()-new Date(b.date+'T'+b.time+':00').getTime())/86400000);return `<div class="todo ${days>2?'over':''}"><div class="td"><div class="tn">${c?c.name:b.phone} 様 <span class="unsent-tag">未送信</span></div><div class="tm">${mdLabel(b.date)} 来店 ・ ${b.items.map(x=>x.name).join('＋')}</div>${days>2?`<div class="turg">⚠ ${days}日経過</div>`:`<div class="turg" style="color:var(--gold)">${days}日前</div>`}</div><button class="tbtn" data-thanks="${b.id}">お礼を送信</button></div>`}).join('')}</div>`:'<div class="note" style="margin-top:0">✅ お礼メッセージの未送信はありません。ご来店後は2日以内のお礼を徹底しましょう。</div>';
-  let list=DATA.bookings.filter(x=>state.adminFilter==='all'?true:x.status===state.adminFilter).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));const groups={};list.forEach(x=>{(groups[x.date]=groups[x.date]||[]).push(x)});
+  const f=state.adminFilter||'today';let list=DATA.bookings.filter(x=>{if(f==='today')return x.date===t&&x.status!=='cancelled';if(f==='upcoming')return x.date>=t&&x.status!=='cancelled';if(f==='past')return (x.date<t&&x.status!=='cancelled')||x.status==='visited';if(f==='cancelled')return x.status==='cancelled';if(f==='confirmed'||f==='visited')return x.status===f;return true;}).sort((a,b)=>f==='past'?(b.date+b.time).localeCompare(a.date+a.time):(a.date+a.time).localeCompare(b.date+b.time));const groups={};list.forEach(x=>{(groups[x.date]=groups[x.date]||[]).push(x)});
   let gh='';Object.keys(groups).sort().forEach(date=>{gh+=`<div class="daygroup"><h3>${date===t?'本日':mdLabel(date)}</h3>`+groups[date].map((x,i)=>bookingRow(x,i)).join('')+'</div>'});if(!list.length)gh=`<div class="empty"><div class="big">○</div>該当する予約はありません</div>`;
-  const statuses=[['all','すべて'],['confirmed','予約確定'],['visited','来店済み'],['cancelled','キャンセル']];
-  return `<div class="searchbar"><input id="qjump" placeholder="お名前・電話番号で顧客検索"></div><button class="btn btn-primary" id="mb-open" style="width:100%;margin:0 0 14px">＋ 電話予約を入力</button>${task}<div class="stats"><div class="stat"><div class="n">${todays.length}</div><div class="l">本日の予約</div></div></div><div class="export"><button data-exp="csv"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>CSVダウンロード</button></div><div class="adminfilter">${statuses.map(s=>`<button data-f="${s[0]}" class="${state.adminFilter===s[0]?'active':''}">${s[1]}</button>`).join('')}</div>${gh}`;
+  const statuses=[['today','今日'],['upcoming','今後'],['past','過去・来店済み'],['cancelled','キャンセル'],['all','すべて']];
+  return `${nowPanel()}<div class="searchbar"><input id="qjump" placeholder="お名前・電話番号で顧客検索"></div><button class="btn btn-primary" id="mb-open" style="width:100%;margin:0 0 14px">＋ 電話予約を入力</button>${task}<div class="export"><button data-exp="csv"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>CSVダウンロード</button></div><div class="adminfilter">${statuses.map(s=>`<button data-f="${s[0]}" class="${state.adminFilter===s[0]?'active':''}">${s[1]}</button>`).join('')}</div>${gh}`;
 }
 function manualBookForm(){
   const mb=state.manualBook||(state.manualBook={phone:'',name:'',items:[],staffId:(DATA.staff.find(s=>s.id!=='s0')||DATA.staff[0]).id,date:fmtDate(today),time:'',status:'confirmed',password:''});
