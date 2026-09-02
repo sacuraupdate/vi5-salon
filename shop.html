@@ -133,7 +133,7 @@ async function syncLoop(showEmpty){
   try{
     for(let round=1;round<=10;round++){
       if(st)st.textContent=(PRODUCTS.length?('商品を追加取り込み中…（現在'+PRODUCTS.length+'点・'+round+'回目）'):'BASEから商品を取り込んでいます…（1〜2分。このままお待ちください）');
-      const r=await fetch('/api/base-sync');last=await r.json().catch(()=>null);
+      const r=await fetch('/api-sync');last=await r.json().catch(()=>null);
       try{const d=await kv('salon:data');PRODUCTS=((d&&d.eshop&&d.eshop.products)||[]).filter(p=>!p.hide);}catch(e){}
       draw();
       if(!last||!last.ok)break;
