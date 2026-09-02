@@ -943,13 +943,15 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260902f';
-(async function(){try{
-  const r=await fetch('/app.html',{method:'HEAD',cache:'no-store'});
-  const et=(r.headers.get('etag')||r.headers.get('last-modified')||'').trim();
-  if(!et)return;const k='vi5:rev';const old=localStorage.getItem(k);
-  if(old&&old!==et){localStorage.setItem(k,et);location.replace('/?u='+Date.now());return;}
-  localStorage.setItem(k,et);
+const APP_REV='r20260902g';
+(function(){try{
+  var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
+  localStorage.setItem(k,cur);
+  // バージョン文字列が変わった時だけ1回リロード（?u既付き or 直近リロード済みなら何もしない=ループ防止）
+  if(old&&old!==cur&&!/[?&]u=/.test(location.search)&&!sessionStorage.getItem('vi5:reloaded')){
+    sessionStorage.setItem('vi5:reloaded','1');
+    location.replace(location.pathname+'?u='+Date.now());
+  }
 }catch(e){}})();
 const SUPA_URL='https://tehcaufdztgpbrknpshk.supabase.co';
 const SUPA_KEY='sb_publishable_CnOCyO9QU69K47vbbLRkYg__cEv53CJ';
