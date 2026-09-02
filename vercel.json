@@ -1,83 +1,14 @@
 {
   "rewrites": [
-    {
-      "source": "/",
-      "has": [
-        {
-          "type": "query",
-          "key": "api",
-          "value": "sync"
-        }
-      ],
-      "destination": "/api/base-sync"
-    },
-    {
-      "source": "/",
-      "has": [
-        {
-          "type": "query",
-          "key": "api",
-          "value": "diag"
-        }
-      ],
-      "destination": "/api/diag"
-    },
-    {
-      "source": "/",
-      "destination": "/app.html"
-    },
-    {
-      "source": "/shop",
-      "destination": "/shop.html"
-    }
+    { "source": "/api-sync", "destination": "/api/base-sync" },
+    { "source": "/api-diag", "destination": "/api/diag" },
+    { "source": "/shop", "destination": "/shop.html" }
   ],
   "headers": [
-    {
-      "source": "/",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/app.html",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/index.html",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/shop",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store, must-revalidate"
-        }
-      ]
-    }
+    { "source": "/", "headers": [ { "key": "Cache-Control", "value": "no-store, must-revalidate" } ] },
+    { "source": "/index.html", "headers": [ { "key": "Cache-Control", "value": "no-store, must-revalidate" } ] },
+    { "source": "/shop", "headers": [ { "key": "Cache-Control", "value": "no-store, must-revalidate" } ] }
   ],
-  "crons": [
-    {
-      "path": "/api/base-sync",
-      "schedule": "0 18 * * *"
-    }
-  ],
-  "functions": {
-    "api/base-sync.js": {
-      "maxDuration": 60
-    }
-  }
+  "crons": [ { "path": "/api/base-sync", "schedule": "0 18 * * *" } ],
+  "functions": { "api/base-sync.js": { "maxDuration": 60 } }
 }
