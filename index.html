@@ -943,7 +943,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260902k';
+const APP_REV='r20260902m';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1831,7 +1831,7 @@ function stepBrowse(){
   const n=byId('next');if(n)n.onclick=()=>{state.step=1;render()};
 }
 function nextAvailLabel(sid){try{const base=new Date(today);for(let d=0;d<21;d++){const dd=new Date(base);dd.setDate(base.getDate()+d);const ds=fmtDate(dd);if(typeof salonClosed==='function'&&salonClosed(ds))continue;for(let mm=OPEN_HOUR*60;mm<=LAST_RECEPTION*60;mm+=30){const okslot=sid!=='s0'?staffSlotOpen30(sid,ds,mm):anyStaffSlot30(ds,mm);if(okslot){const t=minToTime(mm);return (d===0?'本日':d===1?'明日':mdLabel(ds))+' '+t+'〜';}}}return '空き枠は要確認';}catch(e){return '';}}
-function next3Slots(sid){const out=[];try{const base=new Date(today);for(let d=0;d<21&&out.length<3;d++){const dd=new Date(base);dd.setDate(base.getDate()+d);const ds=fmtDate(dd);if(typeof salonClosed==='function'&&salonClosed(ds))continue;for(let mm=OPEN_HOUR*60;mm<=LAST_RECEPTION*60&&out.length<3;mm+=30){const okslot=sid!=='s0'?staffSlotOpen30(sid,ds,mm):anyStaffSlot30(ds,mm);if(okslot){const hh=String(Math.floor(mm/60)).padStart(2,'0'),mi=String(mm%60).padStart(2,'0');out.push({date:ds,time:hh+':'+mi,label:(d===0?'本日':d===1?'明日':mdLabel(ds))+' '+hh+':'+mi});}}}}catch(e){}return out;}
+function next3Slots(sid){const out=[];try{const base=new Date(today);const cutoff=Date.now()+3*60*60*1000;const totalMin=(state.cart||[]).reduce((a,x)=>a+(x.min||0),0);const closeMin=LAST_RECEPTION*60;for(let d=0;d<21&&out.length<3;d++){const dd=new Date(base);dd.setDate(base.getDate()+d);const ds=fmtDate(dd);if(typeof salonClosed==='function'&&salonClosed(ds))continue;for(let mm=OPEN_HOUR*60;mm<=LAST_RECEPTION*60&&out.length<3;mm+=30){if(mm+totalMin>closeMin)continue;const hh0=String(Math.floor(mm/60)).padStart(2,'0'),mi0=String(mm%60).padStart(2,'0');if(new Date(ds+'T'+hh0+':'+mi0+':00').getTime()<cutoff)continue;const okslot=sid!=='s0'?staffSlotOpen30(sid,ds,mm):anyStaffSlot30(ds,mm);if(okslot){const hh=String(Math.floor(mm/60)).padStart(2,'0'),mi=String(mm%60).padStart(2,'0');out.push({date:ds,time:hh+':'+mi,label:(d===0?'本日':d===1?'明日':mdLabel(ds))+' '+hh+':'+mi});}}}}catch(e){}return out;}
 function stepStaff(){
   const cartIds=state.cart.map(x=>x.id);
   const eligible=p=>p.id==='s0'?true:(!p.hidden&&(p.services||[]).length>0&&cartIds.every(id=>(p.services||[]).includes(id)));
