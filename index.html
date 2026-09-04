@@ -950,7 +950,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260904e';
+const APP_REV='r20260904f';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -2699,9 +2699,27 @@ function computePay(staffId,mkey){const sv=stById(staffId)||{};const wage=sv.wag
   const total=base+homeAllow+nomFee+plus-minus;
   return {wage,hours,days,homeDays,base,homeAllow,noms,nomFee,adj,plus,minus,total};}
 function clockBar(){if(!WORK)return '';const me=localGet('salon:me');if(!me||me==='owner')return '';const cur=(WORK.clock||[]).find(c=>c.staff===me&&!c.out);const onBreak=cur&&(cur.breaks||[]).some(b=>!b.end);let warn='';if(cur){const w=clockWorkedMs(cur)/3600000;const mx=WORK_MAX[cur.mode];if(w>=mx)warn=`<div class="cl-warn">⏰ 上限${mx}時間超過。退勤してください</div>`;}return `<div class="clockp"><button data-clockfix="1" style="float:right;font-size:11px;background:none;border:1px solid var(--line);border-radius:14px;padding:4px 10px;color:var(--soft);font-family:inherit">🛠 打刻の修正・追加</button><div class="cl-status">${cur?`🟢 出勤中（${cur.mode==='onsite'?'店舗':'在宅'}）／ ${fmtDur(clockWorkedMs(cur))}${onBreak?' ・ ☕休憩中':''}`:'⚪ 未出勤'}</div><div class="cl-btns">${!cur?`<button class="clbtn in" data-clock="in_onsite">🏢 店舗 出勤</button><button class="clbtn home" data-clock="in_home">🏠 在宅 出勤</button>`:`<button class="clbtn br" data-clock="break">${onBreak?'☕ 休憩終了':'☕ 休憩'}</button><button class="clbtn out" data-clock="out">🔴 退勤</button>`}</div>${warn}</div>${clockFixPanel()}`;}
+function adminPayOwner(){
+  if(!WORK){loadWork().then(()=>render());return '<div class="empty" style="padding:40px 0">💴 読み込み中…</div>';}
+  const mkey=state.payMonth||payKey(today);const nm=new Date(mkey+'-01T00:00:00');
+  const reals=staff.filter(x=>x.id!=='s0'&&x.id!=='s1'&&meNameById(x.id)!=='SAKURA'); // オーナー本人は除外
+  const brMin=c=>Math.round((c.breaks||[]).reduce((a,b)=>a+((b.end||Date.now())-b.start),0)/60000);
+  const cards=reals.map(st=>{const p=computePay(st.id,mkey);const recs=(WORK.clock||[]).filter(c=>c.staff===st.id&&payKey(new Date(c.in))===mkey).sort((a,b)=>a.in-b.in);const pend=recs.filter(c=>c.pending||c.pendingFix).length;
+    const rows=recs.map(c=>`<div class="drow" style="${(c.pending||c.pendingFix)?'color:var(--gold-deep,#9c7a12)':''}">${mdLabel(fmtDate(new Date(c.in)))} ${c.mode==='home'?'🏠在宅':'🏢店舗'} ${new Date(c.in).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}〜${c.out?new Date(c.out).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}):'（勤務中）'} ／ ${fmtDur(c.workedMs||clockWorkedMs(c))}${(c.breaks&&c.breaks.length)?' ・ 休憩'+brMin(c)+'分':''}${c.manualEdited?' ・ 手動修正':''}${(c.pending||c.pendingFix)?' ・ ⏳承認待ち':''}</div>`).join('')||'<div class="note">この月の勤務記録はありません</div>';
+    const confirmed=((WORK.payConfirm||{})[mkey]||{})[st.id];
+    return `<div class="paycard ${confirmed?'confirmed':''}" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:16px">${st.name}</b><span class="note" style="margin:0">${confirmed?'✅ 本人確認済み':'未確認'}${pend?' ・ ⏳承認待ち'+pend+'件':''}</span></div>
+    <div class="pc-row"><span>時給 ${yen(p.wage)} × ${p.hours.toFixed(1)}時間（${p.days}日）</span><b>${yen(p.base)}</b></div><div class="pc-row"><span>指名料 × ${p.noms}名</span><b>${yen(p.nomFee)}</b></div><div class="pc-row"><span>在宅手当 × ${p.homeDays}日</span><b>${yen(p.homeAllow)}</b></div>${p.plus?`<div class="pc-row"><span>加算（申告）</span><b>+${yen(p.plus)}</b></div>`:''}${p.minus?`<div class="pc-row minus"><span>控除（申告）</span><b>−${yen(p.minus)}</b></div>`:''}<div class="pc-total"><span>お支払い額</span><b>${yen(p.total)}</b></div>
+    <details class="faq" style="margin-top:8px"><summary>🕒 打刻・出勤時間の明細（${recs.length}日）</summary><div class="faq-a">${rows}</div></details></div>`;}).join('')||'<div class="empty">対象スタッフがいません</div>';
+  const grand=reals.reduce((a,st)=>a+computePay(st.id,mkey).total,0);
+  return `<div class="subhead" style="margin-top:0">👑 スタッフ給与（振込確認用）</div><div class="note" style="margin:0 0 10px">オーナー（SAKURA）はご自身の給与は表示されません。各スタッフの給与・打刻・出勤時間を確認できます。</div>
+  <div class="paynav"><button data-paymv="prev">‹</button><div class="calttl">${nm.getFullYear()}年 ${nm.getMonth()+1}月分</div><button data-paymv="next">›</button></div>
+  <div class="note" style="text-align:center;margin-bottom:8px">お支払い：翌月10日 ・ 合計 <b>${yen(grand)}</b></div>${cards}`;
+}
+function meNameById(id){const s=stById(id);return (s&&s.name)||'';}
 function adminPay(){
   if(!WORK){loadWork().then(()=>render());return '<div class="empty" style="padding:40px 0">💴 読み込み中…</div>';}
   const me=localGet('salon:me');const isOwner=meName()==='SAKURA';
+  if(isOwner){return adminPayOwner();}
   // ロック（本人パスワード）
   const lockKey='paypin:'+me;const pin=localGet(lockKey);
   if(!state.payUnlocked){
