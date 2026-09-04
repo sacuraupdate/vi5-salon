@@ -950,7 +950,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260904a';
+const APP_REV='r20260904b';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1226,6 +1226,7 @@ async function backupSoon(d){/* 曜日別の自動バックアップ（1日1回�
     if(r.ok)localSet(mk,tag);}catch(_e){}}
 async function saveData(d){DATA=d;
   if(!state.adminAuthed)return;
+  try{for(const sv of (d.services||[])){if(sv.img&&sv.img.indexOf('data:image')===0&&sv._thumbSrc!==sv.img.length){const t=await shrinkDataURL(sv.img,260,0.62,20000);if(t){sv.thumb=t;sv._thumbSrc=sv.img.length;}}}}catch(_e){}
   // ★保存前に必ずサーバーの実データと統合（古い端末による上書き消失を構造的に防止）
   let srv=null;try{srv=await directLoad();}catch(_e){}
   if(srv){d=mergeProtect(d,srv);DATA=d;state.dataFull=true;}
@@ -1249,8 +1250,8 @@ async function downloadBackup(){
     a.href=url;a.download='vi5-backup-'+fmtDate(today)+'.json';document.body.appendChild(a);a.click();
     setTimeout(function(){URL.revokeObjectURL(url);a.remove();},1000);
   }catch(e){alert('バックアップの作成に失敗しました。')}}
-function shrinkDataURL(du,mx,q){return new Promise(res=>{try{
-  if(!du||typeof du!=='string'||du.indexOf('data:image')!==0||du.length<90000){res(du);return;}
+function shrinkDataURL(du,mx,q,minLen){return new Promise(res=>{try{
+  if(!du||typeof du!=='string'||du.indexOf('data:image')!==0||du.length<(minLen==null?90000:minLen)){res(du);return;}
   const img=new Image();
   img.onload=()=>{try{let w=img.width,h=img.height;const m=mx||720;if(w>m){h=Math.round(h*m/w);w=m;}
     const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(img,0,0,w,h);
@@ -1266,9 +1267,12 @@ async function walkShrink(root){let n=0,before=0,after=0;const seen=new Set();
       if(typeof v==='string'&&v.indexOf('data:image')===0&&v.length>90000){const nv=await shrinkDataURL(v,720,0.66);if(nv&&nv!==v){before+=v.length;after+=nv.length;o[k]=nv;n++;}}
       else if(v&&typeof v==='object')await go(v,depth+1);}}}
   await go(root,0);return {n:n,before:before,after:after};}
+async function thumbMigrate(){try{let n=0;for(const sv of (DATA.services||[])){if(sv.img&&sv.img.indexOf('data:image')===0&&(!sv.thumb||sv._thumbSrc!==sv.img.length)){const t=await shrinkDataURL(sv.img,260,0.62,20000);if(t&&t!==sv.img){sv.thumb=t;sv._thumbSrc=sv.img.length;n++;}}}
+  for(const st of (DATA.staff||[])){if(st.photo&&st.photo.indexOf('data:image')===0&&(!st.thumb||st._thumbSrc!==st.photo.length)){const t=await shrinkDataURL(st.photo,260,0.62,20000);if(t&&t!==st.photo){st.thumb=t;st._thumbSrc=st.photo.length;n++;}}}
+  return n;}catch(e){return 0;}}
 async function imageShrinkMigrate(){/* データ内の全画像（メニュー・スタッフ・カルテ・チャット等）を一度だけ軽量化 */
   if(state._shrunkTried||!state.adminAuthed)return;state._shrunkTried=true;
-  try{
+  try{const tn0=await thumbMigrate();if(tn0){await saveData(DATA);}
     let tn=0,tb=0,ta=0;
     if((DATA._imgV||0)<2){const r1=await walkShrink(DATA);DATA._imgV=2;if(r1.n){tn+=r1.n;tb+=r1.before;ta+=r1.after;await saveData(DATA);}}
     try{await loadWork();if(WORK&&(WORK._imgV||0)<1){const r2=await walkShrink(WORK);WORK._imgV=1;if(r2.n){tn+=r2.n;tb+=r2.before;ta+=r2.after;}await saveWork();}}catch(_e){}
@@ -1871,7 +1875,7 @@ async function addComment(id){
 /* ===== 予約 ===== */
 function renderCustomer(){const pair=state.bookMode==='pair';if(state.step===0)return pair?stepBrowsePair():stepBrowse();if(state.step===1)return pair?stepStaffPair():stepStaff();if(state.step===2)return stepDate();if(state.step===3)return stepInfo();if(state.step===4)return stepDone()}
 function cartBar(label,enabled){return `<div class="cta-bar"><div class="cart-mini"><span class="ct-n">${state.cart.length}点</span><span class="ct-p">${yen(cartTotal())}</span></div><button class="btn btn-primary" id="next" ${enabled?'':'disabled'}>${label}</button></div>`}
-function menuItemHtml(x){const sel=inCart(x.id);const catObj=categories.find(c=>c.id===x.cat)||{ph:'#888'};const bg=x.img?`background-image:url('${x.img}');background-color:${catObj.ph}`:`background-color:${catObj.ph}`;
+function menuItemHtml(x){const sel=inCart(x.id);const catObj=categories.find(c=>c.id===x.cat)||{ph:'#888'};const _im=x.thumb||x.img;const bg=_im?`background-image:url('${_im}');background-color:${catObj.ph}`:`background-color:${catObj.ph}`;
   const open=state.menuOpen===x.id;
   const photos=(x.photos&&x.photos.length?x.photos:(x.img?[x.img]:[])).slice(0,3);
   const detail=open?`<div class="mi-detail">${photos.length?`<div class="share-photos" style="margin:0 0 10px">${photos.map(p=>`<div style="background-image:url('${p}')"></div>`).join('')}</div>`:''}<div class="mi-detail-tx">${x.detail||x.desc||'詳細はスタッフまでお気軽にお尋ねください。'}</div></div>`:'';
@@ -2599,7 +2603,7 @@ function adminTodo(){
   const _tf=state.taskForm||(state.taskForm={title:'',desc:'',assignee:me,due:'',url:''});const _due=_tf.due||'';const _dueChips=[['','なし'],[fmtDate(today),'今日'],[fmtDate(new Date(today.getFullYear(),today.getMonth(),today.getDate()+1)),'明日'],[fmtDate(new Date(today.getFullYear(),today.getMonth(),today.getDate()+3)),'3日後'],[fmtDate(new Date(today.getFullYear(),today.getMonth(),today.getDate()+7)),'来週']];const addForm=state.taskAddOpen?`<div class="tkform">
     <input id="tk-title" placeholder="やること（例：BASEに新商品を登録）" value="${(_tf.title||'').replace(/"/g,'&quot;')}">
     <textarea id="tk-desc" rows="2" placeholder="詳細・メモ（任意）">${_tf.desc||''}</textarea>
-    <div class="note" style="margin:0 0 4px">担当（複数可）</div><div class="chips" id="tk-asg">${reals.map(s=>`<button type="button" class="chip ${((_tf.assignees)||[me]).includes(s.id)?'sel':''}" data-tkasg="${s.id}">${s.id===me?'自分':s.name}</button>`).join('')}<button type="button" class="chip ${_tf.assignees&&_tf.assignees.includes('all')?'sel':''}" data-tkasg="all">👥全員</button></div>
+    <textarea id="tk-bulk" rows="3" placeholder="まとめて追加する場合はこちらに1行ずつ（例：&#10;回数券の画像変更&#10;9月の在庫チェック&#10;LINEの返信）" style="margin-bottom:6px"></textarea><div class="note" style="margin:0 0 8px">↑ 1行＝1タスクで、下の担当・期日をまとめて付けて登録します（上の「やること」欄と併用可）</div><div class="note" style="margin:0 0 4px">担当（複数可）</div><div class="chips" id="tk-asg">${reals.map(s=>`<button type="button" class="chip ${((_tf.assignees)||[me]).includes(s.id)?'sel':''}" data-tkasg="${s.id}">${s.id===me?'自分':s.name}</button>`).join('')}<button type="button" class="chip ${_tf.assignees&&_tf.assignees.includes('all')?'sel':''}" data-tkasg="all">👥全員</button></div>
     <div class="tk-duewrap"><label class="tk-duelbl">📅 期日</label><input id="tk-due" type="date" value="${_due}" style="flex:1"></div>
     <div class="tk-duechips">${_dueChips.map(c=>`<button type="button" class="tk-dchip ${_due===c[0]?'on':''}" data-duechip="${c[0]}">${c[1]}</button>`).join('')}</div>
     <input id="tk-url" placeholder="リンク添付（任意）https://..." value="${(_tf.url||'').replace(/"/g,'&quot;')}">
@@ -2636,7 +2640,12 @@ function tkAsgToggle(id){state.taskForm=state.taskForm||{};const me=localGet('sa
   const ti=byId('tk-title'),td=byId('tk-desc'),tu=byId('tk-due'),tl=byId('tk-url');if(ti)state.taskForm.title=ti.value;if(td)state.taskForm.desc=td.value;if(tu)state.taskForm.due=tu.value;if(tl)state.taskForm.url=tl.value;
   if(id==='all'){a=a.includes('all')?[me]:['all'];}else{a=a.filter(x=>x!=='all');if(a.includes(id))a=a.filter(x=>x!==id);else a.push(id);if(!a.length)a=[me];}
   state.taskForm.assignees=a;render();}
-async function taskSave(){const me=localGet('salon:me');const tf=state.taskForm||{};const title=(((byId('tk-title')||{}).value)||tf.title||'').trim();if(!title){alert('やることをご入力ください。');return;}const assignees=(tf.assignees&&tf.assignees.length)?tf.assignees.slice():[me];const isAll=assignees.includes('all');const assignee=isAll?'all':assignees[0];const due=((byId('tk-due')||{}).value)||tf.due||'';const desc=(((byId('tk-desc')||{}).value)||tf.desc||'').trim();const url=(((byId('tk-url')||{}).value)||tf.url||'').trim();await loadWork();WORK.tasks=WORK.tasks||[];WORK.tasks.unshift({id:'t'+Date.now(),title,desc,by:me,assignee,assignees:isAll?['all']:assignees,scope:isAll?'all':'one',due,url,imgs:(state.taskImgs||[]).slice(0,5),qa:[],done:false,at:Date.now()});state.taskImgs=[];state.taskForm=null;state.taskAddOpen=false;const others=isAll?[]:assignees.filter(a=>a!==me);logAct('タスクを追加'+(others.length?'（'+others.map(a=>(stById(a)||{}).name).join('・')+'へ依頼）':''));WORK.chats=WORK.chats||{};for(const a of others){const rk='dm:'+[me,a].sort().join('|');WORK.chats[rk]=WORK.chats[rk]||[];WORK.chats[rk].push({id:'m'+Date.now()+Math.random().toString(36).slice(2,5),by:meName(),at:Date.now(),text:'【タスク依頼】'+title+(due?'（期日：'+mdLabel(due)+'）':''),reads:[meName()],reacts:{}});}await saveWork();alert('タスクを追加しました'+(due?'（期日：'+mdLabel(due)+'）':'（期日なし）'));render();}
+async function taskSaveMany(lines){const me=localGet('salon:me');const tf=state.taskForm||{};const assignees=(tf.assignees&&tf.assignees.length)?tf.assignees.slice():[me];const isAll=assignees.includes('all');const assignee=isAll?'all':assignees[0];const due=((byId('tk-due')||{}).value)||tf.due||'';const url=(((byId('tk-url')||{}).value)||tf.url||'').trim();
+  await loadWork();WORK.tasks=WORK.tasks||[];WORK.chats=WORK.chats||{};const others=isAll?[]:assignees.filter(a=>a!==me);
+  lines.forEach((title,i)=>{WORK.tasks.unshift({id:'t'+Date.now()+i,title,desc:'',by:me,assignee,assignees:isAll?['all']:assignees,scope:isAll?'all':'one',due,url:i===0?url:'',imgs:[],qa:[],done:false,at:Date.now()+i});});
+  for(const a of others){const rk='dm:'+[me,a].sort().join('|');WORK.chats[rk]=WORK.chats[rk]||[];WORK.chats[rk].push({id:'m'+Date.now()+Math.random().toString(36).slice(2,5),by:meName(),at:Date.now(),text:'【タスク依頼 '+lines.length+'件】\n'+lines.map(l=>'・'+l).join('\n')+(due?'\n（期日：'+mdLabel(due)+'）':''),reads:[meName()],reacts:{}});}
+  logAct('タスクを'+lines.length+'件まとめて追加');await saveWork();state.taskForm=null;state.taskAddOpen=false;alert(lines.length+'件のタスクを登録しました。');render();}
+async function taskSave(){const me=localGet('salon:me');const tf=state.taskForm||{};const title=(((byId('tk-title')||{}).value)||tf.title||'').trim();const bulk=(((byId('tk-bulk')||{}).value)||'').split('\n').map(x=>x.trim()).filter(Boolean);if(!title&&!bulk.length){alert('やることをご入力ください。');return;}if(bulk.length){const lines=title?[title,...bulk]:bulk;await taskSaveMany(lines);return;}const assignees=(tf.assignees&&tf.assignees.length)?tf.assignees.slice():[me];const isAll=assignees.includes('all');const assignee=isAll?'all':assignees[0];const due=((byId('tk-due')||{}).value)||tf.due||'';const desc=(((byId('tk-desc')||{}).value)||tf.desc||'').trim();const url=(((byId('tk-url')||{}).value)||tf.url||'').trim();await loadWork();WORK.tasks=WORK.tasks||[];WORK.tasks.unshift({id:'t'+Date.now(),title,desc,by:me,assignee,assignees:isAll?['all']:assignees,scope:isAll?'all':'one',due,url,imgs:(state.taskImgs||[]).slice(0,5),qa:[],done:false,at:Date.now()});state.taskImgs=[];state.taskForm=null;state.taskAddOpen=false;const others=isAll?[]:assignees.filter(a=>a!==me);logAct('タスクを追加'+(others.length?'（'+others.map(a=>(stById(a)||{}).name).join('・')+'へ依頼）':''));WORK.chats=WORK.chats||{};for(const a of others){const rk='dm:'+[me,a].sort().join('|');WORK.chats[rk]=WORK.chats[rk]||[];WORK.chats[rk].push({id:'m'+Date.now()+Math.random().toString(36).slice(2,5),by:meName(),at:Date.now(),text:'【タスク依頼】'+title+(due?'（期日：'+mdLabel(due)+'）':''),reads:[meName()],reacts:{}});}await saveWork();alert('タスクを追加しました'+(due?'（期日：'+mdLabel(due)+'）':'（期日なし）'));render();}
 async function taskToggle(id){await loadWork();const t=(WORK.tasks||[]).find(x=>x.id===id);if(!t)return;t.done=!t.done;t.doneBy=t.done?meName():'';t.doneAt=t.done?Date.now():0;logAct((t.done?'タスク完了：':'タスク未完了に戻す：')+t.title);await saveWork();render();}
 async function taskQ(id){const v=(byId('tk-q').value||'').trim();if(!v)return;await loadWork();const t=(WORK.tasks||[]).find(x=>x.id===id);t.qa=t.qa||[];t.qa.push({by:meName()||'不明',text:v,at:Date.now()});await saveWork();render();}
 async function taskDel(id){if(!confirm('このタスクを削除しますか？'))return;await loadWork();WORK.tasks=(WORK.tasks||[]).filter(x=>x.id!==id);state.taskOpen=null;await saveWork();render();}
@@ -2863,8 +2872,8 @@ function todayDash(chatN,todoN){
   const tiles=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:2px 0 10px">${tile('☑️','タスク','todo',0)}${tile('📅','予約','bookings',0)}${tile('🗓','シフト','schedule',0)}${tile('💬','チャット','chat',chatN)}</div>`;
   const note=`<div class="note" style="background:#EFF6EF;border:1px solid #cfe3cf;border-radius:12px;padding:9px 12px;margin:0 0 10px">🗓 シフトはGoogleカレンダーへ<b>自動反映</b>されます（ボタン操作は不要です）</div>`;
   const isOwner=(meName()==='SAKURA');
-  const oal=((WORK&&WORK.ownerAlerts)||[]);const unread=oal.filter(a=>!a.read).length;
-  const bell=isOwner?`<div class="addform" style="margin:0 0 10px;padding:12px 14px;border:1.5px solid ${unread?'var(--gold)':'var(--line)'}"><div style="display:flex;justify-content:space-between;align-items:center"><b>🔔 スタッフからのお知らせ${unread?` <span class="tbnum" style="position:static">${unread}</span>`:''}</b>${oal.length?`<button class="chip" data-oaread="1">既読にする</button>`:''}</div>${oal.slice(0,6).map(a=>`<div style="font-size:13px;padding:7px 0;border-bottom:1px solid var(--line);${a.read?'color:var(--soft)':''}">${a.read?'':'🔴 '}${a.text}<div class="note" style="margin:2px 0 0">${new Date(a.at).toLocaleString('ja-JP')}</div></div>`).join('')||'<div class="note" style="margin:6px 0 0">新しいお知らせはありません</div>'}</div>`:'';
+  const oal=((WORK&&WORK.ownerAlerts)||[]).filter(a=>!a.read);const unread=oal.length;
+  const bell=(isOwner&&unread)?`<div class="addform" style="margin:0 0 10px;padding:12px 14px;border:1.5px solid var(--gold)"><div style="display:flex;justify-content:space-between;align-items:center"><b>🔔 スタッフからのお知らせ${unread?` <span class="tbnum" style="position:static">${unread}</span>`:''}</b>${oal.length?`<button class="chip" data-oaread="1">既読にする（消す）</button>`:''}</div>${oal.slice(0,8).map(a=>`<div style="font-size:13px;padding:7px 0;border-bottom:1px solid var(--line)">🔴 ${a.text}<div class="note" style="margin:2px 0 0">${new Date(a.at).toLocaleString('ja-JP')}</div></div>`).join('')||'<div class="note" style="margin:6px 0 0">新しいお知らせはありません</div>'}</div>`:'';
   return `<div style="margin:4px 0 2px"><div class="note" style="margin:0">${gr}</div><div style="font-family:'Fraunces',serif;font-size:26px;color:var(--navy);font-weight:600;margin:0 0 4px">${nm}さん</div></div>${bell}${clockApproveBlock()}${bkCard}${note}${installBtnHtml('スタッフ用にホーム画面へ追加（1タップで管理画面）')}`;
 }
 function renderAdmin(){
