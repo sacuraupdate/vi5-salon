@@ -950,7 +950,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260903h';
+const APP_REV='r20260904a';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1070,7 +1070,6 @@ function couponLine(c){const v=couponVal(c);if(!v)return '';return c.couponExpir
 const OPEN_HOUR=9,LAST_RECEPTION=21,CLOSED_DOW=2;
 const IMG='https://s3.ap-northeast-1.amazonaws.com/img35h189/ooohvi5/menu/';
 const categories=[
-  {id:'addon',label:'オプションメニュー',mono:'＋',ph:'#8A7A5A'},
   {id:'perm',label:'まつげ・眉パーマ',mono:'パ',ph:'#3A4660'},
   {id:'lash',label:'まつげエクステ',mono:'ま',ph:'#9C7B4A'},
   {id:'wlash',label:'Wまつげエクステ',mono:'Ｗ',ph:'#6B5B8A'},
@@ -1078,7 +1077,8 @@ const categories=[
   {id:'peel',label:'ピーリング',mono:'肌',ph:'#9C5B6B'},
   {id:'makeup',label:'メイク・ヘア',mono:'M',ph:'#4A6B6B'},
   {id:'ticket',label:'回数券',mono:'券',ph:'#8A6D3B'},
-  {id:'consult',label:'無料相談',mono:'相',ph:'#6B6276'}];
+  {id:'consult',label:'無料相談',mono:'相',ph:'#6B6276'},
+  {id:'addon',label:'オプションメニュー',mono:'＋',ph:'#8A7A5A'}];
 const SEED_SERVICES=[
   {id:'pm1',cat:'perm',name:'【上】まつげパーマ',min:60,price:6800,desc:'ダメージレスで上向きカール',img:IMG+'mlist_2043957422.jpg',addons:['br1']},
   {id:'pm2',cat:'perm',name:'【上下セット】まつげパーマ',min:75,price:12000,desc:'上下まとめてぱっちり',img:IMG+'mlist_1973913600.jpg'},
@@ -1489,9 +1489,9 @@ function render(){normDATA();updateNav();updateBack();updateFloatBook();if(state
 function stepsBar(n){let h='<div class="steps">';for(let i=0;i<4;i++)h+=`<div class="s ${i<=n?'on':''}"></div>`;return h+'</div>'}
 function go(v){state.view=v;render();window.scrollTo(0,0)}
 var _hLast="",_hRestoring=false;
-function _snap(){return {v:state.view,step:state.step,custOpen:state.custOpen||null,taskOpen:state.taskOpen||null,chatRoom:state.chatRoom||null,mpReg:!!state.mpReg,adminTab:state.adminTab||null,schedMode:state.schedMode||null,calDay:state.calDay||null,taskTab:state.taskTab||null,taskAddOpen:!!state.taskAddOpen,mpPreview:!!state.mpPreview};}
+function _snap(){return {openCat:state.openCat||null,pairEditing:state.pairEditing||null,bookMode:state.bookMode||null,eshopCat:state.eshopCat||null,v:state.view,step:state.step,custOpen:state.custOpen||null,taskOpen:state.taskOpen||null,chatRoom:state.chatRoom||null,mpReg:!!state.mpReg,adminTab:state.adminTab||null,schedMode:state.schedMode||null,calDay:state.calDay||null,taskTab:state.taskTab||null,taskAddOpen:!!state.taskAddOpen,mpPreview:!!state.mpPreview};}
 function _pushHistory(){if(_hRestoring)return;try{var s=_snap();var sg=JSON.stringify(s);if(sg===_hLast)return;if(_hLast==="")history.replaceState(s,"");else history.pushState(s,"");_hLast=sg;}catch(e){}}
-if(window.addEventListener)window.addEventListener("popstate",function(e){var s=e.state;if(!s)return;_hRestoring=true;state.view=s.v;state.step=s.step;state.custOpen=s.custOpen;state.taskOpen=s.taskOpen;state.chatRoom=s.chatRoom;state.mpReg=s.mpReg;state.adminTab=s.adminTab;state.schedMode=s.schedMode;state.calDay=s.calDay;state.taskTab=s.taskTab;state.taskAddOpen=s.taskAddOpen;state.mpPreview=s.mpPreview;_hLast=JSON.stringify(s);render();_hRestoring=false;window.scrollTo(0,0);});
+if(window.addEventListener)window.addEventListener("popstate",function(e){var s=e.state;if(!s)return;_hRestoring=true;state.view=s.v;state.step=s.step;state.openCat=s.openCat||null;if(s.pairEditing)state.pairEditing=s.pairEditing;if(s.bookMode)state.bookMode=s.bookMode;state.eshopCat=s.eshopCat||'all';state.custOpen=s.custOpen;state.taskOpen=s.taskOpen;state.chatRoom=s.chatRoom;state.mpReg=s.mpReg;state.adminTab=s.adminTab;state.schedMode=s.schedMode;state.calDay=s.calDay;state.taskTab=s.taskTab;state.taskAddOpen=s.taskAddOpen;state.mpPreview=s.mpPreview;_hLast=JSON.stringify(s);render();_hRestoring=false;window.scrollTo(0,0);});
 function goBack(){try{history.back();}catch(e){if(state.navStack.length){state.view=state.navStack.pop();render();window.scrollTo(0,0);}}}
 function updateBack(){const b=byId('backbtn');if(b){b.style.display=state.navStack.length?'block':'none';b.textContent=t('back')}}
 const S=()=>DATA.settings;
@@ -1876,6 +1876,8 @@ function menuItemHtml(x){const sel=inCart(x.id);const catObj=categories.find(c=>
   const photos=(x.photos&&x.photos.length?x.photos:(x.img?[x.img]:[])).slice(0,3);
   const detail=open?`<div class="mi-detail">${photos.length?`<div class="share-photos" style="margin:0 0 10px">${photos.map(p=>`<div style="background-image:url('${p}')"></div>`).join('')}</div>`:''}<div class="mi-detail-tx">${x.detail||x.desc||'詳細はスタッフまでお気軽にお尋ねください。'}</div></div>`:'';
   return `<div class="menu-item ${sel?'sel':''} ${open?'open':''}"><div class="mi-row" data-mpick="${x.id}"><div class="mi-thumb" style="${bg}"></div><div class="mi-body"><div class="mi-name">${svcName(x)} <span class="mi-more" data-mexp="${x.id}">${open?'閉じる':'詳細▾'}</span></div>${x.desc?`<div class="mi-desc">${x.desc}</div>`:''}<div class="mi-meta">${x.price?yen(x.price):'無料'} ・ 約${x.min}分</div></div><button class="mi-add" data-add="${x.id}"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">${sel?'<path d="M5 13l4 4L19 7"/>':'<path d="M12 5v14M5 12h14"/>'}</svg></button></div>${detail}</div>`}
+function catTilesHtml(cartArr){const cart=cartArr||state.cart||[];const hasMain=cart.some(x=>x.cat!=='addon');
+  return `<div class="note" style="margin:6px 0 8px">カテゴリをタップするとメニューが表示されます</div><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">${categories.filter(c=>services.some(s=>s.cat===c.id)).map(c=>{const n=services.filter(s=>s.cat===c.id).length;const sel=cart.filter(x=>x.cat===c.id).length;const isOpt=c.id==='addon';const locked=isOpt&&!hasMain;return `<button data-fc="${c.id}" style="position:relative;text-align:left;border:1.5px solid ${sel?'var(--gold)':(isOpt?'var(--gold-soft)':'var(--line)')};background:${sel?'var(--gold-bg,#fdf6e3)':(isOpt?'#fffdf7':'#fff')};border-radius:16px;padding:14px 12px;font-family:inherit;opacity:${locked?'.6':'1'}">${sel?`<span style="position:absolute;top:-8px;right:-6px;background:var(--gold);color:#fff;border-radius:20px;min-width:26px;height:26px;padding:0 8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.18)">${sel}</span>`:''}<div style="font-weight:700;font-size:15px;color:var(--navy)">${c.label}</div><div style="font-size:11px;color:var(--ink-soft);margin-top:4px">${n}メニュー${sel?` ・ <b style="color:var(--gold)">${sel}つ選択中</b>`:''}${locked?'<br>先に施術メニューをお選びください':''}${isOpt&&!locked?'<br>何個でも追加OK':''}</div></button>`;}).join('')}</div>`;}
 function stepBrowse(){
   const chips=[['all','すべて'],['mens','メンズにおすすめ'],...categories.filter(c=>services.some(s=>s.cat===c.id)).map(c=>[c.id,c.label])];
   const cur=state.openCat||'all';
@@ -1883,7 +1885,7 @@ function stepBrowse(){
   if(state.mpPhone){const ids=favServiceIds(state.mpPhone).slice(0,3).filter(id=>svById(id));if(ids.length&&cur==='all')fav=`<div class="fav-label">よく選ぶメニュー</div>${ids.map(id=>menuItemHtml(svById(id))).join('')}<div style="height:8px"></div>`;}
   const _mq=(state.menuQuery||'').trim();const _match=s=>!_mq||((s.name||'')+(s.desc||'')).toLowerCase().includes(_mq.toLowerCase());let listHtml=promoCardHtml();
   if(cur==='all'&&!_mq){
-    listHtml+=`<div class="note" style="margin:6px 0 8px">カテゴリをタップするとメニューが表示されます</div><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">${categories.filter(c=>services.some(s=>s.cat===c.id)).map(c=>{const n=services.filter(s=>s.cat===c.id).length;const sel=state.cart.filter(x=>x.cat===c.id).length;const isOpt=c.id==='addon';const locked=isOpt&&!cartHasMain();return `<button data-fc="${c.id}" style="text-align:left;border:1.5px solid ${sel?'var(--gold)':(isOpt?'var(--gold-soft)':'var(--line)')};background:${sel?'var(--gold-bg,#fdf6e3)':(isOpt?'#fffdf7':'#fff')};border-radius:16px;padding:14px 12px;font-family:inherit;opacity:${locked?'.6':'1'}"><div style="font-weight:700;font-size:15px;color:var(--navy)">${c.label}</div><div style="font-size:11px;color:var(--ink-soft);margin-top:4px">${n}メニュー${sel?` ・ <b style="color:var(--gold)">選択中${sel}</b>`:''}${locked?'<br>先に施術メニューをお選びください':''}${isOpt&&!locked?'<br>何個でも追加OK':''}</div></button>`;}).join('')}</div>`;
+    listHtml+=catTilesHtml(state.cart);
   }else if(cur==='all'){
     categories.forEach(c=>{if(c.id==='addon')return;let items=services.filter(s=>s.cat===c.id&&_match(s));if(!items.length)return;const sel=state.cart.filter(x=>x.cat===c.id).length;listHtml+=`<div class="subhead" style="margin-top:14px">${c.label}${sel?` <span style="color:var(--gold);font-size:11px;font-weight:700">選択中 ${sel}</span>`:''}</div>`+items.map(menuItemHtml).join('')});
   }else if(cur==='mens'){
@@ -1902,7 +1904,7 @@ function stepBrowse(){
   const pairBanner=state.bookMode==='pair'?`<div class="pairbanner">👥 おふたりでご予約 ・ <b>${state.pairPerson===1?'お一人目':'お二人目'}</b>のメニュー${state.pairPerson===2&&state.pairA?`<span class="pb-a">お一人目：${state.pairA.cart.map(x=>itemName(x)).join('・')||'(未選択)'} ／ ${state.pairA.staff.name}</span>`:''}</div>`:'';
   app.innerHTML=`<div class="fade"><div class="eyebrow">Step 01</div><div class="h-title">${t('selectMenu')}</div><div class="h-sub">${t('menuSub')}</div>${modeBar}${pairBanner}<div class="menusearch"><input id="menu-q" type="search" value="${(state.menuQuery||'').replace(/"/g,'&quot;')}" placeholder="🔍 メニュー名で検索（例：まつげ、眉、ピーリング）" aria-label="メニュー検索"></div>${selChips}${fav}${listHtml}${_mq&&!/選択中/.test(listHtml)&&listHtml.indexOf('menu-item')<0?'<div class="empty">「'+_mq+'」に一致するメニューがありません</div>':''}${addHtml}</div>`+cartBar(t('ctaNextStaff'),state.cart.length>0);
   app.querySelectorAll('[data-bookmode]').forEach(b=>b.onclick=()=>{const mode=b.dataset.bookmode;if(mode==='pair'){state.bookMode='pair';state.cartA=[...state.cart];state.cartB=[];state.staffA=state.b.staff;state.staffB=null;state.optA=[];state.optB=[];state.pairEditing='A';}else{state.bookMode='single';}render();window.scrollTo(0,0)});
-  app.querySelectorAll('[data-fc]').forEach(b=>b.onclick=()=>{state.openCat=b.dataset.fc==='all'?null:b.dataset.fc;state.menuOpen=null;render();window.scrollTo(0,0)});
+  app.querySelectorAll('[data-fc]').forEach(b=>b.onclick=()=>{state.openCat=b.dataset.fc==='all'?null:b.dataset.fc;state.menuOpen=null;render();try{_pushHistory();}catch(_e){};window.scrollTo(0,0)});
   app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{state.cart=state.cart.filter(x=>x.id!==b.dataset.rm);render()});
   app.querySelectorAll('[data-mexp]').forEach(r=>r.onclick=e=>{e.stopPropagation();state.menuOpen=state.menuOpen===r.dataset.mexp?null:r.dataset.mexp;render()});app.querySelectorAll('[data-mpick]').forEach(r=>r.onclick=()=>{const id=r.dataset.mpick;const _mqe=byId('menu-q');if(_mqe)_mqe.oninput=e=>{state.menuQuery=e.target.value;render();const el=byId('menu-q');if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length);}catch(_){}}};inCart(id)?state.cart=state.cart.filter(x=>x.id!==id):state.cart.push(svById(id));render()});app.querySelectorAll('[data-cattg]').forEach(el=>el.onclick=()=>{state.catOpen=state.catOpen||{};state.catOpen[el.dataset.cattg]=!state.catOpen[el.dataset.cattg];render()});
   app.querySelectorAll('[data-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();const id=b.dataset.add;const sv=svById(id);if(sv&&sv.cat==='addon'&&!inCart(id)&&!cartHasMain()){alert('オプションメニューは、先に施術メニューをお選びいただいてから追加できます。');return;}inCart(id)?state.cart=state.cart.filter(x=>x.id!==id):state.cart.push(sv);if(!cartHasMain())state.cart=state.cart.filter(x=>x.cat!=='addon');render()});
@@ -2007,9 +2009,9 @@ function stepBrowsePair(){
   state.cart=active;
   const chips=[['all','すべて'],['mens','メンズにおすすめ'],...categories.filter(c=>services.some(s=>s.cat===c.id)).map(c=>[c.id,c.label])];const cur=state.openCat||'all';
   let listHtml='';
-  if(cur==='all'){categories.forEach(c=>{let items=services.filter(s=>s.cat===c.id);if(!items.length)return;const sel=active.filter(x=>x.cat===c.id).length;listHtml+=`<div class="subhead" style="margin-top:14px">${c.label}${sel?` <span style="color:var(--gold);font-size:11px;font-weight:700">選択中 ${sel}</span>`:''}</div>`+items.map(menuItemHtml).join('')});}
-  else if(cur==='mens'){let items=services.filter(isMens);listHtml=items.length?items.map(menuItemHtml).join(''):'<div class="empty">メンズにおすすめのメニューがありません</div>';}
-  else{let items=services.filter(s=>s.cat===cur);listHtml=items.length?items.map(menuItemHtml).join(''):'<div class="empty">メニューがありません</div>';}
+  if(cur==='all'){listHtml=catTilesHtml(active);}
+  else if(cur==='mens'){let items=services.filter(isMens);listHtml=`<button class="chip" data-fc="all" style="margin:0 0 10px">← カテゴリ一覧へ</button>`+(items.length?items.map(menuItemHtml).join(''):'<div class="empty">メンズにおすすめのメニューがありません</div>');}
+  else{let items=services.filter(s=>s.cat===cur);const hasMain=active.some(x=>x.cat!=='addon');const optNote=cur==='addon'?(hasMain?`<div class="note" style="margin:0 0 10px;border:1.5px solid var(--gold);border-radius:12px;padding:10px 12px">施術メニューに<b>何個でも追加できます</b>（担当：SAKURA・TOMOMI）。<b>TOMOMI指名でハーブピーリングまたはニードルピーリングをご予約の方はオプション無料</b>（ヘッドスパ20分・30分は通常料金）。</div>`:`<div class="note" style="margin:0 0 10px;border:1.5px solid var(--rose);border-radius:12px;padding:10px 12px;color:var(--rose)">オプションメニューは、先に施術メニューを選んでから追加できます。</div>`):'';listHtml=`<button class="chip" data-fc="all" style="margin:0 0 10px">← カテゴリ一覧へ</button><div class="subhead" style="margin-top:0">${catLabel(cur)}</div>${optNote}`+(items.length?items.map(menuItemHtml).join(''):'<div class="empty">メニューがありません</div>');}
   const aset=new Set();active.forEach(it=>{const sv=svById(it.id);((sv&&sv.addons)||[]).forEach(a=>aset.add(a))});active.forEach(it=>aset.delete(it.id));
   const adds=[...aset].map(svById).filter(Boolean);const addHtml=adds.length?`<div class="addon-label">＋ いっしょにいかがですか？</div>`+adds.map(menuItemHtml).join(''):'';
   const selChips=active.length?`<div class="selbar">${active.map(it=>`<span class="selchip" data-rm="${it.id}">${itemName(it)} <b>✕</b></span>`).join('')}</div>`:'';
@@ -2027,7 +2029,7 @@ function stepBrowsePair(){
   app.innerHTML=`<div class="fade"><div class="eyebrow">Step 01</div><div class="h-title">${t('selectMenu')}</div><div class="h-sub">${t('menuSub')}</div>${modeBar}${pairHead}${chipHtml}${selChips}${listHtml}${addHtml}</div>`+`<div class="cta-bar"><div class="cart-mini"><span class="ct-n">①${state.cartA.length}点・②${state.cartB.length}点</span><span class="ct-p">${yen(cartSum(state.cartA,state.staffA&&state.staffA.id)+cartSum(state.cartB,state.staffB&&state.staffB.id))}</span></div>${ctaBtn}</div>`;
   app.querySelectorAll('[data-bookmode]').forEach(b=>b.onclick=()=>{const mode=b.dataset.bookmode;if(mode==='single'){state.bookMode='single';state.cart=[...state.cartA];}else{state.bookMode='pair';}render();window.scrollTo(0,0)});
   app.querySelectorAll('[data-pedit]').forEach(b=>b.onclick=()=>{state.pairEditing=b.dataset.pedit;state.openCat=null;render();window.scrollTo(0,0)});
-  app.querySelectorAll('[data-fc]').forEach(b=>b.onclick=()=>{state.openCat=b.dataset.fc==='all'?null:b.dataset.fc;state.menuOpen=null;render();window.scrollTo(0,0)});
+  app.querySelectorAll('[data-fc]').forEach(b=>b.onclick=()=>{state.openCat=b.dataset.fc==='all'?null:b.dataset.fc;state.menuOpen=null;render();try{_pushHistory();}catch(_e){};window.scrollTo(0,0)});
   app.querySelectorAll('[data-mexp]').forEach(r=>r.onclick=()=>{state.menuOpen=state.menuOpen===r.dataset.mexp?null:r.dataset.mexp;render()});
   const mut=id=>{const arr=state.pairEditing==='A'?state.cartA:state.cartB;const i=arr.findIndex(x=>x.id===id);if(i>=0)arr.splice(i,1);else arr.push(svById(id));render()};
   app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>mut(b.dataset.rm));
