@@ -119,7 +119,7 @@ const yen=n=>'¥'+Number(n||0).toLocaleString();
 const byId=i=>document.getElementById(i);
 async function kv(key){const r=await fetch(SUPA+'/rest/v1/kv?key=eq.'+key+'&select=value',{headers:H});if(!r.ok)throw 0;const j=await r.json();if(!j.length)return null;let v=j[0].value;for(let i=0;i<4;i++){if(typeof v==='string'){try{v=JSON.parse(v);continue}catch(e){break}}if(Array.isArray(v)){v=v[0];continue}break}return v}
 async function load(){
-  try{const d=await kv('salon:data');PRODUCTS=((d&&d.eshop&&d.eshop.products)||[]).filter(p=>!p.hide);}catch(e){}
+  try{const d=await kv('salon:eshop');PRODUCTS=((d&&d.products)||[]).filter(p=>!p.hide);}catch(e){}
   byId('loading').textContent=PRODUCTS.length?'':'';
   draw();
   if(!PRODUCTS.length){ensureSync();}
@@ -134,7 +134,7 @@ async function syncLoop(showEmpty){
     for(let round=1;round<=10;round++){
       if(st)st.textContent=(PRODUCTS.length?('商品を追加取り込み中…（現在'+PRODUCTS.length+'点・'+round+'回目）'):'BASEから商品を取り込んでいます…（1〜2分。このままお待ちください）');
       const r=await fetch('/api-sync');last=await r.json().catch(()=>null);
-      try{const d=await kv('salon:data');PRODUCTS=((d&&d.eshop&&d.eshop.products)||[]).filter(p=>!p.hide);}catch(e){}
+      try{const d=await kv('salon:eshop');PRODUCTS=((d&&d.products)||[]).filter(p=>!p.hide);}catch(e){}
       draw();
       if(!last||!last.ok)break;
       if(!last.remaining||last.remaining<=0)break;
@@ -248,9 +248,7 @@ async function send(){
     items:cart.map(x=>({id:x.id,name:x.name,price:x.price,qty:x.qty||1})),total:cart.reduce((a,x)=>a+x.price*(x.qty||1),0),
     method:method==='ship'?'配送希望':'店頭受け取り',addr:method==='ship'?saved.addr.trim():'',note:saved.note.trim(),status:'new',via:'shop-site'};
   try{
-    const wk=(await kv('salon:work'))||{};wk.orders=wk.orders||[];wk.orders.unshift(order);
-    const r=await fetch(SUPA+'/rest/v1/kv?on_conflict=key',{method:'POST',headers:{...H,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:work',value:JSON.stringify(wk)})});
-    if(!r.ok)throw 0;
+    const r=await fetch('/api/cust',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op:'order',order:order})});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)throw 0;
   }catch(e){alert('送信に失敗しました。通信状況をご確認のうえ、もう一度お試しください。');return;}
   cart=[];draw();view='done';drawSheet();
 }
