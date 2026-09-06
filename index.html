@@ -950,7 +950,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260904f';
+const APP_REV='r20260904g';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1076,6 +1076,7 @@ const categories=[
   {id:'brow',label:'眉',mono:'眉',ph:'#5F7355'},
   {id:'peel',label:'ピーリング',mono:'肌',ph:'#9C5B6B'},
   {id:'makeup',label:'メイク・ヘア',mono:'M',ph:'#4A6B6B'},
+  {id:'inkmakeup',label:'インクメイク（眉タトゥー）',mono:'刺',ph:'#7A4B52'},
   {id:'ticket',label:'回数券',mono:'券',ph:'#8A6D3B'},
   {id:'consult',label:'無料相談',mono:'相',ph:'#6B6276'},
   {id:'addon',label:'オプションメニュー',mono:'＋',ph:'#8A7A5A'},
@@ -1102,7 +1103,7 @@ const SEED_SERVICES=[
   {id:'mk1',cat:'makeup',name:'ヘアセット',min:30,price:8000,desc:'',img:IMG+'mlist_1463500302.jpg'},
   {id:'mk2',cat:'makeup',name:'ヘアセット+メイク',min:60,price:14000,desc:'',img:IMG+'mlist_345166121.jpg'},
   {id:'mk3',cat:'makeup',name:'メイク講習',min:180,price:25000,desc:'1〜4名まで同価格',img:IMG+'mlist_282070096.jpg'},
-  {id:'mk4',cat:'makeup',name:'インクメイク',min:180,price:44000,desc:'ストローク+パウダー+眉スタイリング',img:IMG+'mlist_51115751.jpg'},
+  {id:'mk4',cat:'inkmakeup',name:'インクメイク（眉タトゥー）',min:180,price:44000,desc:'ストローク+パウダー+眉スタイリング',img:IMG+'mlist_51115751.jpg'},
   {id:'tk1',cat:'ticket',name:'ハーブピーリング集中肌管理 5回チケット',min:60,price:50000,desc:'剥離無し・回数券',img:IMG+'mlist_1767413619.jpg',pass:{label:'漢方ハーブピーリング',count:5}},
   {id:'tk2',cat:'ticket',name:'攻めと再生のニードルピーリング 5回チケット',min:60,price:70000,desc:'回数券',img:IMG+'mlist_716754688.jpg',pass:{label:'ニードルピーリング',count:5}},
   {id:'cs1',cat:'consult',name:'メニュー相談',min:75,price:0,desc:'何を選べばいいか分からない方へ',img:IMG+'mlist_2125498979.jpg'}];
@@ -1369,6 +1370,7 @@ function tfreeMigrate(){DATA.services=DATA.services||[];let ch=false;const TF=[
   for(const[id,name,min,desc]of TF){const ex=DATA.services.find(x=>x.id===id);if(!ex){DATA.services.push({id,name,cat:'tfree',min,price:0,desc,addon:true,tfree:true,pair:false});ch=true;}}
   const t=(DATA.staff||[]).find(x=>x.id==='s2');if(t){t.prices=t.prices||{};TF.forEach(([id])=>{if(t.prices[id]!=='0'){t.prices[id]='0';ch=true;}});}
   if(ch)services=DATA.services;return ch;}
+function inkCatMigrate(){try{let ch=false;for(const sv of (DATA.services||[])){if(sv&&sv.cat==='makeup'&&/インクメイク|眉タトゥー|アートメイク|タトゥー/.test(sv.name||'')){sv.cat='inkmakeup';ch=true;}}return ch;}catch(e){return false;}}
 function addonMigrate(){DATA.services=DATA.services||[];let ch=false;
   const ADD=[['ad1','毛穴ピール／スチーム／導入スキンケア／パック',30,3500,'毛穴をごっそりきれいにしたい方におすすめ！',true],
     ['ad2','電気バリブラシ',20,2500,'たるみ改善・リフトアップ・お肌改善（刺激あり）',true],
@@ -1497,7 +1499,7 @@ function updateNav(){if(nav)nav.style.display=(state.view==='admin')?'none':'';n
 }
 async function setLang(v){state.lang=v;document.documentElement.lang=v;try{if(window.storage)await window.storage.set('salon:lang',v,false)}catch(e){}render()}
 async function loadLang(){try{if(window.storage){const r=await window.storage.get('salon:lang',false);if(r&&r.value)return r.value}}catch(e){}return 'ja'}
-function normDATA(){try{linksMigrate();staffAddMigrate();addonMigrate();tfreeMigrate();custNoMigrate();DATA.eshop=DATA.eshop||{products:[]};}catch(_e){}try{DATA=DATA||{};['customers'].forEach(k=>{if(typeof DATA[k]!=='object'||DATA[k]===null||Array.isArray(DATA[k]))DATA[k]={};});['bookings','blocks','posts','campaigns','shares','boards','feedback'].forEach(k=>{if(!Array.isArray(DATA[k]))DATA[k]=[];});if(!DATA.settings||typeof DATA.settings!=='object')DATA.settings={};if(!Array.isArray(DATA.services)||!DATA.services.length)DATA.services=(typeof SEED_SERVICES!=='undefined')?JSON.parse(JSON.stringify(SEED_SERVICES)):[];if(!Array.isArray(DATA.staff)||!DATA.staff.length)DATA.staff=(typeof SEED_STAFF!=='undefined')?JSON.parse(JSON.stringify(SEED_STAFF)):[];services=DATA.services;staff=DATA.staff;}catch(e){}}
+function normDATA(){try{linksMigrate();staffAddMigrate();addonMigrate();tfreeMigrate();inkCatMigrate();custNoMigrate();DATA.eshop=DATA.eshop||{products:[]};}catch(_e){}try{DATA=DATA||{};['customers'].forEach(k=>{if(typeof DATA[k]!=='object'||DATA[k]===null||Array.isArray(DATA[k]))DATA[k]={};});['bookings','blocks','posts','campaigns','shares','boards','feedback'].forEach(k=>{if(!Array.isArray(DATA[k]))DATA[k]=[];});if(!DATA.settings||typeof DATA.settings!=='object')DATA.settings={};if(!Array.isArray(DATA.services)||!DATA.services.length)DATA.services=(typeof SEED_SERVICES!=='undefined')?JSON.parse(JSON.stringify(SEED_SERVICES)):[];if(!Array.isArray(DATA.staff)||!DATA.staff.length)DATA.staff=(typeof SEED_STAFF!=='undefined')?JSON.parse(JSON.stringify(SEED_STAFF)):[];services=DATA.services;staff=DATA.staff;}catch(e){}}
 function attachInputTools(){try{const excl=['vs-text','shop-bulk','shop-prompt','ch-text','st-pw','mp-newpw'];app.querySelectorAll('textarea').forEach(ta=>{if(!ta.id||excl.indexOf(ta.id)>=0||ta.dataset.tooled)return;const par=ta.parentElement;if(par&&par.querySelector('.mic,.ai,.iat-mic'))return;ta.dataset.tooled='1';const bar=document.createElement('div');bar.className='iat';bar.innerHTML='<button type="button" class="iat-mic">🎤 音声</button><button type="button" class="iat-ai">✨ AIで整える</button>';ta.parentNode.insertBefore(bar,ta.nextSibling);bar.querySelector('.iat-mic').onclick=function(){startVoice(ta.id,this);};bar.querySelector('.iat-ai').onclick=function(){runAi(ta.id,this,'memo');};});}catch(e){}}
 function render(){normDATA();updateNav();updateBack();updateFloatBook();if(state.view==='home')renderHome();else if(state.view==='book')renderCustomer();else if(state.view==='gallery')renderGallery();else if(state.view==='share')renderShare();else if(state.view==='board')renderBoard();else if(state.view==='staff')renderStaffIntro();else if(state.view==='course')renderCourse();else if(state.view==='care')renderCareDocs();else if(state.view==='eshop')renderEshop();else if(state.view==='mypage')renderMypage();else renderAdmin();attachInputTools();_pushHistory();}
 function stepsBar(n){let h='<div class="steps">';for(let i=0;i<4;i++)h+=`<div class="s ${i<=n?'on':''}"></div>`;return h+'</div>'}
