@@ -950,7 +950,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260904k';
+const APP_REV='r20260904m';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -2344,8 +2344,8 @@ function renderMypage(){
   app.innerHTML=`<div class="fade">${previewBar}${bdayBanner}<div class="mp-hero"><div class="mp-hello">${t('mpThanks')} ${c.birthday?`・ 🎂${bdayLabel(c.birthday)}`:''}</div><div class="mp-name">${c.name} 様 <span class="rank-badge r${effectiveRank(c)}">${RANK_LABEL[effectiveRank(c)]}</span>${c.discount?`<span class="disc-badge">${DISC_LABEL[c.discount]}</span>`:''}</div><div class="mp-ptlabel">保有ポイント</div><div class="mp-pt">${bal.toLocaleString()}<small>pt</small></div><div class="mp-meta">今後のご予約 ${upcoming}件${coupon}</div></div>
     ${nextCard}
     <button class="btn btn-primary" id="mp-book" style="width:100%;margin:2px 0 12px">＋ ご予約はこちら（情報入力なしでOK）</button>
-    <div class="addform" style="margin:2px 0 14px"><div class="subhead" style="margin:0 0 8px">🛠 お客様情報の管理</div><details class="faq" style="margin:8px 0"><summary>✏️ お客様情報を編集・削除（名前・ふりがな・電話番号・お誕生日）</summary><div class="faq-a">
-    <div class="field"><label>お名前</label><input id="ce-name" value="${(c.name||'').replace(/"/g,'&quot;')}"></div>
+    <div class="addform" style="margin:2px 0 14px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;color:var(--ink)"><div class="subhead" style="margin:0 0 8px;color:var(--navy)">🛠 お客様情報の管理</div><details class="faq" style="margin:8px 0"><summary>✏️ お客様情報を編集・削除（名前・ふりがな・電話番号・お誕生日）</summary><div class="faq-a">
+    <div class="field"><label style="color:var(--ink)">お名前</label><input id="ce-name" value="${(c.name||'').replace(/"/g,'&quot;')}"></div>
     <div class="field"><label>ふりがな</label><input id="ce-kana" value="${(c.kana||'').replace(/"/g,'&quot;')}"></div>
     <div class="field"><label>電話番号</label><input id="ce-phone" inputmode="tel" value="${c.phone||''}"></div>
     <div class="field"><label>お誕生日</label><input id="ce-bday" type="date" value="${c.birthday||''}"></div>
