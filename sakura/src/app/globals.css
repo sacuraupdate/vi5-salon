@@ -1,0 +1,110 @@
+@import 'tailwindcss';
+
+/* ===== デザイントークン =====
+   CLAUDE.md 第5章の基本色をそのまま定義する。
+   --color-ink-muted のみ、補助文字（キャプション・単位・補足）用に追加提案したもの。 */
+@theme {
+  --color-bg: #ffffff;
+  --color-surface: #faf8f5;
+  --color-sakura: #f1d9df;
+  --color-sakura-soft: #faeff2;
+  --color-crimson: #8d2633;
+  --color-crimson-deep: #74202b;
+  --color-ink: #292526;
+  --color-ink-muted: #6b6361;
+  --color-line: #e9e3e1;
+
+  /* Webフォントは読み込まない（表示速度と海外からの安定性を優先）。
+     日本語=Hiragino/游/Noto、韓国語=Apple SD Gothic/Malgun、繁体字=PingFang TC/微軟正黑体 を
+     ロケールに応じてOSが選ぶ順で並べる。 */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
+    'Yu Gothic Medium', 'Noto Sans JP', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR',
+    'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', 'Helvetica Neue', Arial, sans-serif;
+  --font-serif: 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', 'Noto Serif JP', 'Apple SD Gothic Neo',
+    'Noto Serif KR', 'PingFang TC', 'Noto Serif TC', Georgia, 'Times New Roman', serif;
+
+  /* 角丸は2段階のみ（過剰な丸角を避ける） */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+
+  --shadow-card: 0 1px 2px rgb(41 37 38 / 0.06);
+  --shadow-lift: 0 4px 16px rgb(41 37 38 / 0.08);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: 'palt';
+    -webkit-font-smoothing: antialiased;
+    /* ページ全体は絶対に横スクロールさせない */
+    overflow-x: hidden;
+  }
+  /* iPhone のタップ時のハイライトを消す */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* フォーカスは見失わせない（キーボード操作） */
+  :focus-visible {
+    outline: 2px solid var(--color-crimson);
+    outline-offset: 2px;
+  }
+  /* 入力欄は16px以上：iOS Safari のフォーカス時自動ズームを防ぐ */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+}
+
+@layer utilities {
+  /* 横スクロール領域：スナップ付き。スクロールバーは隠す */
+  .scroller {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+  .scroller::-webkit-scrollbar {
+    display: none;
+  }
+  .scroller > * {
+    scroll-snap-align: start;
+    flex: 0 0 82%;
+  }
+  @media (min-width: 640px) {
+    .scroller > * {
+      flex: 0 0 46%;
+    }
+  }
+  /* 固定要素のセーフエリア（iPhone のホームバー） */
+  .safe-bottom {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+  .h-dvh {
+    height: 100dvh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

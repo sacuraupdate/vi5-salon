@@ -1,0 +1,213 @@
+/* ドメイン型。Phase 2 の DB スキーマの下敷きになるため Phase 1 でも正確に定義する。 */
+
+export const LOCALES = ['ja', 'en', 'ko', 'zh-TW'] as const;
+export type Locale = (typeof LOCALES)[number];
+
+/**
+ * 多言語テキスト。日本語(ja)を必須にすることで
+ * 「日本語が原本(MASTER)」という原則を型レベルで担保する。
+ */
+export type Localized<T = string> = { ja: T } & Partial<Record<Exclude<Locale, 'ja'>, T>>;
+
+/** 翻訳の鮮度。原本の更新時刻と翻訳の更新時刻を比較して状態を導出する。 */
+export type TranslationMeta = {
+  masterUpdatedAt: string;
+  translations: Partial<Record<Exclude<Locale, 'ja'>, { updatedAt: string }>>;
+};
+
+export type TranslationStatus = 'translated' | 'outdated' | 'missing';
+
+/** 市場ごとの独立価格。為替換算では生成しない（最小通貨単位の整数）。 */
+export type CurrencyCode = 'JPY' | 'USD' | 'KRW' | 'TWD';
+export type Price = { JPY: number } & Partial<Record<Exclude<CurrencyCode, 'JPY'>, number>>;
+
+export type InstructorId = 'sakura' | 'tomomi';
+export type CourseLevel = 'beginner' | 'intermediate' | 'advanced';
+
+/** 修了証(completion) と 認定証(certification) は明確に別物として扱う。 */
+export type CertificateKind = 'completion' | 'certification';
+
+export type CategoryId =
+  | 'salon-standard'
+  | 'salon-management'
+  | 'omotenashi'
+  | 'beauty-skill'
+  | 'makeup'
+  | 'inbound'
+  | 'femcare-basic'
+  | 'life-stage'
+  | 'femcare-pro';
+
+export type Category = {
+  id: CategoryId;
+  name: Localized;
+  instructorId: InstructorId;
+  /** TOP に出す 4 つの大分類 */
+  group: 'japanese-salon' | 'management' | 'technique' | 'femcare';
+};
+
+export type Instructor = {
+  id: InstructorId;
+  name: string;
+  role: Localized;
+  headline: Localized;
+  bio: Localized;
+  photoUrl: string | null;
+  stats: { label: Localized; value: string }[];
+  categoryIds: CategoryId[];
+};
+
+export type MaterialType = 'pdf' | 'workbook' | 'checklist' | 'transcript' | 'quiz';
+
+export type Material = {
+  id: string;
+  courseSlug: string;
+  type: MaterialType;
+  title: Localized;
+  meta: string;
+};
+
+export type Lesson = {
+  id: string;
+  title: Localized;
+  minutes: number;
+  isPreview: boolean;
+};
+
+export type Chapter = {
+  id: string;
+  title: Localized;
+  lessons: Lesson[];
+};
+
+export type Review = {
+  id: string;
+  author: string;
+  country: Localized;
+  rating: number;
+  body: Localized;
+};
+
+export type Course = {
+  slug: string;
+  title: Localized;
+  summary: Localized;
+  description: Localized;
+  instructorId: InstructorId;
+  categoryId: CategoryId;
+  level: CourseLevel;
+  price: Price;
+  isFree: boolean;
+  lessonCount: number;
+  totalMinutes: number;
+  /** 実際に視聴できる言語（字幕含む） */
+  languages: Locale[];
+  certificate: CertificateKind | null;
+  featured: boolean;
+  rating: number;
+  reviewCount: number;
+  studentCount: number;
+  /** 正式素材が入るまでのプレースホルダ配色（0-3） */
+  tone: number;
+  highlights: Localized<string[]>;
+  curriculum: Chapter[];
+  materials: Material[];
+  reviews: Review[];
+  faq: { q: Localized; a: Localized }[];
+  translation: TranslationMeta;
+  publishedAt: string;
+};
+
+export type FreeContentType = 'video' | 'article' | 'pdf';
+
+export type FreeContent = {
+  id: string;
+  type: FreeContentType;
+  title: Localized;
+  summary: Localized;
+  instructorId: InstructorId;
+  minutes: number;
+  tone: number;
+};
+
+/* ---------- 受講者（マイページ） ---------- */
+
+export type Enrollment = {
+  courseSlug: string;
+  progressPercent: number;
+  lastLessonId: string;
+  lastLessonTitle: Localized;
+  lastStudiedAt: string;
+  completedAt: string | null;
+};
+
+export type Certificate = {
+  id: string;
+  kind: CertificateKind;
+  courseSlug: string;
+  holderName: string;
+  instructorId: InstructorId;
+  issuedAt: string;
+};
+
+export type LearnerProfile = {
+  name: string;
+  email: string;
+  country: Localized;
+  memberSince: string;
+};
+
+/* ---------- 管理画面 ---------- */
+
+export type AdminRole = 'owner' | 'instructor';
+
+export type SalesSummary = {
+  todayJpy: number;
+  monthJpy: number;
+  monthDiffPercent: number;
+  newStudents: number;
+  openTaskCount: number;
+};
+
+export type DailySales = { date: string; jpy: number };
+
+export type CourseSales = {
+  courseSlug: string;
+  title: Localized;
+  instructorId: InstructorId;
+  orders: number;
+  jpy: number;
+};
+
+export type CountrySales = { country: Localized; orders: number; jpy: number };
+
+export type AdminTask = {
+  id: string;
+  title: string;
+  kind: 'inquiry' | 'course' | 'certificate' | 'post' | 'system';
+  dueLabel: string;
+  urgent: boolean;
+  instructorId: InstructorId | null;
+};
+
+export type Inquiry = {
+  id: string;
+  name: string;
+  country: Localized;
+  language: Locale;
+  subject: string;
+  receivedAt: string;
+  status: 'open' | 'answered';
+  instructorId: InstructorId | null;
+};
+
+export type Student = {
+  id: string;
+  name: string;
+  country: Localized;
+  language: Locale;
+  courseCount: number;
+  progressPercent: number;
+  joinedAt: string;
+  instructorIds: InstructorId[];
+};
