@@ -230,6 +230,7 @@ module.exports = async (req, res) => {
     diag.recat = recat; diag.pubOk = pubOk;
     d.eshop.syncedAt = Date.now();
     if (added || updated || recat || diag.futureFix) await saveData(d);
+    try{await fetch(SUPA_URL+'/rest/v1/kv?on_conflict=key',{method:'POST',headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:eshop',value:JSON.stringify({products:d.eshop.products,syncedAt:Date.now()})})});}catch(e){}
     diag.added = added; diag.updated = updated; diag.fetched = fetched;
     diag.total = d.eshop.products.length;
     diag.cats = [...new Set(d.eshop.products.map(p => p.cat).filter(Boolean))];
