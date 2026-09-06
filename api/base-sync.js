@@ -156,6 +156,11 @@ module.exports = async (req, res) => {
   try {
     const d = await loadData();
     if (!d) { res.status(503).json({ ok: false, error: 'data unavailable' }); return; }
+    // 安全修復: 未来日なのに来店済みの予約を戻し、誤送信のお礼メッセージを削除
+    try{const td=new Date(Date.now()+9*3600000).toISOString().slice(0,10);let fixed=0;
+      for(const b of (d.bookings||[])){if(b&&b.date>td&&b.status==='visited'){b.status='confirmed';b.thanked=false;b.reviewAsked=false;b.awardedPoints=0;fixed++;
+        const k=String(b.phone||'').replace(/[^0-9]/g,'');const c=d.customers&&d.customers[k];if(c&&Array.isArray(c.notices)){c.notices=c.notices.filter(n=>!/^本日はご来店ありがとうございました/.test((n&&n.text)||''));}}}
+      diag.futureFix=fixed;}catch(e){}
     d.eshop = d.eshop || {}; d.eshop.products = d.eshop.products || [];
     const known = {}; d.eshop.products.forEach(p => { if (p.baseId) known[p.baseId] = p; });
 
@@ -224,7 +229,7 @@ module.exports = async (req, res) => {
     }
     diag.recat = recat; diag.pubOk = pubOk;
     d.eshop.syncedAt = Date.now();
-    if (added || updated || recat) await saveData(d);
+    if (added || updated || recat || diag.futureFix) await saveData(d);
     diag.added = added; diag.updated = updated; diag.fetched = fetched;
     diag.total = d.eshop.products.length;
     diag.cats = [...new Set(d.eshop.products.map(p => p.cat).filter(Boolean))];
