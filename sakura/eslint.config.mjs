@@ -2,7 +2,8 @@ import coreWebVitals from 'eslint-config-next/core-web-vitals';
 import nextTypescript from 'eslint-config-next/typescript';
 
 const config = [
-  { ignores: ['.next/**', 'node_modules/**', '.shots/**'] },
+  // ビルド生成物は検査しない（.open-next / .wrangler は Cloudflare 向けの生成物）
+  { ignores: ['.next/**', 'node_modules/**', '.shots/**', '.open-next/**', '.wrangler/**'] },
   ...coreWebVitals,
   ...nextTypescript,
   {

@@ -6,3 +6,5 @@ next-env.d.ts
 test-results
 .shots
 tsconfig.tsbuildinfo
+.open-next
+.wrangler

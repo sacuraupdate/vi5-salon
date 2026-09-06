@@ -55,3 +55,30 @@ ESLint (`no-restricted-imports`) で禁止しています。Phase 2 で Supabase
 - 日本語(`ja`)が原本。`Localized` 型は `ja` を必須にして、型レベルで原本を強制しています。
 - 翻訳の鮮度は `translationStatus()` が判定し、管理画面に「翻訳済み／翻訳更新が必要／未翻訳」で表示します。
 - 管理画面は多言語化しません。ルーティング上も `[locale]` の外に置いています。
+
+## Cloudflare へのデプロイ（確認用 Preview）
+
+Next.js 16 を Cloudflare で動かす現行の公式方式である **`@opennextjs/cloudflare`（Cloudflare Workers）** を使う。
+
+> 旧方式の `@cloudflare/next-on-pages`（Cloudflare Pages 用）は peer が `next <=15.5.2` で
+> **Next.js 16 に非対応**のため使わない。
+
+| コマンド | 内容 |
+|---|---|
+| `npm run cf:build` | Cloudflare 用にビルドし `.open-next/worker.js` を生成 |
+| `npm run cf:preview` | ビルドして Cloudflare のランタイム（workerd）でローカル起動 |
+| `npm run cf:deploy` | ビルドして Cloudflare へデプロイ（要ログイン） |
+
+### 設定ファイル
+
+- `wrangler.jsonc` — Worker 名 `sakura-japan-beauty-preview`、`nodejs_compat` などの設定
+- `open-next.config.ts` — キャッシュ実装の指定
+
+Phase 1 は確認用のため、**R2 などの追加リソースを必要としない構成**にしている
+（`static-assets-incremental-cache` = 再検証なし・事前生成データのみ配信）。
+Phase 2 で ISR / 再検証が必要になった時点で R2 版へ差し替える。
+
+### 既存の予約サイトとの関係
+
+このディレクトリの Cloudflare 設定は `sakura/` 内で完結しており、
+リポジトリルートの `vercel.json`（既存の予約サイト）には一切影響しない。

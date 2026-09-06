@@ -411,6 +411,11 @@ SAKURA 本人をブランドの顔として大きく見せる（写真を主役�
   日本語=Hiragino/游/Noto、韓国語=Apple SD Gothic/Malgun、繁体字=PingFang TC/微軟正黑体 を
   ロケールに応じてOSが選ぶフォントスタックで対応している（`src/app/globals.css`）。
 - **`middleware.ts` ではなく `src/proxy.ts`。** Next.js 16 で middleware 規約は非推奨になった。
+- **Cloudflare へのデプロイは `@opennextjs/cloudflare`（Cloudflare Workers）を使う。**
+  旧方式の `@cloudflare/next-on-pages`（Cloudflare Pages 用）は peer が `next <=15.5.2` で
+  **Next.js 16 に非対応**のため使わない。設定は `sakura/wrangler.jsonc` と `sakura/open-next.config.ts`。
+  Phase 1 は確認用のため R2 を使わない構成（再検証なし・事前生成データのみ配信）。
+  ISR / 再検証が必要になった時点で R2 版へ差し替える。
 - **`next.config.ts` で `agentRules: false`。** Next.js が `sakura/CLAUDE.md` を自動生成するのを止めている。
   このリポジトリの恒久ルールはルートの CLAUDE.md ただ1つとする。
 
