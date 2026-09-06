@@ -83,10 +83,13 @@ module.exports = async (req, res) => {
     } else {
       const name = NAMES[s] || s;
       lines.push('X-WR-CALNAME:Vi5 ' + name + ' シフト', 'X-WR-TIMEZONE:Asia/Tokyo', ...VTZ);
+      const months = Array.isArray(DATA.shiftMonths) ? DATA.shiftMonths : null;
       const start = new Date(now.getTime() - 30 * 86400000);
-      for (let i = 0; i < 155; i++) {
+      for (let i = 0; i < 400; i++) {
         const d = new Date(start.getTime() + i * 86400000);
         const ds = fmtDate(d), dow = d.getDay();
+        // 提出済みの月だけ配信（未提出/取消の月はカレンダーに出さない）
+        if (months && months.indexOf(ds.slice(0,7)) < 0) continue;
         if (salonClosed(DATA, ds, dow) || isDayOff(DATA, s, ds)) continue;
         const sh = effectiveShift(DATA, s, ds, dow);
         if (!sh.on || !sh.ranges || !sh.ranges.length) continue;
