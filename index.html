@@ -950,7 +950,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260904n';
+const APP_REV='r20260904p';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -3082,7 +3082,7 @@ function nowPanel(){const t=fmtDate(today);const nowMs=Date.now();const td=(DATA
   const late=td.filter(x=>x.status==='confirmed'&&nowMs>bkStartMs(x)+10*60000&&!inProg.includes(x)&&nowMs<bkStartMs(x)+bkDur(x)*60000+240*60000);
   const next=td.filter(x=>x.status!=='visited'&&bkStartMs(x)>nowMs).slice(0,2);
   const done=td.filter(x=>x.status==='visited').length;
-  const card=(x,label,color)=>{const c=DATA.customers[normPhone(x.phone)];return `<div style="border:2px solid ${color};border-radius:16px;padding:10px 12px;margin:0 0 10px;background:#fff"><div style="display:flex;justify-content:space-between;align-items:center"><b style="color:${color}">${label}</b><span style="font-size:12px;color:var(--ink-soft)">${x.time}〜 ・ ${stById(x.staffId).name}</span></div><div style="font-size:15px;font-weight:700;margin:4px 0 2px">${c?c.name:x.phone} 様</div><div style="font-size:13px;color:var(--ink-soft)">${x.items.map(i=>i.name).join('＋')}</div>${bkCustInfo(x,c)}<div class="bk-actions" style="justify-content:flex-start;margin-top:6px">${x.status==='confirmed'?`<button class="chip" data-visit="${x.id}" style="border-color:#3F5A46;color:#2C4433;font-weight:700">✓ 来店済みにする</button>`:''}</div></div>`;};
+  const card=(x,label,color)=>{const c=DATA.customers[normPhone(x.phone)];return `<div style="border:2px solid ${color};border-radius:16px;padding:10px 12px;margin:0 0 10px;background:#fff"><div style="display:flex;justify-content:space-between;align-items:center"><b style="color:${color}">${label}</b><span style="font-size:12px;color:var(--ink-soft)">${x.time}〜 ・ ${stById(x.staffId).name}</span></div><div style="font-size:15px;font-weight:700;margin:4px 0 2px">${c?c.name:x.phone} 様</div><div style="font-size:13px;color:var(--ink-soft)">${x.items.map(i=>i.name).join('＋')}</div>${bkCustInfo(x,c)}<div style="margin-top:8px">${x.status==='confirmed'?`<button class="btn btn-ghost" data-visit="${x.id}" style="width:100%;border-color:#3F5A46;color:#2C4433;font-weight:700">✓ 来店済みにする</button>`:''}</div></div>`;};
   let h='';
   inProg.forEach(x=>h+=card(x,'💆 いま施術中','#3F5A46'));
   late.forEach(x=>h+=card(x,'⚠️ 未来店（'+Math.floor((nowMs-bkStartMs(x))/60000)+'分経過）','var(--rose)'));
@@ -3582,17 +3582,31 @@ function adminBroadcast(){
 let recog=null,recogTarget=null;
 function startVoice(elId,btn){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){alert('この端末では音声認識が使えません。キーボードのマイク（音声入力）をご利用ください。');return;}
-  if(recog){recog.stop();recog=null;btn.classList.remove('on');return;}
-  recog=new SR();recog.lang='ja-JP';recog.interimResults=true;recog.continuous=true;recogTarget=elId;btn.classList.add('on');btn.textContent='🎤 聞き取り中…（タップで停止）';const _base=(byId(elId)?byId(elId).value:'');let _fin='';recog.onresult=e=>{let interim='';for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)_fin+=e.results[i][0].transcript;else interim+=e.results[i][0].transcript;}const el=byId(elId);if(el)el.value=(_base?_base+' ':'')+_fin+interim;};recog.onerror=(ev)=>{if(ev&&ev.error==='no-speech')return;btn.classList.remove('on');btn.textContent='🎤 音声';recog=null;};recog.onend=()=>{if(recog&&recogTarget===elId){try{recog.start();return;}catch(e){}}btn.classList.remove('on');btn.textContent='🎤 音声';recog=null;};recog.start();
+  if(!SR){alert('この端末のブラウザは音声入力に対応していません。\niPhoneは「Safari」で開くと使えます（アプリ内ブラウザやChromeは不可の場合があります）。\nまたは、キーボードのマイク（音声入力）でも入力できます。');return;}
+  if(recog){try{recog.stop();}catch(e){}recog=null;btn.classList.remove('on');btn.textContent='🎤 音声入力';return;}
+  recog=new SR();recog.lang='ja-JP';recog.interimResults=true;recog.continuous=true;recogTarget=elId;
+  btn.classList.add('on');btn.textContent='🔴 聞き取り中…（話してください・押すと停止）';
+  const _base=(byId(elId)?byId(elId).value:'');let _fin='';let _got=false;
+  recog.onstart=()=>{btn.textContent='🔴 聞き取り中…（話してください・押すと停止）';};
+  recog.onaudiostart=()=>{btn.textContent='🎙 音声を認識中…（話してください）';};
+  recog.onresult=e=>{let interim='';for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)_fin+=e.results[i][0].transcript;else interim+=e.results[i][0].transcript;}_got=true;const el=byId(elId);if(el){el.value=(_base?_base+' ':'')+_fin+interim;btn.textContent='✅ 認識中：'+((_fin+interim).slice(-14)||'…');}};
+  recog.onerror=(ev)=>{const er=ev&&ev.error;if(er==='no-speech'){btn.textContent='🔇 声が聞こえません…もう一度お話しください';return;}recog=null;btn.classList.remove('on');btn.textContent='🎤 音声入力';
+    if(er==='not-allowed'||er==='service-not-allowed'){alert('マイクの使用が許可されていません。\niPhoneの「設定 → Safari → マイク」または、開いたときに出る許可ダイアログで「許可」を選んでください。');}
+    else if(er==='audio-capture'){alert('マイクが見つかりません。他のアプリがマイクを使っていないかご確認ください。');}
+    else if(er!=='aborted'){alert('音声入力でエラーが発生しました（'+er+'）。もう一度お試しください。');}};
+  recog.onend=()=>{if(recog&&recogTarget===elId){try{recog.start();return;}catch(e){}}btn.classList.remove('on');btn.textContent=_got?'🎤 音声入力（もう一度）':'🎤 音声入力';recog=null;};
+  try{recog.start();}catch(e){recog=null;btn.classList.remove('on');btn.textContent='🎤 音声入力';alert('音声入力を開始できませんでした。Safariで開いているかご確認ください。');}
 }
 async function aiPolish(rough,mode){
-  const sys=mode==='memo'?'あなたは美容サロンのアシスタントです。スタッフが音声でざっくり入力したカウンセリングのメモを、後から読み返せるよう簡潔に整理された日本語にまとめ直してください。事実のみ、絵文字は不要。短い箇条書きでも構いません。出力は本文のみ。':(mode==='campaign'?'あなたは美容サロンの広報担当です。入力されたざっくりした内容を、お客様向けのお知らせ文に整えてください。必ず丁寧な敬語（です・ます調、尊敬語・謙譲語を適切に使う）で、2〜3文・適度に絵文字。失礼のない上品な文体に。出力は本文のみ。':'あなたは美容サロンのスタッフです。入力内容を、お客様にお送りする文章に整えてください。必ず丁寧な敬語（です・ます調、尊敬語・謙譲語を適切に使う）で、温かく上品な文体に。なれなれしい表現やタメ口は使わない。適度に絵文字を使い3〜4文程度。出力は本文のみ。');
-  try{const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:[{role:'user',content:rough}]})});
-    const data=await res.json();const out=(data.content||[]).filter(i=>i.type==='text').map(i=>i.text).join('').trim();if(out)return out;}catch(e){}
-  return rough.trim()+(mode==='message'?' 😊':'');
+  try{const res=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:rough,mode:mode||'memo'})});
+    const data=await res.json();
+    if(data&&data.ok&&data.text)return {ok:true,text:data.text};
+    return {ok:false,err:(data&&data.error)||'unknown',text:rough};
+  }catch(e){return {ok:false,err:String(e&&e.message),text:rough};}
 }
-async function runAi(srcId,btn,mode){const el=byId(srcId);if(!el||!el.value.trim()){alert('先に内容を入力してください。');return;}const orig=btn.textContent;btn.textContent='整えています…';btn.disabled=true;const out=await aiPolish(el.value,mode);el.value=out;btn.textContent=orig;btn.disabled=false;}
+async function runAi(srcId,btn,mode){const el=byId(srcId);if(!el||!el.value.trim()){alert('先に内容を入力してください（音声入力でもOK）。');return;}const orig=btn.textContent;btn.textContent='✨ 整えています…';btn.disabled=true;const r=await aiPolish(el.value,mode);btn.textContent=orig;btn.disabled=false;
+  if(r&&r.ok){el.value=r.text;btn.textContent='✅ 整えました';setTimeout(()=>{btn.textContent=orig;},1500);}
+  else{if(r&&r.err==='no-key'){alert('AI整え機能はただ今準備中です（サーバー設定が必要）。入力内容はそのままご利用いただけます。');}else{alert('AIで整えられませんでした（'+((r&&r.err)||'')+'）。通信状況をご確認のうえ、もう一度お試しください。');}}}
 
 function bindAdmin(){
   const acp=byId('ac-prev');if(acp)acp.onclick=()=>{const m=state.acM;state.acM=new Date(m.getFullYear(),m.getMonth()-1,1);render()};
