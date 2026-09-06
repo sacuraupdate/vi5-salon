@@ -37,7 +37,7 @@ module.exports=async(req,res)=>{
     if(op==='board'){const P=norm(b.phone);const post=b.post||{};d.boards=d.boards||[];
       if(b.action==='add'){post.owner=P;post.at=post.at||Date.now();if(!post.id)post.id='bd'+Date.now();d.boards.unshift(post);}
       else{const ix=d.boards.findIndex(x=>x.id===(b.id||post.id));if(ix<0){res.status(404).json({ok:false});return;}if(norm(d.boards[ix].owner)!==P&&!b.staffPw){res.status(403).json({ok:false});return;}
-        if(b.action==='del')d.boards.splice(ix,1);else d.boards[ix]=Object.assign({},d.boards[ix],post,{owner:d.boards[ix].owner});}
+        if(b.action==='del'){d.delBoards=d.delBoards||[];const rid=d.boards[ix].id;if(!d.delBoards.includes(rid))d.delBoards.push(rid);d.boards.splice(ix,1);}else d.boards[ix]=Object.assign({},d.boards[ix],post,{owner:d.boards[ix].owner});}
       await kvSet('salon:data',d);res.status(200).json({ok:true});return;}
     if(op==='order'){const o=b.order||{};if(!o.name||!o.phone||!Array.isArray(o.items)||!o.items.length){res.status(400).json({ok:false});return;}
       const w=(await kvGet('salon:work'))||{};w.orders=w.orders||[];o.id=o.id||('O'+Date.now());o.at=Date.now();o.status='new';w.orders.unshift(o);await kvSet('salon:work',w);res.status(200).json({ok:true,id:o.id});return;}
