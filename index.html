@@ -950,7 +950,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260906a';
+const APP_REV='r20260906b';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1502,7 +1502,7 @@ async function setLang(v){state.lang=v;document.documentElement.lang=v;try{if(wi
 async function loadLang(){try{if(window.storage){const r=await window.storage.get('salon:lang',false);if(r&&r.value)return r.value}}catch(e){}return 'ja'}
 function normDATA(){try{linksMigrate();staffAddMigrate();addonMigrate();tfreeMigrate();inkCatMigrate();custNoMigrate();DATA.eshop=DATA.eshop||{products:[]};}catch(_e){}try{DATA=DATA||{};['customers'].forEach(k=>{if(typeof DATA[k]!=='object'||DATA[k]===null||Array.isArray(DATA[k]))DATA[k]={};});['bookings','blocks','posts','campaigns','shares','boards','feedback'].forEach(k=>{if(!Array.isArray(DATA[k]))DATA[k]=[];});if(!DATA.settings||typeof DATA.settings!=='object')DATA.settings={};if(!Array.isArray(DATA.services)||!DATA.services.length)DATA.services=(typeof SEED_SERVICES!=='undefined')?JSON.parse(JSON.stringify(SEED_SERVICES)):[];if(!Array.isArray(DATA.staff)||!DATA.staff.length)DATA.staff=(typeof SEED_STAFF!=='undefined')?JSON.parse(JSON.stringify(SEED_STAFF)):[];services=DATA.services;staff=DATA.staff;}catch(e){}}
 function attachInputTools(){try{const excl=['vs-text','shop-bulk','shop-prompt','ch-text','st-pw','mp-newpw'];app.querySelectorAll('textarea').forEach(ta=>{if(!ta.id||excl.indexOf(ta.id)>=0||ta.dataset.tooled)return;const par=ta.parentElement;if(par&&par.querySelector('.mic,.ai,.iat-mic'))return;ta.dataset.tooled='1';const bar=document.createElement('div');bar.className='iat';bar.innerHTML='<button type="button" class="iat-mic">🎤 音声</button><button type="button" class="iat-ai">✨ AIで整える</button>';ta.parentNode.insertBefore(bar,ta.nextSibling);bar.querySelector('.iat-mic').onclick=function(){startVoice(ta.id,this);};bar.querySelector('.iat-ai').onclick=function(){runAi(ta.id,this,'memo');};});}catch(e){}}
-function render(){normDATA();updateNav();updateBack();updateFloatBook();_prevBarInject();if(state.previewMode&&state.view!=='mypage'&&state.view!=='home'&&state.view!=='book'&&state.view!=='care'&&state.view!=='eshop'&&state.view!=='board'&&state.view!=='staff'&&state.view!=='course'&&state.view!=='gallery'&&state.view!=='share'){/* 管理系に来たらプレビュー終了 */state.previewMode=false;}if(state.view==='home')renderHome();else if(state.view==='book')renderCustomer();else if(state.view==='gallery')renderGallery();else if(state.view==='share')renderShare();else if(state.view==='board')renderBoard();else if(state.view==='staff')renderStaffIntro();else if(state.view==='course')renderCourse();else if(state.view==='care')renderCareDocs();else if(state.view==='eshop')renderEshop();else if(state.view==='mypage')renderMypage();else renderAdmin();attachInputTools();_pushHistory();}
+function render(){normDATA();updateNav();updateBack();updateFloatBook();_prevBarInject();try{if(!state._fvfDone)futureVisitFixDirect();}catch(_e){}if(state.previewMode&&state.view!=='mypage'&&state.view!=='home'&&state.view!=='book'&&state.view!=='care'&&state.view!=='eshop'&&state.view!=='board'&&state.view!=='staff'&&state.view!=='course'&&state.view!=='gallery'&&state.view!=='share'){/* 管理系に来たらプレビュー終了 */state.previewMode=false;}if(state.view==='home')renderHome();else if(state.view==='book')renderCustomer();else if(state.view==='gallery')renderGallery();else if(state.view==='share')renderShare();else if(state.view==='board')renderBoard();else if(state.view==='staff')renderStaffIntro();else if(state.view==='course')renderCourse();else if(state.view==='care')renderCareDocs();else if(state.view==='eshop')renderEshop();else if(state.view==='mypage')renderMypage();else renderAdmin();attachInputTools();_pushHistory();}
 function stepsBar(n){let h='<div class="steps">';for(let i=0;i<4;i++)h+=`<div class="s ${i<=n?'on':''}"></div>`;return h+'</div>'}
 function go(v){state.view=v;render();window.scrollTo(0,0)}
 var _hLast="",_hRestoring=false;
@@ -2912,6 +2912,13 @@ async function seedTasksMigrate(){try{if(!WORK)return false;WORK.tasks=WORK.task
   ];
   T.forEach((x,i)=>{WORK.tasks.unshift({id:'seed'+i+'_'+Date.now(),title:x.title,desc:'',by:x.by,assignee:x.as[0],assignees:x.as,scope:'one',due:x.due,url:'',imgs:[],qa:[],done:false,at:Date.now()+i});});
   WORK._seed1=true;await saveWork();return true;}catch(e){return false;}}
+async function futureVisitFixDirect(){try{if(state._fvfDone)return;state._fvfDone=true;
+  const srv=await directLoad();if(!srv||!Array.isArray(srv.bookings))return;const td=fmtDate(today);let ch=false;
+  for(const b of srv.bookings){if(b.date>td&&b.status==='visited'){b.status='confirmed';b.thanked=false;b.reviewAsked=false;b.awardedPoints=0;delete b.visitedAt;ch=true;
+    const c=srv.customers&&srv.customers[normPhone(b.phone)];if(c&&Array.isArray(c.notices)){const n0=c.notices.length;c.notices=c.notices.filter(n=>!(/^本日はご来店ありがとうございました/.test(n.text||'')));if(c.notices.length!==n0)ch=true;}}}
+  if(!ch)return;
+  await fetchT(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:data',value:JSON.stringify(srv)})});
+  DATA.bookings=srv.bookings;DATA.customers=srv.customers;render();}catch(e){}}
 function futureVisitFix(){try{const td=fmtDate(today);let ch=false;const hit=(DATA.bookings||[]).filter(b=>b.date>td&&b.status==='visited');
   for(const b of hit){b.status='confirmed';b.thanked=false;b.reviewAsked=false;b.awardedPoints=0;delete b.visitedAt;ch=true;
     const c=DATA.customers[normPhone(b.phone)];if(c&&Array.isArray(c.notices)){const before=c.notices.length;c.notices=c.notices.filter(n=>!(/^本日はご来店ありがとうございました/.test(n.text||'')));if(c.notices.length!==before)ch=true;}
