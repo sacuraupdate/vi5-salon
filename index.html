@@ -950,7 +950,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260906d';
+const APP_REV='r20260906e';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -3574,9 +3574,15 @@ function adminBroadcast(){
 }
 /* ===== AI / 音声 ===== */
 let recog=null,recogTarget=null;
+function kbdVoice(elId,btn){const el=byId(elId);if(!el)return;el.focus();try{el.setSelectionRange(el.value.length,el.value.length);}catch(e){}
+  let tip=document.getElementById('kbdvoicetip');if(!tip){tip=document.createElement('div');tip.id='kbdvoicetip';tip.style.cssText='position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:999;background:var(--navy);color:#fff;padding:12px 16px;border-radius:16px;font-size:14px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:92vw;text-align:center;line-height:1.7';document.body.appendChild(tip);}
+  tip.innerHTML='🎙 キーボードの<b>マイクボタン</b>（右下・スペースキーの横）を押して話してください<br><span style="font-weight:400;font-size:12px;opacity:.9">設定や許可は不要です。話し終わったら「完了」でそのまま入ります</span>';tip.style.display='';clearTimeout(tip._t);tip._t=setTimeout(()=>{tip.style.display='none';},7000);
+  if(btn){btn.textContent='🎙 キーボードのマイクで入力中';setTimeout(()=>{btn.textContent='🎤 音声入力';},7000);}}
+function useKbdVoice(){try{const ua=navigator.userAgent||'';const ios=/iPhone|iPad|iPod/i.test(ua);const standalone=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;if(localStorage.getItem('vi5:voicemode')==='kbd')return true;if(ios&&standalone)return true;/* ホーム画面アプリでは音声認識が使えないため */return false;}catch(e){return false;}}
 function startVoice(elId,btn){
+  if(useKbdVoice()){kbdVoice(elId,btn);return;}
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){alert('この端末のブラウザは音声入力に対応していません。\niPhoneは「Safari」で開くと使えます（アプリ内ブラウザやChromeは不可の場合があります）。\nまたは、キーボードのマイク（音声入力）でも入力できます。');return;}
+  if(!SR){try{localStorage.setItem('vi5:voicemode','kbd');}catch(e){}kbdVoice(elId,btn);return;}
   if(recog){try{recog.stop();}catch(e){}recog=null;btn.classList.remove('on');btn.textContent='🎤 音声入力';return;}
   recog=new SR();recog.lang='ja-JP';recog.interimResults=true;recog.continuous=true;recogTarget=elId;
   btn.classList.add('on');btn.textContent='🔴 聞き取り中…（話してください・押すと停止）';
@@ -3585,11 +3591,10 @@ function startVoice(elId,btn){
   recog.onaudiostart=()=>{btn.textContent='🎙 音声を認識中…（話してください）';};
   recog.onresult=e=>{let interim='';for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)_fin+=e.results[i][0].transcript;else interim+=e.results[i][0].transcript;}_got=true;const el=byId(elId);if(el){el.value=(_base?_base+' ':'')+_fin+interim;btn.textContent='✅ 認識中：'+((_fin+interim).slice(-14)||'…');}};
   recog.onerror=(ev)=>{const er=ev&&ev.error;if(er==='no-speech'){btn.textContent='🔇 声が聞こえません…もう一度お話しください';return;}recog=null;btn.classList.remove('on');btn.textContent='🎤 音声入力';
-    if(er==='not-allowed'||er==='service-not-allowed'){alert('マイクの使用が許可されていません。\niPhoneの「設定 → Safari → マイク」または、開いたときに出る許可ダイアログで「許可」を選んでください。');}
-    else if(er==='audio-capture'){alert('マイクが見つかりません。他のアプリがマイクを使っていないかご確認ください。');}
-    else if(er!=='aborted'){alert('音声入力でエラーが発生しました（'+er+'）。もう一度お試しください。');}};
+    if(er==='not-allowed'||er==='service-not-allowed'||er==='audio-capture'){try{localStorage.setItem('vi5:voicemode','kbd');}catch(e){}kbdVoice(elId,btn);}
+    else if(er!=='aborted'){kbdVoice(elId,btn);}};
   recog.onend=()=>{if(recog&&recogTarget===elId){try{recog.start();return;}catch(e){}}btn.classList.remove('on');btn.textContent=_got?'🎤 音声入力（もう一度）':'🎤 音声入力';recog=null;};
-  try{recog.start();}catch(e){recog=null;btn.classList.remove('on');btn.textContent='🎤 音声入力';alert('音声入力を開始できませんでした。Safariで開いているかご確認ください。');}
+  try{recog.start();}catch(e){recog=null;btn.classList.remove('on');try{localStorage.setItem('vi5:voicemode','kbd');}catch(_e){}kbdVoice(elId,btn);}
 }
 async function aiPolish(rough,mode){
   try{const res=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:rough,mode:mode||'memo'})});
