@@ -54,7 +54,7 @@ export default async function SalesPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="h-1.5 flex-1 overflow-hidden rounded-sm bg-line">
-                      <span className="block h-full rounded-sm bg-crimson" style={{ width: `${pct}%` }} />
+                      <span className="block h-full rounded-sm bg-vermilion" style={{ width: `${pct}%` }} />
                     </span>
                     <span className="w-16 text-right text-[11px] text-ink-muted">{s.orders}件 / {pct}%</span>
                   </div>

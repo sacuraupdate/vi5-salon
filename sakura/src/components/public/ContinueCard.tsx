@@ -32,7 +32,7 @@ export default async function ContinueCard({
           className="h-24 w-full rounded-sm border border-line sm:aspect-4/3 sm:h-auto"
         />
         <div className="flex flex-col gap-2.5">
-          <span className="text-[11px] font-medium tracking-[0.14em] text-crimson uppercase">
+          <span className="text-[11px] font-medium tracking-[0.14em] text-vermilion uppercase">
             {m('continueTitle')}
           </span>
           <h2 className="text-lg leading-snug">{t(course.title, locale)}</h2>

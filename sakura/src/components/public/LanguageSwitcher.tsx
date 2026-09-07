@@ -26,7 +26,7 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="inline-flex min-h-11 items-center gap-1.5 rounded-sm border border-line px-3 text-sm text-ink hover:border-crimson hover:text-crimson"
+        className="inline-flex min-h-11 items-center gap-1.5 rounded-sm border border-line px-3 text-sm text-ink hover:border-vermilion hover:text-vermilion"
       >
         <Globe className="h-4 w-4" />
         <span className={compact ? 'sr-only' : ''}>{localeLabel[locale as Locale]}</span>
@@ -48,7 +48,7 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
                   className="flex min-h-11 w-full items-center justify-between px-3 text-left text-sm hover:bg-washi"
                 >
                   {localeLabel[l]}
-                  {l === locale ? <Check className="h-4 w-4 text-crimson" /> : null}
+                  {l === locale ? <Check className="h-4 w-4 text-vermilion" /> : null}
                 </button>
               </li>
             ))}

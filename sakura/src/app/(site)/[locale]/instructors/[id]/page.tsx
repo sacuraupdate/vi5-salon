@@ -77,7 +77,7 @@ export default async function InstructorPage({
                 <li key={c.id}>
                   <Link
                     href={`/courses?category=${c.id}`}
-                    className="flex items-center justify-between gap-2 py-1.5 text-sm hover:text-crimson"
+                    className="flex items-center justify-between gap-2 py-1.5 text-sm hover:text-vermilion"
                   >
                     {t(c.name, locale)}
                     <ArrowRight className="h-3.5 w-3.5 shrink-0 text-ink-muted" />
@@ -95,7 +95,7 @@ export default async function InstructorPage({
             eyebrow="Courses"
             title={i18n('coursesTitle')}
             action={
-              <Link href={`/courses?instructor=${id}`} className="inline-flex items-center gap-1 text-sm text-crimson hover:underline">
+              <Link href={`/courses?instructor=${id}`} className="inline-flex items-center gap-1 text-sm text-vermilion hover:underline">
                 {common('viewAll')}
                 <ArrowRight className="h-4 w-4" />
               </Link>

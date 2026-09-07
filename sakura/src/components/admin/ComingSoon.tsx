@@ -29,7 +29,7 @@ export default function ComingSoon({
       </header>
 
       <Card className="flex items-center gap-3 border-line bg-washi p-4">
-        <Construction className="h-5 w-5 shrink-0 text-crimson" strokeWidth={1.5} />
+        <Construction className="h-5 w-5 shrink-0 text-vermilion" strokeWidth={1.5} />
         <p className="text-[13px] leading-relaxed text-ink">
           この画面は Phase 2 以降で作ります。今は入る予定の機能だけをご確認ください。
         </p>

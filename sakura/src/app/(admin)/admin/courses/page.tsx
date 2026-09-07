@@ -31,8 +31,8 @@ export default async function AdminCoursesPage() {
       </header>
 
       {needsAttention > 0 ? (
-        <Card className="flex items-center gap-3 border-crimson p-4">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-crimson text-white">
+        <Card className="flex items-center gap-3 border-vermilion p-4">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-vermilion text-white">
             <PlayCircle className="h-4.5 w-4.5" strokeWidth={1.5} />
           </span>
           <p className="text-[13px] leading-relaxed">
@@ -98,7 +98,7 @@ export default async function AdminCoursesPage() {
                   <span className="text-[11px] text-ink-muted">翻訳の状態</span>
                   {targetLocales.map((l) => {
                     const status = translationStatus(course.translation, l);
-                    const tone = status === 'translated' ? 'neutral' : status === 'outdated' ? 'crimson' : 'outline';
+                    const tone = status === 'translated' ? 'neutral' : status === 'outdated' ? 'vermilion' : 'outline';
                     return (
                       <Badge key={l} tone={tone}>
                         {localeLabelJa[l]}：{translationStatusLabel[status]}

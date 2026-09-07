@@ -14,7 +14,7 @@ export default async function InquiriesPage() {
     <section className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
         <h2 className="text-base">{title}</h2>
-        <Badge tone={isOpen && items.length ? 'crimson' : 'neutral'}>{items.length}件</Badge>
+        <Badge tone={isOpen && items.length ? 'vermilion' : 'neutral'}>{items.length}件</Badge>
       </div>
       {items.length === 0 ? (
         <EmptyState
@@ -35,7 +35,7 @@ export default async function InquiriesPage() {
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <Badge tone={q.language === 'ja' ? 'neutral' : 'sakura'}>{localeLabelJa[q.language]}</Badge>
-                  <Badge tone={isOpen ? 'crimson' : 'outline'}>{isOpen ? '未対応' : '対応済み'}</Badge>
+                  <Badge tone={isOpen ? 'vermilion' : 'outline'}>{isOpen ? '未対応' : '対応済み'}</Badge>
                 </div>
               </li>
             ))}

@@ -27,7 +27,7 @@ export default function RoleSwitcher({ role }: { role: AdminRole }) {
             value={value}
             aria-pressed={role === value}
             className={`min-h-9 rounded-sm px-3 text-xs transition-colors ${
-              role === value ? 'bg-crimson text-white' : 'text-ink-muted hover:text-ink'
+              role === value ? 'bg-vermilion text-white' : 'text-ink-muted hover:text-ink'
             }`}
           >
             {label}

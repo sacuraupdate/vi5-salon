@@ -117,7 +117,7 @@ export default async function CourseDetailPage({
             <ul className="flex flex-col gap-2.5">
               {t(course.highlights, locale).map((hl) => (
                 <li key={hl} className="flex items-start gap-2.5 text-sm leading-relaxed">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-crimson" strokeWidth={1.5} />
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-vermilion" strokeWidth={1.5} />
                   {hl}
                 </li>
               ))}
@@ -225,7 +225,7 @@ export default async function CourseDetailPage({
           <div className="flex items-center gap-3">
             <span className="font-serif text-3xl">{course.rating.toFixed(1)}</span>
             <span className="flex flex-col">
-              <span className="flex gap-0.5 text-crimson">
+              <span className="flex gap-0.5 text-vermilion">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <Star key={n} className="h-3.5 w-3.5" fill={n <= Math.round(course.rating) ? 'currentColor' : 'none'} strokeWidth={1.5} />
                 ))}
@@ -240,7 +240,7 @@ export default async function CourseDetailPage({
                   <span className="text-sm font-medium">{r.author}</span>
                   <span className="text-[11px] text-ink-muted">{t(r.country, locale)}</span>
                 </div>
-                <span className="flex gap-0.5 text-crimson">
+                <span className="flex gap-0.5 text-vermilion">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <Star key={n} className="h-3 w-3" fill={n <= r.rating ? 'currentColor' : 'none'} strokeWidth={1.5} />
                   ))}
@@ -289,7 +289,7 @@ export default async function CourseDetailPage({
 
             <Link
               href={`/instructors/${course.instructorId}`}
-              className="flex w-fit items-center gap-3 rounded-sm border border-line p-2 pr-4 transition-colors hover:border-crimson"
+              className="flex w-fit items-center gap-3 rounded-sm border border-line p-2 pr-4 transition-colors hover:border-vermilion"
             >
               <PhotoFrame
                 src={instructor?.photoUrl}

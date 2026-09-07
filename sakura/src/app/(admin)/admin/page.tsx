@@ -86,7 +86,7 @@ export default async function AdminDashboard() {
         <Card className="flex flex-col p-4 sm:p-5">
           <div className="mb-3 flex items-center justify-between gap-3">
             <h2 className="text-base">今日やること</h2>
-            <Badge tone={tasks.length ? 'crimson' : 'neutral'}>{tasks.length}件</Badge>
+            <Badge tone={tasks.length ? 'vermilion' : 'neutral'}>{tasks.length}件</Badge>
           </div>
           {tasks.length === 0 ? (
             <EmptyState
@@ -99,7 +99,7 @@ export default async function AdminDashboard() {
               {tasks.map((t) => (
                 <li key={t.id} className="flex items-start gap-3 py-3">
                   <span
-                    className={`mt-1 h-2 w-2 shrink-0 rounded-full ${t.urgent ? 'bg-crimson' : 'bg-sakura'}`}
+                    className={`mt-1 h-2 w-2 shrink-0 rounded-full ${t.urgent ? 'bg-vermilion' : 'bg-sakura'}`}
                     aria-hidden
                   />
                   <span className="flex min-w-0 flex-1 flex-col gap-1">
@@ -121,7 +121,7 @@ export default async function AdminDashboard() {
               <Link
                 key={a.href}
                 href={a.href}
-                className="flex flex-col gap-2 rounded-sm border border-line p-3 transition-colors hover:border-crimson hover:bg-washi"
+                className="flex flex-col gap-2 rounded-sm border border-line p-3 transition-colors hover:border-vermilion hover:bg-washi"
               >
                 <span className="flex h-9 w-9 items-center justify-center rounded-sm border border-line text-ink-2">
                   <a.icon className="h-4.5 w-4.5" strokeWidth={1.5} />
@@ -137,7 +137,7 @@ export default async function AdminDashboard() {
       <Card className="flex flex-col gap-4 p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-base">売上の推移</h2>
-          <Link href="/admin/sales" className="inline-flex items-center gap-1 text-[13px] text-crimson hover:underline">
+          <Link href="/admin/sales" className="inline-flex items-center gap-1 text-[13px] text-vermilion hover:underline">
             詳しく見る
             <ArrowRight className="h-3.5 w-3.5" />
           </Link>
@@ -148,7 +148,7 @@ export default async function AdminDashboard() {
       {/* 講座別の売上 */}
       <Card className="flex flex-col p-4 sm:p-5">
         <div className="mb-3 flex items-center gap-2">
-          <BarChart3 className="h-4 w-4 text-crimson" strokeWidth={1.5} />
+          <BarChart3 className="h-4 w-4 text-vermilion" strokeWidth={1.5} />
           <h2 className="text-base">{isOwner ? '講座別の売上（今月）' : '自分の講座の売上（今月）'}</h2>
         </div>
         <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">

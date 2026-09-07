@@ -30,7 +30,7 @@ export default function MyPageNav() {
                 href={i.href}
                 className={`flex min-h-12 items-center gap-2 border-b-2 px-3 text-sm transition-colors ${
                   active(i.href)
-                    ? 'border-crimson font-medium text-crimson'
+                    ? 'border-vermilion font-medium text-vermilion'
                     : 'border-transparent text-ink-muted hover:text-ink'
                 }`}
               >
@@ -50,7 +50,7 @@ export default function MyPageNav() {
               <Link
                 href={i.href}
                 className={`flex min-h-12 flex-col items-center justify-center gap-0.5 ${
-                  active(i.href) ? 'text-crimson' : 'text-ink-muted'
+                  active(i.href) ? 'text-vermilion' : 'text-ink-muted'
                 }`}
               >
                 <i.icon className="h-5 w-5" strokeWidth={1.5} />

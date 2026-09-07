@@ -59,22 +59,31 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   return (
     <>
       {/* ① HERO ─ SAKURA を主役に。地は和紙、桜は影として1箇所だけ */}
-      <section className="washi-texture relative overflow-hidden border-b border-line">
+      <section className="relative overflow-hidden border-b border-line bg-bg">
+        {/* 和紙はHEROの一部だけ。全面には敷かない */}
+        <div
+          aria-hidden
+          className="washi-texture absolute inset-y-0 left-0 w-full lg:w-[58%]"
+          style={{
+            maskImage: 'linear-gradient(to right, black 45%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to right, black 45%, transparent 100%)',
+          }}
+        />
         <PetalShadow />
         <div className="relative mx-auto grid max-w-6xl items-center gap-8 px-4 py-10 lg:grid-cols-[1fr_0.9fr] lg:gap-14 lg:py-16">
           <div className="flex flex-col items-start gap-6">
             <span className="flex items-center gap-3">
-              <SakuraCrest className="h-4 w-4 text-crimson" />
+              <SakuraCrest className="h-4 w-4 text-vermilion" />
               <span className="eyebrow">{h('eyebrow')}</span>
             </span>
 
             <h1 className="text-[30px] leading-[1.45] tracking-[0.08em] sm:text-[40px] lg:text-[44px]">
               {h('title')}
               <br />
-              <span className="text-crimson">{h('titleAccent')}</span>
+              <span className="text-vermilion">{h('titleAccent')}</span>
             </h1>
 
-            <span className="h-px w-16 bg-crimson" aria-hidden />
+            <span className="h-px w-16 bg-vermilion" aria-hidden />
 
             <p className="max-w-xl text-[13px] leading-loose text-ink-2 sm:text-sm">{h('lead')}</p>
 
@@ -109,7 +118,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               alt="SAKURA"
               kind="portrait"
               priority
-              className="h-72 w-full border border-line sm:h-96 lg:h-[500px]"
+              className="h-72 w-full border border-navy/25 sm:h-96 lg:h-[500px]"
             />
             {/* 縦書きの講師名。写真の左端に沿わせて存在感を出す */}
             <span
@@ -132,13 +141,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         <SectionHeading eyebrow="Curriculum" title={h('categoriesTitle')} lead={h('categoriesLead')} />
         <div className="mt-10 grid grid-cols-2 gap-px border border-line bg-line lg:grid-cols-4">
           {groups.map((g) => (
-            <Link key={g.group} href="/courses" className="group bg-bg p-5 transition-colors hover:bg-washi sm:p-6">
+            <Link key={g.group} href="/courses" className="group bg-bg p-5 transition-colors hover:bg-washi/60 sm:p-6">
               <IconFrame>
                 <g.icon className="h-4.5 w-4.5" strokeWidth={1.25} />
               </IconFrame>
               <h3 className="mt-4 font-serif text-[15px] tracking-[0.08em] text-ink">{g.title}</h3>
               <p className="mt-2 text-xs leading-loose text-ink-muted">{g.desc}</p>
-              <span className="mt-4 inline-block text-[10px] tracking-[0.14em] text-crimson">
+              <span className="mt-4 inline-block text-[10px] tracking-[0.14em] text-vermilion">
                 {h('catCount', { count: countOf(g.group) })}
               </span>
             </Link>
@@ -147,14 +156,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       </section>
 
       {/* ③ 注目講座 */}
-      <section className="washi-texture border-y border-line">
+      <section className="border-y border-line bg-bg">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:py-20">
           <SectionHeading
             eyebrow="Featured"
             title={h('featuredTitle')}
             lead={h('featuredLead')}
             action={
-              <Link href="/courses" className="inline-flex items-center gap-2 text-[13px] text-crimson hover:underline">
+              <Link href="/courses" className="inline-flex items-center gap-2 text-[13px] text-vermilion hover:underline">
                 {common('viewAll')}
                 <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.5} />
               </Link>
@@ -174,37 +183,46 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
       </section>
 
-      {/* ④ なぜ日本の美容なのか ─ 縦罫で区切る静かな三分割 */}
-      <section className="mx-auto max-w-6xl px-4 py-14 sm:py-20">
-        <SectionHeading eyebrow="Why Japan" title={h('whyTitle')} lead={h('whyLead')} align="center" />
-        <div className="mt-10 grid gap-8 sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-line">
-          {why.map((w, i) => (
-            <div key={w.title} className={`flex flex-col gap-3 ${i === 0 ? 'sm:pr-8' : 'sm:px-8'}`}>
-              <span className="font-serif text-[11px] tracking-[0.3em] text-gold">{`0${i + 1}`}</span>
-              <h3 className="font-serif text-[17px] tracking-[0.1em] text-ink">{w.title}</h3>
-              <p className="text-[13px] leading-loose text-ink-muted">{w.desc}</p>
-            </div>
-          ))}
+      {/* ④ なぜ日本の美容なのか ─ 濃紺の面。ページ全体にメリハリをつける */}
+      <section className="band-navy">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <span className="eyebrow text-on-navy-muted">Why Japan</span>
+            <h2 className="text-[22px] sm:text-[28px]">{h('whyTitle')}</h2>
+            <span className="my-2 h-px w-12 bg-vermilion" aria-hidden />
+            <p className="max-w-2xl text-[13px] leading-loose text-on-navy-muted">{h('whyLead')}</p>
+          </div>
+          <div className="mt-12 grid gap-10 sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-white/15">
+            {why.map((w, i) => (
+              <div key={w.title} className={`flex flex-col gap-3 ${i === 0 ? 'sm:pr-10' : 'sm:px-10'}`}>
+                <span className="font-serif text-[11px] tracking-[0.3em] text-gold">{`0${i + 1}`}</span>
+                <h3 className="font-serif text-[18px] tracking-[0.1em]">{w.title}</h3>
+                <p className="text-[13px] leading-loose text-on-navy-muted">{w.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ⑤ SAKURA 紹介 */}
-      <section className="border-y border-line bg-bg">
+      <section className="bg-bg">
         <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 py-14 sm:py-20 lg:grid-cols-[0.75fr_1.25fr] lg:gap-14">
           <PhotoFrame
             src={sakura.photoUrl}
             alt="SAKURA"
             kind="portrait"
-            className="h-80 w-full border border-line lg:h-[440px]"
+            className="h-80 w-full border border-navy/25 lg:h-[440px]"
           />
           <div className="flex flex-col items-start gap-5">
             <span className="eyebrow">{h('sakuraTitle')}</span>
             <h2 className="font-serif text-[28px] tracking-[0.24em] text-ink">SAKURA</h2>
-            <span className="h-px w-12 bg-crimson" aria-hidden />
+            <span className="h-px w-12 bg-vermilion" aria-hidden />
             <p className="text-[12px] tracking-[0.1em] text-ink-muted">{t(sakura.role, locale)}</p>
-            <p className="font-serif text-[19px] leading-[2] tracking-[0.06em] text-ink">
-              {t(sakura.headline, locale)}
-            </p>
+            <blockquote className="band-navy border-l-2 border-vermilion px-6 py-5">
+              <p className="font-serif text-[17px] leading-[2] tracking-[0.06em] sm:text-[19px]">
+                {t(sakura.headline, locale)}
+              </p>
+            </blockquote>
             <p className="line-clamp-4 text-[13px] leading-loose text-ink-muted">{t(sakura.bio, locale)}</p>
             <dl className="grid grid-cols-3 divide-x divide-line border-t border-line pt-4">
               {sakura.stats.map((s, i) => (
@@ -240,7 +258,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <p className="text-[13px] leading-loose text-ink-2">{t(tomomi.headline, locale)}</p>
             <Link
               href="/instructors/tomomi"
-              className="inline-flex items-center gap-2 text-[13px] text-crimson hover:underline"
+              className="inline-flex items-center gap-2 text-[13px] text-vermilion hover:underline"
             >
               {h('tomomiMore')}
               <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -250,7 +268,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       </section>
 
       {/* ⑦ 学ぶ → 修了 → 証明 */}
-      <section className="washi-texture border-t border-line">
+      <section className="border-t border-line bg-bg">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:py-20">
           <SectionHeading eyebrow="Learn to Certify" title={h('flowTitle')} lead={h('flowLead')} align="center" />
 
@@ -258,7 +276,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <ol className="flex flex-col divide-y divide-line border-y border-line">
               {flow.map((f) => (
                 <li key={f.n} className="flex items-start gap-5 py-5">
-                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center border border-line font-serif text-[13px] text-crimson">
+                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center border border-line font-serif text-[13px] text-vermilion">
                     {f.n}
                   </span>
                   <div className="flex flex-col gap-1.5">
@@ -270,7 +288,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </ol>
 
             {/* 証明書サンプル：印章と金の細罫で格式を出す */}
-            <figure className="relative flex flex-col border border-line bg-bg p-6">
+            <figure className="washi-texture relative flex flex-col border border-line p-6">
               <span className="absolute inset-x-4 top-4 h-px bg-gold opacity-60" aria-hidden />
               <figcaption className="eyebrow mt-2">{h('certSample')}</figcaption>
               <SakuraDivider className="my-5" />

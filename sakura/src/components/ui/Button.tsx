@@ -1,18 +1,20 @@
 import Link from 'next/link';
 import type { ComponentProps, ReactNode } from 'react';
 
-type Variant = 'primary' | 'secondary' | 'ghost';
+type Variant = 'primary' | 'secondary' | 'onNavy' | 'ghost';
 type Size = 'md' | 'lg';
 
 const base =
   'inline-flex items-center justify-center gap-2 rounded-sm font-medium tracking-[0.06em] transition-colors disabled:opacity-50';
 
 const variants: Record<Variant, string> = {
-  // 主ボタン：深赤のベタ。ページ内で目立たせたい一箇所に使う
-  primary: 'bg-crimson text-white hover:bg-crimson-deep',
-  // 副ボタン：白背景＋濃色の線。主ボタンとはっきり差をつける
-  secondary: 'border border-ink-2 bg-bg text-ink hover:bg-ink hover:text-white',
-  ghost: 'text-crimson underline-offset-4 hover:underline',
+  // 主ボタン：朱赤のベタ。ページ内で目立たせたい一箇所に使う
+  primary: 'bg-vermilion text-white hover:bg-vermilion-deep',
+  // 副ボタン：白地＋濃紺の線。主ボタンとはっきり差をつける
+  secondary: 'border border-navy bg-bg text-navy hover:bg-navy hover:text-white',
+  // 濃紺の面の上に置く副ボタン
+  onNavy: 'border border-white/45 bg-transparent text-white hover:bg-white hover:text-navy',
+  ghost: 'text-vermilion underline-offset-4 hover:underline',
 };
 
 // タップ対象は最小44px（iPhone Safari を主対象にした設計）

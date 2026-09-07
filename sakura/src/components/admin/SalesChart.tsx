@@ -41,7 +41,7 @@ export default function SalesChart({ data }: { data: DailySales[] }) {
               width={barW * 0.64}
               height={h}
               rx="2"
-              fill={last ? 'var(--color-crimson)' : 'var(--color-sakura)'}
+              fill={last ? 'var(--color-vermilion)' : 'var(--color-sakura)'}
             />
           );
         })}

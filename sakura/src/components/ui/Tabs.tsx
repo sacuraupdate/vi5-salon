@@ -21,7 +21,7 @@ export default function Tabs({ items, initialId }: { items: TabItem[]; initialId
               aria-selected={on}
               onClick={() => setActive(item.id)}
               className={`min-h-11 shrink-0 border-b-2 px-3 text-sm whitespace-nowrap transition-colors ${
-                on ? 'border-crimson font-medium text-crimson' : 'border-transparent text-ink-muted hover:text-ink'
+                on ? 'border-vermilion font-medium text-vermilion' : 'border-transparent text-ink-muted hover:text-ink'
               }`}
               style={{ flex: '0 0 auto' }}
             >

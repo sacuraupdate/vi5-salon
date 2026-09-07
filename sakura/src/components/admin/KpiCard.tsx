@@ -18,17 +18,17 @@ export default function KpiCard({
 }) {
   const up = (diffPercent ?? 0) >= 0;
   return (
-    <Card className={`flex flex-col gap-2 p-4 ${tone === 'alert' ? 'border-crimson' : ''}`}>
+    <Card className={`flex flex-col gap-2 p-4 ${tone === 'alert' ? 'border-vermilion' : ''}`}>
       <div className="flex items-center justify-between">
         <span
           className={`flex h-9 w-9 items-center justify-center rounded-sm ${
-            tone === 'alert' ? 'bg-crimson text-white' : 'bg-washi text-crimson'
+            tone === 'alert' ? 'bg-vermilion text-white' : 'bg-washi text-vermilion'
           }`}
         >
           <Icon className="h-4.5 w-4.5" strokeWidth={1.5} />
         </span>
         {diffPercent != null ? (
-          <span className={`inline-flex items-center gap-1 text-[11px] ${up ? 'text-crimson' : 'text-ink-muted'}`}>
+          <span className={`inline-flex items-center gap-1 text-[11px] ${up ? 'text-vermilion' : 'text-ink-muted'}`}>
             {up ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
             前月比 {up ? '+' : ''}
             {diffPercent}%

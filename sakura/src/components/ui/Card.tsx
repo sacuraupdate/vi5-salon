@@ -28,12 +28,12 @@ export function IconFrame({
 }: {
   children: ReactNode;
   className?: string;
-  tone?: 'default' | 'crimson';
+  tone?: 'default' | 'vermilion';
 }) {
   return (
     <span
       className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border ${
-        tone === 'crimson' ? 'border-crimson text-crimson' : 'border-line text-ink-2'
+        tone === 'vermilion' ? 'border-vermilion text-vermilion' : 'border-line text-pine'
       } ${className}`}
     >
       {children}
@@ -47,16 +47,17 @@ export function Badge({
   className = '',
 }: {
   children: ReactNode;
-  tone?: 'neutral' | 'sakura' | 'crimson' | 'outline' | 'gold';
+  tone?: 'neutral' | 'sakura' | 'vermilion' | 'outline' | 'gold' | 'pine';
   className?: string;
 }) {
   const tones = {
     neutral: 'border border-line text-ink-muted',
-    // 桜色は細い線と文字色のみ。面では塗らない
-    sakura: 'border border-sakura text-crimson',
-    crimson: 'bg-crimson text-white',
+    // 桜色は細い線のみ。面では塗らない
+    sakura: 'border border-sakura text-ink-2',
+    vermilion: 'bg-vermilion text-white',
     outline: 'border border-line text-ink-muted',
     gold: 'border border-gold text-gold',
+    pine: 'border border-pine/40 text-pine',
   } as const;
   return (
     <span
@@ -96,7 +97,7 @@ export function SectionHeading({
 export function ProgressBar({ value, className = '' }: { value: number; className?: string }) {
   return (
     <div className={`h-px w-full bg-line ${className}`} style={{ height: '2px' }}>
-      <div className="h-full bg-crimson" style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
+      <div className="h-full bg-vermilion" style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
     </div>
   );
 }
@@ -113,7 +114,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-sm border border-line bg-washi px-6 py-12 text-center">
+    <div className="flex flex-col items-center gap-3 rounded-sm border border-line px-6 py-12 text-center">
       <IconFrame>{icon}</IconFrame>
       <p className="font-serif text-base text-ink">{title}</p>
       <p className="max-w-sm text-[13px] leading-loose text-ink-muted">{body}</p>

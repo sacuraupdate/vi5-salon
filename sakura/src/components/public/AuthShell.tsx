@@ -76,7 +76,7 @@ export function Field({
         type={type}
         autoComplete={autoComplete}
         placeholder={placeholder}
-        className="min-h-12 rounded-sm border border-line bg-bg px-3 text-ink placeholder:text-ink-muted/70 focus:border-crimson focus:outline-none"
+        className="min-h-12 rounded-sm border border-line bg-bg px-3 text-ink placeholder:text-ink-muted/70 focus:border-vermilion focus:outline-none"
       />
     </div>
   );

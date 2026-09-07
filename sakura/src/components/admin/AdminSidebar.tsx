@@ -24,7 +24,7 @@ export default function AdminSidebar({ role }: { role: AdminRole }) {
             onClick={() => setOpen(false)}
             className={`flex min-h-11 items-center gap-2.5 rounded-sm px-3 text-[13px] transition-colors ${
               active(i.href)
-                ? 'border-l-2 border-crimson bg-washi pl-2.5 font-medium text-crimson'
+                ? 'border-l-2 border-vermilion bg-washi pl-2.5 font-medium text-vermilion'
                 : 'border-l-2 border-transparent text-ink-2 hover:bg-washi'
             }`}
           >

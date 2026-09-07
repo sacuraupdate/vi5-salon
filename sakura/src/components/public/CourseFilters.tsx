@@ -40,8 +40,8 @@ function Row({
               href={href(current, paramKey, o.value)}
               className={`inline-flex min-h-9 items-center rounded-sm border px-3 text-[13px] transition-colors ${
                 on
-                  ? 'border-crimson bg-crimson text-white'
-                  : 'border-line bg-bg text-ink hover:border-crimson hover:text-crimson'
+                  ? 'border-vermilion bg-vermilion text-white'
+                  : 'border-line bg-bg text-ink hover:border-vermilion hover:text-vermilion'
               }`}
             >
               {o.label}
@@ -107,7 +107,7 @@ export default async function CourseFilters({
         <Row key={r.paramKey} {...r} current={current} />
       ))}
       {hasFilter ? (
-        <Link href="/courses" className="inline-flex items-center gap-1 self-start text-[13px] text-crimson hover:underline">
+        <Link href="/courses" className="inline-flex items-center gap-1 self-start text-[13px] text-vermilion hover:underline">
           <X className="h-3.5 w-3.5" />
           {c('filterReset')}
         </Link>
@@ -121,7 +121,7 @@ export default async function CourseFilters({
       <details className="rounded-md border border-line bg-bg lg:hidden">
         <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-4 text-sm font-medium">
           <span className="inline-flex items-center gap-2">
-            <SlidersHorizontal className="h-4 w-4 text-crimson" />
+            <SlidersHorizontal className="h-4 w-4 text-vermilion" />
             {c('filterOpen')}
           </span>
           <span className="text-[13px] font-normal text-ink-muted">{c('resultCount', { count: resultCount })}</span>

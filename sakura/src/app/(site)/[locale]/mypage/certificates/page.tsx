@@ -59,7 +59,7 @@ export default async function CertificatesPage({ params }: { params: Promise<{ l
                   <span className="font-mono text-[10px] tracking-wider text-ink-muted">{cert.id}</span>
                 </div>
 
-                <p className="mt-4 font-serif text-[13px] tracking-[0.2em] text-crimson">
+                <p className="mt-4 font-serif text-[13px] tracking-[0.2em] text-vermilion">
                   {common(`certificate.${cert.kind}`)}
                 </p>
 

@@ -17,7 +17,7 @@ export default async function RegisterPage({ params }: { params: Promise<{ local
       footer={
         <p className="flex flex-wrap items-center gap-2 text-ink-muted">
           {a('toLogin')}
-          <Link href="/login" className="text-crimson hover:underline">
+          <Link href="/login" className="text-vermilion hover:underline">
             {a('loginTitle')}
           </Link>
         </p>

@@ -34,7 +34,7 @@ export default async function CourseCard({
           <PhotoFrame kind="course" tone={course.tone} alt={t(course.title, locale)} className="h-full w-full" />
           {course.isFree ? (
             <span className="absolute top-3 left-3">
-              <Badge tone="crimson">{c('free')}</Badge>
+              <Badge tone="vermilion">{c('free')}</Badge>
             </span>
           ) : null}
         </div>
@@ -42,11 +42,11 @@ export default async function CourseCard({
         <div className="flex flex-1 flex-col gap-3 p-5">
           {/* 講師とカテゴリー＝専門領域を先に示す */}
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10px] tracking-[0.12em] text-ink-muted">
-            <span className="text-crimson">{course.instructorId === 'sakura' ? 'SAKURA' : 'TOMOMI'}</span>
+            <span className="text-navy">{course.instructorId === 'sakura' ? 'SAKURA' : 'TOMOMI'}</span>
             {category ? (
               <>
                 <span aria-hidden className="text-line">|</span>
-                <span>{t(category.name, locale)}</span>
+                <span className="text-pine">{t(category.name, locale)}</span>
               </>
             ) : null}
             <span aria-hidden className="text-line">|</span>
@@ -63,7 +63,7 @@ export default async function CourseCard({
 
           {/* 得られること：教育プログラムであることを最も端的に示す一行 */}
           {gain ? (
-            <p className="border-l border-crimson pl-3 text-[12px] leading-relaxed text-ink-2">{gain}</p>
+            <p className="border-l-2 border-vermilion pl-3 text-[12px] leading-relaxed text-ink-2">{gain}</p>
           ) : null}
 
           <div className="mt-auto flex flex-col gap-3 pt-3">

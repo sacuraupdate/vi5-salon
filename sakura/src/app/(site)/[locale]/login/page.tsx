@@ -17,7 +17,7 @@ export default async function LoginPage({ params }: { params: Promise<{ locale: 
       footer={
         <p className="flex flex-wrap items-center gap-2 text-ink-muted">
           {a('toRegister')}
-          <Link href="/register" className="text-crimson hover:underline">
+          <Link href="/register" className="text-vermilion hover:underline">
             {a('registerTitle')}
           </Link>
         </p>
@@ -29,7 +29,7 @@ export default async function LoginPage({ params }: { params: Promise<{ locale: 
         <Link href="/mypage" className={buttonClass('primary', 'lg', 'mt-1 w-full')}>
           {a('submitLogin')}
         </Link>
-        <Link href="/login" className="self-center text-[13px] text-ink-muted hover:text-crimson">
+        <Link href="/login" className="self-center text-[13px] text-ink-muted hover:text-vermilion">
           {a('forgot')}
         </Link>
       </form>

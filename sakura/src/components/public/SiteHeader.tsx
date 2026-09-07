@@ -35,7 +35,7 @@ export default function SiteHeader() {
               key={l.href}
               href={l.href}
               className={`rounded-sm px-3 py-2 text-sm transition-colors ${
-                isActive(l.href) ? 'text-crimson' : 'text-ink hover:text-crimson'
+                isActive(l.href) ? 'text-vermilion' : 'text-ink-2 hover:text-navy'
               }`}
             >
               {l.label}
@@ -92,7 +92,7 @@ export default function SiteHeader() {
                   href={l.href}
                   onClick={() => setOpen(false)}
                   className={`flex min-h-12 items-center rounded-sm px-3 text-[15px] ${
-                    isActive(l.href) ? 'bg-washi text-crimson' : 'hover:bg-washi'
+                    isActive(l.href) ? 'border-l-2 border-vermilion bg-washi/70 text-vermilion' : 'hover:bg-washi'
                   }`}
                 >
                   {l.label}

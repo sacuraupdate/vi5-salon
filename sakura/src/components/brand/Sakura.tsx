@@ -62,10 +62,10 @@ export function SakuraCrest({ className }: { className?: string }) {
 export function PetalShadow({ className }: { className?: string }) {
   return (
     <div aria-hidden className={`pointer-events-none absolute inset-0 overflow-hidden ${className ?? ''}`}>
-      <span className="absolute top-[12%] left-[6%] block h-24 w-24 text-sakura opacity-25 sm:h-32 sm:w-32">
+      <span className="absolute top-[12%] left-[6%] block h-24 w-24 text-sakura opacity-45 sm:h-32 sm:w-32">
         <Petal rotate={22} className="h-full w-full" />
       </span>
-      <span className="absolute right-[9%] bottom-[16%] block h-14 w-14 text-sakura opacity-20">
+      <span className="absolute right-[9%] bottom-[16%] block h-14 w-14 text-sakura opacity-35">
         <Petal rotate={-38} className="h-full w-full" />
       </span>
     </div>
@@ -83,15 +83,21 @@ export function SakuraDivider({ className }: { className?: string }) {
   );
 }
 
-/** 印章風のアクセント。証明書など格式を出す箇所にのみ使う。 */
+/**
+ * 印章風のアクセント。証明書など格式を出す箇所にのみ使う。
+ * 縦書き（writing-mode）は文字が重なることがあるため、1文字ずつ縦に積む。
+ */
 export function Seal({ label, className }: { label: string; className?: string }) {
   return (
     <span
       aria-hidden
-      className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border border-crimson text-crimson ${className ?? ''}`}
-      style={{ writingMode: 'vertical-rl' }}
+      className={`inline-flex h-12 w-12 shrink-0 flex-col items-center justify-center gap-0.5 rounded-sm border border-vermilion text-vermilion ${className ?? ''}`}
     >
-      <span className="font-serif text-[10px] leading-tight tracking-[0.2em]">{label}</span>
+      {[...label].map((ch, i) => (
+        <span key={i} className="font-serif text-[11px] leading-none">
+          {ch}
+        </span>
+      ))}
     </span>
   );
 }

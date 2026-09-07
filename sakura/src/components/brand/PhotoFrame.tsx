@@ -20,11 +20,12 @@ type Props = {
 };
 
 // 生成りの濃淡。無機質な灰色にならないよう、必ず温かみのある地にする。
+// 白を基調に、藍のごく淡い濃淡だけで差をつける。ピンクは使わない。
 const toneStyles = [
-  { from: '#F2EDE5', to: '#FBF9F6', accent: '#E4DCD0' },
-  { from: '#EFEAE3', to: '#FAF8F4', accent: '#DED5C8' },
-  { from: '#F1ECE6', to: '#FCFAF7', accent: '#E7DFD4' },
-  { from: '#EDE8E0', to: '#F9F6F2', accent: '#DAD1C3' },
+  { from: '#E6EAEF', to: '#FBFCFD', accent: '#D3DAE2' },
+  { from: '#EFF1F0', to: '#FFFFFF', accent: '#DDE3DF' },
+  { from: '#F0F1F3', to: '#FDFDFD', accent: '#D9DEE4' },
+  { from: '#EEF0EF', to: '#FFFFFF', accent: '#DBE0DC' },
 ];
 
 export default function PhotoFrame({
@@ -71,10 +72,10 @@ export default function PhotoFrame({
           className="absolute inset-0 h-full w-full"
         >
           {/* 背後のやわらかい光。人物の輪郭を浮かせる */}
-          <ellipse cx="100" cy="126" rx="78" ry="90" fill="#FFFDFB" opacity="0.55" />
-          <ellipse cx="100" cy="126" rx="78" ry="90" fill="none" stroke="var(--color-sakura)" strokeWidth="0.8" opacity="0.7" />
-          {/* 墨に少し赤を混ぜた温かい影。灰色に見せない */}
-          <g fill="#5A4A46" opacity="0.2">
+          <ellipse cx="100" cy="126" rx="78" ry="90" fill="#FFFFFF" opacity="0.6" />
+          <ellipse cx="100" cy="126" rx="78" ry="90" fill="none" stroke="var(--color-navy)" strokeWidth="0.6" opacity="0.18" />
+          {/* 藍の影。人物の輪郭を静かに示す */}
+          <g fill="var(--color-navy)" opacity="0.3">
             <ellipse cx="100" cy="104" rx="27" ry="31" />
             <rect x="89" y="124" width="22" height="42" rx="11" />
             <path d="M100 158c-38 0-68 28-68 64v38h136v-38c0-36-30-64-68-64Z" />
@@ -100,7 +101,7 @@ export default function PhotoFrame({
 
       {/* 桜は紋を1つだけ、金の細線で。散らさない。 */}
       {minimal ? null : (
-        <span className="absolute top-3 right-3 block h-4 w-4 text-gold opacity-70">
+        <span className="absolute top-3 right-3 block h-4 w-4 text-gold opacity-60">
           <SakuraCrest className="h-full w-full" />
         </span>
       )}
