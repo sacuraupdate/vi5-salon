@@ -62,10 +62,10 @@ export function SakuraCrest({ className }: { className?: string }) {
 export function PetalShadow({ className }: { className?: string }) {
   return (
     <div aria-hidden className={`pointer-events-none absolute inset-0 overflow-hidden ${className ?? ''}`}>
-      <span className="absolute top-[12%] left-[6%] block h-24 w-24 text-sakura opacity-45 sm:h-32 sm:w-32">
+      <span className="absolute right-[4%] bottom-[8%] block h-20 w-20 text-sakura opacity-40 sm:h-28 sm:w-28">
         <Petal rotate={22} className="h-full w-full" />
       </span>
-      <span className="absolute right-[9%] bottom-[16%] block h-14 w-14 text-sakura opacity-35">
+      <span className="absolute top-[14%] right-[16%] block h-10 w-10 text-sakura opacity-30">
         <Petal rotate={-38} className="h-full w-full" />
       </span>
     </div>

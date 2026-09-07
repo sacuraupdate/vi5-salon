@@ -15,6 +15,7 @@ const paths = [
   ['', 'TOP'],
   ['/courses', '講座一覧'],
   ['/courses/japanese-salon-standard', '講座詳細'],
+  ['/getting-started', '初めての方へ'],
 ];
 const viewports = {
   PC: { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 },

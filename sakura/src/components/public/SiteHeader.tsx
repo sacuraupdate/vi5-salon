@@ -14,6 +14,7 @@ export default function SiteHeader() {
   const [open, setOpen] = useState(false);
 
   const links = [
+    { href: '/getting-started', label: t('gettingStarted') },
     { href: '/courses', label: t('courses') },
     { href: '/free', label: t('free') },
     { href: '/instructors/sakura', label: t('sakura') },

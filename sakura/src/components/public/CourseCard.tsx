@@ -1,4 +1,4 @@
-import { Award, Clock, Medal, PlayCircle } from 'lucide-react';
+import { Award, Clock, FileText, Medal, PlayCircle, Users } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import PhotoFrame from '@/components/brand/PhotoFrame';
@@ -22,7 +22,17 @@ export default async function CourseCard({
   compact?: boolean;
 }) {
   const c = await getTranslations({ locale, namespace: 'common' });
+  const cc = await getTranslations({ locale, namespace: 'courseCard' });
   const gain = t(course.highlights, locale)[0];
+
+  // 誰向けかは、講座のカテゴリー分類から導く（4言語対応）
+  const audienceKey: Record<string, 'audSalon' | 'audManagement' | 'audTechnique' | 'audFemcare'> = {
+    'japanese-salon': 'audSalon',
+    management: 'audManagement',
+    technique: 'audTechnique',
+    femcare: 'audFemcare',
+  };
+  const audience = category ? cc(audienceKey[category.group]) : null;
 
   return (
     <article className="h-full">
@@ -61,9 +71,22 @@ export default async function CourseCard({
             <p className="line-clamp-2 text-[12px] leading-loose text-ink-muted">{t(course.summary, locale)}</p>
           )}
 
-          {/* 得られること：教育プログラムであることを最も端的に示す一行 */}
+          {/* 誰向けか：自分向けかどうかを最初に判断できるようにする */}
+          {audience ? (
+            <p className="flex items-start gap-2 text-[11px] leading-relaxed text-ink-muted">
+              <Users className="mt-0.5 h-3.5 w-3.5 shrink-0 text-pine" strokeWidth={1.25} />
+              <span>
+                <span className="text-pine">{cc('forWhom')}</span>　{audience}
+              </span>
+            </p>
+          ) : null}
+
+          {/* できるようになること：価格ではなく中身で選べるようにする */}
           {gain ? (
-            <p className="border-l-2 border-vermilion pl-3 text-[12px] leading-relaxed text-ink-2">{gain}</p>
+            <p className="border-l-2 border-vermilion pl-3 text-[12px] leading-relaxed text-ink-2">
+              <span className="mb-0.5 block text-[10px] tracking-[0.1em] text-vermilion">{cc('canDo')}</span>
+              {gain}
+            </p>
           ) : null}
 
           <div className="mt-auto flex flex-col gap-3 pt-3">
@@ -77,6 +100,11 @@ export default async function CourseCard({
                 <PlayCircle className="h-3.5 w-3.5" strokeWidth={1.25} />
                 {course.lessonCount}
                 {c('lessons')}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <FileText className="h-3.5 w-3.5" strokeWidth={1.25} />
+                {cc('materials')} {course.materials.length}
+                {cc('materialsUnit')}
               </span>
               <span className="uppercase">{course.languages.join(' / ')}</span>
             </div>

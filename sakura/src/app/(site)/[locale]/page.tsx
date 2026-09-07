@@ -1,12 +1,17 @@
 import {
   ArrowRight,
+  Briefcase,
   Building2,
+  GraduationCap,
+  Scissors as ScissorsIcon,
+  Store,
   HeartPulse,
   Scissors,
   ShieldCheck,
   Sparkles,
   TrendingUp,
 } from 'lucide-react';
+import Image from 'next/image';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { catalogRepository } from '@/lib/data';
@@ -16,6 +21,11 @@ import { PetalShadow, SakuraCrest, SakuraDivider, Seal } from '@/components/bran
 import CourseCard from '@/components/public/CourseCard';
 import { Badge, IconFrame, SectionHeading } from '@/components/ui/Card';
 import { buttonClass } from '@/components/ui/Button';
+import CourseQuiz from '@/components/public/CourseQuiz';
+import LearningRoutes from '@/components/public/LearningRoutes';
+import { brandAsset, BRAND_FILES } from '@/lib/brand-assets';
+import { learningRoutes } from '@/lib/quiz';
+import { formatPrice } from '@/lib/format';
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -33,6 +43,56 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   const sakura = instructors.find((i) => i.id === 'sakura')!;
   const tomomi = instructors.find((i) => i.id === 'tomomi')!;
+
+  const branchSrc = brandAsset(BRAND_FILES.branch);
+  const portraitSrc = brandAsset(BRAND_FILES.portrait) ?? sakura.photoUrl;
+
+  const audience = [
+    { icon: Store, label: h('aud1') },
+    { icon: ScissorsIcon, label: h('aud2') },
+    { icon: Briefcase, label: h('aud3') },
+    { icon: GraduationCap, label: h('aud4') },
+  ];
+
+  const bySlug = new Map(courses.map((c) => [c.slug, c]));
+
+  // 診断モーダルへ渡す表示用データ（訳出はサーバー側で済ませる）
+  const quizCourses = courses.map((c) => ({
+    raw: c,
+    slug: c.slug,
+    level: c.level,
+    totalMinutes: c.totalMinutes,
+    lessonCount: c.lessonCount,
+    categoryId: c.categoryId,
+    isFree: c.isFree,
+    title: t(c.title, locale),
+    gain: t(c.highlights, locale)[0] ?? '',
+    levelLabel: common(`level.${c.level}`),
+    certificateLabel: c.certificate ? common(`certificate.${c.certificate}`) : null,
+    priceLabel: c.isFree ? common('free') : formatPrice(c.price, locale),
+    materialCount: c.materials.length,
+  }));
+
+  const routeLabels: Record<string, { label: string; desc: string }> = {
+    salon: { label: h('routeSalon'), desc: h('routeSalonDesc') },
+    technique: { label: h('routeTechnique'), desc: h('routeTechniqueDesc') },
+    femcare: { label: h('routeFemcare'), desc: h('routeFemcareDesc') },
+  };
+  const routes = learningRoutes.map((r) => ({
+    id: r.id,
+    label: routeLabels[r.id].label,
+    desc: routeLabels[r.id].desc,
+    steps: r.slugs
+      .map((slug) => bySlug.get(slug))
+      .filter((c): c is NonNullable<typeof c> => Boolean(c))
+      .map((c) => ({
+        slug: c.slug,
+        title: t(c.title, locale),
+        levelLabel: common(`level.${c.level}`),
+        isFree: c.isFree,
+        freeLabel: common('free'),
+      })),
+  }));
 
   const countOf = (group: string) =>
     courses.filter((c) => categories.find((cat) => cat.id === c.categoryId)?.group === group).length;
@@ -58,26 +118,31 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   return (
     <>
-      {/* ① HERO ─ SAKURA を主役に。地は和紙、桜は影として1箇所だけ */}
+      {/* ① HERO ─ 背景は完全な白。和紙は使わない */}
       <section className="relative overflow-hidden border-b border-line bg-bg">
-        {/* 和紙はHEROの一部だけ。全面には敷かない */}
-        <div
-          aria-hidden
-          className="washi-texture absolute inset-y-0 left-0 w-full lg:w-[58%]"
-          style={{
-            maskImage: 'linear-gradient(to right, black 45%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to right, black 45%, transparent 100%)',
-          }}
-        />
-        <PetalShadow />
-        <div className="relative mx-auto grid max-w-6xl items-center gap-8 px-4 py-10 lg:grid-cols-[1fr_0.9fr] lg:gap-14 lg:py-16">
+        {/* 桜の枝。正式素材が public/brand に置かれたときだけ表示する */}
+        {branchSrc ? (
+          <Image
+            src={branchSrc}
+            alt=""
+            aria-hidden
+            width={900}
+            height={600}
+            priority
+            className="pointer-events-none absolute -top-10 right-0 w-[46%] max-w-[560px] opacity-90 select-none"
+          />
+        ) : (
+          <PetalShadow />
+        )}
+
+        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14 lg:py-16">
           <div className="flex flex-col items-start gap-6">
             <span className="flex items-center gap-3">
               <SakuraCrest className="h-4 w-4 text-vermilion" />
               <span className="eyebrow">{h('eyebrow')}</span>
             </span>
 
-            <h1 className="text-[30px] leading-[1.45] tracking-[0.08em] sm:text-[40px] lg:text-[44px]">
+            <h1 className="text-[28px] leading-[1.5] tracking-[0.06em] sm:text-[36px] lg:text-[40px]">
               {h('title')}
               <br />
               <span className="text-vermilion">{h('titleAccent')}</span>
@@ -87,51 +152,59 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
             <p className="max-w-xl text-[13px] leading-loose text-ink-2 sm:text-sm">{h('lead')}</p>
 
+            {/* 主要CTA＝診断。無料講座は最重要ボタンにしない */}
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-              <Link href="/courses" className={buttonClass('primary', 'lg')}>
-                {h('ctaPrimary')}
-                <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
-              </Link>
-              <Link href="/free" className={buttonClass('secondary', 'lg')}>
+              <CourseQuiz courses={quizCourses} label={h('ctaPrimary')} variant="primary" />
+              <Link href="/courses" className={buttonClass('secondary', 'lg')}>
                 {h('ctaSecondary')}
+                <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
               </Link>
             </div>
 
-            <dl className="grid w-full max-w-lg grid-cols-3 divide-x divide-line border-t border-line pt-5">
-              {[
-                { v: `${courses.length}`, l: h('trustCourses') },
-                { v: '18', l: h('trustCountries') },
-                { v: '2', l: h('trustCertificate') },
-              ].map((s, i) => (
-                <div key={s.l} className={i === 0 ? 'pr-4' : 'px-4'}>
-                  <dt className="font-serif text-[26px] leading-none text-ink">{s.v}</dt>
-                  <dd className="mt-2 text-[10px] leading-tight tracking-[0.1em] text-ink-muted">{s.l}</dd>
-                </div>
-              ))}
-            </dl>
+            {/* こんな方におすすめ。カードにせずアイコン＋短いラベルで済ませる */}
+            <div className="w-full border-t border-line pt-5">
+              <span className="eyebrow">{h('audienceTitle')}</span>
+              <ul className="mt-3 grid grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-4">
+                {audience.map((a) => (
+                  <li key={a.label} className="flex items-center gap-2.5">
+                    <a.icon className="h-4 w-4 shrink-0 text-pine" strokeWidth={1.25} />
+                    <span className="text-[12px] leading-tight text-ink-2">{a.label}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
-          {/* SAKURA本人。正式写真は photoUrl を入れるだけで差し替わる */}
+          {/* SAKURA本人。人が教えていることを一目で伝える */}
           <div className="relative">
             <PhotoFrame
-              src={sakura.photoUrl}
+              src={portraitSrc}
               alt="SAKURA"
               kind="portrait"
               priority
               className="h-72 w-full border border-navy/25 sm:h-96 lg:h-[500px]"
             />
-            {/* 縦書きの講師名。写真の左端に沿わせて存在感を出す */}
             <span
               className="absolute top-8 -left-4 hidden bg-bg px-2 py-5 font-serif text-[22px] whitespace-nowrap tracking-[0.32em] text-ink lg:block"
               style={{ writingMode: 'vertical-rl' }}
             >
               SAKURA
             </span>
-            {/* 肩書きは横書きの細い行で。縦書きに詰め込まない */}
-            <div className="mt-3 flex items-baseline justify-between gap-4 border-t border-line pt-3">
-              <span className="font-serif text-[13px] tracking-[0.24em] text-ink lg:hidden">SAKURA</span>
-              <span className="text-[11px] tracking-[0.14em] text-ink-muted">{t(sakura.role, locale)}</span>
+            <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-t border-line pt-3">
+              <span className="font-serif text-[14px] tracking-[0.24em] text-ink lg:hidden">SAKURA</span>
+              <span className="text-[11px] tracking-[0.1em] text-ink-muted">{h('instructorLead')}</span>
+              <span className="text-[11px] tracking-[0.1em] text-ink-muted">{t(sakura.role, locale)}</span>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ①-2 迷ったら、この順番 ─ 3つの入口をタブで1つずつ見せる */}
+      <section className="border-b border-line bg-bg">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
+          <SectionHeading eyebrow="Learning Routes" title={h('routesTitle')} lead={h('routesLead')} />
+          <div className="mt-8">
+            <LearningRoutes routes={routes} />
           </div>
         </div>
       </section>
