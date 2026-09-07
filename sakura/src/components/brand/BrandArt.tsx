@@ -21,29 +21,40 @@ export function BrandCrest({ className = '' }: { className?: string }) {
 }
 
 /**
- * HERO の桜の枝。右上から入り、SAKURA の背面へ流れる。
- * 人物写真は背景透過のため、枝は写真越しに透けて見える。
- * 顔・髪飾りに重ねすぎないよう、
- *   - 左端を 58% で切り落として本文側・人物の中心側へ出さない
- *   - 枝の主要部を右上の隅へ寄せ、人物へ向かうのは細い先端だけにする
- *   - 濃度を落として「背面の気配」に留める
- * の3点で抑えている（枠は overflow-hidden）。
+ * HERO の桜の枝。右上から入り、HERO 右側の上部〜中部へ流れ込む。
+ * 「隅に置いた飾り」ではなく、HERO の構図そのものを作る要素として大きく使う。
+ *
+ * 重ならないことの担保:
+ *   - 見出し・本文・CTA … 左端を 56% で切り落とした枠の中だけに描く（overflow-hidden）。
+ *     どれだけ枝を大きくしても本文側へは1pxも出ない。
+ *   - 顔・髪飾り ………… 人物写真は z-10、枝は z-0。顔の画素は不透明なので、
+ *     枝は必ず人物の背面へ回り込む。頭のまわりには枝の開始位置で余白を確保している。
  */
+/** 右上を最も濃く、左下（人物の頭のほう）へ向かって溶けるように消すマスク */
+const MASK =
+  'linear-gradient(210deg, #000 0%, #000 66%, rgba(0,0,0,0.5) 80%, transparent 94%)';
+
 export function BrandBranch() {
   const src = brandAsset(BRAND_FILES.branch);
   if (!src) return null;
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-y-0 right-0 left-[58%] z-0 hidden select-none overflow-hidden opacity-70 lg:block"
+      className="pointer-events-none absolute inset-y-0 right-0 left-[54%] z-0 hidden select-none overflow-hidden opacity-85 lg:block"
     >
+      {/* 枝の先端（左下）だけをやわらかく溶かし、クリップ端で硬く切れないようにする。
+          顔は人物写真（z-10）が不透明なため、枝は必ず背面へ回り込む。 */}
       <Image
         src={src}
         alt=""
         width={2000}
         height={625}
         priority
-        className="absolute -top-[16%] -right-[24%] w-[112%] max-w-[560px] select-none"
+        className="absolute top-[-8%] right-[-14%] w-[228%] max-w-[1500px] select-none"
+        style={{
+          maskImage: MASK,
+          WebkitMaskImage: MASK,
+        }}
       />
     </div>
   );

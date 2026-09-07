@@ -122,11 +122,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         {/* 桜の枝は右半分を切り抜いた枠の中だけに描く。見出しには決して重ならない */}
         <BrandBranch />
 
-        {/* 花びらは3枚だけ。右上から中央へ流れる軌跡をつくる（PCのみ）。
+        {/* 花びらは枝の軌跡に沿って4枚まで。増やしすぎると可愛くなるので大きさと濃度で抑える。
             正式な桜素材が入るまでは描かない＝桜色の面を増やさない（assetOnly） */}
-        <BrandPetals className="top-[7%] right-[9%] hidden h-14 w-14 lg:block" opacity={0.5} assetOnly />
-        <BrandPetals className="top-[34%] right-[27%] hidden h-10 w-10 lg:block" opacity={0.36} rotate={26} assetOnly />
-        <BrandPetals className="top-[62%] right-[41%] hidden h-8 w-8 lg:block" opacity={0.24} rotate={-14} assetOnly />
+        <BrandPetals className="top-[6%] right-[8%] hidden h-16 w-16 lg:block" opacity={0.55} assetOnly />
+        <BrandPetals className="top-[26%] right-[22%] hidden h-12 w-12 lg:block" opacity={0.4} rotate={26} assetOnly />
+        <BrandPetals className="top-[50%] right-[6%] hidden h-11 w-11 lg:block" opacity={0.3} rotate={-18} assetOnly />
+        <BrandPetals className="top-[66%] right-[30%] hidden h-9 w-9 lg:block" opacity={0.22} rotate={12} assetOnly />
 
         <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-8 px-4 pt-8 pb-9 lg:grid-cols-[1.08fr_0.92fr] lg:gap-10 lg:pt-14 lg:pb-12">
           <div className="flex flex-col items-start gap-5">
