@@ -20,9 +20,16 @@ type Props = {
   minimal?: boolean;
   /**
    * 写真のトリミング位置（CSS object-position）。
-   * 人物写真は既定の中央だと顔が切れるため、顔・髪飾り・上半身が入る位置を指定する。
+   * frame のときだけ意味を持つ。
    */
   focus?: string;
+  /**
+   * frame  : 枠に合わせて切り抜く（object-cover）。風景・サムネイル向け。
+   * cutout : 背景透過の切り抜き写真。**一切トリミングしない**（object-contain）。
+   *          頭頂部・髪飾り・顔が切れないことを最優先し、枠線も地の色も置かず、
+   *          サイトの白背景と直接つなげる。SAKURA 本人の4枚はすべてこちら。
+   */
+  variant?: 'frame' | 'cutout';
 };
 
 // 生成りの濃淡。無機質な灰色にならないよう、必ず温かみのある地にする。
@@ -43,18 +50,21 @@ export default function PhotoFrame({
   priority = false,
   minimal = false,
   focus,
+  variant = 'frame',
 }: Props) {
   if (src) {
+    // 背景透過の切り抜き写真は切らない。枠も地の色も置かず、白背景へそのまま置く
+    const cutout = variant === 'cutout';
     return (
-      <div className={`relative overflow-hidden ${className}`}>
+      <div className={`relative ${cutout ? '' : 'overflow-hidden'} ${className}`}>
         <Image
           src={src}
           alt={alt}
           fill
           sizes="(max-width: 768px) 100vw, 50vw"
           priority={priority}
-          className="object-cover"
-          style={focus ? { objectPosition: focus } : undefined}
+          className={cutout ? 'object-contain' : 'object-cover'}
+          style={{ objectPosition: cutout ? 'center bottom' : focus }}
         />
       </div>
     );

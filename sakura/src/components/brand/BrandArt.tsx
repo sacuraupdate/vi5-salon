@@ -21,9 +21,13 @@ export function BrandCrest({ className = '' }: { className?: string }) {
 }
 
 /**
- * HERO の桜の枝。右上から入り、HERO 右側の中央へ向かって流れ落ちる。
- * 見出しに絶対に重ならないよう、左端を 52% で切り落とした枠の中だけに描く
- * （枠は overflow-hidden。枝をいくら大きくしても本文・CTA 側へは出ない）。
+ * HERO の桜の枝。右上から入り、SAKURA の背面へ流れる。
+ * 人物写真は背景透過のため、枝は写真越しに透けて見える。
+ * 顔・髪飾りに重ねすぎないよう、
+ *   - 左端を 58% で切り落として本文側・人物の中心側へ出さない
+ *   - 枝の主要部を右上の隅へ寄せ、人物へ向かうのは細い先端だけにする
+ *   - 濃度を落として「背面の気配」に留める
+ * の3点で抑えている（枠は overflow-hidden）。
  */
 export function BrandBranch() {
   const src = brandAsset(BRAND_FILES.branch);
@@ -31,7 +35,7 @@ export function BrandBranch() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-y-0 right-0 left-[52%] z-0 hidden select-none overflow-hidden lg:block"
+      className="pointer-events-none absolute inset-y-0 right-0 left-[58%] z-0 hidden select-none overflow-hidden opacity-70 lg:block"
     >
       <Image
         src={src}
@@ -39,7 +43,7 @@ export function BrandBranch() {
         width={2000}
         height={625}
         priority
-        className="absolute -top-[3%] -right-[10%] w-[172%] max-w-none select-none"
+        className="absolute -top-[16%] -right-[24%] w-[112%] max-w-[560px] select-none"
       />
     </div>
   );

@@ -58,8 +58,9 @@ export default async function GettingStartedPage({ params }: { params: Promise<{
               alt="SAKURA"
               kind="portrait"
               focus="50% 24%"
-              /* ピンクが強いので大面積にしない。スマホでも横幅いっぱいの帯にはせず、4:5のカードで置く */
-              className="h-[250px] w-[200px] border border-line sm:h-[280px] sm:w-[224px] lg:h-[350px] lg:w-full"
+              variant="cutout"
+              /* ピンクが強いので大面積にしない。切り抜きなので枠は置かず白背景へ直接置く */
+              className="h-[250px] w-[200px] sm:h-[280px] sm:w-[224px] lg:h-[350px] lg:w-full"
             />
           ) : null}
         </div>

@@ -48,7 +48,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // 写真が無いときは人物プレースホルダを出さず、ブランドの文字と桜だけで右側を成立させる
   const heroPhoto = brandAsset(BRAND_FILES.portraitHero);
   // SAKURA紹介セクションは sakura-portrait-about.png。HERO と同じ写真は使わない
-  const aboutPhoto = brandAsset(BRAND_FILES.portraitAbout) ?? sakura.photoUrl ?? null;
+  const aboutBrandPhoto = brandAsset(BRAND_FILES.portraitAbout);
+  const aboutPhoto = aboutBrandPhoto ?? sakura.photoUrl ?? null;
+  const aboutIsCutout = Boolean(aboutBrandPhoto);
 
   const audience = [
     { icon: Store, label: h('aud1') },
@@ -179,9 +181,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   alt="SAKURA"
                   kind="portrait"
                   priority
-                  /* 顔・髪飾り・上半身が入るよう、中央よりやや上でトリミングする */
-                  focus="50% 22%"
-                  className="h-[380px] w-full border border-navy/25 sm:h-[440px] lg:h-[470px]"
+                  /* 背景透過の切り抜き。トリミングせず全身のバランスを優先する。
+                     頭頂部・髪飾り・顔はPC・スマホのどちらでも絶対に切れない */
+                  variant="cutout"
+                  className="h-[400px] w-full sm:h-[480px] lg:h-[520px]"
                 />
                 {/* 写真の上には文字を重ねない。名前・肩書はすべて写真の下の罫に置く */}
                 <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-t border-line pt-3">
@@ -319,8 +322,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             src={aboutPhoto}
             alt="SAKURA"
             kind="portrait"
+            variant={aboutIsCutout ? 'cutout' : 'frame'}
             focus="50% 24%"
-            className="h-80 w-full border border-navy/25 lg:h-[440px]"
+            className={`h-80 w-full lg:h-[440px] ${aboutIsCutout ? '' : 'border border-navy/25'}`}
           />
           <div className="flex flex-col items-start gap-5">
             <span className="eyebrow">{h('sakuraTitle')}</span>

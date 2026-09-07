@@ -12,7 +12,8 @@
     "ux-check": "node tools/ux-check.mjs",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare build && wrangler dev",
-    "cf:deploy": "opennextjs-cloudflare build && wrangler deploy"
+    "cf:deploy": "opennextjs-cloudflare build && wrangler deploy",
+    "check:portraits": "node tools/check-portraits.mjs"
   },
   "dependencies": {
     "lucide-react": "1.41.0",

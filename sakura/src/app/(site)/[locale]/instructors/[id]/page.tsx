@@ -37,8 +37,8 @@ export default async function InstructorPage({
   const own = categories.filter((c) => instructor.categoryIds.includes(c.id));
 
   // SAKURA の写真は用途を固定する。講師紹介は about、経歴は story。HERO用は使わない
-  const profilePhoto =
-    (id === 'sakura' ? brandAsset(BRAND_FILES.portraitAbout) : null) ?? instructor.photoUrl;
+  const profileBrandPhoto = id === 'sakura' ? brandAsset(BRAND_FILES.portraitAbout) : null;
+  const profilePhoto = profileBrandPhoto ?? instructor.photoUrl;
   const storyPhoto = id === 'sakura' ? brandAsset(BRAND_FILES.portraitStory) : null;
 
   return (
@@ -52,8 +52,11 @@ export default async function InstructorPage({
             kind="portrait"
             tone={id === 'tomomi' ? 2 : 0}
             priority
+            variant={profileBrandPhoto ? 'cutout' : 'frame'}
             focus="50% 22%"
-            className="h-64 w-full rounded-md border border-line shadow-card sm:h-80 lg:h-[420px]"
+            className={`h-64 w-full sm:h-80 lg:h-[420px] ${
+              profileBrandPhoto ? '' : 'rounded-md border border-line shadow-card'
+            }`}
           />
           <div className="flex flex-col items-start gap-4 lg:justify-center">
             <h1 className="font-serif text-3xl tracking-[0.14em]">{instructor.name}</h1>
@@ -82,8 +85,8 @@ export default async function InstructorPage({
                   src={storyPhoto}
                   alt={instructor.name}
                   kind="portrait"
-                  focus="50% 22%"
-                  className="h-[275px] w-full border border-line"
+                  variant="cutout"
+                  className="h-[275px] w-full"
                 />
                 <p className="text-sm leading-loose text-ink">{t(instructor.bio, locale)}</p>
               </div>
