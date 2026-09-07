@@ -202,18 +202,23 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           {firstPick ? (
             <Link
               href={`/courses/${firstPick.slug}`}
-              className="mt-6 flex flex-col gap-3 border-l-2 border-vermilion bg-washi/70 px-5 py-4 transition-colors hover:bg-washi sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+              className="band-navy group mt-6 flex flex-col gap-4 border-l-2 border-vermilion px-5 py-5 transition-colors hover:bg-navy-deep sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:px-6"
             >
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[10px] tracking-[0.2em] text-vermilion">{h('firstPickTitle')}</span>
-                <span className="text-[9px] tracking-[0.28em] text-ink-muted uppercase">Japanese Salon Standard</span>
-                <span className="font-serif text-[17px] tracking-[0.06em] text-ink">
+              <div className="flex flex-col items-start gap-2.5">
+                {/* 朱赤の小さなアクセント。重要な導線であることを一目で示す */}
+                <span className="bg-vermilion px-2 py-0.5 text-[10px] tracking-[0.16em] text-white">
+                  {h('firstPickTitle')}
+                </span>
+                <span className="text-[9px] tracking-[0.28em] text-on-navy-muted uppercase">
+                  Japanese Salon Standard
+                </span>
+                <span className="font-serif text-[19px] tracking-[0.08em] text-white">
                   {t(firstPick.title, locale)}
                 </span>
               </div>
               <div className="flex items-center gap-3 sm:shrink-0">
-                <span className="text-[12px] leading-relaxed text-ink-2">{h('firstPickDesc')}</span>
-                <ArrowRight className="h-4 w-4 shrink-0 text-vermilion" strokeWidth={1.5} />
+                <span className="text-[12px] leading-relaxed text-on-navy-muted">{h('firstPickDesc')}</span>
+                <ArrowRight className="h-4 w-4 shrink-0 text-white" strokeWidth={1.5} />
               </div>
             </Link>
           ) : null}
@@ -229,7 +234,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         <SectionHeading eyebrow="Curriculum" title={h('categoriesTitle')} lead={h('categoriesLead')} />
         <div className="mt-10 grid grid-cols-2 gap-px border border-line bg-line lg:grid-cols-4">
           {groups.map((g) => (
-            <Link key={g.group} href="/courses" className="group bg-bg p-5 transition-colors hover:bg-washi/60 sm:p-6">
+            <Link key={g.group} href="/courses" className="group bg-bg p-5 transition-colors hover:bg-navy/5 sm:p-6">
               <IconFrame>
                 <g.icon className="h-4.5 w-4.5" strokeWidth={1.25} />
               </IconFrame>
