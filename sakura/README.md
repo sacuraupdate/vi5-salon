@@ -71,7 +71,7 @@ Next.js 16 を Cloudflare で動かす現行の公式方式である **`@opennex
 
 ### 設定ファイル
 
-- `wrangler.jsonc` — Worker 名 `sakura-japan-beauty-preview`、`nodejs_compat` などの設定
+- `wrangler.jsonc` — Worker 名 `vi5-salon`、`nodejs_compat` などの設定
 - `open-next.config.ts` — キャッシュ実装の指定
 
 Phase 1 は確認用のため、**R2 などの追加リソースを必要としない構成**にしている
