@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { catalogRepository, learnerRepository } from '@/lib/data';
 import { formatDate, t } from '@/lib/format';
 import { SakuraDivider, Seal } from '@/components/brand/Sakura';
+import { BrandCrest } from '@/components/brand/BrandArt';
 import { EmptyState } from '@/components/ui/Card';
 import { buttonClass } from '@/components/ui/Button';
 import { Link } from '@/i18n/navigation';
@@ -63,7 +64,7 @@ export default async function CertificatesPage({ params }: { params: Promise<{ l
                   {common(`certificate.${cert.kind}`)}
                 </p>
 
-                <SakuraDivider className="my-5" />
+                <SakuraDivider className="my-5" mark={<BrandCrest className="h-5 w-5 text-gold" />} />
 
                 <p className="font-serif text-[24px] leading-snug tracking-[0.16em] text-ink">{cert.holderName}</p>
                 <p className="mt-3 text-[13px] leading-loose text-ink-2">

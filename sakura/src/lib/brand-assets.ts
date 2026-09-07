@@ -7,10 +7,10 @@ import path from 'node:path';
  * ファイルが無い場合は null を返し、画像なしでも成立するレイアウトにフォールバックする。
  *
  * 想定ファイル:
- *   public/brand/sakura-branch.webp  桜の枝（墨絵調）
- *   public/brand/sakura-petals.webp  桜の花びら
- *   public/brand/sakura-crest.svg    桜紋
- *   public/brand/sakura-portrait.webp SAKURA本人の写真
+ *   public/brand/sakura-branch.png   桜の枝（墨絵調）
+ *   public/brand/sakura-petals.png   桜の花びら
+ *   public/brand/sakura-crest.png    桜紋
+ *   public/brand/sakura-portrait.png SAKURA本人の写真
  *
  * サーバーコンポーネントからのみ呼ぶこと。
  */
@@ -23,8 +23,8 @@ export function brandAsset(file: string): string | null {
 }
 
 export const BRAND_FILES = {
-  branch: 'sakura-branch.webp',
-  petals: 'sakura-petals.webp',
-  crest: 'sakura-crest.svg',
-  portrait: 'sakura-portrait.webp',
+  branch: 'sakura-branch.png',
+  petals: 'sakura-petals.png',
+  crest: 'sakura-crest.png',
+  portrait: 'sakura-portrait.png',
 } as const;

@@ -73,11 +73,11 @@ export function PetalShadow({ className }: { className?: string }) {
 }
 
 /** セクション区切り。細い罫の中央に小さな桜紋を置く。 */
-export function SakuraDivider({ className }: { className?: string }) {
+export function SakuraDivider({ className, mark }: { className?: string; mark?: React.ReactNode }) {
   return (
     <div aria-hidden className={`flex items-center gap-4 ${className ?? ''}`}>
       <span className="h-px flex-1 bg-line" />
-      <SakuraCrest className="h-3.5 w-3.5 text-gold" />
+      {mark ?? <SakuraCrest className="h-3.5 w-3.5 text-gold" />}
       <span className="h-px flex-1 bg-line" />
     </div>
   );

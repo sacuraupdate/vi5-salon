@@ -11,13 +11,13 @@ import {
   Sparkles,
   TrendingUp,
 } from 'lucide-react';
-import Image from 'next/image';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { catalogRepository } from '@/lib/data';
 import { t } from '@/lib/format';
 import PhotoFrame from '@/components/brand/PhotoFrame';
-import { PetalShadow, SakuraCrest, SakuraDivider, Seal } from '@/components/brand/Sakura';
+import { SakuraDivider, Seal } from '@/components/brand/Sakura';
+import { BrandBranch, BrandCrest, BrandPetals } from '@/components/brand/BrandArt';
 import CourseCard from '@/components/public/CourseCard';
 import { Badge, IconFrame, SectionHeading } from '@/components/ui/Card';
 import { buttonClass } from '@/components/ui/Button';
@@ -44,7 +44,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const sakura = instructors.find((i) => i.id === 'sakura')!;
   const tomomi = instructors.find((i) => i.id === 'tomomi')!;
 
-  const branchSrc = brandAsset(BRAND_FILES.branch);
   const portraitSrc = brandAsset(BRAND_FILES.portrait) ?? sakura.photoUrl;
 
   const audience = [
@@ -114,25 +113,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     <>
       {/* ① HERO ─ 背景は完全な白。和紙は使わない */}
       <section className="relative overflow-hidden border-b border-line bg-bg">
-        {/* 桜の枝。正式素材が public/brand に置かれたときだけ表示する */}
-        {branchSrc ? (
-          <Image
-            src={branchSrc}
-            alt=""
-            aria-hidden
-            width={900}
-            height={600}
-            priority
-            className="pointer-events-none absolute -top-10 right-0 w-[46%] max-w-[560px] opacity-90 select-none"
-          />
-        ) : (
-          <PetalShadow />
-        )}
+        {/* 桜の枝は右上の背面に置き、見出しやSAKURAには重ねない */}
+        <BrandBranch />
 
-        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14 lg:py-16">
+        <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-10 px-4 pt-10 pb-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14 lg:pt-28 lg:pb-16">
           <div className="flex flex-col items-start gap-6">
             <span className="flex items-center gap-3">
-              <SakuraCrest className="h-4 w-4 text-vermilion" />
+              <BrandCrest className="h-5 w-5 text-vermilion" />
               <span className="eyebrow">{h('eyebrow')}</span>
             </span>
 
@@ -176,7 +163,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               alt="SAKURA"
               kind="portrait"
               priority
-              className="h-72 w-full border border-navy/25 sm:h-96 lg:h-[500px]"
+              className="h-72 w-full border border-navy/25 sm:h-96 lg:h-[440px]"
             />
             <span
               className="absolute top-8 -left-4 hidden bg-bg px-2 py-5 font-serif text-[22px] whitespace-nowrap tracking-[0.32em] text-ink lg:block"
@@ -361,8 +348,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       </section>
 
       {/* ⑦ 学ぶ → 修了 → 証明 */}
-      <section className="border-t border-line bg-bg">
-        <div className="mx-auto max-w-6xl px-4 py-14 sm:py-20">
+      <section className="relative overflow-hidden border-t border-line bg-bg">
+        <BrandPetals className="top-[8%] left-[3%] h-20 w-20 sm:h-28 sm:w-28" opacity={0.28} />
+        <div className="relative z-10 mx-auto max-w-6xl px-4 py-14 sm:py-20">
           <SectionHeading eyebrow="Learn to Certify" title={h('flowTitle')} lead={h('flowLead')} align="center" />
 
           <div className="mt-10 grid gap-8 lg:grid-cols-[1.6fr_1fr] lg:gap-14">
@@ -384,7 +372,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <figure className="washi-texture relative flex flex-col border border-line p-6">
               <span className="absolute inset-x-4 top-4 h-px bg-gold opacity-60" aria-hidden />
               <figcaption className="eyebrow mt-2">{h('certSample')}</figcaption>
-              <SakuraDivider className="my-5" />
+              <SakuraDivider className="my-5" mark={<BrandCrest className="h-5 w-5 text-gold" />} />
               <p className="font-serif text-[19px] tracking-[0.14em] text-ink">Jasmine Lim</p>
               <p className="mt-2 text-[12px] leading-loose text-ink-muted">
                 {t({ ja: '日本式サロンスタンダード 基礎', en: 'Japanese Salon Standards' }, locale)}
