@@ -121,9 +121,9 @@ export default async function AdminDashboard() {
               <Link
                 key={a.href}
                 href={a.href}
-                className="flex flex-col gap-2 rounded-sm border border-line p-3 transition-colors hover:border-crimson hover:bg-sakura-soft"
+                className="flex flex-col gap-2 rounded-sm border border-line p-3 transition-colors hover:border-crimson hover:bg-washi"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-sm bg-sakura-soft text-crimson">
+                <span className="flex h-9 w-9 items-center justify-center rounded-sm border border-line text-ink-2">
                   <a.icon className="h-4.5 w-4.5" strokeWidth={1.5} />
                 </span>
                 <span className="text-[13px] leading-snug">{a.label}</span>

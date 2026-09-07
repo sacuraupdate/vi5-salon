@@ -1,17 +1,17 @@
 import Image from 'next/image';
-import { Petal, SakuraMark } from './Sakura';
+import { SakuraCrest } from './Sakura';
 
 /**
  * 正式な写真素材が入るまでのプレースホルダ。
  * src を渡すだけで実写真に差し替わる（呼び出し側の変更は不要）。
- * 素材が無くてもブランドの意図が伝わるよう、桜のブランド装飾で構成している。
+ * 甘い印象を避けるため、桜色は使わず生成りと墨の濃淡だけで構成する。
  */
 type Props = {
   src?: string | null;
   alt: string;
   /** 人物用と講座サムネイル用で構図を変える */
   kind?: 'portrait' | 'course';
-  /** 講座サムネイルの配色バリエーション（0-3） */
+  /** 講座サムネイルの濃淡バリエーション（0-3） */
   tone?: number;
   className?: string;
   priority?: boolean;
@@ -19,11 +19,12 @@ type Props = {
   minimal?: boolean;
 };
 
+// 生成りの濃淡。無機質な灰色にならないよう、必ず温かみのある地にする。
 const toneStyles = [
-  { from: '#FAEFF2', to: '#FFFFFF', accent: '#F1D9DF' },
-  { from: '#FAF8F5', to: '#FFFFFF', accent: '#E9E3E1' },
-  { from: '#F7F1F2', to: '#FDFBFA', accent: '#EBD5DA' },
-  { from: '#FBF6F2', to: '#FFFFFF', accent: '#EFE0D9' },
+  { from: '#F2EDE5', to: '#FBF9F6', accent: '#E4DCD0' },
+  { from: '#EFEAE3', to: '#FAF8F4', accent: '#DED5C8' },
+  { from: '#F1ECE6', to: '#FCFAF7', accent: '#E7DFD4' },
+  { from: '#EDE8E0', to: '#F9F6F2', accent: '#DAD1C3' },
 ];
 
 export default function PhotoFrame({
@@ -50,25 +51,30 @@ export default function PhotoFrame({
       role="img"
       aria-label={alt}
       className={`relative overflow-hidden ${className}`}
-      style={{ background: `linear-gradient(160deg, ${t.from} 0%, ${t.to} 68%)` }}
+      style={{ background: `linear-gradient(165deg, ${t.from} 0%, ${t.to} 72%)` }}
     >
-      {/* やわらかい光の面 */}
-      <div
+      {/* 和紙の質感をごく薄く重ねる */}
+      <span
         aria-hidden
-        className="absolute -top-1/4 left-1/2 h-[120%] w-[80%] -translate-x-1/2 rounded-full opacity-60"
-        style={{ background: `radial-gradient(closest-side, #FFFFFF 0%, transparent 100%)` }}
+        className="absolute inset-0 opacity-60"
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E\")",
+        }}
       />
-
       {kind === 'portrait' ? (
-        // 人物写真が入る位置を示す、抽象化されたシルエット（頭・首・肩をつなげて1つの形にする）
+        // 人物写真が入る位置を示す、抽象化されたシルエット
         <svg
           aria-hidden
           viewBox="0 0 200 260"
           preserveAspectRatio="xMidYMax meet"
           className="absolute inset-0 h-full w-full"
         >
-          <ellipse cx="100" cy="132" rx="70" ry="82" fill="#FFFFFF" opacity="0.45" />
-          <g fill="var(--color-crimson)" opacity="0.11">
+          {/* 背後のやわらかい光。人物の輪郭を浮かせる */}
+          <ellipse cx="100" cy="126" rx="78" ry="90" fill="#FFFDFB" opacity="0.55" />
+          <ellipse cx="100" cy="126" rx="78" ry="90" fill="none" stroke="var(--color-sakura)" strokeWidth="0.8" opacity="0.7" />
+          {/* 墨に少し赤を混ぜた温かい影。灰色に見せない */}
+          <g fill="#5A4A46" opacity="0.2">
             <ellipse cx="100" cy="104" rx="27" ry="31" />
             <rect x="89" y="124" width="22" height="42" rx="11" />
             <path d="M100 158c-38 0-68 28-68 64v38h136v-38c0-36-30-64-68-64Z" />
@@ -80,29 +86,23 @@ export default function PhotoFrame({
             stroke="var(--color-bg)"
             strokeWidth="3"
             strokeLinecap="round"
-            opacity="0.85"
+            opacity="0.9"
           />
         </svg>
       ) : (
+        // 講座サムネイル：直線と円弧だけの静かな構成
         <svg aria-hidden viewBox="0 0 200 120" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full">
-          <circle cx="168" cy="18" r="52" fill={t.accent} opacity="0.85" />
-          <circle cx="150" cy="96" r="22" fill={t.accent} opacity="0.5" />
-          <path d="M0 108c34-10 58-30 74-58" stroke="var(--color-crimson)" strokeOpacity="0.12" strokeWidth="1.5" fill="none" />
+          <circle cx="172" cy="14" r="48" fill={t.accent} opacity="0.7" />
+          <path d="M0 104c40-6 70-30 88-70" stroke="var(--color-ink)" strokeOpacity="0.08" strokeWidth="1" fill="none" />
+          <path d="M22 24h44" stroke="var(--color-ink)" strokeOpacity="0.1" strokeWidth="1" />
         </svg>
       )}
 
-      {/* 桜のワンポイント（画面あたりの使用量を抑えるため小さく1〜2枚だけ） */}
+      {/* 桜は紋を1つだけ、金の細線で。散らさない。 */}
       {minimal ? null : (
-        <>
-          <span className="absolute top-4 right-4 block h-5 w-5 text-sakura opacity-80">
-            <Petal rotate={24} className="h-full w-full" />
-          </span>
-          {kind === 'portrait' ? (
-            <span className="absolute bottom-5 left-5 block h-6 w-6 text-sakura opacity-60">
-              <SakuraMark className="h-full w-full" />
-            </span>
-          ) : null}
-        </>
+        <span className="absolute top-3 right-3 block h-4 w-4 text-gold opacity-70">
+          <SakuraCrest className="h-full w-full" />
+        </span>
       )}
     </div>
   );

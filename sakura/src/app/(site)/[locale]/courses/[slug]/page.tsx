@@ -172,7 +172,7 @@ export default async function CourseDetailPage({
               const Icon = materialIcon[m.type];
               return (
                 <Card key={m.id} className="flex items-center gap-3 p-4">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-sakura-soft text-crimson">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-line text-ink-2">
                     <Icon className="h-5 w-5" strokeWidth={1.5} />
                   </span>
                   <span className="flex flex-col">
@@ -193,7 +193,7 @@ export default async function CourseDetailPage({
       content: (
         <div className="flex flex-col gap-4">
           <Card className="flex items-start gap-4 p-5">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm bg-sakura-soft text-crimson">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-line text-ink-2">
               {course.certificate === 'certification' ? (
                 <Medal className="h-5 w-5" strokeWidth={1.5} />
               ) : (

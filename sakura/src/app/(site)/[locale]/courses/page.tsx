@@ -77,7 +77,12 @@ export default async function CoursesPage({
             <>
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {visible.map((course) => (
-                  <CourseCard key={course.slug} course={course} locale={locale} />
+                  <CourseCard
+                    key={course.slug}
+                    course={course}
+                    locale={locale}
+                    category={categories.find((cat) => cat.id === course.categoryId)}
+                  />
                 ))}
               </div>
               {!showAll && courses.length > PAGE_SIZE ? (

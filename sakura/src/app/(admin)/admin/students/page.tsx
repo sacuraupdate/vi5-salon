@@ -38,7 +38,7 @@ export default async function StudentsPage() {
               </thead>
               <tbody className="divide-y divide-line">
                 {students.map((s) => (
-                  <tr key={s.id} className="hover:bg-surface">
+                  <tr key={s.id} className="hover:bg-washi">
                     <td className="px-4 py-3 text-[13px]">{s.name}</td>
                     <td className="px-4 py-3 text-[13px] text-ink-muted">{s.country.ja}</td>
                     <td className="px-4 py-3 text-[13px] text-ink-muted">{localeLabelJa[s.language]}</td>

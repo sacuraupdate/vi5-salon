@@ -41,7 +41,7 @@ export default async function MaterialsPage({ params }: { params: Promise<{ loca
                 const Icon = icons[mat.type];
                 return (
                   <Card key={mat.id} className="flex items-center gap-3 p-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-sakura-soft text-crimson">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-line text-ink-2">
                       <Icon className="h-4.5 w-4.5" strokeWidth={1.5} />
                     </span>
                     <span className="flex min-w-0 flex-1 flex-col">

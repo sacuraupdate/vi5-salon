@@ -22,7 +22,7 @@ export default function KpiCard({
       <div className="flex items-center justify-between">
         <span
           className={`flex h-9 w-9 items-center justify-center rounded-sm ${
-            tone === 'alert' ? 'bg-crimson text-white' : 'bg-sakura-soft text-crimson'
+            tone === 'alert' ? 'bg-crimson text-white' : 'bg-washi text-crimson'
           }`}
         >
           <Icon className="h-4.5 w-4.5" strokeWidth={1.5} />

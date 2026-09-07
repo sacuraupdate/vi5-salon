@@ -8,7 +8,7 @@ export default function SiteFooter() {
   const nav = useTranslations('nav');
 
   return (
-    <footer className="mt-20 border-t border-line bg-surface">
+    <footer className="mt-20 border-t border-line bg-washi">
       <div className="mx-auto max-w-6xl px-4 py-12">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div className="flex flex-col gap-3">

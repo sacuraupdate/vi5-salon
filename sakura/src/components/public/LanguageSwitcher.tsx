@@ -45,7 +45,7 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
                   role="option"
                   aria-selected={l === locale}
                   onClick={() => change(l)}
-                  className="flex min-h-11 w-full items-center justify-between px-3 text-left text-sm hover:bg-sakura-soft"
+                  className="flex min-h-11 w-full items-center justify-between px-3 text-left text-sm hover:bg-washi"
                 >
                   {localeLabel[l]}
                   {l === locale ? <Check className="h-4 w-4 text-crimson" /> : null}

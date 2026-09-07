@@ -16,7 +16,7 @@ export default async function AdminRootLayout({ children }: { children: React.Re
 
   return (
     <html lang="ja">
-      <body className="bg-surface text-ink">
+      <body className="bg-washi text-ink">
         <div className="flex min-h-dvh">
           <AdminSidebarWrapper role={role} />
           <div className="flex min-w-0 flex-1 flex-col">

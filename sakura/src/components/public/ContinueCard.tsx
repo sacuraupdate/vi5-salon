@@ -23,7 +23,7 @@ export default async function ContinueCard({
   const m = await getTranslations({ locale, namespace: 'mypage' });
 
   return (
-    <section className="overflow-hidden rounded-md border border-sakura bg-sakura-soft">
+    <section className="overflow-hidden rounded-md border border-line bg-washi">
       <div className="grid gap-4 p-4 sm:grid-cols-[180px_1fr] sm:items-center sm:gap-5 sm:p-5">
         <PhotoFrame
           kind="course"

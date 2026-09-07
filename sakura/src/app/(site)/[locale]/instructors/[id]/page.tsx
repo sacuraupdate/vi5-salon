@@ -5,7 +5,7 @@ import { catalogRepository } from '@/lib/data';
 import type { InstructorId } from '@/lib/data';
 import { t } from '@/lib/format';
 import PhotoFrame from '@/components/brand/PhotoFrame';
-import { PetalField } from '@/components/brand/Sakura';
+import { PetalShadow } from '@/components/brand/Sakura';
 import CourseCard from '@/components/public/CourseCard';
 import { Badge, Card, SectionHeading } from '@/components/ui/Card';
 import { Link } from '@/i18n/navigation';
@@ -37,8 +37,8 @@ export default async function InstructorPage({
 
   return (
     <>
-      <section className="relative overflow-hidden border-b border-line bg-linear-to-b from-sakura-soft to-bg">
-        <PetalField />
+      <section className="washi-texture relative overflow-hidden border-b border-line">
+        <PetalShadow />
         <div className="relative mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:py-12 lg:grid-cols-[340px_1fr] lg:gap-10">
           <PhotoFrame
             src={instructor.photoUrl}
@@ -89,7 +89,7 @@ export default async function InstructorPage({
         </div>
       </section>
 
-      <section className="border-t border-line bg-surface">
+      <section className="border-t border-line bg-washi">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
           <SectionHeading
             eyebrow="Courses"

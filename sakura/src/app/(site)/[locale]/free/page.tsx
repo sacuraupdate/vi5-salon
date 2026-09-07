@@ -66,7 +66,7 @@ export default async function FreePage({ params }: { params: Promise<{ locale: s
         })}
       </div>
 
-      <Card className="mt-10 flex flex-col items-start gap-3 border-sakura bg-sakura-soft p-6 sm:flex-row sm:items-center sm:justify-between">
+      <Card className="mt-10 flex flex-col items-start gap-3 border-line bg-washi p-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-1">
           <h2 className="text-lg">{f('ctaTitle')}</h2>
           <p className="max-w-xl text-sm leading-relaxed text-ink-muted">{f('ctaBody')}</p>

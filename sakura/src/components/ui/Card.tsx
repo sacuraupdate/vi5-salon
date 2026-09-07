@@ -11,12 +11,33 @@ export function Card({
 }) {
   return (
     <div
-      className={`rounded-md border border-line bg-bg shadow-card ${
-        hover ? 'transition-shadow hover:shadow-lift' : ''
+      className={`rounded-sm border border-line bg-bg ${
+        hover ? 'transition-colors hover:border-ink-2' : ''
       } ${className}`}
     >
       {children}
     </div>
+  );
+}
+
+/** アイコンを収める枠。面で塗らず、細い線で囲う */
+export function IconFrame({
+  children,
+  className = '',
+  tone = 'default',
+}: {
+  children: ReactNode;
+  className?: string;
+  tone?: 'default' | 'crimson';
+}) {
+  return (
+    <span
+      className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border ${
+        tone === 'crimson' ? 'border-crimson text-crimson' : 'border-line text-ink-2'
+      } ${className}`}
+    >
+      {children}
+    </span>
   );
 }
 
@@ -26,18 +47,20 @@ export function Badge({
   className = '',
 }: {
   children: ReactNode;
-  tone?: 'neutral' | 'sakura' | 'crimson' | 'outline';
+  tone?: 'neutral' | 'sakura' | 'crimson' | 'outline' | 'gold';
   className?: string;
 }) {
   const tones = {
-    neutral: 'bg-surface text-ink-muted',
-    sakura: 'bg-sakura-soft text-crimson',
+    neutral: 'border border-line text-ink-muted',
+    // 桜色は細い線と文字色のみ。面では塗らない
+    sakura: 'border border-sakura text-crimson',
     crimson: 'bg-crimson text-white',
     outline: 'border border-line text-ink-muted',
+    gold: 'border border-gold text-gold',
   } as const;
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-[11px] leading-5 font-medium ${tones[tone]} ${className}`}
+      className={`inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-[10px] leading-5 tracking-[0.08em] ${tones[tone]} ${className}`}
     >
       {children}
     </span>
@@ -59,13 +82,11 @@ export function SectionHeading({
 }) {
   const alignment = align === 'center' ? 'text-center items-center' : 'text-left items-start';
   return (
-    <div className={`flex flex-col gap-2 ${alignment} ${action ? 'sm:flex-row sm:justify-between sm:items-end' : ''}`}>
-      <div className={`flex flex-col gap-1.5 ${alignment}`}>
-        {eyebrow ? (
-          <span className="text-[11px] font-medium tracking-[0.16em] text-crimson uppercase">{eyebrow}</span>
-        ) : null}
-        <h2 className="text-xl sm:text-2xl">{title}</h2>
-        {lead ? <p className="max-w-2xl text-sm leading-relaxed text-ink-muted">{lead}</p> : null}
+    <div className={`flex flex-col gap-3 ${alignment} ${action ? 'sm:flex-row sm:justify-between sm:items-end' : ''}`}>
+      <div className={`flex flex-col gap-2.5 ${alignment}`}>
+        {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
+        <h2 className="text-[21px] sm:text-[26px]">{title}</h2>
+        {lead ? <p className="max-w-2xl text-[13px] leading-loose text-ink-muted">{lead}</p> : null}
       </div>
       {action}
     </div>
@@ -74,8 +95,8 @@ export function SectionHeading({
 
 export function ProgressBar({ value, className = '' }: { value: number; className?: string }) {
   return (
-    <div className={`h-1.5 w-full overflow-hidden rounded-sm bg-line ${className}`}>
-      <div className="h-full rounded-sm bg-crimson" style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
+    <div className={`h-px w-full bg-line ${className}`} style={{ height: '2px' }}>
+      <div className="h-full bg-crimson" style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
     </div>
   );
 }
@@ -92,12 +113,10 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-md border border-dashed border-line bg-surface px-6 py-12 text-center">
-      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-sakura-soft text-crimson">
-        {icon}
-      </span>
-      <p className="text-base font-medium">{title}</p>
-      <p className="max-w-sm text-sm leading-relaxed text-ink-muted">{body}</p>
+    <div className="flex flex-col items-center gap-3 rounded-sm border border-line bg-washi px-6 py-12 text-center">
+      <IconFrame>{icon}</IconFrame>
+      <p className="font-serif text-base text-ink">{title}</p>
+      <p className="max-w-sm text-[13px] leading-loose text-ink-muted">{body}</p>
       {action}
     </div>
   );

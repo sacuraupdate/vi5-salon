@@ -23,7 +23,9 @@ export default function AdminSidebar({ role }: { role: AdminRole }) {
             href={i.href}
             onClick={() => setOpen(false)}
             className={`flex min-h-11 items-center gap-2.5 rounded-sm px-3 text-[13px] transition-colors ${
-              active(i.href) ? 'bg-sakura-soft font-medium text-crimson' : 'text-ink hover:bg-surface'
+              active(i.href)
+                ? 'border-l-2 border-crimson bg-washi pl-2.5 font-medium text-crimson'
+                : 'border-l-2 border-transparent text-ink-2 hover:bg-washi'
             }`}
           >
             <i.icon className="h-4.5 w-4.5 shrink-0" strokeWidth={1.5} />

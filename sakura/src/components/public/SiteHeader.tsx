@@ -92,7 +92,7 @@ export default function SiteHeader() {
                   href={l.href}
                   onClick={() => setOpen(false)}
                   className={`flex min-h-12 items-center rounded-sm px-3 text-[15px] ${
-                    isActive(l.href) ? 'bg-sakura-soft text-crimson' : 'hover:bg-surface'
+                    isActive(l.href) ? 'bg-washi text-crimson' : 'hover:bg-washi'
                   }`}
                 >
                   {l.label}

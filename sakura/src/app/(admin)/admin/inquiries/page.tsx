@@ -26,7 +26,7 @@ export default async function InquiriesPage() {
         <Card className="p-0">
           <ul className="divide-y divide-line">
             {items.map((q) => (
-              <li key={q.id} className="flex flex-col gap-2 p-4 hover:bg-surface sm:flex-row sm:items-center sm:justify-between">
+              <li key={q.id} className="flex flex-col gap-2 p-4 hover:bg-washi sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex min-w-0 flex-col gap-1">
                   <p className="text-[14px] text-ink">{q.subject}</p>
                   <p className="text-[11px] text-ink-muted">

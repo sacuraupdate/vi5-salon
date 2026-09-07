@@ -1,7 +1,7 @@
 import { Info } from 'lucide-react';
 import type { ReactNode } from 'react';
 import Logo from '@/components/brand/Logo';
-import { PetalField, SakuraDivider } from '@/components/brand/Sakura';
+import { PetalShadow, SakuraDivider } from '@/components/brand/Sakura';
 
 /** ログイン／新規登録で共通のレイアウト。左にブランド面、右にフォーム。 */
 export default function AuthShell({
@@ -22,8 +22,8 @@ export default function AuthShell({
   return (
     <div className="mx-auto grid max-w-5xl gap-0 px-4 py-8 sm:py-14 lg:grid-cols-2 lg:gap-10">
       {/* ブランド面（モバイルでは非表示にして1画面1目的を保つ） */}
-      <div className="relative hidden overflow-hidden rounded-md border border-line bg-linear-to-b from-sakura-soft to-bg p-8 lg:flex lg:flex-col lg:justify-between">
-        <PetalField />
+      <div className="relative hidden overflow-hidden washi-texture rounded-sm border border-line p-8 lg:flex lg:flex-col lg:justify-between">
+        <PetalShadow />
         <div className="relative">
           <Logo />
         </div>
@@ -41,7 +41,7 @@ export default function AuthShell({
 
         {children}
 
-        <p className="mt-5 flex items-start gap-2 rounded-sm border border-line bg-surface p-3 text-[11px] leading-relaxed text-ink-muted">
+        <p className="mt-5 flex items-start gap-2 rounded-sm border border-line bg-washi p-3 text-[11px] leading-relaxed text-ink-muted">
           <Info className="mt-px h-3.5 w-3.5 shrink-0" />
           {demoNote}
         </p>
@@ -76,7 +76,7 @@ export function Field({
         type={type}
         autoComplete={autoComplete}
         placeholder={placeholder}
-        className="min-h-12 rounded-sm border border-line bg-bg px-3 text-ink placeholder:text-ink-muted/60 focus:border-crimson focus:outline-none"
+        className="min-h-12 rounded-sm border border-line bg-bg px-3 text-ink placeholder:text-ink-muted/70 focus:border-crimson focus:outline-none"
       />
     </div>
   );

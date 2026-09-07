@@ -19,7 +19,7 @@ export default function ComingSoon({
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-5">
       <header className="flex items-start gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm bg-sakura-soft text-crimson">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-line text-ink-2">
           <Icon className="h-5 w-5" strokeWidth={1.5} />
         </span>
         <div className="flex flex-col gap-1">
@@ -28,7 +28,7 @@ export default function ComingSoon({
         </div>
       </header>
 
-      <Card className="flex items-center gap-3 border-sakura bg-sakura-soft p-4">
+      <Card className="flex items-center gap-3 border-line bg-washi p-4">
         <Construction className="h-5 w-5 shrink-0 text-crimson" strokeWidth={1.5} />
         <p className="text-[13px] leading-relaxed text-ink">
           この画面は Phase 2 以降で作ります。今は入る予定の機能だけをご確認ください。

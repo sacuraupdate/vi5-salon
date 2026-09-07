@@ -63,7 +63,7 @@ export default async function MyPage({ params }: { params: Promise<{ locale: str
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {stats.map((s) => (
           <Card key={s.label} className="flex flex-col gap-2 p-4">
-            <span className="flex h-9 w-9 items-center justify-center rounded-sm bg-sakura-soft text-crimson">
+            <span className="flex h-9 w-9 items-center justify-center rounded-sm border border-line text-ink-2">
               <s.icon className="h-4.5 w-4.5" strokeWidth={1.5} />
             </span>
             <span className="font-serif text-2xl leading-none">{s.value}</span>

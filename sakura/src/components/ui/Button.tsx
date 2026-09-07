@@ -5,19 +5,20 @@ type Variant = 'primary' | 'secondary' | 'ghost';
 type Size = 'md' | 'lg';
 
 const base =
-  'inline-flex items-center justify-center gap-2 rounded-sm font-medium transition-colors disabled:opacity-50';
+  'inline-flex items-center justify-center gap-2 rounded-sm font-medium tracking-[0.06em] transition-colors disabled:opacity-50';
 
 const variants: Record<Variant, string> = {
-  // 深赤は CTA と重要箇所のみ。面で塗り広げない。
+  // 主ボタン：深赤のベタ。ページ内で目立たせたい一箇所に使う
   primary: 'bg-crimson text-white hover:bg-crimson-deep',
-  secondary: 'border border-line bg-bg text-ink hover:border-crimson hover:text-crimson',
-  ghost: 'text-crimson hover:bg-sakura-soft',
+  // 副ボタン：白背景＋濃色の線。主ボタンとはっきり差をつける
+  secondary: 'border border-ink-2 bg-bg text-ink hover:bg-ink hover:text-white',
+  ghost: 'text-crimson underline-offset-4 hover:underline',
 };
 
 // タップ対象は最小44px（iPhone Safari を主対象にした設計）
 const sizes: Record<Size, string> = {
-  md: 'min-h-11 px-4 text-sm',
-  lg: 'min-h-12 px-6 text-[15px]',
+  md: 'min-h-11 px-5 text-[13px]',
+  lg: 'min-h-12 px-7 text-sm',
 };
 
 export function buttonClass(variant: Variant = 'primary', size: Size = 'md', className = '') {
