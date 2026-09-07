@@ -99,7 +99,10 @@
     "routeFemcareDesc": "お客様のライフステージに合わせた提案力を。",
     "routeStep": "STEP",
     "routeGoal": "認定へ",
-    "quizCta": "3問で診断する"
+    "quizCta": "3問で診断する",
+    "firstPickTitle": "迷ったら、まずこれ",
+    "firstPickDesc": "日本式サロンを学びたい方の最初の1講座",
+    "routeGoalCompletion": "修了証へ"
   },
   "courses": {
     "title": "講座一覧",
@@ -140,7 +143,9 @@
     "reviewsCount": "{count}件のレビュー",
     "noReviews": "まだレビューがありません",
     "noReviewsBody": "受講後にレビューを投稿いただけます。",
-    "instructorLabel": "講師"
+    "instructorLabel": "講師",
+    "prevTitle": "この講座の前におすすめ",
+    "nextTitle": "この講座の次におすすめ"
   },
   "instructor": {
     "profile": "プロフィール",
@@ -252,7 +257,10 @@
     "restart": "もう一度診断する",
     "close": "閉じる",
     "back": "戻る",
-    "seeAll": "講座一覧を見る"
+    "seeAll": "講座一覧を見る",
+    "routeTitle": "あなたのおすすめ学習ルート",
+    "routeLead": "この順番で進めると、最終的にここまで到達できます。",
+    "flagship": "中心となる講座"
   },
   "gettingStarted": {
     "title": "初めての方へ",

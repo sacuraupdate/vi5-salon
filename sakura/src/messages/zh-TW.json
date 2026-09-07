@@ -99,7 +99,10 @@
     "routeFemcareDesc": "依顧客生命階段調整的提案力。",
     "routeStep": "STEP",
     "routeGoal": "邁向認證",
-    "quizCta": "三題快速診斷"
+    "quizCta": "三題快速診斷",
+    "firstPickTitle": "不知從何開始？先上這門",
+    "firstPickDesc": "想學日式沙龍的人的第一門課",
+    "routeGoalCompletion": "邁向結業"
   },
   "courses": {
     "title": "課程一覽",
@@ -140,7 +143,9 @@
     "reviewsCount": "{count} 則評價",
     "noReviews": "尚無評價",
     "noReviewsBody": "上完課程後即可留下評價。",
-    "instructorLabel": "講師"
+    "instructorLabel": "講師",
+    "prevTitle": "建議在此之前",
+    "nextTitle": "建議接著學習"
   },
   "instructor": {
     "profile": "簡介",
@@ -252,7 +257,10 @@
     "restart": "重新診斷",
     "close": "關閉",
     "back": "返回",
-    "seeAll": "瀏覽全部課程"
+    "seeAll": "瀏覽全部課程",
+    "routeTitle": "為您推薦的學習路線",
+    "routeLead": "依此順序學習，最終能到達這裡。",
+    "flagship": "核心課程"
   },
   "gettingStarted": {
     "title": "初次造訪",

@@ -99,7 +99,10 @@
     "routeFemcareDesc": "고객의 라이프 스테이지에 맞춘 제안력을.",
     "routeStep": "STEP",
     "routeGoal": "인정으로",
-    "quizCta": "3문항으로 진단하기"
+    "quizCta": "3문항으로 진단하기",
+    "firstPickTitle": "고민된다면, 먼저 이것",
+    "firstPickDesc": "일본식 살롱을 배우고 싶은 분의 첫 강좌",
+    "routeGoalCompletion": "수료증으로"
   },
   "courses": {
     "title": "강좌 목록",
@@ -140,7 +143,9 @@
     "reviewsCount": "{count}개의 리뷰",
     "noReviews": "아직 리뷰가 없습니다",
     "noReviewsBody": "수강 후 리뷰를 남기실 수 있습니다.",
-    "instructorLabel": "강사"
+    "instructorLabel": "강사",
+    "prevTitle": "이 강좌 전에 추천",
+    "nextTitle": "이 강좌 다음에 추천"
   },
   "instructor": {
     "profile": "프로필",
@@ -252,7 +257,10 @@
     "restart": "다시 진단하기",
     "close": "닫기",
     "back": "뒤로",
-    "seeAll": "전체 강좌 보기"
+    "seeAll": "전체 강좌 보기",
+    "routeTitle": "추천 학습 루트",
+    "routeLead": "이 순서로 진행하면 최종적으로 여기까지 도달합니다.",
+    "flagship": "중심이 되는 강좌"
   },
   "gettingStarted": {
     "title": "처음 오신 분께",

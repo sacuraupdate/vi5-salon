@@ -99,7 +99,10 @@
     "routeFemcareDesc": "Advice that fits each stage of a guest’s life.",
     "routeStep": "STEP",
     "routeGoal": "To certification",
-    "quizCta": "Take the 3-question quiz"
+    "quizCta": "Take the 3-question quiz",
+    "firstPickTitle": "Not sure? Start here",
+    "firstPickDesc": "The first course for anyone learning the Japanese salon",
+    "routeGoalCompletion": "To completion"
   },
   "courses": {
     "title": "Courses",
@@ -140,7 +143,9 @@
     "reviewsCount": "{count} reviews",
     "noReviews": "No reviews yet",
     "noReviewsBody": "You can leave a review after taking the course.",
-    "instructorLabel": "Instructor"
+    "instructorLabel": "Instructor",
+    "prevTitle": "Recommended before this",
+    "nextTitle": "Recommended after this"
   },
   "instructor": {
     "profile": "Profile",
@@ -252,7 +257,10 @@
     "restart": "Start over",
     "close": "Close",
     "back": "Back",
-    "seeAll": "Browse all courses"
+    "seeAll": "Browse all courses",
+    "routeTitle": "Your recommended route",
+    "routeLead": "Take them in this order and you will reach this point.",
+    "flagship": "Core course"
   },
   "gettingStarted": {
     "title": "Start here",

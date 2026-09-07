@@ -1,4 +1,6 @@
 import {
+  ArrowLeft,
+  ArrowRight,
   Award,
   BadgeCheck,
   CheckCircle2,
@@ -15,6 +17,7 @@ import {
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { catalogRepository } from '@/lib/data';
+import { neighboursOf } from '@/lib/quiz';
 import type { MaterialType } from '@/lib/data';
 import { formatPrice, t } from '@/lib/format';
 import PhotoFrame from '@/components/brand/PhotoFrame';
@@ -51,6 +54,12 @@ export default async function CourseDetailPage({
 
   const d = await getTranslations({ locale, namespace: 'courseDetail' });
   const common = await getTranslations({ locale, namespace: 'common' });
+
+  // 学習ルート上の前後の講座。受講後に「次に何を学ぶか」で迷わせないため
+  const all = await catalogRepository.listCourses();
+  const around = neighboursOf(course.slug);
+  const prevCourse = around.prev ? all.find((c) => c.slug === around.prev) : undefined;
+  const nextCourse = around.next ? all.find((c) => c.slug === around.next) : undefined;
 
   const priceLabel = course.isFree ? common('free') : formatPrice(course.price, locale);
 
@@ -317,6 +326,47 @@ export default async function CourseDetailPage({
             <div className="mt-2 min-w-0">
               <Tabs items={tabs} />
             </div>
+
+            {/* 学習ルート上の前後。購入後に次の一手で迷わせない */}
+            {prevCourse || nextCourse ? (
+              <nav aria-label={d('nextTitle')} className="mt-10 grid gap-4 border-t border-line pt-8 sm:grid-cols-2">
+                {[
+                  { label: d('prevTitle'), c: prevCourse, dir: 'prev' as const },
+                  { label: d('nextTitle'), c: nextCourse, dir: 'next' as const },
+                ]
+                  .filter((x) => x.c)
+                  .map(({ label, c, dir }) => (
+                    <Link
+                      key={dir}
+                      href={`/courses/${c!.slug}`}
+                      className="group flex flex-col gap-2 border border-line p-4 transition-colors hover:border-navy"
+                    >
+                      <span className="flex items-center gap-2 text-[10px] tracking-[0.16em] text-ink-muted">
+                        {dir === 'prev' ? <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.5} /> : null}
+                        {label}
+                        {dir === 'next' ? <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.5} /> : null}
+                      </span>
+                      <span className="font-serif text-[15px] leading-relaxed text-ink">
+                        {t(c!.title, locale)}
+                      </span>
+                      <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] tracking-[0.08em] text-ink-muted">
+                        <span className="text-pine">{common(`level.${c!.level}`)}</span>
+                        <span aria-hidden className="text-line">|</span>
+                        <span>
+                          {c!.totalMinutes}
+                          {common('minutes')}
+                        </span>
+                        {c!.certificate ? (
+                          <>
+                            <span aria-hidden className="text-line">|</span>
+                            <span>{common(`certificate.${c!.certificate}`)}</span>
+                          </>
+                        ) : null}
+                      </span>
+                    </Link>
+                  ))}
+              </nav>
+            ) : null}
           </div>
 
           {/* 上部右：購入情報カード（デスクトップは追従） */}

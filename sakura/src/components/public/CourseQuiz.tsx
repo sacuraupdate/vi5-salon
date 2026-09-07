@@ -5,39 +5,28 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { buttonClass } from '@/components/ui/Button';
+import RouteFlow, { type RouteData } from './RouteFlow';
 import {
   QUIZ_LEVELS,
   QUIZ_ROLES,
   QUIZ_TOPICS,
-  recommendCourses,
+  recommendRoute,
   type QuizAnswer,
   type QuizExperience,
   type QuizRole,
   type QuizTopic,
 } from '@/lib/quiz';
-import type { Course } from '@/lib/data';
-
-/** 表示に必要な最小限だけを受け取る（サーバー側で整形済み） */
-export type QuizCourse = Pick<Course, 'slug' | 'level' | 'totalMinutes' | 'lessonCount' | 'categoryId' | 'isFree'> & {
-  title: string;
-  gain: string;
-  certificateLabel: string | null;
-  levelLabel: string;
-  priceLabel: string;
-  materialCount: number;
-};
 
 /**
  * 3問のおすすめ講座診断。ルールベースで、外部APIは使わない。
- * ページ遷移させず、モーダル内のステップUIで完結させる。
+ * 結果は単発の講座ではなく「最終ゴールまでの学習ルート」で示す。
  */
 export default function CourseQuiz({
-  courses,
+  routes,
   label,
   variant = 'secondary',
 }: {
-  courses: (QuizCourse & { raw: Course })[];
-  /** 開くボタンの文言。未指定なら診断用の既定文言 */
+  routes: RouteData[];
   label?: string;
   variant?: 'primary' | 'secondary';
 }) {
@@ -58,66 +47,32 @@ export default function CourseQuiz({
   const questions = [
     {
       label: q('q1'),
-      options: QUIZ_ROLES.map((v) => ({
-        value: v,
-        label: q(`role${v[0].toUpperCase()}${v.slice(1)}` as 'roleOwner'),
-      })),
+      options: QUIZ_ROLES.map((v) => ({ value: v, label: q(`role${v[0].toUpperCase()}${v.slice(1)}` as 'roleOwner') })),
       pick: (v: string) => setAnswer((a) => ({ ...a, role: v as QuizRole })),
     },
     {
       label: q('q2'),
-      options: QUIZ_TOPICS.map((v) => ({
-        value: v,
-        label: q(`topic${v[0].toUpperCase()}${v.slice(1)}` as 'topicSalon'),
-      })),
+      options: QUIZ_TOPICS.map((v) => ({ value: v, label: q(`topic${v[0].toUpperCase()}${v.slice(1)}` as 'topicSalon') })),
       pick: (v: string) => setAnswer((a) => ({ ...a, topic: v as QuizTopic })),
     },
     {
       label: q('q3'),
-      options: QUIZ_LEVELS.map((v) => ({
-        value: v,
-        label: q(`exp${v[0].toUpperCase()}${v.slice(1)}` as 'expBeginner'),
-      })),
+      options: QUIZ_LEVELS.map((v) => ({ value: v, label: q(`exp${v[0].toUpperCase()}${v.slice(1)}` as 'expBeginner') })),
       pick: (v: string) => setAnswer((a) => ({ ...a, experience: v as QuizExperience })),
     },
   ];
 
   const done = step >= questions.length;
-  const result =
-    done && answer.role && answer.topic && answer.experience
-      ? recommendCourses(
-          courses.map((c) => c.raw),
-          answer as QuizAnswer,
-        )
-      : null;
-  const view = (slug?: string) => courses.find((c) => c.slug === slug);
 
-  const card = (label: string, c?: QuizCourse) =>
-    c ? (
-      <div className="border border-line p-4">
-        <span className="eyebrow text-vermilion">{label}</span>
-        <h4 className="mt-2 font-serif text-[15px] leading-relaxed text-ink">{c.title}</h4>
-        <p className="mt-2 border-l-2 border-vermilion pl-3 text-[12px] leading-relaxed text-ink-2">{c.gain}</p>
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] tracking-[0.08em] text-ink-muted">
-          <span>{c.levelLabel}</span>
-          <span aria-hidden className="text-line">|</span>
-          <span>{c.totalMinutes}分</span>
-          {c.certificateLabel ? (
-            <>
-              <span aria-hidden className="text-line">|</span>
-              <span>{c.certificateLabel}</span>
-            </>
-          ) : null}
-        </div>
-        <Link
-          href={`/courses/${c.slug}`}
-          onClick={close}
-          className="mt-3 inline-flex items-center gap-1.5 text-[13px] text-vermilion hover:underline"
-        >
-          {c.priceLabel}
-        </Link>
-      </div>
-    ) : null;
+  // 回答からルートを決め、経験に応じて先頭（無料入門）を省く
+  let resultRoute: RouteData | null = null;
+  if (done && answer.role && answer.topic && answer.experience) {
+    const rec = recommendRoute(answer as QuizAnswer);
+    const base = routes.find((r) => r.id === rec.routeId);
+    if (base) {
+      resultRoute = { ...base, steps: base.steps.filter((s) => rec.slugs.includes(s.slug)) };
+    }
+  }
 
   return (
     <>
@@ -127,9 +82,14 @@ export default function CourseQuiz({
       </button>
 
       {open ? (
-        <div role="dialog" aria-modal="true" aria-label={q('title')} className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={q('title')}
+          className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+        >
           <div className="absolute inset-0 bg-navy/50" onClick={close} aria-hidden />
-          <div className="safe-bottom relative flex max-h-[88dvh] w-full max-w-lg flex-col overflow-y-auto border border-line bg-bg p-6 sm:max-h-[85dvh] sm:p-8">
+          <div className="safe-bottom relative flex max-h-[88dvh] w-full max-w-xl flex-col overflow-y-auto border border-line bg-bg p-6 sm:max-h-[85dvh] sm:p-8">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div className="flex flex-col gap-1.5">
                 <span className="eyebrow">{q('title')}</span>
@@ -187,12 +147,10 @@ export default function CourseQuiz({
               </>
             ) : (
               <>
-                <h3 className="mb-4 font-serif text-[17px] tracking-[0.06em] text-ink">{q('resultTitle')}</h3>
-                <div className="flex flex-col gap-3">
-                  {card(q('first'), view(result?.first?.slug))}
-                  {card(q('next'), view(result?.next?.slug))}
-                </div>
-                <div className="mt-5 flex flex-wrap gap-3">
+                <h3 className="font-serif text-[17px] tracking-[0.06em] text-ink">{q('routeTitle')}</h3>
+                <p className="mt-2 mb-5 text-[12px] leading-loose text-ink-muted">{q('routeLead')}</p>
+                {resultRoute ? <RouteFlow route={resultRoute} compact /> : null}
+                <div className="mt-6 flex flex-wrap gap-3">
                   <button type="button" onClick={reset} className={buttonClass('secondary')}>
                     {q('restart')}
                   </button>

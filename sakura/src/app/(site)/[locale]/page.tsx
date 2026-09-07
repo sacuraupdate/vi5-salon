@@ -24,8 +24,7 @@ import { buttonClass } from '@/components/ui/Button';
 import CourseQuiz from '@/components/public/CourseQuiz';
 import LearningRoutes from '@/components/public/LearningRoutes';
 import { brandAsset, BRAND_FILES } from '@/lib/brand-assets';
-import { learningRoutes } from '@/lib/quiz';
-import { formatPrice } from '@/lib/format';
+import { learningRoutes, routeGoalKind } from '@/lib/quiz';
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -33,6 +32,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   const h = await getTranslations({ locale, namespace: 'home' });
   const common = await getTranslations({ locale, namespace: 'common' });
+  const q = await getTranslations({ locale, namespace: 'quiz' });
 
   const [featured, categories, courses, instructors] = await Promise.all([
     catalogRepository.listFeaturedCourses(3),
@@ -56,43 +56,37 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   const bySlug = new Map(courses.map((c) => [c.slug, c]));
 
-  // 診断モーダルへ渡す表示用データ（訳出はサーバー側で済ませる）
-  const quizCourses = courses.map((c) => ({
-    raw: c,
-    slug: c.slug,
-    level: c.level,
-    totalMinutes: c.totalMinutes,
-    lessonCount: c.lessonCount,
-    categoryId: c.categoryId,
-    isFree: c.isFree,
-    title: t(c.title, locale),
-    gain: t(c.highlights, locale)[0] ?? '',
-    levelLabel: common(`level.${c.level}`),
-    certificateLabel: c.certificate ? common(`certificate.${c.certificate}`) : null,
-    priceLabel: c.isFree ? common('free') : formatPrice(c.price, locale),
-    materialCount: c.materials.length,
-  }));
-
   const routeLabels: Record<string, { label: string; desc: string }> = {
     salon: { label: h('routeSalon'), desc: h('routeSalonDesc') },
     technique: { label: h('routeTechnique'), desc: h('routeTechniqueDesc') },
     femcare: { label: h('routeFemcare'), desc: h('routeFemcareDesc') },
   };
-  const routes = learningRoutes.map((r) => ({
-    id: r.id,
-    label: routeLabels[r.id].label,
-    desc: routeLabels[r.id].desc,
-    steps: r.slugs
-      .map((slug) => bySlug.get(slug))
-      .filter((c): c is NonNullable<typeof c> => Boolean(c))
-      .map((c) => ({
-        slug: c.slug,
-        title: t(c.title, locale),
-        levelLabel: common(`level.${c.level}`),
-        isFree: c.isFree,
-        freeLabel: common('free'),
-      })),
-  }));
+  const routes = learningRoutes.map((r) => {
+    // 終点は実データから判定する。認定対象が無いルートで「認定へ」と出さない
+    const goalKind = routeGoalKind(courses, r.slugs);
+    return {
+      id: r.id,
+      label: routeLabels[r.id].label,
+      desc: routeLabels[r.id].desc,
+      goalKind,
+      goalLabel: goalKind === 'certification' ? h('routeGoal') : h('routeGoalCompletion'),
+      flagshipLabel: q('flagship'),
+      steps: r.slugs
+        .map((slug) => bySlug.get(slug))
+        .filter((c): c is NonNullable<typeof c> => Boolean(c))
+        .map((c) => ({
+          slug: c.slug,
+          title: t(c.title, locale),
+          levelLabel: common(`level.${c.level}`),
+          isFree: c.isFree,
+          freeLabel: common('free'),
+          isFlagship: c.slug === r.flagship,
+        })),
+    };
+  });
+
+  // 迷ったら、まずこれ＝日本式サロンの旗艦講座
+  const firstPick = bySlug.get('japanese-salon-standard');
 
   const countOf = (group: string) =>
     courses.filter((c) => categories.find((cat) => cat.id === c.categoryId)?.group === group).length;
@@ -154,7 +148,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
             {/* 主要CTA＝診断。無料講座は最重要ボタンにしない */}
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-              <CourseQuiz courses={quizCourses} label={h('ctaPrimary')} variant="primary" />
+              <CourseQuiz routes={routes} label={h('ctaPrimary')} variant="primary" />
               <Link href="/courses" className={buttonClass('secondary', 'lg')}>
                 {h('ctaSecondary')}
                 <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
@@ -203,6 +197,27 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       <section className="border-b border-line bg-bg">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
           <SectionHeading eyebrow="Learning Routes" title={h('routesTitle')} lead={h('routesLead')} />
+
+          {/* 迷ったら、まずこれ。旗艦講座を1件だけ、コンパクトに示す */}
+          {firstPick ? (
+            <Link
+              href={`/courses/${firstPick.slug}`}
+              className="mt-6 flex flex-col gap-3 border-l-2 border-vermilion bg-washi/70 px-5 py-4 transition-colors hover:bg-washi sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+            >
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] tracking-[0.2em] text-vermilion">{h('firstPickTitle')}</span>
+                <span className="text-[9px] tracking-[0.28em] text-ink-muted uppercase">Japanese Salon Standard</span>
+                <span className="font-serif text-[17px] tracking-[0.06em] text-ink">
+                  {t(firstPick.title, locale)}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 sm:shrink-0">
+                <span className="text-[12px] leading-relaxed text-ink-2">{h('firstPickDesc')}</span>
+                <ArrowRight className="h-4 w-4 shrink-0 text-vermilion" strokeWidth={1.5} />
+              </div>
+            </Link>
+          ) : null}
+
           <div className="mt-8">
             <LearningRoutes routes={routes} />
           </div>
