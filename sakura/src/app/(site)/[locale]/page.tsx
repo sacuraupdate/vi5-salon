@@ -113,25 +113,32 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     <>
       {/* ① HERO ─ 背景は完全な白。和紙は使わない */}
       <section className="relative overflow-hidden border-b border-line bg-bg">
-        {/* 桜の枝は右上の背面に置き、見出しやSAKURAには重ねない */}
+        {/* 桜の枝は右半分を切り抜いた枠の中だけに描く。見出しには決して重ならない */}
         <BrandBranch />
 
-        <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-10 px-4 pt-10 pb-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14 lg:pt-28 lg:pb-16">
-          <div className="flex flex-col items-start gap-6">
+        {/* 花びらは3枚だけ。右上から中央へ流れる軌跡をつくる（PCのみ）。
+            正式な桜素材が入るまでは描かない＝桜色の面を増やさない（assetOnly） */}
+        <BrandPetals className="top-[7%] right-[9%] hidden h-14 w-14 lg:block" opacity={0.5} assetOnly />
+        <BrandPetals className="top-[34%] right-[27%] hidden h-10 w-10 lg:block" opacity={0.36} rotate={26} assetOnly />
+        <BrandPetals className="top-[62%] right-[41%] hidden h-8 w-8 lg:block" opacity={0.24} rotate={-14} assetOnly />
+
+        <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-8 px-4 pt-8 pb-9 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12 lg:pt-16 lg:pb-12">
+          <div className="flex flex-col items-start gap-5">
             <span className="flex items-center gap-3">
               <BrandCrest className="h-5 w-5 text-vermilion" />
               <span className="eyebrow">{h('eyebrow')}</span>
             </span>
 
-            <h1 className="text-[28px] leading-[1.5] tracking-[0.06em] sm:text-[36px] lg:text-[40px]">
+            {/* 大見出しは墨と濃紺。朱赤は下の短い罫だけに使う */}
+            <h1 className="text-[27px] leading-[1.45] tracking-[0.06em] sm:text-[34px] lg:text-[38px]">
               {h('title')}
               <br />
-              <span className="text-vermilion">{h('titleAccent')}</span>
+              <span className="text-navy">{h('titleAccent')}</span>
             </h1>
 
-            <span className="h-px w-16 bg-vermilion" aria-hidden />
+            <span className="h-[2px] w-14 bg-vermilion" aria-hidden />
 
-            <p className="max-w-xl text-[13px] leading-loose text-ink-2 sm:text-sm">{h('lead')}</p>
+            <p className="max-w-xl text-[13px] leading-[1.9] text-ink-2 sm:text-sm">{h('lead')}</p>
 
             {/* 主要CTA＝診断。無料講座は最重要ボタンにしない */}
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
@@ -142,14 +149,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               </Link>
             </div>
 
-            {/* こんな方におすすめ。カードにせずアイコン＋短いラベルで済ませる */}
-            <div className="w-full border-t border-line pt-5">
-              <span className="eyebrow">{h('audienceTitle')}</span>
-              <ul className="mt-3 grid grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-4">
-                {audience.map((a) => (
-                  <li key={a.label} className="flex items-center gap-2.5">
-                    <a.icon className="h-4 w-4 shrink-0 text-pine" strokeWidth={1.25} />
-                    <span className="text-[12px] leading-tight text-ink-2">{a.label}</span>
+            {/* こんな方におすすめ。カードにせず、濃紺の罫とアイコンで1行として強く見せる */}
+            <div className="w-full border-t-2 border-navy/25 pt-4">
+              <span className="text-[10px] tracking-[0.3em] text-navy">{h('audienceTitle')}</span>
+              <ul className="mt-3 grid grid-cols-2 gap-x-6 gap-y-3.5 sm:grid-cols-4 sm:gap-x-4">
+                {audience.map((a, i) => (
+                  <li
+                    key={a.label}
+                    className={`flex items-center gap-2.5 ${i === 0 ? '' : 'sm:border-l sm:border-line sm:pl-4'}`}
+                  >
+                    <a.icon className="h-5 w-5 shrink-0 text-navy" strokeWidth={1.5} />
+                    <span className="text-[13px] leading-[1.35] font-medium text-ink">{a.label}</span>
                   </li>
                 ))}
               </ul>
@@ -163,10 +173,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               alt="SAKURA"
               kind="portrait"
               priority
-              className="h-72 w-full border border-navy/25 sm:h-96 lg:h-[440px]"
+              className="h-64 w-full border border-navy/25 sm:h-80 lg:h-[380px]"
             />
             <span
-              className="absolute top-8 -left-4 hidden bg-bg px-2 py-5 font-serif text-[22px] whitespace-nowrap tracking-[0.32em] text-ink lg:block"
+              className="absolute top-7 -left-4 hidden bg-bg px-2 py-5 font-serif text-[21px] whitespace-nowrap tracking-[0.32em] text-ink lg:block"
               style={{ writingMode: 'vertical-rl' }}
             >
               SAKURA
@@ -180,16 +190,21 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
       </section>
 
-      {/* ①-2 迷ったら、この順番 ─ 3つの入口をタブで1つずつ見せる */}
+      {/* ①-2 どこから学びますか？ ─ 先に3つの入口、その後に「迷ったら、まずこれ」 */}
       <section className="border-b border-line bg-bg">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
           <SectionHeading eyebrow="Learning Routes" title={h('routesTitle')} lead={h('routesLead')} />
 
-          {/* 迷ったら、まずこれ。旗艦講座を1件だけ、コンパクトに示す */}
+          {/* まず3つの入口。ここで自分の学ぶ順番を決めてもらう */}
+          <div className="mt-8">
+            <LearningRoutes routes={routes} />
+          </div>
+
+          {/* それでも決められない人の逃げ道。旗艦講座を1件だけ、コンパクトに示す */}
           {firstPick ? (
             <Link
               href={`/courses/${firstPick.slug}`}
-              className="band-navy group mt-6 flex flex-col gap-4 border-l-2 border-vermilion px-5 py-5 transition-colors hover:bg-navy-deep sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:px-6"
+              className="band-navy group mt-10 flex flex-col gap-4 border-l-2 border-vermilion px-5 py-5 transition-colors hover:bg-navy-deep sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:px-6"
             >
               <div className="flex flex-col items-start gap-2.5">
                 {/* 朱赤の小さなアクセント。重要な導線であることを一目で示す */}
@@ -209,10 +224,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               </div>
             </Link>
           ) : null}
-
-          <div className="mt-8">
-            <LearningRoutes routes={routes} />
-          </div>
         </div>
       </section>
 

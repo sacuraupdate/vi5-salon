@@ -22,7 +22,7 @@ type Props = {
 // 生成りの濃淡。無機質な灰色にならないよう、必ず温かみのある地にする。
 // 白を基調に、藍のごく淡い濃淡だけで差をつける。ピンクは使わない。
 const toneStyles = [
-  { from: '#E6EAEF', to: '#FBFCFD', accent: '#D3DAE2' },
+  { from: '#EDF1F5', to: '#FDFDFE', accent: '#D3DAE2' },
   { from: '#EFF1F0', to: '#FFFFFF', accent: '#DDE3DF' },
   { from: '#F0F1F3', to: '#FDFDFD', accent: '#D9DEE4' },
   { from: '#EEF0EF', to: '#FFFFFF', accent: '#DBE0DC' },
@@ -64,31 +64,44 @@ export default function PhotoFrame({
         }}
       />
       {kind === 'portrait' ? (
-        // 人物写真が入る位置を示す、抽象化されたシルエット
+        // 人物写真が入る位置。人物アイコンにも制作途中にも見せないため、
+        // 輪郭を持たせず「ピントの外れた気配」と細い罫だけで構図をつくる。
         <svg
           aria-hidden
           viewBox="0 0 200 260"
           preserveAspectRatio="xMidYMax meet"
           className="absolute inset-0 h-full w-full"
         >
-          {/* 背後のやわらかい光。人物の輪郭を浮かせる */}
-          <ellipse cx="100" cy="126" rx="78" ry="90" fill="#FFFFFF" opacity="0.6" />
-          <ellipse cx="100" cy="126" rx="78" ry="90" fill="none" stroke="var(--color-navy)" strokeWidth="0.6" opacity="0.18" />
-          {/* 藍の影。人物の輪郭を静かに示す */}
-          <g fill="var(--color-navy)" opacity="0.3">
-            <ellipse cx="100" cy="104" rx="27" ry="31" />
-            <rect x="89" y="124" width="22" height="42" rx="11" />
-            <path d="M100 158c-38 0-68 28-68 64v38h136v-38c0-36-30-64-68-64Z" />
-          </g>
-          {/* 襟もと。シルエットを人物として読ませるための細い線 */}
+          <defs>
+            {/* 下へ向かって完全に消える。塗りの面として残さない */}
+            <linearGradient id="pf-figure" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--color-navy)" stopOpacity="0.1" />
+              <stop offset="60%" stopColor="var(--color-navy)" stopOpacity="0.05" />
+              <stop offset="100%" stopColor="var(--color-navy)" stopOpacity="0" />
+            </linearGradient>
+            <radialGradient id="pf-light" cx="50%" cy="38%" r="66%">
+              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.92" />
+              <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+            </radialGradient>
+            {/* 輪郭を溶かす。丸や人型として読ませない */}
+            <filter id="pf-soft" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="11" />
+            </filter>
+          </defs>
+
+          {/* 背後のやわらかい光。境目のない広がりにする */}
+          <rect width="200" height="260" fill="url(#pf-light)" />
+
+          {/* 人物の気配。首でつなげた一続きの形をぼかし、記号に見せない */}
           <path
-            d="M84 172c5 9 10 14 16 14s11-5 16-14"
-            fill="none"
-            stroke="var(--color-bg)"
-            strokeWidth="3"
-            strokeLinecap="round"
-            opacity="0.9"
+            d="M100 74c15 0 26 13 26 30 0 12-5 21-12 26 30 7 52 32 52 64v66H34v-66c0-32 22-57 52-64-7-5-12-14-12-26 0-17 11-30 26-30Z"
+            fill="url(#pf-figure)"
+            filter="url(#pf-soft)"
           />
+
+          {/* 天地を示す細い罫。余白を「意図」に見せる */}
+          <path d="M20 32h160" stroke="var(--color-navy)" strokeOpacity="0.14" strokeWidth="0.7" />
+          <path d="M20 234h160" stroke="var(--color-navy)" strokeOpacity="0.14" strokeWidth="0.7" />
         </svg>
       ) : (
         // 講座サムネイル：直線と円弧だけの静かな構成

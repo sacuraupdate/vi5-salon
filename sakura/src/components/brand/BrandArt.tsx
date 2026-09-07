@@ -21,22 +21,27 @@ export function BrandCrest({ className = '' }: { className?: string }) {
 }
 
 /**
- * HERO の桜の枝。右上から入り、見出しや人物には重ねない（背面に置く）。
- * 白背景の余白を残すため、幅は抑えめにする。
+ * HERO の桜の枝。右上から入り、SAKURA の人物写真の背面へ流れる。
+ * 見出しに絶対に重ならないよう、左端を 52% で切り落とした枠の中だけに描く
+ * （枠は overflow-hidden。枝をいくら大きくしても本文側へは出ない）。
  */
 export function BrandBranch() {
   const src = brandAsset(BRAND_FILES.branch);
   if (!src) return null;
   return (
-    <Image
-      src={src}
-      alt=""
+    <div
       aria-hidden
-      width={2000}
-      height={625}
-      priority
-      className="pointer-events-none absolute top-0 right-0 z-0 hidden w-[52%] max-w-[680px] select-none lg:block"
-    />
+      className="pointer-events-none absolute inset-y-0 right-0 left-[52%] z-0 hidden select-none overflow-hidden lg:block"
+    >
+      <Image
+        src={src}
+        alt=""
+        width={2000}
+        height={625}
+        priority
+        className="absolute -top-[9%] -right-[14%] w-[148%] max-w-none select-none"
+      />
+    </div>
   );
 }
 
@@ -47,20 +52,34 @@ export function BrandBranch() {
 export function BrandPetals({
   className = '',
   opacity = 0.5,
+  rotate = 0,
+  assetOnly = false,
 }: {
   className?: string;
   opacity?: number;
+  /** 同じ向きの花びらを並べないための回転角（度） */
+  rotate?: number;
+  /**
+   * true のとき、正式な桜素材が無ければ何も描かない。
+   * 線画フォールバックは桜色なので、桜色を増やしたくない箇所（HERO）で使う。
+   */
+  assetOnly?: boolean;
 }) {
   const src = brandAsset(BRAND_FILES.petals);
   if (!src) {
+    if (assetOnly) return null;
     return (
       <span aria-hidden className={`pointer-events-none absolute block text-sakura ${className}`} style={{ opacity }}>
-        <Petal rotate={18} className="h-full w-full" />
+        <Petal rotate={18 + rotate} className="h-full w-full" />
       </span>
     );
   }
   return (
-    <span aria-hidden className={`pointer-events-none absolute block ${className}`} style={{ opacity }}>
+    <span
+      aria-hidden
+      className={`pointer-events-none absolute block ${className}`}
+      style={{ opacity, transform: rotate ? `rotate(${rotate}deg)` : undefined }}
+    >
       <Image src={src} alt="" fill sizes="240px" className="object-contain select-none" />
     </span>
   );
