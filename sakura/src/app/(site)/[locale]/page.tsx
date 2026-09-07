@@ -44,7 +44,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const sakura = instructors.find((i) => i.id === 'sakura')!;
   const tomomi = instructors.find((i) => i.id === 'tomomi')!;
 
-  const portraitSrc = brandAsset(BRAND_FILES.portrait) ?? sakura.photoUrl;
+  // 写真が無いときは人物プレースホルダを出さず、ブランドの文字と桜だけで右側を成立させる
+  const portraitSrc = brandAsset(BRAND_FILES.portrait) ?? sakura.photoUrl ?? null;
 
   const audience = [
     { icon: Store, label: h('aud1') },
@@ -166,26 +167,42 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </div>
           </div>
 
-          {/* SAKURA本人。人が教えていることを一目で伝える */}
+          {/* SAKURA。写真があれば人物レイアウト、無ければブランドビジュアルだけで見せる */}
           <div className="relative">
-            <PhotoFrame
-              src={portraitSrc}
-              alt="SAKURA"
-              kind="portrait"
-              priority
-              className="h-64 w-full border border-navy/25 sm:h-80 lg:h-[380px]"
-            />
-            <span
-              className="absolute top-7 -left-4 hidden bg-bg px-2 py-5 font-serif text-[21px] whitespace-nowrap tracking-[0.32em] text-ink lg:block"
-              style={{ writingMode: 'vertical-rl' }}
-            >
-              SAKURA
-            </span>
-            <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-t border-line pt-3">
-              <span className="font-serif text-[14px] tracking-[0.24em] text-ink lg:hidden">SAKURA</span>
-              <span className="text-[11px] tracking-[0.1em] text-ink-muted">{h('instructorLead')}</span>
-              <span className="text-[11px] tracking-[0.1em] text-ink-muted">{t(sakura.role, locale)}</span>
-            </div>
+            {portraitSrc ? (
+              <>
+                <PhotoFrame
+                  src={portraitSrc}
+                  alt="SAKURA"
+                  kind="portrait"
+                  priority
+                  className="h-64 w-full border border-navy/25 sm:h-80 lg:h-[380px]"
+                />
+                <span
+                  className="absolute top-7 -left-4 hidden bg-bg px-2 py-5 font-serif text-[21px] whitespace-nowrap tracking-[0.32em] text-ink lg:block"
+                  style={{ writingMode: 'vertical-rl' }}
+                >
+                  SAKURA
+                </span>
+                <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-t border-line pt-3">
+                  <span className="font-serif text-[14px] tracking-[0.24em] text-ink lg:hidden">SAKURA</span>
+                  <span className="text-[11px] tracking-[0.1em] text-ink-muted">{h('instructorLead')}</span>
+                  <span className="text-[11px] tracking-[0.1em] text-ink-muted">{t(sakura.role, locale)}</span>
+                </div>
+              </>
+            ) : (
+              /* 写真が入るまでの状態。仮シルエットは出さず、桜紋・SAKURA・肩書だけで組む。
+                 背面の桜の枝と花びらがそのまま抜けて見える。 */
+              <div className="flex flex-col items-start gap-4 border-t border-line pt-8 lg:min-h-[380px] lg:items-center lg:justify-center lg:border-t-0 lg:border-l lg:border-line lg:pt-0 lg:pl-12">
+                <BrandCrest className="h-7 w-7 text-gold" />
+                <span className="-mr-[0.28em] font-serif text-[38px] leading-none tracking-[0.28em] text-ink sm:text-[46px]">
+                  SAKURA
+                </span>
+                <span className="h-px w-14 bg-vermilion" aria-hidden />
+                <span className="text-[12px] tracking-[0.14em] text-ink-2">{h('instructorLead')}</span>
+                <span className="text-[11px] tracking-[0.1em] text-ink-muted">{t(sakura.role, locale)}</span>
+              </div>
+            )}
           </div>
         </div>
       </section>

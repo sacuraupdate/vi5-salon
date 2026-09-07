@@ -21,9 +21,9 @@ export function BrandCrest({ className = '' }: { className?: string }) {
 }
 
 /**
- * HERO の桜の枝。右上から入り、SAKURA の人物写真の背面へ流れる。
+ * HERO の桜の枝。右上から入り、HERO 右側の中央へ向かって流れ落ちる。
  * 見出しに絶対に重ならないよう、左端を 52% で切り落とした枠の中だけに描く
- * （枠は overflow-hidden。枝をいくら大きくしても本文側へは出ない）。
+ * （枠は overflow-hidden。枝をいくら大きくしても本文・CTA 側へは出ない）。
  */
 export function BrandBranch() {
   const src = brandAsset(BRAND_FILES.branch);
@@ -39,7 +39,7 @@ export function BrandBranch() {
         width={2000}
         height={625}
         priority
-        className="absolute -top-[9%] -right-[14%] w-[148%] max-w-none select-none"
+        className="absolute -top-[3%] -right-[10%] w-[172%] max-w-none select-none"
       />
     </div>
   );

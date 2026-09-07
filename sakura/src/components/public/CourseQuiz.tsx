@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, Compass, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
@@ -77,7 +77,7 @@ export default function CourseQuiz({
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} className={buttonClass(variant, 'lg')}>
-        <Sparkles className="h-4 w-4" strokeWidth={1.5} />
+        <Compass className="h-4 w-4" strokeWidth={1.5} />
         {label ?? q('open')}
       </button>
 

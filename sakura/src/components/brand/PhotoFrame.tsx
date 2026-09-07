@@ -4,7 +4,8 @@ import { SakuraCrest } from './Sakura';
 /**
  * 正式な写真素材が入るまでのプレースホルダ。
  * src を渡すだけで実写真に差し替わる（呼び出し側の変更は不要）。
- * 甘い印象を避けるため、桜色は使わず生成りと墨の濃淡だけで構成する。
+ * 甘い印象を避けるため、桜色は使わず白と藍のごく淡い濃淡だけで構成する。
+ * 人物のシルエットや仮アイコンは描かない（「読み込めていない」ように見せないため）。
  */
 type Props = {
   src?: string | null;
@@ -64,42 +65,21 @@ export default function PhotoFrame({
         }}
       />
       {kind === 'portrait' ? (
-        // 人物写真が入る位置。人物アイコンにも制作途中にも見せないため、
-        // 輪郭を持たせず「ピントの外れた気配」と細い罫だけで構図をつくる。
+        // 人物写真が入る位置。仮のシルエット（灰色の人物・ぼかした人影）は一切描かない。
+        // 静かな光と天地の細罫だけを置き、余白そのものを構図として成立させる。
         <svg
           aria-hidden
           viewBox="0 0 200 260"
-          preserveAspectRatio="xMidYMax meet"
+          preserveAspectRatio="xMidYMid slice"
           className="absolute inset-0 h-full w-full"
         >
           <defs>
-            {/* 下へ向かって完全に消える。塗りの面として残さない */}
-            <linearGradient id="pf-figure" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--color-navy)" stopOpacity="0.1" />
-              <stop offset="60%" stopColor="var(--color-navy)" stopOpacity="0.05" />
-              <stop offset="100%" stopColor="var(--color-navy)" stopOpacity="0" />
-            </linearGradient>
             <radialGradient id="pf-light" cx="50%" cy="38%" r="66%">
               <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.92" />
               <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
             </radialGradient>
-            {/* 輪郭を溶かす。丸や人型として読ませない */}
-            <filter id="pf-soft" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur stdDeviation="11" />
-            </filter>
           </defs>
-
-          {/* 背後のやわらかい光。境目のない広がりにする */}
           <rect width="200" height="260" fill="url(#pf-light)" />
-
-          {/* 人物の気配。首でつなげた一続きの形をぼかし、記号に見せない */}
-          <path
-            d="M100 74c15 0 26 13 26 30 0 12-5 21-12 26 30 7 52 32 52 64v66H34v-66c0-32 22-57 52-64-7-5-12-14-12-26 0-17 11-30 26-30Z"
-            fill="url(#pf-figure)"
-            filter="url(#pf-soft)"
-          />
-
-          {/* 天地を示す細い罫。余白を「意図」に見せる */}
           <path d="M20 32h160" stroke="var(--color-navy)" strokeOpacity="0.14" strokeWidth="0.7" />
           <path d="M20 234h160" stroke="var(--color-navy)" strokeOpacity="0.14" strokeWidth="0.7" />
         </svg>
@@ -112,9 +92,16 @@ export default function PhotoFrame({
         </svg>
       )}
 
-      {/* 桜は紋を1つだけ、金の細線で。散らさない。 */}
+      {/* 桜は紋を1つだけ、金の細線で。散らさない。
+          人物枠では中央に置き、空の箱ではなくブランドの面として見せる。 */}
       {minimal ? null : (
-        <span className="absolute top-3 right-3 block h-4 w-4 text-gold opacity-60">
+        <span
+          className={
+            kind === 'portrait'
+              ? 'absolute top-1/2 left-1/2 block h-10 w-10 -translate-x-1/2 -translate-y-1/2 text-gold opacity-45'
+              : 'absolute top-3 right-3 block h-4 w-4 text-gold opacity-60'
+          }
+        >
           <SakuraCrest className="h-full w-full" />
         </span>
       )}
