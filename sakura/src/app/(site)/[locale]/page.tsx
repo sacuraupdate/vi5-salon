@@ -44,8 +44,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const sakura = instructors.find((i) => i.id === 'sakura')!;
   const tomomi = instructors.find((i) => i.id === 'tomomi')!;
 
+  // HERO は sakura-portrait-hero.png のみ。他の3枚は TOP のこの位置では使わない。
   // 写真が無いときは人物プレースホルダを出さず、ブランドの文字と桜だけで右側を成立させる
-  const portraitSrc = brandAsset(BRAND_FILES.portrait) ?? sakura.photoUrl ?? null;
+  const heroPhoto = brandAsset(BRAND_FILES.portraitHero);
+  // SAKURA紹介セクションは sakura-portrait-about.png。HERO と同じ写真は使わない
+  const aboutPhoto = brandAsset(BRAND_FILES.portraitAbout) ?? sakura.photoUrl ?? null;
 
   const audience = [
     { icon: Store, label: h('aud1') },
@@ -123,7 +126,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         <BrandPetals className="top-[34%] right-[27%] hidden h-10 w-10 lg:block" opacity={0.36} rotate={26} assetOnly />
         <BrandPetals className="top-[62%] right-[41%] hidden h-8 w-8 lg:block" opacity={0.24} rotate={-14} assetOnly />
 
-        <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-8 px-4 pt-8 pb-9 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12 lg:pt-16 lg:pb-12">
+        <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-8 px-4 pt-8 pb-9 lg:grid-cols-[1.08fr_0.92fr] lg:gap-10 lg:pt-14 lg:pb-12">
           <div className="flex flex-col items-start gap-5">
             <span className="flex items-center gap-3">
               <BrandCrest className="h-5 w-5 text-vermilion" />
@@ -169,23 +172,20 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
           {/* SAKURA。写真があれば人物レイアウト、無ければブランドビジュアルだけで見せる */}
           <div className="relative">
-            {portraitSrc ? (
+            {heroPhoto ? (
               <>
                 <PhotoFrame
-                  src={portraitSrc}
+                  src={heroPhoto}
                   alt="SAKURA"
                   kind="portrait"
                   priority
-                  className="h-64 w-full border border-navy/25 sm:h-80 lg:h-[380px]"
+                  /* 顔・髪飾り・上半身が入るよう、中央よりやや上でトリミングする */
+                  focus="50% 22%"
+                  className="h-[380px] w-full border border-navy/25 sm:h-[440px] lg:h-[470px]"
                 />
-                <span
-                  className="absolute top-7 -left-4 hidden bg-bg px-2 py-5 font-serif text-[21px] whitespace-nowrap tracking-[0.32em] text-ink lg:block"
-                  style={{ writingMode: 'vertical-rl' }}
-                >
-                  SAKURA
-                </span>
+                {/* 写真の上には文字を重ねない。名前・肩書はすべて写真の下の罫に置く */}
                 <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-t border-line pt-3">
-                  <span className="font-serif text-[14px] tracking-[0.24em] text-ink lg:hidden">SAKURA</span>
+                  <span className="font-serif text-[15px] tracking-[0.24em] text-ink">SAKURA</span>
                   <span className="text-[11px] tracking-[0.1em] text-ink-muted">{h('instructorLead')}</span>
                   <span className="text-[11px] tracking-[0.1em] text-ink-muted">{t(sakura.role, locale)}</span>
                 </div>
@@ -316,9 +316,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       <section className="bg-bg">
         <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 py-14 sm:py-20 lg:grid-cols-[0.75fr_1.25fr] lg:gap-14">
           <PhotoFrame
-            src={sakura.photoUrl}
+            src={aboutPhoto}
             alt="SAKURA"
             kind="portrait"
+            focus="50% 24%"
             className="h-80 w-full border border-navy/25 lg:h-[440px]"
           />
           <div className="flex flex-col items-start gap-5">

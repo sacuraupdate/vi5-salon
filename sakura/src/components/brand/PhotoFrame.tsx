@@ -18,6 +18,11 @@ type Props = {
   priority?: boolean;
   /** アバターなど小さく使う場合は装飾を省く */
   minimal?: boolean;
+  /**
+   * 写真のトリミング位置（CSS object-position）。
+   * 人物写真は既定の中央だと顔が切れるため、顔・髪飾り・上半身が入る位置を指定する。
+   */
+  focus?: string;
 };
 
 // 生成りの濃淡。無機質な灰色にならないよう、必ず温かみのある地にする。
@@ -37,11 +42,20 @@ export default function PhotoFrame({
   className = '',
   priority = false,
   minimal = false,
+  focus,
 }: Props) {
   if (src) {
     return (
       <div className={`relative overflow-hidden ${className}`}>
-        <Image src={src} alt={alt} fill sizes="(max-width: 768px) 100vw, 50vw" priority={priority} className="object-cover" />
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+          priority={priority}
+          className="object-cover"
+          style={focus ? { objectPosition: focus } : undefined}
+        />
       </div>
     );
   }

@@ -13,11 +13,16 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { buttonClass } from '@/components/ui/Button';
 import { SakuraCrest } from '@/components/brand/Sakura';
+import PhotoFrame from '@/components/brand/PhotoFrame';
+import { brandAsset, BRAND_FILES } from '@/lib/brand-assets';
 
 export default async function GettingStartedPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
   const g = await getTranslations({ locale, namespace: 'gettingStarted' });
+
+  // おもてなしを伝える1枚。ピンクが強いため大面積にはせず、補助ビジュアルとして使う
+  const welcomePhoto = brandAsset(BRAND_FILES.portraitWelcome);
 
   const steps = [
     { icon: Sparkles, title: g('s1'), desc: g('s1d') },
@@ -33,14 +38,30 @@ export default async function GettingStartedPage({ params }: { params: Promise<{
   return (
     <>
       <section className="border-b border-line bg-bg">
-        <div className="mx-auto flex max-w-5xl flex-col items-start gap-4 px-4 py-10 sm:py-14">
-          <span className="flex items-center gap-3">
-            <SakuraCrest className="h-4 w-4 text-vermilion" />
-            <span className="eyebrow">Start Here</span>
-          </span>
-          <h1 className="text-[26px] sm:text-[32px]">{g('title')}</h1>
-          <span className="h-px w-14 bg-vermilion" aria-hidden />
-          <p className="max-w-2xl text-[13px] leading-loose text-ink-2">{g('lead')}</p>
+        <div
+          className={`mx-auto grid max-w-5xl gap-8 px-4 py-10 sm:py-14 ${
+            welcomePhoto ? 'lg:grid-cols-[1fr_280px] lg:items-center' : ''
+          }`}
+        >
+          <div className="flex flex-col items-start gap-4">
+            <span className="flex items-center gap-3">
+              <SakuraCrest className="h-4 w-4 text-vermilion" />
+              <span className="eyebrow">Start Here</span>
+            </span>
+            <h1 className="text-[26px] sm:text-[32px]">{g('title')}</h1>
+            <span className="h-px w-14 bg-vermilion" aria-hidden />
+            <p className="max-w-2xl text-[13px] leading-loose text-ink-2">{g('lead')}</p>
+          </div>
+          {welcomePhoto ? (
+            <PhotoFrame
+              src={welcomePhoto}
+              alt="SAKURA"
+              kind="portrait"
+              focus="50% 24%"
+              /* ピンクが強いので大面積にしない。スマホでも横幅いっぱいの帯にはせず、4:5のカードで置く */
+              className="h-[250px] w-[200px] border border-line sm:h-[280px] sm:w-[224px] lg:h-[350px] lg:w-full"
+            />
+          ) : null}
         </div>
       </section>
 

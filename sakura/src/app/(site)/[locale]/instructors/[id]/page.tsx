@@ -5,6 +5,7 @@ import { catalogRepository } from '@/lib/data';
 import type { InstructorId } from '@/lib/data';
 import { t } from '@/lib/format';
 import PhotoFrame from '@/components/brand/PhotoFrame';
+import { brandAsset, BRAND_FILES } from '@/lib/brand-assets';
 import { PetalShadow } from '@/components/brand/Sakura';
 import CourseCard from '@/components/public/CourseCard';
 import { Badge, Card, SectionHeading } from '@/components/ui/Card';
@@ -35,17 +36,23 @@ export default async function InstructorPage({
 
   const own = categories.filter((c) => instructor.categoryIds.includes(c.id));
 
+  // SAKURA の写真は用途を固定する。講師紹介は about、経歴は story。HERO用は使わない
+  const profilePhoto =
+    (id === 'sakura' ? brandAsset(BRAND_FILES.portraitAbout) : null) ?? instructor.photoUrl;
+  const storyPhoto = id === 'sakura' ? brandAsset(BRAND_FILES.portraitStory) : null;
+
   return (
     <>
       <section className="washi-texture relative overflow-hidden border-b border-line">
         <PetalShadow />
         <div className="relative mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:py-12 lg:grid-cols-[340px_1fr] lg:gap-10">
           <PhotoFrame
-            src={instructor.photoUrl}
+            src={profilePhoto}
             alt={instructor.name}
             kind="portrait"
             tone={id === 'tomomi' ? 2 : 0}
             priority
+            focus="50% 22%"
             className="h-64 w-full rounded-md border border-line shadow-card sm:h-80 lg:h-[420px]"
           />
           <div className="flex flex-col items-start gap-4 lg:justify-center">
@@ -68,7 +75,21 @@ export default async function InstructorPage({
         <div className="grid gap-8 lg:grid-cols-[1fr_300px] lg:gap-10">
           <div>
             <h2 className="mb-3 text-xl">{i18n('profile')}</h2>
-            <p className="text-sm leading-loose text-ink">{t(instructor.bio, locale)}</p>
+            {storyPhoto ? (
+              /* 全面背景にはせず、4:5の写真カードとして本文の横に置く */
+              <div className="grid gap-5 sm:grid-cols-[220px_1fr] sm:gap-6">
+                <PhotoFrame
+                  src={storyPhoto}
+                  alt={instructor.name}
+                  kind="portrait"
+                  focus="50% 22%"
+                  className="h-[275px] w-full border border-line"
+                />
+                <p className="text-sm leading-loose text-ink">{t(instructor.bio, locale)}</p>
+              </div>
+            ) : (
+              <p className="text-sm leading-loose text-ink">{t(instructor.bio, locale)}</p>
+            )}
           </div>
           <Card className="h-fit p-5">
             <h2 className="mb-3 text-base">{i18n('expertise')}</h2>
