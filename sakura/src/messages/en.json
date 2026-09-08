@@ -17,7 +17,8 @@
       "certification": "Certification",
       "none": "No certificate"
     },
-    "languageLabel": "Languages"
+    "languageLabel": "Languages",
+    "chapters": "chapters"
   },
   "nav": {
     "home": "Home",
@@ -146,7 +147,20 @@
     "noReviewsBody": "You can leave a review after taking the course.",
     "instructorLabel": "Instructor",
     "prevTitle": "Recommended before this",
-    "nextTitle": "Recommended after this"
+    "nextTitle": "Recommended after this",
+    "audienceTitle": "Who this course is for",
+    "curriculumChapters": "{total} chapters · one video each · about {minutes} minutes in total",
+    "curriculumPartial": "Chapters 1–{published} are available now. The rest are released as they are finished.",
+    "chapterUpcoming": "Coming soon",
+    "chapterInProduction": "This chapter is still in production. You will be able to watch it at no extra cost once it is released.",
+    "materialPlanned": "Included on release",
+    "materialsPlannedNote": "Materials marked “Included on release” are still being produced. Once released you can download them from your page as often as you like.",
+    "assessmentTitle": "Final test",
+    "assessmentBody": "{questions} questions. You pass at {passPercent}% ({passQuestions} correct or more). Retakes are free and unlimited.",
+    "certCompletionGated": "Pass the final test and a certificate of completion is issued.",
+    "salonCertTitle": "SAKURA JAPAN BEAUTY Certified Salon",
+    "salonCertBody": "After completing the course you may take a separate certification test if you wish. Passing it issues a digital certificate. There is no expiry and no annual fee.",
+    "salonCertNote": "This is separate from the certificate of completion. The certification test is not included in this course."
   },
   "instructor": {
     "profile": "Profile",

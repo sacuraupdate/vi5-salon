@@ -17,7 +17,8 @@
       "certification": "인정증",
       "none": "증명서 없음"
     },
-    "languageLabel": "지원 언어"
+    "languageLabel": "지원 언어",
+    "chapters": "장"
   },
   "nav": {
     "home": "홈",
@@ -146,7 +147,20 @@
     "noReviewsBody": "수강 후 리뷰를 남기실 수 있습니다.",
     "instructorLabel": "강사",
     "prevTitle": "이 강좌 전에 추천",
-    "nextTitle": "이 강좌 다음에 추천"
+    "nextTitle": "이 강좌 다음에 추천",
+    "audienceTitle": "이런 분을 위한 강좌입니다",
+    "curriculumChapters": "전 {total}장 · 1장 1영상 · 합계 약 {minutes}분",
+    "curriculumPartial": "{published}장까지 공개 중입니다. 이후 장은 순차적으로 공개합니다.",
+    "chapterUpcoming": "순차 공개",
+    "chapterInProduction": "이 장은 제작 중입니다. 공개 후 추가 비용 없이 시청하실 수 있습니다.",
+    "materialPlanned": "공개 시 제공",
+    "materialsPlannedNote": "「공개 시 제공」 자료는 제작 중입니다. 공개 후 마이페이지에서 몇 번이든 다운로드하실 수 있습니다.",
+    "assessmentTitle": "최종 테스트",
+    "assessmentBody": "전 {questions}문항. {passPercent}％（{passQuestions}문항 이상） 정답으로 합격입니다. 재응시는 무료이며 횟수 제한이 없습니다.",
+    "certCompletionGated": "최종 테스트에 합격하면 수료증을 발행합니다.",
+    "salonCertTitle": "SAKURA JAPAN BEAUTY 인증 살롱",
+    "salonCertBody": "수료 후 희망하시는 분은 별도로 인증 테스트에 응시하실 수 있습니다. 합격하면 디지털 인증서를 발행합니다. 유효기간과 연회비는 없습니다.",
+    "salonCertNote": "수료증과는 다른 증명입니다. 이 강좌의 구매에 인증 테스트는 포함되지 않습니다."
   },
   "instructor": {
     "profile": "프로필",

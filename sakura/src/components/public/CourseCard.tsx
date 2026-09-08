@@ -24,6 +24,8 @@ export default async function CourseCard({
   const c = await getTranslations({ locale, namespace: 'common' });
   const cc = await getTranslations({ locale, namespace: 'courseCard' });
   const gain = t(course.highlights, locale)[0];
+  // 1章1動画の講座は「章」で数える（講座詳細と表記を揃える）
+  const chaptered = course.curriculum.length > 0 && course.curriculum.every((ch) => ch.lessons.length === 1);
 
   // 誰向けかは、講座のカテゴリー分類から導く（4言語対応）
   const audienceKey: Record<string, 'audSalon' | 'audManagement' | 'audTechnique' | 'audFemcare'> = {
@@ -98,8 +100,8 @@ export default async function CourseCard({
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <PlayCircle className="h-3.5 w-3.5" strokeWidth={1.25} />
-                {course.lessonCount}
-                {c('lessons')}
+                {chaptered ? course.curriculum.length : course.lessonCount}
+                {chaptered ? c('chapters') : c('lessons')}
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <FileText className="h-3.5 w-3.5" strokeWidth={1.25} />

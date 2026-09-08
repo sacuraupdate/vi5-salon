@@ -70,6 +70,11 @@ export type Material = {
   type: MaterialType;
   title: Localized;
   meta: string;
+  /**
+   * 'planned' は実ファイルがまだ無い教材。
+   * ダウンロード導線を作らず「付属予定」として表示する。未指定は提供済み。
+   */
+  status?: 'available' | 'planned';
 };
 
 export type Lesson = {
@@ -83,6 +88,25 @@ export type Chapter = {
   id: string;
   title: Localized;
   lessons: Lesson[];
+  /**
+   * 'in-production' は制作中の章。「順次公開」と明示し、公開済みと混同させない。
+   * 未指定は公開済み。
+   */
+  status?: 'published' | 'in-production';
+};
+
+/**
+ * 修了証の発行条件になる最終テスト。
+ * 講座ごとに問題数・合格ラインが違うため、講座に持たせる。
+ */
+export type Assessment = {
+  questions: number;
+  /** 合格に必要な正答率（%） */
+  passPercent: number;
+  /** 合格に必要な正答数。passPercent から導出せず、明示して丸め誤差を避ける */
+  passQuestions: number;
+  /** 再受験の条件。現在は無料・回数制限なしのみ */
+  retake: 'unlimited-free';
 };
 
 export type Review = {
@@ -115,6 +139,15 @@ export type Course = {
   /** 正式素材が入るまでのプレースホルダ配色（0-3） */
   tone: number;
   highlights: Localized<string[]>;
+  /** 誰のための講座か。講座ごとに明示する（カテゴリーからの推測に頼らない） */
+  audience?: Localized<string[]>;
+  /** 最終テスト。ある場合、修了証は合格者のみ発行 */
+  assessment?: Assessment;
+  /**
+   * 修了後に別途受験できる「認定サロン」の対象講座かどうか。
+   * 講座単位の認定証（certificate: 'certification'）とは別物。混同させない。
+   */
+  salonCertification?: boolean;
   curriculum: Chapter[];
   materials: Material[];
   reviews: Review[];

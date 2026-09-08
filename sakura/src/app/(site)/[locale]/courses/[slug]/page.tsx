@@ -1,4 +1,5 @@
 import {
+  ClipboardCheck,
   ArrowLeft,
   ArrowRight,
   Award,
@@ -21,7 +22,7 @@ import { neighboursOf } from '@/lib/quiz';
 import type { MaterialType } from '@/lib/data';
 import { formatPrice, t } from '@/lib/format';
 import PhotoFrame from '@/components/brand/PhotoFrame';
-import { Badge, Card } from '@/components/ui/Card';
+import { Badge, Card, EmptyState } from '@/components/ui/Card';
 import Accordion from '@/components/ui/Accordion';
 import Tabs from '@/components/ui/Tabs';
 import { buttonClass } from '@/components/ui/Button';
@@ -63,6 +64,10 @@ export default async function CourseDetailPage({
 
   const priceLabel = course.isFree ? common('free') : formatPrice(course.price, locale);
 
+  // 1章1動画の講座は「レッスン数」ではなく「章数」で数える
+  const isChaptered = course.curriculum.length > 0 && course.curriculum.every((ch) => ch.lessons.length === 1);
+  const publishedChapters = course.curriculum.filter((ch) => ch.status !== 'in-production').length;
+
   const purchaseCard = (
     <Card className="p-5">
       <div className="flex items-baseline justify-between gap-3">
@@ -78,8 +83,8 @@ export default async function CourseDetailPage({
           </dt>
           <dd>
             {course.totalMinutes}
-            {common('minutes')} / {course.lessonCount}
-            {common('lessons')}
+            {common('minutes')} / {isChaptered ? course.curriculum.length : course.lessonCount}
+            {isChaptered ? common('chapters') : common('lessons')}
           </dd>
         </div>
         <div className="flex items-center justify-between gap-3">
@@ -121,6 +126,19 @@ export default async function CourseDetailPage({
       content: (
         <div className="flex flex-col gap-6">
           <p className="text-sm leading-loose text-ink">{t(course.description, locale)}</p>
+          {course.audience ? (
+            <div>
+              <h3 className="mb-3 text-base">{d('audienceTitle')}</h3>
+              <ul className="flex flex-col gap-2">
+                {t(course.audience, locale).map((a) => (
+                  <li key={a} className="flex items-start gap-2.5 text-sm leading-relaxed text-ink-2">
+                    <span className="mt-2.5 h-px w-3 shrink-0 bg-pine" aria-hidden />
+                    {a}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <div>
             <h3 className="mb-3 text-base">{d('highlights')}</h3>
             <ul className="flex flex-col gap-2.5">
@@ -140,32 +158,47 @@ export default async function CourseDetailPage({
       label: d('tabCurriculum'),
       content: (
         <div className="flex flex-col gap-4">
-          <p className="text-xs text-ink-muted">
-            {d('curriculumNote', { lessons: course.lessonCount, minutes: course.totalMinutes })}
-          </p>
+          <div className="flex flex-col gap-1">
+            <p className="text-xs text-ink-muted">
+              {isChaptered
+                ? d('curriculumChapters', { total: course.curriculum.length, minutes: course.totalMinutes })
+                : d('curriculumNote', { lessons: course.lessonCount, minutes: course.totalMinutes })}
+            </p>
+            {/* 制作中の章がある場合、どこまで見られるかを先に伝える */}
+            {publishedChapters < course.curriculum.length ? (
+              <p className="text-xs text-vermilion">{d('curriculumPartial', { published: publishedChapters })}</p>
+            ) : null}
+          </div>
           <Accordion
             items={course.curriculum.map((ch, i) => ({
               id: ch.id,
               title: `${String(i + 1).padStart(2, '0')}　${t(ch.title, locale)}`,
-              body: (
-                <ul className="flex flex-col divide-y divide-line">
-                  {ch.lessons.map((l) => (
-                    <li key={l.id} className="flex items-center justify-between gap-3 py-2.5">
-                      <span className="flex items-center gap-2 text-ink">
-                        <PlayCircle className="h-4 w-4 shrink-0 text-ink-muted" strokeWidth={1.5} />
-                        {t(l.title, locale)}
-                      </span>
-                      <span className="flex shrink-0 items-center gap-2">
-                        {l.isPreview ? <Badge tone="sakura">{d('preview')}</Badge> : null}
-                        <span className="text-xs text-ink-muted">
-                          {l.minutes}
-                          {common('minutes')}
+              meta:
+                ch.status === 'in-production' ? (
+                  <Badge tone="outline">{d('chapterUpcoming')}</Badge>
+                ) : undefined,
+              body:
+                ch.status === 'in-production' ? (
+                  <p className="py-2 text-sm leading-relaxed text-ink-muted">{d('chapterInProduction')}</p>
+                ) : (
+                  <ul className="flex flex-col divide-y divide-line">
+                    {ch.lessons.map((l) => (
+                      <li key={l.id} className="flex items-center justify-between gap-3 py-2.5">
+                        <span className="flex items-center gap-2 text-ink">
+                          <PlayCircle className="h-4 w-4 shrink-0 text-ink-muted" strokeWidth={1.5} />
+                          {t(l.title, locale)}
                         </span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ),
+                        <span className="flex shrink-0 items-center gap-2">
+                          {l.isPreview ? <Badge tone="sakura">{d('preview')}</Badge> : null}
+                          <span className="text-xs text-ink-muted">
+                            {l.minutes}
+                            {common('minutes')}
+                          </span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ),
             }))}
           />
         </div>
@@ -184,15 +217,21 @@ export default async function CourseDetailPage({
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-line text-ink-2">
                     <Icon className="h-5 w-5" strokeWidth={1.5} />
                   </span>
-                  <span className="flex flex-col">
-                    <span className="text-sm font-medium">{t(m.title, locale)}</span>
-                    <span className="text-[11px] text-ink-muted">{m.meta}</span>
+                  <span className="flex min-w-0 flex-col gap-1">
+                    <span className="text-sm leading-snug font-medium">{t(m.title, locale)}</span>
+                    {m.status === 'planned' ? (
+                      <span className="text-[11px] text-ink-muted">{d('materialPlanned')}</span>
+                    ) : m.meta ? (
+                      <span className="text-[11px] text-ink-muted">{m.meta}</span>
+                    ) : null}
                   </span>
                 </Card>
               );
             })}
           </div>
-          <p className="text-xs leading-relaxed text-ink-muted">{d('materialsNote')}</p>
+          <p className="text-xs leading-relaxed text-ink-muted">
+            {course.materials.some((m) => m.status === 'planned') ? d('materialsPlannedNote') : d('materialsNote')}
+          </p>
         </div>
       ),
     },
@@ -201,6 +240,26 @@ export default async function CourseDetailPage({
       label: d('tabCertificate'),
       content: (
         <div className="flex flex-col gap-4">
+          {/* ① 発行条件になる最終テスト。教材とは分けて置く */}
+          {course.assessment ? (
+            <Card className="flex items-start gap-4 p-5">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-line text-ink-2">
+                <ClipboardCheck className="h-5 w-5" strokeWidth={1.5} />
+              </span>
+              <div className="flex flex-col gap-1.5">
+                <p className="text-[15px] font-medium">{d('assessmentTitle')}</p>
+                <p className="text-sm leading-relaxed text-ink-muted">
+                  {d('assessmentBody', {
+                    questions: course.assessment.questions,
+                    passPercent: course.assessment.passPercent,
+                    passQuestions: course.assessment.passQuestions,
+                  })}
+                </p>
+              </div>
+            </Card>
+          ) : null}
+
+          {/* ② この講座で発行される証明書 */}
           <Card className="flex items-start gap-4 p-5">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-line text-ink-2">
               {course.certificate === 'certification' ? (
@@ -217,19 +276,44 @@ export default async function CourseDetailPage({
                 {course.certificate === 'certification'
                   ? d('certCertification')
                   : course.certificate === 'completion'
-                    ? d('certCompletion')
+                    ? course.assessment
+                      ? d('certCompletionGated')
+                      : d('certCompletion')
                     : d('certNone')}
               </p>
             </div>
           </Card>
           {course.certificate ? <p className="text-xs leading-relaxed text-ink-muted">{d('certVerify')}</p> : null}
+
+          {/* ③ 修了の「その先」。証明書と同じ見た目にせず、罫線で段を分ける */}
+          {course.salonCertification ? (
+            <div className="mt-2 border-t border-line pt-5">
+              <div className="flex items-start gap-4">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-gold/60 text-gold">
+                  <Medal className="h-5 w-5" strokeWidth={1.5} />
+                </span>
+                <div className="flex flex-col gap-1.5">
+                  <p className="font-serif text-[15px] tracking-[0.06em] text-ink">{d('salonCertTitle')}</p>
+                  <p className="text-sm leading-relaxed text-ink-muted">{d('salonCertBody')}</p>
+                  <p className="text-xs leading-relaxed text-vermilion">{d('salonCertNote')}</p>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       ),
     },
     {
       id: 'reviews',
       label: d('tabReviews'),
-      content: (
+      content:
+        course.reviews.length === 0 ? (
+          <EmptyState
+            icon={<Star className="h-5 w-5" strokeWidth={1.5} />}
+            title={d('noReviews')}
+            body={d('noReviewsBody')}
+          />
+        ) : (
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-3">
             <span className="font-serif text-3xl">{course.rating.toFixed(1)}</span>
@@ -259,7 +343,7 @@ export default async function CourseDetailPage({
             ))}
           </div>
         </div>
-      ),
+        ),
     },
     {
       id: 'faq',

@@ -90,6 +90,22 @@ const chapter = (id: string, ja: string, en: string, lessons: [string, number][]
   })),
 });
 
+/** 1章1動画の章。制作中の章は status で明示し、公開済みと混同させない */
+const solo = (
+  n: number,
+  ja: string,
+  en: string,
+  minutes: number,
+  status: 'published' | 'in-production',
+): Chapter => ({
+  id: `c${n}`,
+  title: { ja, en },
+  status,
+  lessons: [
+    { id: `c${n}-l1`, title: { ja, en }, minutes, isPreview: n === 1 && status === 'published' },
+  ],
+});
+
 const materials = (slug: string): Material[] => [
   { id: `${slug}-m1`, courseSlug: slug, type: 'pdf', title: { ja: '講義PDF', en: 'Lecture PDF', ko: '강의 PDF', 'zh-TW': '講義 PDF' }, meta: '全42ページ' },
   { id: `${slug}-m2`, courseSlug: slug, type: 'workbook', title: { ja: 'Workbook', en: 'Workbook', ko: '워크북', 'zh-TW': '練習手冊' }, meta: '書き込み式' },
@@ -121,9 +137,15 @@ const faq = [
 
 type CourseSeed = Pick<
   Course,
-  'slug' | 'title' | 'summary' | 'description' | 'instructorId' | 'categoryId' | 'level' | 'price' | 'isFree' | 'certificate' | 'featured' | 'tone' | 'highlights'
+  | 'slug' | 'title' | 'summary' | 'description' | 'instructorId' | 'categoryId' | 'level'
+  | 'price' | 'isFree' | 'certificate' | 'featured' | 'tone' | 'highlights'
+  | 'audience' | 'assessment' | 'salonCertification'
 > & {
   chapters: Chapter[];
+  /** 講座固有の教材。未指定なら汎用の5点を使う */
+  materials?: Material[];
+  /** 実際のレビュー。未指定なら仮のサンプルを使う（正式講座では [] を渡す） */
+  reviews?: Review[];
   translation: Course['translation'];
   languages: Course['languages'];
   rating: number;
@@ -139,11 +161,13 @@ const build = (s: CourseSeed): Course => {
     lessonCount,
     totalMinutes,
     curriculum: s.chapters,
-    materials: materials(s.slug),
-    reviews: reviews(
-      '説明が具体的で、翌日から接客が変わりました。',
-      '「なぜそうするのか」まで教えてくれるのが良かったです。',
-    ),
+    materials: s.materials ?? materials(s.slug),
+    reviews:
+      s.reviews ??
+      reviews(
+        '説明が具体的で、翌日から接客が変わりました。',
+        '「なぜそうするのか」まで教えてくれるのが良かったです。',
+      ),
     faq,
     publishedAt: '2026-06-01',
   };
@@ -161,19 +185,96 @@ const full = (master: string): Course['translation'] => ({
 export const courses: Course[] = [
   build({
     slug: 'japanese-salon-standard',
-    title: { ja: '日本式サロンスタンダード 基礎', en: 'Japanese Salon Standards: Foundations', ko: '일본식 살롱 스탠다드 기초', 'zh-TW': '日式沙龍標準｜基礎' },
-    summary: { ja: '清潔感・所作・空間づくり。日本のサロンが選ばれ続ける土台をつくります。', en: 'Cleanliness, conduct and space — the foundation behind why Japanese salons keep being chosen.', ko: '청결감·동작·공간 만들기. 일본 살롱이 선택받는 토대를 만듭니다.', 'zh-TW': '清潔感、儀態、空間營造，打造日式沙龍的基礎。' },
-    description: { ja: '技術が同じでも、日本のサロンが「また来たい」と言われるのはなぜか。その差は、目に見えにくい基準の積み重ねにあります。この講座では、清掃と衛生管理の基準、道具の置き方、お客様の前での所作、席へのご案内、声のトーンまでを分解し、あなたのサロンでそのまま運用できるチェックリストに落とし込みます。', en: 'Why do guests say “I want to come back” to a Japanese salon, even when the technique is the same? The difference lies in standards that are hard to see. This course breaks down hygiene, tool placement, conduct in front of the guest, seating and tone of voice into a checklist you can run in your own salon.' },
-    instructorId: 'sakura', categoryId: 'salon-standard', level: 'beginner',
+    title: { ja: '日本式サロンスタンダード', en: 'Japanese Salon Standard', ko: '일본식 살롱 스탠다드', 'zh-TW': '日式沙龍標準' },
+    summary: {
+      ja: 'おもてなしを、感覚ではなくサロンの標準に。',
+      en: 'Turn omotenashi from instinct into a standard your salon can run.',
+      ko: '오모테나시를 감각이 아니라 살롱의 표준으로.',
+      'zh-TW': '把款待從感覺，變成沙龍可以執行的標準。',
+    },
+    description: {
+      ja: '日本式のおもてなしは、センスのある人だけができるものではありません。お迎え、カウンセリング、施術中の気配り、清潔感、お見送り、アフターフォロー。そのひとつひとつを行動レベルまで分解すれば、新人でも同じレベルで再現できます。この講座では、感覚で語られてきたおもてなしを「誰でも再現できるサロンの仕組み」に変えるまでを、全10章で扱います。',
+      en: 'Japanese omotenashi is not a gift only some people have. The welcome, the counselling, the small attentions during a service, visible cleanliness, the farewell, the follow-up — break each one down to the level of actions, and a new stylist can reproduce it just as well. Across ten chapters, this course turns omotenashi from something described by instinct into a system any salon can run.',
+      ko: '일본식 오모테나시는 감각이 있는 사람만 할 수 있는 것이 아닙니다. 맞이함, 카운슬링, 시술 중의 배려, 청결감, 배웅, 애프터 팔로우. 하나하나를 행동 수준까지 분해하면 신입도 같은 수준으로 재현할 수 있습니다.',
+      'zh-TW': '日式款待並不是只有有天分的人才做得到。迎接、諮詢、施作中的細心、整潔感、送客、後續追蹤，只要把每一項拆解到行動層級，新人也能做到同樣的水準。',
+    },
+    instructorId: 'sakura', categoryId: 'omotenashi', level: 'beginner',
+    // 価格は国別固定価格の決定前。仮置きのまま据え置き、正式価格として確定しない
     price: { JPY: 19800, USD: 148, KRW: 189000, TWD: 4200 }, isFree: false,
     certificate: 'completion', featured: true, tone: 0,
-    highlights: { ja: ['清掃・衛生管理の日本基準を数値で理解する', '道具と什器の配置が与える印象を設計する', '初回来店から次回予約までの声かけを組み立てる'], en: ['Understand Japanese hygiene standards in concrete numbers', 'Design the impression created by tools and fixtures', 'Build the words that lead from first visit to next booking'] },
-    languages: ['ja', 'en', 'ko', 'zh-TW'], rating: 4.9, reviewCount: 128, studentCount: 412,
-    translation: full('2026-07-20'),
+    audience: {
+      ja: ['これからサロンをオープンしたい方', '他のサロンと差別化したいサロンオーナー', '新人スタッフ教育を整えたいサロン'],
+      en: ['Opening your own salon', 'Salon owners looking to stand apart', 'Salons building new-staff training'],
+      ko: ['앞으로 살롱을 오픈하고 싶은 분', '다른 살롱과 차별화하고 싶은 오너', '신입 스태프 교육을 정비하고 싶은 살롱'],
+      'zh-TW': ['準備開設沙龍的人', '想與其他沙龍做出差異的經營者', '想整備新人教育的沙龍'],
+    },
+    highlights: {
+      ja: [
+        '日本式のお迎えを導入できる',
+        'カウンセリングの流れを統一できる',
+        'お客様から見える場所の清潔基準を作れる',
+        'アフターフォローを仕組み化できる',
+        '接客を細かな行動レベルまでマニュアル化できる',
+        '新人でも同じレベルのおもてなしを再現できる',
+      ],
+      en: [
+        'Introduce the Japanese welcome',
+        'Standardise how counselling runs',
+        'Set cleanliness standards for what the guest can see',
+        'Systematise follow-up after the visit',
+        'Write service down to the level of individual actions',
+        'Let a new stylist reproduce the same level of care',
+      ],
+      ko: [
+        '일본식 맞이함을 도입할 수 있다',
+        '카운슬링의 흐름을 통일할 수 있다',
+        '고객이 보는 곳의 청결 기준을 만들 수 있다',
+        '애프터 팔로우를 구조화할 수 있다',
+        '접객을 행동 수준까지 매뉴얼화할 수 있다',
+        '신입도 같은 수준의 오모테나시를 재현할 수 있다',
+      ],
+      'zh-TW': [
+        '導入日式的迎接方式',
+        '統一諮詢的流程',
+        '為顧客看得見的地方訂出整潔標準',
+        '把後續追蹤變成制度',
+        '把待客拆解到行動層級寫成手冊',
+        '讓新人也能做到同樣水準的款待',
+      ],
+    },
+    assessment: { questions: 50, passPercent: 90, passQuestions: 45, retake: 'unlimited-free' },
+    salonCertification: true,
+    languages: ['ja', 'en', 'ko', 'zh-TW'], rating: 0, reviewCount: 0, studentCount: 0,
+    // 実績は未取得。架空のレビュー・評価を置かない
+    reviews: [],
+    translation: full('2026-09-08'),
+    // 全10章・1章1動画・合計55分。第5章までが公開済み、第6章以降は制作中
     chapters: [
-      chapter('c1', '日本のサロンの前提', 'The premise of a Japanese salon', [['なぜ清潔感が最優先なのか', 8], ['お客様が見ている3つの場所', 9], ['基準を言語化する', 7]]),
-      chapter('c2', '衛生管理の実務', 'Hygiene in practice', [['施術前後の手順', 11], ['道具の消毒と保管', 10], ['記録の残し方', 8]]),
-      chapter('c3', '空間と所作', 'Space and conduct', [['席へのご案内', 9], ['声のトーンと距離', 10], ['退店までの動線', 8]]),
+      solo(1, '日本式おもてなしがサロンの差別化になる理由', 'Why Japanese omotenashi sets a salon apart', 5, 'published'),
+      solo(2, 'おもてなしを「感覚」から「ルール」に変える', 'Turning omotenashi from instinct into rules', 5, 'published'),
+      solo(3, '日本式のお迎え', 'The Japanese welcome', 6, 'published'),
+      solo(4, '日本式カウンセリング', 'Japanese counselling', 6, 'published'),
+      solo(5, '施術前の説明と安心感', 'Explaining before you begin', 5, 'published'),
+      solo(6, '施術中の細かな気配り', 'Attentiveness during the service', 6, 'in-production'),
+      solo(7, 'お客様から見える清潔感', 'Cleanliness the guest can see', 5, 'in-production'),
+      solo(8, '施術後の仕上げと提案', 'Finishing, and what to recommend next', 5, 'in-production'),
+      solo(9, '会計・お見送り・アフターフォロー', 'Payment, farewell and follow-up', 6, 'in-production'),
+      solo(10, 'スタッフ全員で再現するためのマニュアル化', 'Making it repeatable for every stylist', 6, 'in-production'),
+    ],
+    // 実ファイルはまだ無いため、すべて 'planned'。ダウンロード導線は作らない
+    materials: [
+      { id: 'jss-m1', courseSlug: 'japanese-salon-standard', type: 'workbook', status: 'planned', meta: '',
+        title: { ja: '日本式おもてなしマニュアル雛形', en: 'Omotenashi manual template', ko: '일본식 오모테나시 매뉴얼 서식', 'zh-TW': '日式款待手冊範本' } },
+      { id: 'jss-m2', courseSlug: 'japanese-salon-standard', type: 'workbook', status: 'planned', meta: '',
+        title: { ja: 'カウンセリングシート', en: 'Counselling sheet', ko: '카운슬링 시트', 'zh-TW': '諮詢表' } },
+      { id: 'jss-m3', courseSlug: 'japanese-salon-standard', type: 'checklist', status: 'planned', meta: '',
+        title: { ja: 'お迎え・施術中・お見送りチェックリスト', en: 'Welcome, service and farewell checklist', ko: '맞이함·시술 중·배웅 체크리스트', 'zh-TW': '迎接・施作・送客檢核表' } },
+      { id: 'jss-m4', courseSlug: 'japanese-salon-standard', type: 'checklist', status: 'planned', meta: '',
+        title: { ja: '清潔感チェックリスト', en: 'Cleanliness checklist', ko: '청결감 체크리스트', 'zh-TW': '整潔感檢核表' } },
+      { id: 'jss-m5', courseSlug: 'japanese-salon-standard', type: 'pdf', status: 'planned', meta: '',
+        title: { ja: 'LINE・DM・メール アフターフォロー例文集', en: 'Follow-up message templates', ko: 'LINE·DM·메일 애프터 팔로우 예문집', 'zh-TW': 'LINE・私訊・郵件 後續追蹤範例' } },
+      { id: 'jss-m6', courseSlug: 'japanese-salon-standard', type: 'workbook', status: 'planned', meta: '',
+        title: { ja: '新人スタッフ教育・接客評価シート', en: 'Staff training and service evaluation sheet', ko: '신입 스태프 교육·접객 평가 시트', 'zh-TW': '新人教育・待客評估表' } },
     ],
   }),
   build({

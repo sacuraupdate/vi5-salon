@@ -17,7 +17,8 @@
       "certification": "認證證書",
       "none": "無證書"
     },
-    "languageLabel": "支援語言"
+    "languageLabel": "支援語言",
+    "chapters": "章"
   },
   "nav": {
     "home": "首頁",
@@ -146,7 +147,20 @@
     "noReviewsBody": "上完課程後即可留下評價。",
     "instructorLabel": "講師",
     "prevTitle": "建議在此之前",
-    "nextTitle": "建議接著學習"
+    "nextTitle": "建議接著學習",
+    "audienceTitle": "這門課適合這樣的你",
+    "curriculumChapters": "共 {total} 章 · 每章一支影片 · 合計約 {minutes} 分鐘",
+    "curriculumPartial": "目前公開至第 {published} 章，之後的章節將陸續公開。",
+    "chapterUpcoming": "陸續公開",
+    "chapterInProduction": "本章製作中。公開後可免費觀看，不需額外付費。",
+    "materialPlanned": "公開時提供",
+    "materialsPlannedNote": "標示「公開時提供」的教材仍在製作中。公開後可從個人頁面無限次下載。",
+    "assessmentTitle": "期末測驗",
+    "assessmentBody": "共 {questions} 題。答對 {passPercent}％（{passQuestions} 題以上）即合格。重考免費且無次數限制。",
+    "certCompletionGated": "通過期末測驗後，將發行結業證書。",
+    "salonCertTitle": "SAKURA JAPAN BEAUTY 認證沙龍",
+    "salonCertBody": "結業後，有意願者可另外報考認證測驗。通過後發行數位認證證書，無有效期限、無年費。",
+    "salonCertNote": "這與結業證書是不同的證明。本課程的費用不含認證測驗。"
   },
   "instructor": {
     "profile": "簡介",
