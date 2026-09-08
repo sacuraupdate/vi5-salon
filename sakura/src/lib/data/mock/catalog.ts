@@ -38,10 +38,10 @@ export const instructors: Instructor[] = [
       'zh-TW': '在大阪經營美容沙龍，同時向日本國內外的美容從業者傳授技術與待客之道。',
     },
     photoUrl: null,
-    stats: [
-      { label: { ja: '指導歴', en: 'Teaching', ko: '지도 경력', 'zh-TW': '教學年資' }, value: '12年' },
-      { label: { ja: '受講者', en: 'Students', ko: '수강생', 'zh-TW': '學員' }, value: '1,240' },
-      { label: { ja: '対応国', en: 'Countries', ko: '대응 국가', 'zh-TW': '服務國家' }, value: '18' },
+    credentials: [
+      { ja: '現役サロンオーナー', en: 'Working salon owner', ko: '현직 살롱 오너', 'zh-TW': '現任沙龍經營者' },
+      { ja: '日本の現場で実践', en: 'On the salon floor in Japan', ko: '일본 현장에서 실천', 'zh-TW': '在日本現場實踐' },
+      { ja: '美容講師', en: 'Beauty instructor', ko: '뷰티 강사', 'zh-TW': '美容講師' },
     ],
     categoryIds: ['salon-standard', 'salon-management', 'omotenashi', 'beauty-skill', 'makeup', 'inbound'],
   },
@@ -62,9 +62,9 @@ export const instructors: Instructor[] = [
       'zh-TW': '專精於女性照護基礎教育，協助美容從業者依照顧客的生命階段提出建議。',
     },
     photoUrl: null,
-    stats: [
-      { label: { ja: '担当講座', en: 'Courses', ko: '담당 강좌', 'zh-TW': '負責課程' }, value: '4' },
-      { label: { ja: '受講者', en: 'Students', ko: '수강생', 'zh-TW': '學員' }, value: '380' },
+    credentials: [
+      { ja: 'フェムケア専門', en: 'Femcare specialist', ko: '펨케어 전문', 'zh-TW': '女性照護專業' },
+      { ja: '女性のライフステージ教育', en: "Teaching women's life stages", ko: '여성 라이프스테이지 교육', 'zh-TW': '女性生命階段教育' },
     ],
     categoryIds: ['femcare-basic', 'life-stage', 'femcare-pro'],
   },

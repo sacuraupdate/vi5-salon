@@ -352,14 +352,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               </p>
             </blockquote>
             <p className="line-clamp-4 text-[13px] leading-loose text-ink-muted">{t(sakura.bio, locale)}</p>
-            <dl className="grid grid-cols-3 divide-x divide-line border-t border-line pt-4">
-              {sakura.stats.map((s, i) => (
-                <div key={s.value} className={i === 0 ? 'pr-6' : 'px-6'}>
-                  <dt className="font-serif text-[20px] text-ink">{s.value}</dt>
-                  <dd className="mt-1 text-[10px] tracking-[0.1em] text-ink-muted">{t(s.label, locale)}</dd>
-                </div>
+            {/* 未確認の実績数値は置かない。事実として言えることだけを並べる */}
+            <ul className="flex flex-wrap gap-x-6 gap-y-2 border-t border-line pt-4">
+              {sakura.credentials.map((c) => (
+                <li key={c.ja} className="flex items-center gap-2 text-[12px] tracking-[0.06em] text-ink-2">
+                  <span className="h-px w-3 shrink-0 bg-vermilion" aria-hidden />
+                  {t(c, locale)}
+                </li>
               ))}
-            </dl>
+            </ul>
             <Link href="/instructors/sakura" className={buttonClass('secondary')}>
               {h('sakuraMore')}
               <ArrowRight className="h-4 w-4" strokeWidth={1.5} />

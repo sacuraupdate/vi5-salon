@@ -53,7 +53,12 @@ export type Instructor = {
   headline: Localized;
   bio: Localized;
   photoUrl: string | null;
-  stats: { label: Localized; value: string }[];
+  /**
+   * 講師の信頼情報。事実として確認できることだけを置く。
+   * 受講者数・指導年数などの実績数値は、確認が取れるまで持たせない。
+   * 3項目以内。同じ意味を重ねない。
+   */
+  credentials: Localized[];
   categoryIds: CategoryId[];
 };
 

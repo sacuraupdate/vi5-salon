@@ -62,14 +62,15 @@ export default async function InstructorPage({
             <h1 className="font-serif text-3xl tracking-[0.14em]">{instructor.name}</h1>
             <Badge tone="sakura">{t(instructor.role, locale)}</Badge>
             <p className="font-serif text-lg leading-relaxed text-ink sm:text-xl">{t(instructor.headline, locale)}</p>
-            <dl className="grid grid-cols-3 gap-6 border-t border-line pt-4">
-              {instructor.stats.map((s) => (
-                <div key={s.value}>
-                  <dt className="font-serif text-xl">{s.value}</dt>
-                  <dd className="text-[11px] text-ink-muted">{t(s.label, locale)}</dd>
-                </div>
+            {/* 未確認の実績数値は置かない。事実として言えることだけを並べる */}
+            <ul className="flex flex-wrap gap-x-6 gap-y-2 border-t border-line pt-4">
+              {instructor.credentials.map((c) => (
+                <li key={c.ja} className="flex items-center gap-2 text-[13px] text-ink-2">
+                  <span className="h-px w-3 shrink-0 bg-vermilion" aria-hidden />
+                  {t(c, locale)}
+                </li>
               ))}
-            </dl>
+            </ul>
           </div>
         </div>
       </section>
