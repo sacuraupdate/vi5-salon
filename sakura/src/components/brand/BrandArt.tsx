@@ -50,7 +50,7 @@ export function BrandBranch() {
         width={2000}
         height={625}
         priority
-        className="absolute top-[-8%] right-[-14%] w-[228%] max-w-[1500px] select-none"
+        className="absolute top-[-8%] right-[-14%] w-[170%] max-w-[1120px] select-none"
         style={{
           maskImage: MASK,
           WebkitMaskImage: MASK,

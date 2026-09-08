@@ -35,11 +35,11 @@
   },
   "home": {
     "eyebrow": "來自日本的專業美容教育",
-    "title": "把日本的美容，",
+    "title": "把日式沙龍的標準，",
     "titleAccent": "化為你沙龍的強項。",
     "lead": "日本美容沙龍所重視的技術、待客、衛生、諮詢與經營。將日本現場累積的標準，化為世界各地都能學習的線上教育。",
-    "ctaPrimary": "尋找適合我的課程",
-    "ctaSecondary": "瀏覽全部課程",
+    "ctaPrimary": "查看日式沙龍標準課程",
+    "ctaSecondary": "免費學習",
     "trustCourses": "門課程",
     "trustCountries": "個國家的學員",
     "trustCertificate": "結業・認證證書",
@@ -83,7 +83,7 @@
     "certId": "Certificate ID",
     "finalCta": "瀏覽課程",
     "finalNote": "沒有觀看期限。購買後可無限次觀看。",
-    "instructorLead": "來自日本的美容講師",
+    "instructorLead": "在日本經營沙龍的現任負責人 · 美容講師",
     "audienceTitle": "推薦給這樣的你",
     "aud1": "沙龍經營者",
     "aud2": "美容從業者",
@@ -102,7 +102,8 @@
     "quizCta": "三題快速診斷",
     "firstPickTitle": "不知從何開始？先上這門",
     "firstPickDesc": "想學日式沙龍的人的第一門課",
-    "routeGoalCompletion": "邁向結業"
+    "routeGoalCompletion": "邁向結業",
+    "quizAside": "尋找適合我的課程"
   },
   "courses": {
     "title": "課程一覽",

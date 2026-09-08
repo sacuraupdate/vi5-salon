@@ -52,10 +52,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const aboutPhoto = aboutBrandPhoto ?? sakura.photoUrl ?? null;
   const aboutIsCutout = Boolean(aboutBrandPhoto);
 
+  // 事業の優先順位そのままに並べる：サロンオーナー → 開業予定 → 従事者 → 導入検討
   const audience = [
     { icon: Store, label: h('aud1') },
-    { icon: ScissorsIcon, label: h('aud2') },
     { icon: Briefcase, label: h('aud3') },
+    { icon: ScissorsIcon, label: h('aud2') },
     { icon: GraduationCap, label: h('aud4') },
   ];
 
@@ -147,12 +148,18 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
             <p className="max-w-xl text-[13px] leading-[1.9] text-ink-2 sm:text-sm">{h('lead')}</p>
 
-            {/* 主要CTA＝診断。無料講座は最重要ボタンにしない */}
+            {/* 主要CTA＝一番売りたい講座へ直行。診断は購入の手前に置かない。
+                副CTAは矢印を付けず短く保ち、PCで1行に収める */}
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-              <CourseQuiz routes={routes} label={h('ctaPrimary')} variant="primary" />
-              <Link href="/courses" className={buttonClass('secondary', 'lg')}>
-                {h('ctaSecondary')}
+              <Link
+                href={firstPick ? `/courses/${firstPick.slug}` : '/courses'}
+                className={buttonClass('primary', 'lg')}
+              >
+                {h('ctaPrimary')}
                 <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+              </Link>
+              <Link href="/free" className={buttonClass('secondary', 'lg')}>
+                {h('ctaSecondary')}
               </Link>
             </div>
 
@@ -190,8 +197,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 {/* 写真の上には文字を重ねない。名前・肩書はすべて写真の下の罫に置く */}
                 <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-t border-line pt-3">
                   <span className="font-serif text-[15px] tracking-[0.24em] text-ink">SAKURA</span>
-                  <span className="text-[11px] tracking-[0.1em] text-ink-muted">{h('instructorLead')}</span>
-                  <span className="text-[11px] tracking-[0.1em] text-ink-muted">{t(sakura.role, locale)}</span>
+                  <span className="text-[11px] leading-relaxed tracking-[0.1em] text-ink-2">
+                    {h('instructorLead')}
+                  </span>
                 </div>
               </>
             ) : (
@@ -203,8 +211,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   SAKURA
                 </span>
                 <span className="h-px w-14 bg-vermilion" aria-hidden />
-                <span className="text-[12px] tracking-[0.14em] text-ink-2">{h('instructorLead')}</span>
-                <span className="text-[11px] tracking-[0.1em] text-ink-muted">{t(sakura.role, locale)}</span>
+                <span className="max-w-[30ch] text-[12px] leading-relaxed tracking-[0.1em] text-ink-2 lg:text-center">
+                  {h('instructorLead')}
+                </span>
               </div>
             )}
           </div>
@@ -216,8 +225,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
           <SectionHeading eyebrow="Learning Routes" title={h('routesTitle')} lead={h('routesLead')} />
 
+          {/* 診断はここに置く。購入の手前ではなく、順番に迷った人のための補助導線 */}
+          <div className="mt-4">
+            <CourseQuiz routes={routes} label={h('quizAside')} variant="ghost" />
+          </div>
+
           {/* まず3つの入口。ここで自分の学ぶ順番を決めてもらう */}
-          <div className="mt-8">
+          <div className="mt-6">
             <LearningRoutes routes={routes} />
           </div>
 

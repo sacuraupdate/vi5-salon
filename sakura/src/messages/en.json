@@ -35,11 +35,11 @@
   },
   "home": {
     "eyebrow": "Professional beauty education from Japan",
-    "title": "Japanese beauty,",
+    "title": "Japanese salon standards,",
     "titleAccent": "as your salon’s strength.",
     "lead": "The technique, service, hygiene, counselling and management a Japanese salon lives by. Standards built on the salon floor in Japan — now learnable from anywhere in the world.",
-    "ctaPrimary": "Find the right course",
-    "ctaSecondary": "Browse all courses",
+    "ctaPrimary": "View Japanese Salon Standard",
+    "ctaSecondary": "Learn for free",
     "trustCourses": "courses",
     "trustCountries": "countries",
     "trustCertificate": "certificates",
@@ -83,7 +83,7 @@
     "certId": "Certificate ID",
     "finalCta": "Browse courses",
     "finalNote": "No expiry. Watch as many times as you like after purchase.",
-    "instructorLead": "Teaching from Japan",
+    "instructorLead": "Working salon owner and instructor, based in Japan",
     "audienceTitle": "Who this is for",
     "aud1": "Salon owners",
     "aud2": "Beauty professionals",
@@ -102,7 +102,8 @@
     "quizCta": "Take the 3-question quiz",
     "firstPickTitle": "Not sure? Start here",
     "firstPickDesc": "The first course for anyone learning the Japanese salon",
-    "routeGoalCompletion": "To completion"
+    "routeGoalCompletion": "To completion",
+    "quizAside": "Find the right course"
   },
   "courses": {
     "title": "Courses",

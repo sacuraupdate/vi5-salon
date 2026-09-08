@@ -28,7 +28,7 @@ export default function CourseQuiz({
 }: {
   routes: RouteData[];
   label?: string;
-  variant?: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary' | 'ghost';
 }) {
   const q = useTranslations('quiz');
   const [open, setOpen] = useState(false);

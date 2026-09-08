@@ -35,11 +35,11 @@
   },
   "home": {
     "eyebrow": "일본발 프로 대상 뷰티 교육",
-    "title": "일본의 미용을,",
+    "title": "일본식 살롱을,",
     "titleAccent": "당신 살롱의 강점으로.",
     "lead": "일본의 미용 살롱이 소중히 여기는 기술·접객·위생·카운슬링·경영. 일본 현장에서 쌓인 기준을 세계 어디에서나 배울 수 있는 온라인 교육입니다.",
-    "ctaPrimary": "나에게 맞는 강좌 찾기",
-    "ctaSecondary": "전체 강좌 보기",
+    "ctaPrimary": "일본식 살롱 스탠다드 보기",
+    "ctaSecondary": "무료로 배우기",
     "trustCourses": "강좌",
     "trustCountries": "수강생 국가",
     "trustCertificate": "수료증·인정증",
@@ -83,7 +83,7 @@
     "certId": "Certificate ID",
     "finalCta": "강좌 보기",
     "finalNote": "수강 기한이 없습니다. 구매 후 몇 번이든 시청하실 수 있습니다.",
-    "instructorLead": "일본에서 가르치는 미용 강사",
+    "instructorLead": "일본에서 살롱을 운영하는 현직 오너 · 뷰티 강사",
     "audienceTitle": "이런 분께 추천합니다",
     "aud1": "살롱 오너",
     "aud2": "미용 종사자",
@@ -102,7 +102,8 @@
     "quizCta": "3문항으로 진단하기",
     "firstPickTitle": "고민된다면, 먼저 이것",
     "firstPickDesc": "일본식 살롱을 배우고 싶은 분의 첫 강좌",
-    "routeGoalCompletion": "수료증으로"
+    "routeGoalCompletion": "수료증으로",
+    "quizAside": "나에게 맞는 강좌 고르기"
   },
   "courses": {
     "title": "강좌 목록",
