@@ -139,7 +139,7 @@ type CourseSeed = Pick<
   Course,
   | 'slug' | 'title' | 'summary' | 'description' | 'instructorId' | 'categoryId' | 'level'
   | 'price' | 'isFree' | 'certificate' | 'featured' | 'tone' | 'highlights'
-  | 'audience' | 'assessment' | 'salonCertification'
+  | 'audience' | 'assessment' | 'salonCertification' | 'availability' | 'priceStatus'
 > & {
   chapters: Chapter[];
   /** 講座固有の教材。未指定なら汎用の5点を使う */
@@ -199,8 +199,8 @@ export const courses: Course[] = [
       'zh-TW': '日式款待並不是只有有天分的人才做得到。迎接、諮詢、施作中的細心、整潔感、送客、後續追蹤，只要把每一項拆解到行動層級，新人也能做到同樣的水準。',
     },
     instructorId: 'sakura', categoryId: 'omotenashi', level: 'beginner',
-    // 価格は国別固定価格の決定前。仮置きのまま据え置き、正式価格として確定しない
-    price: { JPY: 19800, USD: 148, KRW: 189000, TWD: 4200 }, isFree: false,
+    // 仮価格。国別固定価格の決定前なので priceStatus: 'draft' とし、購入できないようにする
+    price: { JPY: 19800, USD: 148, KRW: 189000, TWD: 4200 }, isFree: false, priceStatus: 'draft',
     certificate: 'completion', featured: true, tone: 0,
     audience: {
       ja: ['これからサロンをオープンしたい方', '他のサロンと差別化したいサロンオーナー', '新人スタッフ教育を整えたいサロン'],
@@ -244,17 +244,21 @@ export const courses: Course[] = [
     },
     assessment: { questions: 50, passPercent: 90, passQuestions: 45, retake: 'unlimited-free' },
     salonCertification: true,
-    languages: ['ja', 'en', 'ko', 'zh-TW'], rating: 0, reviewCount: 0, studentCount: 0,
+    languages: ['ja', 'en', 'ko', 'zh-TW'],
+    // 制作順は 日本語 → 英語 → 繁体字中国語 → 韓国語。完成した言語から個別に 'published' へ変える
+    availability: { ja: 'in-production', en: 'planned', 'zh-TW': 'planned', ko: 'planned' },
+    rating: 0, reviewCount: 0, studentCount: 0,
     // 実績は未取得。架空のレビュー・評価を置かない
     reviews: [],
     translation: full('2026-09-08'),
-    // 全10章・1章1動画・合計55分。第5章までが公開済み、第6章以降は制作中
+    // 全10章・1章1動画・合計55分。動画は未完成のため全章 'in-production'。
+    // 完成した章から 'published' に変えると、公開状況の表示が自動で切り替わる
     chapters: [
-      solo(1, '日本式おもてなしがサロンの差別化になる理由', 'Why Japanese omotenashi sets a salon apart', 5, 'published'),
-      solo(2, 'おもてなしを「感覚」から「ルール」に変える', 'Turning omotenashi from instinct into rules', 5, 'published'),
-      solo(3, '日本式のお迎え', 'The Japanese welcome', 6, 'published'),
-      solo(4, '日本式カウンセリング', 'Japanese counselling', 6, 'published'),
-      solo(5, '施術前の説明と安心感', 'Explaining before you begin', 5, 'published'),
+      solo(1, '日本式おもてなしがサロンの差別化になる理由', 'Why Japanese omotenashi sets a salon apart', 5, 'in-production'),
+      solo(2, 'おもてなしを「感覚」から「ルール」に変える', 'Turning omotenashi from instinct into rules', 5, 'in-production'),
+      solo(3, '日本式のお迎え', 'The Japanese welcome', 6, 'in-production'),
+      solo(4, '日本式カウンセリング', 'Japanese counselling', 6, 'in-production'),
+      solo(5, '施術前の説明と安心感', 'Explaining before you begin', 5, 'in-production'),
       solo(6, '施術中の細かな気配り', 'Attentiveness during the service', 6, 'in-production'),
       solo(7, 'お客様から見える清潔感', 'Cleanliness the guest can see', 5, 'in-production'),
       solo(8, '施術後の仕上げと提案', 'Finishing, and what to recommend next', 5, 'in-production'),

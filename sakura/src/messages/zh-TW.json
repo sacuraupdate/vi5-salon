@@ -18,7 +18,8 @@
       "none": "無證書"
     },
     "languageLabel": "支援語言",
-    "chapters": "章"
+    "chapters": "章",
+    "preparing": "準備中"
   },
   "nav": {
     "home": "首頁",
@@ -160,7 +161,13 @@
     "certCompletionGated": "通過期末測驗後，將發行結業證書。",
     "salonCertTitle": "SAKURA JAPAN BEAUTY 認證沙龍",
     "salonCertBody": "結業後，有意願者可另外報考認證測驗。通過後發行數位認證證書，無有效期限、無年費。",
-    "salonCertNote": "這與結業證書是不同的證明。本課程的費用不含認證測驗。"
+    "salonCertNote": "這與結業證書是不同的證明。本課程的費用不含認證測驗。",
+    "preparingTitle": "公開準備中",
+    "preparingBody": "本課程正在製作中。以您目前閱讀的語言公開時，我們會再行通知。",
+    "curriculumPreparing": "全 {total} 章製作中。章節內容將依各語言的公開準備進度陸續刊登。",
+    "priceTbd": "價格準備中",
+    "buyPreparing": "尚未開賣",
+    "buyPreparingNote": "請等待開賣。價格確定後將另行公告。"
   },
   "instructor": {
     "profile": "簡介",

@@ -18,7 +18,8 @@
       "none": "証明書なし"
     },
     "languageLabel": "対応言語",
-    "chapters": "章"
+    "chapters": "章",
+    "preparing": "準備中"
   },
   "nav": {
     "home": "ホーム",
@@ -160,7 +161,13 @@
     "certCompletionGated": "最終テストに合格すると、修了証を発行します。",
     "salonCertTitle": "SAKURA JAPAN BEAUTY 認定サロン",
     "salonCertBody": "修了後、ご希望の方は別途、認定テストを受験できます。合格するとデジタル認定証を発行します。有効期限・年会費はありません。",
-    "salonCertNote": "修了証とは別の証明です。この講座の購入に認定テストは含まれません。"
+    "salonCertNote": "修了証とは別の証明です。この講座の購入に認定テストは含まれません。",
+    "preparingTitle": "公開準備中",
+    "preparingBody": "この講座は現在制作中です。ご覧の言語での公開が決まりましたら、あらためてご案内します。",
+    "curriculumPreparing": "全{total}章を制作中です。章の内容は、公開の準備が整った言語から順に掲載します。",
+    "priceTbd": "価格は準備中",
+    "buyPreparing": "公開準備中",
+    "buyPreparingNote": "販売開始までお待ちください。価格は決定しだいご案内します。"
   },
   "instructor": {
     "profile": "プロフィール",

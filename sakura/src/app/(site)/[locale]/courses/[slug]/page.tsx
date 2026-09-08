@@ -20,7 +20,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { catalogRepository } from '@/lib/data';
 import { neighboursOf } from '@/lib/quiz';
 import type { MaterialType } from '@/lib/data';
-import { formatPrice, t } from '@/lib/format';
+import { formatPrice, isPublishedIn, isPurchasable, publishedLocales, t } from '@/lib/format';
 import PhotoFrame from '@/components/brand/PhotoFrame';
 import { Badge, Card, EmptyState } from '@/components/ui/Card';
 import Accordion from '@/components/ui/Accordion';
@@ -62,10 +62,21 @@ export default async function CourseDetailPage({
   const prevCourse = around.prev ? all.find((c) => c.slug === around.prev) : undefined;
   const nextCourse = around.next ? all.find((c) => c.slug === around.next) : undefined;
 
-  const priceLabel = course.isFree ? common('free') : formatPrice(course.price, locale);
+  // この言語で顧客に公開されているか。未公開の言語では中身を出さない
+  // （日本語原本へフォールバックさせて、海外の画面に日本語を出さないため）
+  const openHere = isPublishedIn(course, locale);
+  const canBuy = isPurchasable(course, locale);
+  const openLocales = publishedLocales(course);
+
+  const priceLabel = course.isFree
+    ? common('free')
+    : course.priceStatus === 'draft'
+      ? d('priceTbd')
+      : formatPrice(course.price, locale);
 
   // 1章1動画の講座は「レッスン数」ではなく「章数」で数える
   const isChaptered = course.curriculum.length > 0 && course.curriculum.every((ch) => ch.lessons.length === 1);
+  // 公開章数はデータから導出する。「第N章まで公開」を固定値で書かない
   const publishedChapters = course.curriculum.filter((ch) => ch.status !== 'in-production').length;
 
   const purchaseCard = (
@@ -92,7 +103,9 @@ export default async function CourseDetailPage({
             <Globe className="h-4 w-4" />
             {common('languageLabel')}
           </dt>
-          <dd className="text-right text-[13px] uppercase">{course.languages.join(' / ')}</dd>
+          <dd className="text-right text-[13px] uppercase">
+            {openLocales.length > 0 ? openLocales.join(' / ') : <span className="normal-case">{common('preparing')}</span>}
+          </dd>
         </div>
         <div className="flex items-center justify-between gap-3">
           <dt className="inline-flex items-center gap-2 text-ink-muted">
@@ -112,10 +125,16 @@ export default async function CourseDetailPage({
         </div>
       </dl>
 
-      <button type="button" className={buttonClass('primary', 'lg', 'mt-5 w-full')}>
-        {d('buy')}
+      <button
+        type="button"
+        disabled={!canBuy}
+        className={buttonClass('primary', 'lg', 'mt-5 w-full disabled:cursor-not-allowed disabled:opacity-45')}
+      >
+        {canBuy ? d('buy') : d('buyPreparing')}
       </button>
-      <p className="mt-2.5 text-center text-[11px] leading-relaxed text-ink-muted">{d('buyNote')}</p>
+      <p className="mt-2.5 text-center text-[11px] leading-relaxed text-ink-muted">
+        {canBuy ? d('buyNote') : d('buyPreparingNote')}
+      </p>
     </Card>
   );
 
@@ -164,11 +183,16 @@ export default async function CourseDetailPage({
                 ? d('curriculumChapters', { total: course.curriculum.length, minutes: course.totalMinutes })
                 : d('curriculumNote', { lessons: course.lessonCount, minutes: course.totalMinutes })}
             </p>
-            {/* 制作中の章がある場合、どこまで見られるかを先に伝える */}
-            {publishedChapters < course.curriculum.length ? (
+            {/* 公開済みの章がある場合だけ「第N章まで公開」を出す。0章なら出さない */}
+            {openHere && publishedChapters > 0 && publishedChapters < course.curriculum.length ? (
               <p className="text-xs text-vermilion">{d('curriculumPartial', { published: publishedChapters })}</p>
             ) : null}
           </div>
+          {!openHere || publishedChapters === 0 ? (
+            <p className="text-sm leading-relaxed text-ink-muted">
+              {d('curriculumPreparing', { total: course.curriculum.length })}
+            </p>
+          ) : (
           <Accordion
             items={course.curriculum.map((ch, i) => ({
               id: ch.id,
@@ -201,6 +225,7 @@ export default async function CourseDetailPage({
                 ),
             }))}
           />
+          )}
         </div>
       ),
     },
@@ -375,10 +400,21 @@ export default async function CourseDetailPage({
                   {common(`certificate.${course.certificate}`)}
                 </Badge>
               ) : null}
+              {openHere ? null : <Badge tone="outline">{common('preparing')}</Badge>}
             </div>
 
             <h1 className="text-2xl leading-snug sm:text-[28px]">{t(course.title, locale)}</h1>
             <p className="text-sm leading-relaxed text-ink-muted">{t(course.summary, locale)}</p>
+
+            {/* この言語でまだ公開していないことを、購入導線より先に伝える */}
+            {openHere ? null : (
+              <div className="flex items-start gap-3 border-l-2 border-vermilion bg-bg py-1 pl-4">
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-medium text-ink">{d('preparingTitle')}</p>
+                  <p className="text-[13px] leading-relaxed text-ink-muted">{d('preparingBody')}</p>
+                </div>
+              </div>
+            )}
 
             <Link
               href={`/instructors/${course.instructorId}`}
@@ -470,8 +506,12 @@ export default async function CourseDetailPage({
               {common('minutes')}
             </span>
           </span>
-          <button type="button" className={buttonClass('primary', 'lg', 'flex-1')}>
-            {d('buy')}
+          <button
+            type="button"
+            disabled={!canBuy}
+            className={buttonClass('primary', 'lg', 'flex-1 disabled:cursor-not-allowed disabled:opacity-45')}
+          >
+            {canBuy ? d('buy') : d('buyPreparing')}
           </button>
         </div>
       </div>

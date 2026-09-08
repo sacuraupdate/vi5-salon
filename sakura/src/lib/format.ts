@@ -1,6 +1,32 @@
-import type { CurrencyCode, Locale, Localized, Price, TranslationMeta, TranslationStatus } from './data/types';
+import { LOCALES } from './data/types';
+import type { Course, CurrencyCode, Locale, Localized, Price, TranslationMeta, TranslationStatus } from './data/types';
 
-/** 多言語テキストの取り出し。翻訳が無い場合は日本語原本にフォールバックする。 */
+/**
+ * 講座がその言語で顧客に公開されているか。
+ * availability を持たない既存講座は従来どおり公開済みとして扱う。
+ */
+export function isPublishedIn(course: Pick<Course, 'availability'>, locale: string): boolean {
+  if (!course.availability) return true;
+  return course.availability[locale as Locale] === 'published';
+}
+
+/** 顧客に見せてよい言語だけを返す。availability が無ければ languages をそのまま使う。 */
+export function publishedLocales(course: Pick<Course, 'availability' | 'languages'>): Locale[] {
+  if (!course.availability) return course.languages;
+  return LOCALES.filter((l) => course.availability?.[l] === 'published');
+}
+
+/** 仮価格のまま購入されないようにする。価格未確定の講座は購入不可。 */
+export function isPurchasable(
+  course: Pick<Course, 'availability' | 'priceStatus' | 'isFree'>,
+  locale: string,
+): boolean {
+  if (course.priceStatus === 'draft') return false;
+  return isPublishedIn(course, locale);
+}
+
+/** 多言語テキストの取り出し。翻訳が無い場合は日本語原本にフォールバックする。
+ *  管理画面で原本を確認するための挙動。顧客向けの未翻訳表示には使わない。 */
 export function t<T>(value: Localized<T>, locale: string): T {
   const key = locale as Exclude<Locale, 'ja'>;
   return (value[key] as T | undefined) ?? value.ja;

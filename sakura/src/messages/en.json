@@ -18,7 +18,8 @@
       "none": "No certificate"
     },
     "languageLabel": "Languages",
-    "chapters": "chapters"
+    "chapters": "chapters",
+    "preparing": "In preparation"
   },
   "nav": {
     "home": "Home",
@@ -160,7 +161,13 @@
     "certCompletionGated": "Pass the final test and a certificate of completion is issued.",
     "salonCertTitle": "SAKURA JAPAN BEAUTY Certified Salon",
     "salonCertBody": "After completing the course you may take a separate certification test if you wish. Passing it issues a digital certificate. There is no expiry and no annual fee.",
-    "salonCertNote": "This is separate from the certificate of completion. The certification test is not included in this course."
+    "salonCertNote": "This is separate from the certificate of completion. The certification test is not included in this course.",
+    "preparingTitle": "In preparation",
+    "preparingBody": "This course is still being produced. We will announce it here once it is released in the language you are reading.",
+    "curriculumPreparing": "All {total} chapters are in production. Chapter details appear as each language is ready for release.",
+    "priceTbd": "Price to be announced",
+    "buyPreparing": "Not yet on sale",
+    "buyPreparingNote": "Please wait for the release. The price will be announced once it is set."
   },
   "instructor": {
     "profile": "Profile",

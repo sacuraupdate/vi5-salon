@@ -59,8 +59,13 @@ const check = (name, ok, detail = '') => results.push({ 確認項目: name, 結�
   await page.goto(`${BASE}/ja/courses/japanese-salon-standard`);
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await page.waitForTimeout(300);
-  const cta = page.getByRole('button', { name: 'この講座を購入する' }).last();
-  check('スマホで購入CTAが画面内に固定されている', await cta.isVisible());
+  // 公開準備中の講座はラベルが「公開準備中」になり押せない。
+  // ここで確かめたいのは「CTAが画面下部に固定されて見えていること」なので、
+  // 文言ではなく固定バー内のボタンで判定する。
+  const bar = page.locator('div.fixed.inset-x-0.bottom-0');
+  const cta = bar.getByRole('button').last();
+  const label = (await cta.textContent())?.trim() ?? '';
+  check('スマホで購入CTAが画面内に固定されている', await cta.isVisible(), label);
   await ctx.close();
 }
 

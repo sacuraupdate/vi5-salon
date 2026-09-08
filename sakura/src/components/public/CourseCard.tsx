@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import PhotoFrame from '@/components/brand/PhotoFrame';
 import { Badge } from '@/components/ui/Card';
-import { formatPrice, t } from '@/lib/format';
+import { formatPrice, isPublishedIn, publishedLocales, t } from '@/lib/format';
 import type { Category, Course } from '@/lib/data';
 
 /**
@@ -26,6 +26,9 @@ export default async function CourseCard({
   const gain = t(course.highlights, locale)[0];
   // 1章1動画の講座は「章」で数える（講座詳細と表記を揃える）
   const chaptered = course.curriculum.length > 0 && course.curriculum.every((ch) => ch.lessons.length === 1);
+  // その言語で未公開の講座は「準備中」を明示し、公開済みの言語だけを出す
+  const openHere = isPublishedIn(course, locale);
+  const openLocales = publishedLocales(course);
 
   // 誰向けかは、講座のカテゴリー分類から導く（4言語対応）
   const audienceKey: Record<string, 'audSalon' | 'audManagement' | 'audTechnique' | 'audFemcare'> = {
@@ -49,6 +52,11 @@ export default async function CourseCard({
               <Badge tone="vermilion">{c('free')}</Badge>
             </span>
           ) : null}
+          {openHere ? null : (
+            <span className="absolute top-3 right-3">
+              <Badge tone="neutral">{c('preparing')}</Badge>
+            </span>
+          )}
         </div>
 
         <div className="flex flex-1 flex-col gap-3 p-5">
@@ -108,7 +116,7 @@ export default async function CourseCard({
                 {cc('materials')} {course.materials.length}
                 {cc('materialsUnit')}
               </span>
-              <span className="uppercase">{course.languages.join(' / ')}</span>
+              <span className="uppercase">{openLocales.length > 0 ? openLocales.join(' / ') : ''}</span>
             </div>
 
             <div className="flex items-end justify-between gap-3">
@@ -124,8 +132,13 @@ export default async function CourseCard({
               ) : (
                 <span />
               )}
+              {/* 仮価格をそのまま出さない。価格未確定の講座は金額を表示しない */}
               <span className="font-serif text-[17px] whitespace-nowrap text-ink">
-                {course.isFree ? c('free') : formatPrice(course.price, locale)}
+                {course.isFree
+                  ? c('free')
+                  : course.priceStatus === 'draft'
+                    ? <span className="text-[13px] text-ink-muted">{c('preparing')}</span>
+                    : formatPrice(course.price, locale)}
               </span>
             </div>
           </div>

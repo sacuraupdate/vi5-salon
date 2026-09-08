@@ -24,6 +24,13 @@ export type Price = { JPY: number } & Partial<Record<Exclude<CurrencyCode, 'JPY'
 export type InstructorId = 'sakura' | 'tomomi';
 export type CourseLevel = 'beginner' | 'intermediate' | 'advanced';
 
+/**
+ * 講座の言語ごとの公開状態。
+ * 顧客に見せてよいのは 'published' のみ。'in-production' は制作中、'planned' は着手前。
+ * 日本語が完成しても他言語は未完成、という状態を正しく持てるようにする。
+ */
+export type CourseLocaleStatus = 'published' | 'in-production' | 'planned';
+
 /** 修了証(completion) と 認定証(certification) は明確に別物として扱う。 */
 export type CertificateKind = 'completion' | 'certification';
 
@@ -143,6 +150,17 @@ export type Course = {
   audience?: Localized<string[]>;
   /** 最終テスト。ある場合、修了証は合格者のみ発行 */
   assessment?: Assessment;
+  /**
+   * 言語ごとの公開状態。未指定は languages がそのまま公開済み（既存講座の互換）。
+   * 指定した場合、'published' の言語だけが顧客向けに公開される。
+   * 言語ごとに独立しているため、日本語だけ先に公開して後から英語を足せる。
+   */
+  availability?: Partial<Record<Locale, CourseLocaleStatus>>;
+  /**
+   * 価格の確定状態。'draft' は仮価格で、購入できない。
+   * 国別固定価格を決めたら 'confirmed' にする。
+   */
+  priceStatus?: 'draft' | 'confirmed';
   /**
    * 修了後に別途受験できる「認定サロン」の対象講座かどうか。
    * 講座単位の認定証（certificate: 'certification'）とは別物。混同させない。
