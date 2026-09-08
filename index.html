@@ -961,7 +961,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260909a';
+const APP_REV='r20260909b';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1152,7 +1152,7 @@ const now=()=>new Date().toLocaleString('ja-JP',{month:'numeric',day:'numeric'})
 
 /* ===== データ ===== */
 let DATA={customers:{},bookings:[],blocks:[],posts:[],campaigns:[],settings:{},nextId:1047};
-function defaultData(){
+function defaultData(){const __d=(function(){
   const t=fmtDate(today);const tm=new Date(today);tm.setDate(today.getDate()+1);if(tm.getDay()===CLOSED_DOW)tm.setDate(tm.getDate()+1);const t2=fmtDate(tm);
   const past=new Date(today);past.setMonth(today.getMonth()-1);const tp=fmtDate(past);
   const C={};const mk=(phone,name,referredBy,bonus,disc,bday)=>{C[normPhone(phone)]={phone,name,password:'1234',referredBy:referredBy||null,bonusPoints:bonus||0,joined:tp,discount:disc||null,birthday:bday,saved:[],couponYen:0,notices:[],salonNote:'',passes:[],bdayYear:0}};
@@ -1204,7 +1204,7 @@ function defaultData(){
     theme:{navy:'#1E2A47',gold:'#B0894A',sage:'#5F7355',rose:'#9C5B6B',paper:'#F5F1E8',heroImg:''},gcal:true,banners:[],
     texts:{tagline:'Eyelash · Brow · Beauty',heroTitle:'',heroSub:'',homeNote:'ご予約はこの予約ページからのみ承っております。'}};
   return {customers:C,bookings:B,blocks,posts,campaigns,settings,shares,boards,shifts,shiftOverrides:{},feedback:[],nextId:1047};
-}
+})();__d._seed=true;return __d;}
 async function loadData(){
   let d=null,role='public';
   try{ if(localGet('salon:staff')&&localGet('salon:staffpw')){ const j=await api({action:'full',pw:localGet('salon:staffpw')}); d=j.data; role='staff'; } }catch(e){ localDel('salon:staff'); localDel('salon:staffpw'); }
@@ -1221,9 +1221,10 @@ async function loadData(){
   if(!d.services)d.services=JSON.parse(JSON.stringify(SEED_SERVICES));
   if(!d.staff)d.staff=JSON.parse(JSON.stringify(SEED_STAFF));
   DATA=d;services=d.services;staff=d.staff;state.dataRole=role;if(role==='staff'){state.adminAuthed=true;state.dataFull=true;state.dataFromDB=true;}try{localStorage.setItem('vi5:datacache',JSON.stringify({at:Date.now(),role:role,d:d}));}catch(e){}try{if(d&&d.customers&&Object.keys(d.customers).length>0)localStorage.setItem('vi5:lastgood',JSON.stringify({at:Date.now(),d:d}));}catch(e){}return d;}
-function mergeProtect(d,srv){/* サーバー実データと統合：顧客・シフト・予約は絶対に減らさない */
+function mergeProtect(d,srv){if(d&&d._seed)return d;if(srv&&srv._seed)return d;/* サーバー実データと統合：顧客・シフト・予約は絶対に減らさない */
   if(!srv||typeof srv!=='object')return d;
   if(srv.deletedCust){d.deletedCust=Object.assign({},srv.deletedCust,d.deletedCust||{});}
+  {const delB=new Set([...(d.delBookings||[]),...(srv.delBookings||[])]);d.delBookings=[...delB];if(delB.size){d.bookings=(d.bookings||[]).filter(b=>!(b&&delB.has(b.id)));if(Array.isArray(srv.bookings))srv.bookings=srv.bookings.filter(b=>!(b&&delB.has(b.id)));}}
   if(srv.customers){const merged=Object.assign({},srv.customers,d.customers||{});const dc=d.deletedCust||{};for(const k in dc){if(dc[k]&&!(d.customers||{})[k])delete merged[k];}d.customers=merged;}
   if(srv.checklist&&d.checklist){/* 日次チェック: より新しい方の完了状態を採用 */try{['work','home'].forEach(mo=>{const ls=(d.checklist[mo]||[]);const ss=(srv.checklist[mo]||[]);ss.forEach((sc,ci)=>{const lc=ls[ci];if(!lc||!sc)return;(sc.items||[]).forEach((si,ii)=>{const li=lc.items&&lc.items[ii];if(li&&si&&(si.lastDone||'')>(li.lastDone||'')){li.done=si.done;li.lastDone=si.lastDone;li.doneBy=si.doneBy;}});});});}catch(e){}}
   if(srv.shiftOverrides){d.shiftOverrides=d.shiftOverrides||{};for(const sid in srv.shiftOverrides){d.shiftOverrides[sid]=Object.assign({},srv.shiftOverrides[sid],d.shiftOverrides[sid]||{});}}
@@ -1239,6 +1240,7 @@ async function backupSoon(d){/* 曜日別の自動バックアップ（1日1回�
     if(r.ok)localSet(mk,tag);}catch(_e){}}
 async function saveData(d){DATA=d;
   if(!state.adminAuthed)return;
+  if(d&&d._seed){console.warn('seed data: save blocked');return;}
   try{for(const sv of (d.services||[])){if(sv.img&&sv.img.indexOf('data:image')===0&&sv._thumbSrc!==sv.img.length){const t=await shrinkDataURL(sv.img,260,0.62,20000);if(t){sv.thumb=t;sv._thumbSrc=sv.img.length;}}}}catch(_e){}
   // ★保存前に必ずサーバーの実データと統合（古い端末による上書き消失を構造的に防止）
   let srv=null;try{srv=await directLoad();}catch(_e){}
@@ -2926,6 +2928,11 @@ async function futureVisitFixDirect(){try{if(state._fvfDone)return;state._fvfDon
   await fetchT(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:data',value:JSON.stringify(srv)})});
   DATA.bookings=srv.bookings;DATA.customers=srv.customers;render();}catch(e){}}
 function autoCancelRestore(){try{let n=0;(DATA.bookings||[]).forEach(b=>{if(b&&b.autoCancelled&&b.status==='cancelled'){b.status='confirmed';delete b.autoCancelled;n++;}});if(n){logAct('自動取消されていた予約'+n+'件を復元');return true;}}catch(e){}return false;}
+function demoPurge(){try{const DEMO_PH=['09012345678','08022223333','07088881111','09055557777','08099990000'];const DEMO_ID=/^B-10(3\d|4\d)(_\d+)?$/;let n=0;
+  DATA.deletedCust=DATA.deletedCust||{};DEMO_PH.forEach(p=>{if(DATA.customers&&DATA.customers[p]){delete DATA.customers[p];n++;}DATA.deletedCust[p]=DATA.deletedCust[p]||Date.now();});
+  const b0=(DATA.bookings||[]).length;DATA.bookings=(DATA.bookings||[]).filter(b=>{const ph=normPhone(b&&b.phone);return !(DEMO_ID.test(String(b&&b.id))||DEMO_PH.includes(ph));});n+=b0-DATA.bookings.length;
+  DATA.delBookings=DATA.delBookings||[];['B-1030','B-1042','B-1043','B-1044','B-1045','B-1046'].forEach(id=>{if(!DATA.delBookings.includes(id))DATA.delBookings.push(id);});
+  if(n){logAct('サンプルデータを除去（'+n+'件）');}return n>0;}catch(e){return false;}}
 function futureVisitFix(){try{const td=fmtDate(today);let ch=false;for(const k in (DATA.customers||{})){const c=DATA.customers[k];if(!c||!Array.isArray(c.notices))continue;const hasReal=(DATA.bookings||[]).some(b=>normPhone(b.phone)===k&&b.status==='visited'&&b.date<=td);if(!hasReal){const n0=c.notices.length;c.notices=c.notices.filter(n=>!/^本日はご来店ありがとうございました/.test(n.text||''));if(c.notices.length!==n0)ch=true;}}const hit=(DATA.bookings||[]).filter(b=>b.date>td&&b.status==='visited');
   for(const b of hit){b.status='confirmed';b.thanked=false;b.reviewAsked=false;b.awardedPoints=0;delete b.visitedAt;ch=true;
     const c=DATA.customers[normPhone(b.phone)];if(c&&Array.isArray(c.notices)){const before=c.notices.length;c.notices=c.notices.filter(n=>!(/^本日はご来店ありがとうございました/.test(n.text||'')));if(c.notices.length!==before)ch=true;}
@@ -2972,7 +2979,7 @@ function renderAdmin(){
   if(!WORK)loadWork().then(()=>render());
   if(!localGet('salon:me')){app.innerHTML=renderMePicker();app.querySelectorAll('[data-me]').forEach(b=>b.onclick=()=>{if(b.dataset.me==='s1'){const p=prompt('オーナー（SAKURA）として入るには暗証番号を入力してください');if(p===null)return;if(String(p).trim()!==ownerPin()){alert('暗証番号が違います。');return;}}setMe(b.dataset.me);});const _mo=byId('me-logout');if(_mo)_mo.onclick=()=>{try{localStorage.removeItem('vi5:datacache');}catch(e){}state.adminAuthed=false;localDel('salon:staff');localDel('salon:staffpw');render();};return;}
   const _idone=localGet('salon:introdone');if(!_idone&&!state.introSkip){app.innerHTML=renderIntro();const _ia=byId('intro-agree');const _iok=byId('intro-ok');if(_iok)_iok.onclick=()=>{if(!_ia||!_ia.checked){alert('「確認しました」にチェックをお願いします。');return;}localSet('salon:introdone',INTRO_VER);render();};const _il=byId('intro-later');if(_il)_il.onclick=()=>{state.introSkip=true;render();};return;}
-  autoRescue();imageShrinkMigrate();autoEshopSync();try{if(extBlocksMigrate())saveData(DATA);}catch(_e){}try{if(state.dataFull&&autoCancelRestore())saveData(DATA);}catch(_e){}try{if(state.dataFull&&futureVisitFix())saveData(DATA);}catch(_e){}try{if(state.dataFull&&birthdayAutoRun())saveData(DATA);}catch(_e){}try{if(state.dataFull&&meName()==='SAKURA'&&campaignReminder()){saveWork();saveData(DATA);}}catch(_e){}try{if(state.dataFull)seedTasksMigrate();}catch(_e){}try{if(state.dataFull&&!state._gcalSwept){state._gcalSwept=true;if(gcalCancelSweep())saveData(DATA);}}catch(_e){}let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(staffNameMigrate())_clch=true;if(wageMigrate())_clch=true;if(harukaFixMigrate())_clch=true;if(staffMenuMigrate())_clch=true;if(calSetupMigrate())_clch=true;/* 自動保存は廃止：古い端末が新データを上書きする事故の元。編集操作時のみ保存 */
+  autoRescue();imageShrinkMigrate();autoEshopSync();try{if(extBlocksMigrate())saveData(DATA);}catch(_e){}try{if(state.dataFull&&demoPurge())saveData(DATA);}catch(_e){}try{if(state.dataFull&&autoCancelRestore())saveData(DATA);}catch(_e){}try{if(state.dataFull&&futureVisitFix())saveData(DATA);}catch(_e){}try{if(state.dataFull&&birthdayAutoRun())saveData(DATA);}catch(_e){}try{if(state.dataFull&&meName()==='SAKURA'&&campaignReminder()){saveWork();saveData(DATA);}}catch(_e){}try{if(state.dataFull)seedTasksMigrate();}catch(_e){}try{if(state.dataFull&&!state._gcalSwept){state._gcalSwept=true;if(gcalCancelSweep())saveData(DATA);}}catch(_e){}let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(staffNameMigrate())_clch=true;if(wageMigrate())_clch=true;if(harukaFixMigrate())_clch=true;if(staffMenuMigrate())_clch=true;if(calSetupMigrate())_clch=true;/* 自動保存は廃止：古い端末が新データを上書きする事故の元。編集操作時のみ保存 */
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
   const tabs=[['todo','✅','やること','毎日'],['chat','💬','チャット','毎日'],['bookings','📅','予約','毎日'],['schedule','⏰','シフト','毎日'],['customers','👥','顧客カルテ','お客様'],['report','📝','業務報告','毎日'],['campaign','🎁','クーポン/告知','毎日'],['money','💰','売上・給与','管理'],['settings','⚙️','設定','管理']];
   const _sec=(t)=>`<div class="subhead" style="margin:26px 0 12px;padding-top:18px;border-top:2px solid var(--line)">${t}</div>`;
@@ -3188,6 +3195,7 @@ async function saveManualBooking(){
   alert(`予約を登録しました。\n${name} 様 ／ ${mdLabel(mb.date)} ${bk.time}\n${items.map(i=>i.name).join('＋')}`);
   render();
 }
+function dupCount(x){return (DATA.bookings||[]).filter(y=>y.status!=='cancelled'&&normPhone(y.phone)===normPhone(x.phone)&&y.date===x.date&&y.time===x.time&&(y.staffId||'')===(x.staffId||'')).length;}
 function bookingRow(x,i){
   const pillTxt={confirmed:'予約確定',pending:'未確定',visited:'来店済み',cancelled:'キャンセル'}[x.status];const svc=x.items.map(s=>s.name).join(' + ');const ph=normPhone(x.phone);
   let tags=x.companions.map(c=>{const o=companionOpts.find(z=>z.id===c);return `<span class="tag">${o.ic} ${o.label}</span>`}).join('');
@@ -3204,7 +3212,7 @@ function bookingRow(x,i){
   else if(x.status==='confirmed')acts=`${x.date<=fmtDate(today)?`<button data-visit="${x.id}|${x.date}" title="来店済みにする">${ICchk}</button>`:''}<button data-cancel="${x.id}" title="来店なし/キャンセル">${ICx}</button><button data-open="${ph}" title="カルテ">${ICcard}</button>`;
   else if(x.status==='visited')acts=`${x.thanked?'':`<button data-thanks="${x.id}" title="お礼を送る">${ICmsg}</button>`}<button data-open="${ph}" title="カルテ">${ICcard}</button>`;
   
-  return `<div class="booking" style="animation-delay:${i*.04}s"><div class="bk-time">${x.time}</div><div class="bk-body" data-bkinfo="${x.id}" style="cursor:pointer"><div class="bk-name">${nm} <span style="font-weight:400;color:var(--ink-soft);font-size:11px">様</span> <span style="color:var(--gold);font-size:10px;font-weight:700">${state.bkInfoOpen===x.id?'▲ 閉じる':'▼ お客様情報'}</span></div><div class="bk-svc">${svc} / ${stById(x.staffId).name}</div>${tags?`<div class="bk-tags">${tags}</div>`:''}${x.customerMemo?`<div class="bk-note">📝 ${x.customerMemo}</div>`:''}</div><span class="pill ${x.status}">${pillTxt}</span>${acts?`<div class="bk-actions">${acts}</div>`:''}</div>${state.bkInfoOpen===x.id?bkCustInfo(x,cust):''}`;
+  return `<div class="booking" style="animation-delay:${i*.04}s"><div class="bk-time">${x.time}</div><div class="bk-body" data-bkinfo="${x.id}" style="cursor:pointer"><div class="bk-name">${nm} <span style="font-weight:400;color:var(--ink-soft);font-size:11px">様</span> <span style="color:var(--gold);font-size:10px;font-weight:700">${state.bkInfoOpen===x.id?'▲ 閉じる':'▼ お客様情報'}</span></div><div class="bk-svc">${svc} / ${stById(x.staffId).name}</div>${tags?`<div class="bk-tags">${tags}</div>`:''}${x.customerMemo?`<div class="bk-note">📝 ${x.customerMemo}</div>`:''}</div><span class="pill ${x.status}">${pillTxt}</span>${(x.status!=='cancelled'&&dupCount(x)>1)?`<span class="tag disc" style="margin-left:6px">⚠ 重複${dupCount(x)}件</span><button class="chip" data-dupfix="${x.id}" style="margin-left:6px;color:var(--rose);border-color:var(--rose)">この1件を取消</button>`:''}${acts?`<div class="bk-actions">${acts}</div>`:''}</div>${state.bkInfoOpen===x.id?bkCustInfo(x,cust):''}`;
 }
 function bkCustInfo(x,c){const ph=normPhone(x.phone);const bks=(DATA.bookings||[]).filter(b=>normPhone(b.phone)===ph&&b.status!=='cancelled').sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));const visits=bks.filter(b=>b.status==='visited');const last=visits.find(b=>b.date<x.date);const kl=((WORK&&WORK.karte&&WORK.karte[ph])||[]).slice(0,3);const bal=c?pointBalance(c.phone):0;const row=(k,v)=>v?`<div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px dashed var(--line);font-size:13px"><span style="min-width:88px;color:var(--ink-soft)">${k}</span><span style="flex:1">${v}</span></div>`:'';return `<div class="addform" style="margin:-6px 0 12px;padding:12px 14px;border:1.5px solid var(--gold);background:#fffdf7"><b style="font-size:14px">👤 ${c?c.name:x.phone} 様のご情報</b>${row('会員番号',custNoLabel(c))}${row('ふりがな',c&&c.kana)}${row('電話',`<a href="tel:${x.phone}" style="color:var(--navy);font-weight:700">${x.phone}</a>`)}${row('お誕生日',c&&c.birthday?bdayLabel(c.birthday):'')}${row('ご来店',`${visits.length}回${c&&c.joined?'（登録 '+c.joined+'）':''}`)}${row('会員ランク',c&&custDiscount(c).label?custDiscount(c).label:'通常')}${row('ポイント',bal.toLocaleString()+'pt')}${row('今回のメニュー',x.items.map(i=>i.name).join('＋')+(x.staffId?' ／ '+stById(x.staffId).name:''))}${row('前回',last?mdLabel(last.date)+' '+last.items.map(i=>i.name).join('＋'):'初めてのご来店 🌸')}${row('ご要望・備考',x.customerMemo)}${row('同伴',x.companions&&x.companions.length?x.companions.map(cc=>(companionOpts.find(z=>z.id===cc)||{}).label||cc).join('・'):'')}${kl.length?`<div style="margin-top:8px"><div style="font-size:12px;color:var(--ink-soft);margin-bottom:4px">📒 カルテ（最近3件）</div>${kl.map(k=>`<div style="font-size:13px;padding:6px 8px;background:#fff;border-radius:8px;margin-bottom:4px;border:1px solid var(--line)"><span style="color:var(--ink-soft);font-size:11px">${new Date(k.at).toLocaleDateString('ja-JP')} ${k.by||''}</span><br>${(k.text||'').replace(/</g,'&lt;')}</div>`).join('')}</div>`:'<div class="note" style="margin-top:8px">カルテはまだありません</div>'}<button class="btn btn-ghost" data-open="${ph}" style="width:100%;margin-top:10px">📒 カルテを書く・全履歴を見る</button></div>`;}
 /* ===== 音声シフト設定 ===== */
@@ -3745,6 +3753,7 @@ function bindAdmin(){
   app.querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>setStatus(b.dataset.confirm,'confirmed'));
   app.querySelectorAll('[data-cancel]').forEach(b=>b.onclick=()=>setStatus(b.dataset.cancel,'cancelled'));
   app.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{state.adminTab='customers';state.custOpen=b.dataset.open;render()});app.querySelectorAll('[data-bkinfo]').forEach(b=>b.onclick=()=>{state.bkInfoOpen=(state.bkInfoOpen===b.dataset.bkinfo)?null:b.dataset.bkinfo;render();});
+  app.querySelectorAll('[data-dupfix]').forEach(b=>b.onclick=async()=>{const bk=(DATA.bookings||[]).find(x=>x.id===b.dataset.dupfix);if(!bk)return;if(!confirm('この重複した1件（'+mdLabel(bk.date)+' '+bk.time+'）をキャンセルします。よろしいですか？'))return;bk.status='cancelled';try{pushGCal(bk,'cancel');}catch(e){}logAct('重複予約を手動で取消');await saveData(DATA);render();});
   const qj=byId('qjump');if(qj)qj.onchange=e=>{state.adminTab='customers';state.custQuery=e.target.value;state.custOpen=null;render()};
   const mbo=byId('mb-open');if(mbo)mbo.onclick=()=>{state.manualOpen=true;state.manualBook=null;state.manualCat='all';render()};
   const mbc=byId('mb-cancel');if(mbc)mbc.onclick=()=>{state.manualOpen=false;state.manualBook=null;render()};
