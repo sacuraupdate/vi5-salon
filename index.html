@@ -961,7 +961,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260907g';
+const APP_REV='r20260909a';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -3352,7 +3352,16 @@ function shiftMonthList(){
     if(salonClosed(ds)){rows+=`<div class="mlrow closed"><span class="mld">${d}日(${DOW[dow]})</span><span class="note" style="margin:0">休業</span></div>`;continue;}
     const sh=effectiveShift(sid,ds);const on=sh.on&&sh.ranges.length;const r0=on?sh.ranges[0]:{start:bs,end:be};const r1=on&&sh.ranges[1]?sh.ranges[1]:null;
     const selT=(i,fld,val)=>{let o='';for(let h=OPEN_HOUR;h<=LAST_RECEPTION;h++)o+=`<option value="${h}" ${val===h?'selected':''}>${gpad(h)}:00</option>`;return `<select data-drng="${ds}|${i}|${fld}" class="${fld==='start'?'mst':'met'}">${o}</select>`;};
-    const times=on?`<div class="mtimes"><div class="mtrow">${selT(0,'start',r0.start)}<span class="tl">〜</span>${selT(0,'end',r0.end)}${r1?'':`<button class="addrng" data-addrng="${ds}" title="間で抜ける時間を作る">＋抜け</button>`}</div>${r1?`<div class="mtrow">${selT(1,'start',r1.start)}<span class="tl">〜</span>${selT(1,'end',r1.end)}<button class="rmrng" data-rmrng="${ds}">✕</button></div>`:''}</div>`:'';
+    const lbl=(t,c)=>`<span style="font-size:11px;font-weight:700;color:${c};min-width:34px;display:inline-block">${t}</span>`;
+    const times=on?(r1?`<div class="mtimes">
+        <div class="mtrow" style="background:#E3F2E6;border-radius:8px;padding:4px 6px">${lbl('🟢出勤','#2C4433')}${selT(0,'start',r0.start)}</div>
+        <div class="mtrow" style="background:#FFF4D6;border-radius:8px;padding:4px 6px">${lbl('☕中抜け','#9c7a12')}${selT(0,'end',r0.end)}<span class="tl">〜</span>${selT(1,'start',r1.start)}<button class="rmrng" data-rmrng="${ds}" title="中抜けをなくす">中抜けなし</button></div>
+        <div class="mtrow" style="background:#EFEFF2;border-radius:8px;padding:4px 6px">${lbl('🔴退勤','#7a2e3a')}${selT(1,'end',r1.end)}</div>
+        <div class="note" style="margin:4px 0 0">出勤 ${gpad(r0.start)}:00 〜 ${gpad(r0.end)}:00 ｜ 中抜け ${gpad(r0.end)}:00〜${gpad(r1.start)}:00 ｜ ${gpad(r1.start)}:00 〜 退勤 ${gpad(r1.end)}:00</div>
+      </div>`:`<div class="mtimes">
+        <div class="mtrow" style="background:#E3F2E6;border-radius:8px;padding:4px 6px">${lbl('🟢出勤','#2C4433')}${selT(0,'start',r0.start)}<span class="tl">〜</span>${lbl('🔴退勤','#7a2e3a')}${selT(0,'end',r0.end)}<button class="addrng" data-addrng="${ds}" title="間で抜ける時間を作る">＋中抜けを入れる</button></div>
+        <div class="note" style="margin:4px 0 0">出勤 ${gpad(r0.start)}:00 〜 退勤 ${gpad(r0.end)}:00（中抜けなし）</div>
+      </div>`):'';
     rows+=`<div class="mlrow ${on?'':'off'}"><div class="mlr-top"><span class="mld">${d}日(${DOW[dow]})</span><div class="wk-toggle"><button class="wk ${on?'on':''}" data-setday="${ds}|on">出勤</button><button class="wk off ${on?'':'on'}" data-setday="${ds}|off">休み</button></div></div>${times}</div>`;
   }
   return `<div class="chips" style="margin-bottom:12px">${chips}</div>${nav}${qf}<div class="note" style="margin-bottom:8px">各日の右の「<b>出勤／休み</b>」を押すとワンクリックで切り替わります。出勤の日は開始〜終了の時刻を選びます。お昼などで<b>間に抜ける時間</b>がある日は「<b>＋抜け</b>」を押すと、もう1つの時間帯（例：9-12と14-18）を作れます。1日から月末までこの画面で完結、入力中に画面は動きません。</div><div class="mlist">${rows}</div><button class="btn btn-ghost" id="ics-month" style="width:100%;margin-top:14px">📅 今月（${mo+1}月）の全員のシフトをGoogleカレンダーへ出力</button><div class="note" style="margin-top:6px">押すとファイル（.ics）が保存されます。Googleカレンダー →「設定」→「インポート/エクスポート」から取り込めます。</div>`;
