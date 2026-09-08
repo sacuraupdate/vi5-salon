@@ -961,7 +961,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260909b';
+const APP_REV='r20260909c';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1238,13 +1238,26 @@ async function backupSoon(d){/* 曜日別の自動バックアップ（1日1回�
     const r=await fetchT(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:bak:'+dow,value:JSON.stringify({at:Date.now(),d:d})})});
     const mkey='salon:bak:m'+String(new Date().getMonth()+1);fetchT(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:mkey,value:JSON.stringify({at:Date.now(),d:d})})}).catch(()=>{});
     if(r.ok)localSet(mk,tag);}catch(_e){}}
+function preSaveGuard(d,srv){try{
+  if(!d||typeof d!=='object')return {ok:false,why:'データが空'};
+  if(d._seed)return {ok:false,why:'サンプルデータは保存しません'};
+  const DEMO=['09012345678','08022223333','07088881111','09055557777','08099990000'];
+  if(DEMO.some(p=>d.customers&&d.customers[p]))return {ok:false,why:'サンプル顧客が混入'};
+  if(srv&&srv.customers){const sc=Object.keys(srv.customers).length,lc=Object.keys(d.customers||{}).length;if(sc>=5&&lc<sc*0.7)return {ok:false,why:'顧客が'+sc+'→'+lc+'に激減（保存を中止）'};}
+  if(srv&&Array.isArray(srv.bookings)){const sb=srv.bookings.length,lb=(d.bookings||[]).length;if(sb>=10&&lb<sb*0.7)return {ok:false,why:'予約が'+sb+'→'+lb+'に激減（保存を中止）'};}
+  return {ok:true};}catch(e){return {ok:true};}}
+function safetyReport(d){try{const issues=[];const td=fmtDate(today);
+  (d.bookings||[]).forEach(b=>{if(b&&b.status==='visited'&&b.date>td)issues.push('未来日なのに来店済み: '+b.date+' '+(b.name||b.phone));});
+  const ids={};(d.bookings||[]).forEach(b=>{if(b&&b.id){ids[b.id]=(ids[b.id]||0)+1;}});Object.keys(ids).forEach(k=>{if(ids[k]>1)issues.push('予約IDの重複: '+k);});
+  return issues;}catch(e){return [];}}
 async function saveData(d){DATA=d;
   if(!state.adminAuthed)return;
   if(d&&d._seed){console.warn('seed data: save blocked');return;}
   try{for(const sv of (d.services||[])){if(sv.img&&sv.img.indexOf('data:image')===0&&sv._thumbSrc!==sv.img.length){const t=await shrinkDataURL(sv.img,260,0.62,20000);if(t){sv.thumb=t;sv._thumbSrc=sv.img.length;}}}}catch(_e){}
   // ★保存前に必ずサーバーの実データと統合（古い端末による上書き消失を構造的に防止）
   let srv=null;try{srv=await directLoad();}catch(_e){}
-  if(srv){d=mergeProtect(d,srv);DATA=d;state.dataFull=true;}
+  if(srv){const g=preSaveGuard(d,srv);if(!g.ok){alert('⚠️ 安全のため保存を中止しました：'+g.why+'\n画面を開き直してから、もう一度操作してください。');try{logAct('保存中止: '+g.why);}catch(_e){}return;}d=mergeProtect(d,srv);DATA=d;state.dataFull=true;}
+  try{const iss=safetyReport(d);if(iss.length&&WORK){WORK.ownerAlerts=WORK.ownerAlerts||[];const txt='🛡 データ点検で気になる点: '+iss.slice(0,3).join(' / ')+(iss.length>3?' ほか'+(iss.length-3)+'件':'');if(!WORK.ownerAlerts.some(a=>a.text===txt)){WORK.ownerAlerts.unshift({id:'sf'+Date.now(),text:txt,by:'システム',at:Date.now(),read:false});}}}catch(_e){}
   if(!state.dataFull&&!state.dataFromDB){console.warn('save skipped: full data not confirmed');return;}
   const staffCount=(d&&Array.isArray(d.staff))?d.staff.filter(s=>s&&s.id!=='s0').length:0;
   const custCount=(d&&d.customers)?Object.keys(d.customers).length:0;
