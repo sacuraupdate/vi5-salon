@@ -48,7 +48,13 @@ export const instructors: Instructor[] = [
   {
     id: 'tomomi',
     name: 'TOMOMI',
-    role: { ja: 'フェムケア講師', en: 'Femcare Instructor', ko: '펨케어 강사', 'zh-TW': '女性照護講師' },
+    // 「講師」「専門家」と断定せず、担当領域を示す役割ラベルにする
+    role: {
+      ja: 'フェムケア・女性のライフステージ担当',
+      en: 'Femcare & Women’s Life Stages',
+      ko: '펨케어 · 여성 라이프스테이지 담당',
+      'zh-TW': '女性照護・女性生命階段',
+    },
     headline: {
       ja: '女性の体の変化を知ることは、サロンの提案力そのものになります。',
       en: 'Understanding how a woman’s body changes is what deepens what a salon can offer.',
