@@ -229,7 +229,15 @@ module.exports = async (req, res) => {
     }
     diag.recat = recat; diag.pubOk = pubOk;
     d.eshop.syncedAt = Date.now();
-    if (added || updated || recat || diag.futureFix) await saveData(d);
+    if (added || updated || recat || diag.futureFix) {
+      // 保存直前にサーバーの最新を読み直し、このジョブが変更した部分(eshop/未来来店修復)だけを適用（他端末の保存を消さない）
+      const fresh = await loadData();
+      if (fresh) {
+        fresh.eshop = d.eshop;
+        if (diag.futureFix) { try { const td=new Date(Date.now()+9*3600000).toISOString().slice(0,10); for (const b of (fresh.bookings||[])) { if (b && b.date>td && b.status==='visited') { b.status='confirmed'; b.thanked=false; b.reviewAsked=false; b.awardedPoints=0; } } } catch(e){} }
+        await saveData(fresh); d = fresh;
+      } else { await saveData(d); }
+    }
     try{await fetch(SUPA_URL+'/rest/v1/kv?on_conflict=key',{method:'POST',headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:eshop',value:JSON.stringify({products:d.eshop.products,syncedAt:Date.now()})})});}catch(e){}
     diag.added = added; diag.updated = updated; diag.fetched = fetched;
     diag.total = d.eshop.products.length;
