@@ -961,7 +961,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260911m';
+const APP_REV='r20260911n';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -2809,17 +2809,23 @@ function computePay(staffId,mkey){const sv=stById(staffId)||{};const wage=sv.wag
 function clockBar(){if(!WORK)return '';const me=localGet('salon:me');if(!me||me==='owner')return '';
   if(meName()==='SAKURA')return ownerStaffPanel();
   const cur=(WORK.clock||[]).find(c=>c.staff===me&&!c.out);const onBreak=cur&&(cur.breaks||[]).some(b=>!b.end);let warn='';if(cur){const w=clockWorkedMs(cur)/3600000;const mx=WORK_MAX[cur.mode];if(w>=mx)warn=`<div class="cl-warn">⏰ 上限${mx}時間超過。退勤してください</div>`;}return `<div class="clockp"><button data-clockfix="1" style="float:right;font-size:11px;background:none;border:1px solid var(--line);border-radius:14px;padding:4px 10px;color:var(--soft);font-family:inherit">🛠 打刻の修正・追加</button><div class="cl-status">${cur?`🟢 出勤中（${cur.mode==='onsite'?'店舗':'在宅'}）／ ${fmtDur(clockWorkedMs(cur))}${onBreak?' ・ ☕休憩中':''}`:'⚪ 未出勤'}${(()=>{const me9=localGet('salon:me');const td9=fmtDate(today);const tm9=fmtDate(new Date(today.getFullYear(),today.getMonth(),today.getDate()+1));const map9=(DATA.workReq||{})[me9]||{};const wrT=map9[td9];const wrN=map9[tm9];const wr=(!cur&&wrT)?{v:wrT,day:'本日'}:(wrN?{v:wrN,day:'明日'}:null);if(!wr)return '';return `<span style="display:inline-flex;align-items:center;gap:5px;margin-left:8px;background:${wr.v==='home'?'#FFF4D6':'#E3F2E6'};color:${wr.v==='home'?'#9c7a12':'#2C4433'};border-radius:100px;padding:3px 12px;font-size:12px;font-weight:700">${wr.v==='home'?'🏠':'🏢'} ${wr.day}は${wr.v==='home'?'在宅':'出勤'}でお願いします</span>`;})()}</div><div class="cl-btns">${!cur?`<button class="clbtn in" data-clock="in_onsite">🏢 店舗 出勤</button><button class="clbtn home" data-clock="in_home">🏠 在宅 出勤</button>`:`<button class="clbtn br" data-clock="break">${onBreak?'☕ 休憩終了':'☕ 休憩'}</button><button class="clbtn out" data-clock="out">🔴 退勤</button>`}</div>${warn}</div>${clockFixPanel()}`;}
+function scheduledOn(sid,ds){try{if(salonClosed(ds))return false;if(isDayOff(sid,ds))return false;const sh=effectiveShift(sid,ds);return !!(sh&&sh.on&&sh.ranges&&sh.ranges.length);}catch(e){return false;}}
 function ownerStaffPanel(){
   const reals=(staff||[]).filter(x=>x.id!=='s0'&&x.name!=='SAKURA');if(!reals.length)return '';
-  const tmr=fmtDate(new Date(today.getFullYear(),today.getMonth(),today.getDate()+1));const wr=DATA.workReq||{};
-  const rows=reals.map(s=>{const cur=(WORK.clock||[]).find(c=>c.staff===s.id&&!c.out);const curReq=(wr[s.id]||{})[tmr];
-    let statusHtml;
-    if(!cur){statusHtml=`<span style="font-size:12px;color:var(--ink-soft)">⚪ 未出勤</span>`;}
-    else{const onBreak=(cur.breaks||[]).some(b=>!b.end);const worked=fmtDur(clockWorkedMs(cur));
-      statusHtml=`<span style="font-size:12px;font-weight:700;color:${onBreak?'#9c7a12':'#2C4433'}">${onBreak?'☕ 休憩中':'🟢 '+(cur.mode==='onsite'?'出勤中（店舗）':'出勤中（在宅）')}</span><span style="font-size:11px;color:var(--ink-soft);margin-left:4px">${worked}</span>`;}
-    return `<div style="padding:10px 0;border-top:1px dashed var(--line)"><div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:${cur?((cur.breaks||[]).some(b=>!b.end)?'#E0C578':'#3F5A46'):'#c9ccd4'};flex-shrink:0"></span><b style="flex:1">${s.name}</b>${statusHtml}</div>
-      <div style="display:flex;gap:6px;margin-top:8px;align-items:center"><span style="font-size:11px;color:var(--ink-soft)">明日(${mdLabel(tmr)})：</span><button class="chip ${curReq==='home'?'sel':''}" data-workreq="${s.id}|${tmr}|home">🏠 在宅で</button><button class="chip ${curReq==='onsite'?'sel':''}" data-workreq="${s.id}|${tmr}|onsite">🏢 出勤で</button>${curReq?`<span style="font-size:11px;color:${curReq==='home'?'#9c7a12':'#2C4433'}">✓指示済み</span>`:''}</div></div>`;}).join('');
-  return `<div class="addform" style="margin-bottom:16px"><div class="subhead" style="margin:0 0 4px">👀 スタッフの状況</div>${rows}</div>`;
+  const td=fmtDate(today);const tmr=fmtDate(new Date(today.getFullYear(),today.getMonth(),today.getDate()+1));const wr=DATA.workReq||{};
+  const targets=reals.filter(s=>scheduledOn(s.id,td)||scheduledOn(s.id,tmr));
+  if(!targets.length)return '';
+  const rows=targets.map(s=>{const workToday=scheduledOn(s.id,td);const workTmr=scheduledOn(s.id,tmr);
+    const cur=(WORK.clock||[]).find(c=>c.staff===s.id&&!c.out);const curReq=(wr[s.id]||{})[tmr];
+    let statusHtml='';
+    if(workToday){if(!cur){statusHtml=`<span style="font-size:12px;color:var(--ink-soft)">⚪ 未出勤</span>`;}
+      else{const onBreak=(cur.breaks||[]).some(b=>!b.end);const worked=fmtDur(clockWorkedMs(cur));
+        statusHtml=`<span style="font-size:12px;font-weight:700;color:${onBreak?'#9c7a12':'#2C4433'}">${onBreak?'☕ 休憩中':'🟢 '+(cur.mode==='onsite'?'出勤中（店舗）':'出勤中（在宅）')}</span><span style="font-size:11px;color:var(--ink-soft);margin-left:4px">${worked}</span>`;}}
+    else{statusHtml=`<span style="font-size:12px;color:var(--ink-soft)">明日出勤予定</span>`;}
+    const dot=workToday?(cur?((cur.breaks||[]).some(b=>!b.end)?'#E0C578':'#3F5A46'):'#c9ccd4'):'#c9ccd4';
+    const reqRow=workTmr?`<div style="display:flex;gap:6px;margin-top:8px;align-items:center"><span style="font-size:11px;color:var(--ink-soft)">明日(${mdLabel(tmr)})：</span><button class="chip ${curReq==='home'?'sel':''}" data-workreq="${s.id}|${tmr}|home">🏠 在宅で</button><button class="chip ${curReq==='onsite'?'sel':''}" data-workreq="${s.id}|${tmr}|onsite">🏢 出勤で</button>${curReq?`<span style="font-size:11px;color:${curReq==='home'?'#9c7a12':'#2C4433'}">✓指示済み</span>`:''}</div>`:'';
+    return `<div style="padding:10px 0;border-top:1px dashed var(--line)"><div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:${dot};flex-shrink:0"></span><b style="flex:1">${s.name}</b>${statusHtml}</div>${reqRow}</div>`;}).join('');
+  return `<div class="addform" style="margin-bottom:16px"><div class="subhead" style="margin:0 0 4px">👀 スタッフの状況</div><div class="note" style="margin:0 0 4px">本日出勤予定・明日出勤予定のスタッフのみ表示しています</div>${rows}</div>`;
 }
 function adminPayOwner(){
   if(!WORK){loadWork().then(()=>render());return '<div class="empty" style="padding:40px 0">💴 読み込み中…</div>';}
