@@ -1,6 +1,6 @@
 // 同期状況の確認  /?api=diag
-const SUPA_URL='https://tehcaufdztgpbrknpshk.supabase.co';
-const SUPA_KEY='sb_publishable_CnOCyO9QU69K47vbbLRkYg__cEv53CJ';
+const SUPA_URL=process.env.SUPABASE_URL||'https://tehcaufdztgpbrknpshk.supabase.co';
+const SUPA_KEY=process.env.SUPABASE_KEY||'sb_publishable_CnOCyO9QU69K47vbbLRkYg__cEv53CJ';
 async function kv(key){const r=await fetch(SUPA_URL+'/rest/v1/kv?key=eq.'+key+'&select=value',{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}});if(!r.ok)return null;const j=await r.json();if(!j.length)return null;let v=j[0].value;for(let i=0;i<4;i++){if(typeof v==='string'){try{v=JSON.parse(v);continue}catch(e){break}}if(Array.isArray(v)){v=v[0];continue}break}return v}
 module.exports=async(req,res)=>{
   try{
