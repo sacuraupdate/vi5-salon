@@ -961,7 +961,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260910h';
+const APP_REV='r20260910m';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1469,7 +1469,7 @@ function bkDurMinOf(b){return (b.items||[]).reduce((a,i)=>a+(i.min||0),0)||60;}
 function staffBusyAt(sid,dateStr,startMin,durMin){/* 既存予約と時間帯が重なれば true */
   const end=startMin+(durMin||60);
   return (DATA.bookings||[]).some(b=>{if(b.staffId!==sid||b.date!==dateStr||b.status==='cancelled')return false;const bs=bkStartMinOf(b),be=bs+bkDurMinOf(b);return startMin<be&&end>bs;});}
-function shiftCovers(sid,dateStr,startMin,durMin){const sh=effectiveShift(sid,dateStr);if(!sh.on||!sh.ranges)return false;const end=startMin+(durMin||60);return sh.ranges.some(r=>startMin>=r.start*60&&end<=r.end*60);}
+function shiftCovers(sid,dateStr,startMin,durMin){if(typeof salonClosed==='function'&&salonClosed(dateStr))return false;if(typeof isDayOff==='function'&&isDayOff(sid,dateStr))return false;const sh=effectiveShift(sid,dateStr);if(!sh.on||!sh.ranges)return false;const end=startMin+(durMin||60);return sh.ranges.some(r=>startMin>=r.start*60&&end<=r.end*60);}
 function staffSlotOpen30(sid,dateStr,startMin){const dur=(state.cart||[]).reduce((a,x)=>a+(x.min||0),0)||60;if(!shiftCovers(sid,dateStr,startMin,dur))return false;for(let m=startMin;m<startMin+dur;m+=15){if(isBlocked(sid,dateStr,minToTime(m)))return false;}return !staffBusyAt(sid,dateStr,startMin,dur);}
 function anyStaffSlot30(dateStr,startMin){return staff.filter(s=>s.id!=='s0').some(s=>staffSlotOpen30(s.id,dateStr,startMin))}
 function getCamp(id){return DATA.campaigns.find(c=>c.id===id)}
@@ -1946,7 +1946,11 @@ async function addComment(id){
 /* ===== 予約 ===== */
 function renderCustomer(){const pair=state.bookMode==='pair';if(state.step===0)return pair?stepBrowsePair():stepBrowse();if(state.step===1)return pair?stepStaffPair():stepStaff();if(state.step===2)return stepDate();if(state.step===3)return stepInfo();if(state.step===4)return stepDone()}
 function cartBar(label,enabled){return `<div class="cta-bar"><div class="cart-mini"><span class="ct-n">${state.cart.length}点</span><span class="ct-p">${yen(cartTotal())}</span></div><button class="btn btn-primary" id="next" ${enabled?'':'disabled'}>${label}</button></div>`}
-function menuItemHtml(x){const sel=inCart(x.id);const catObj=categories.find(c=>c.id===x.cat)||{ph:'#888'};const _im=x.thumb||x.img;const bg=_im?`background-image:url('${_im}');background-color:${catObj.ph}`:`background-color:${catObj.ph}`;
+function menuRankOK(sv){const need=(sv&&sv.minRank)||0;if(!need)return true;const c=state.mpPhone?DATA.customers[normPhone(state.mpPhone)]:null;const rk=c?effectiveRank(c):0;return rk>=need;}
+function rankUpHint(sv){const need=(sv&&sv.minRank)||0;if(!need)return '';const c=state.mpPhone?DATA.customers[normPhone(state.mpPhone)]:null;if(!c)return '🔒 '+RANK_LABEL[need]+'限定メニューです。ログイン（会員登録）すると会員ランクに応じて選べます。';const rk=effectiveRank(c);const ym=fmtDate(today).slice(0,7);const monthV=(DATA.bookings||[]).filter(b=>normPhone(b.phone)===normPhone(c.phone)&&b.status==='visited'&&b.date.slice(0,7)===ym).length;
+  if(need===1)return '🔒 シルバー会員以上のメニューです。<b>今月あと'+Math.max(0,1-monthV)+'回のご来店でシルバー会員</b>になり、選べるようになります✨';
+  return '🔒 ゴールド会員限定メニューです。'+(rk===1?'<b>今月あと'+Math.max(0,2-monthV)+'回のご来店でゴールド会員</b>':'月1回のご来店でシルバー、<b>月2回でゴールド会員</b>')+'になり、選べるようになります✨';}
+function menuItemHtml(x){const sel=inCart(x.id);const catObj=categories.find(c=>c.id===x.cat)||{ph:'#888'};const _rkOK=menuRankOK(x);if(!_rkOK){return `<div class="menu-item" style="opacity:.75;border:1.5px dashed var(--gold)"><div class="mi-body"><div class="mi-name">🔒 ${itemName(x)} <span class="tag disc">${RANK_LABEL[x.minRank||0]}${(x.minRank||0)===2?'限定':'以上'}</span></div><div class="mi-meta">${x.min}分 ・ ${yen(x.price)}</div><div style="font-size:12.5px;color:var(--rose);margin-top:6px;line-height:1.7">${rankUpHint(x)}</div></div></div>`;}const _im=x.thumb||x.img;const bg=_im?`background-image:url('${_im}');background-color:${catObj.ph}`:`background-color:${catObj.ph}`;
   const open=state.menuOpen===x.id;
   const photos=(x.photos&&x.photos.length?x.photos:(x.img?[x.img]:[])).slice(0,3);
   const detail=open?`<div class="mi-detail">${photos.length?`<div class="share-photos" style="margin:0 0 10px">${photos.map(p=>`<div style="background-image:url('${p}')"></div>`).join('')}</div>`:''}<div class="mi-detail-tx">${x.detail||x.desc||'詳細はスタッフまでお気軽にお尋ねください。'}</div></div>`:'';
@@ -1986,7 +1990,7 @@ function stepBrowse(){
   app.querySelectorAll('[data-fc]').forEach(b=>b.onclick=()=>{state.openCat=b.dataset.fc==='all'?null:b.dataset.fc;state.menuOpen=null;render();try{_pushHistory();}catch(_e){};window.scrollTo(0,0)});
   app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{state.cart=state.cart.filter(x=>x.id!==b.dataset.rm);render()});
   app.querySelectorAll('[data-mexp]').forEach(r=>r.onclick=e=>{e.stopPropagation();state.menuOpen=state.menuOpen===r.dataset.mexp?null:r.dataset.mexp;render()});app.querySelectorAll('[data-mpick]').forEach(r=>r.onclick=()=>{const id=r.dataset.mpick;const _mqe=byId('menu-q');if(_mqe)_mqe.oninput=e=>{state.menuQuery=e.target.value;render();const el=byId('menu-q');if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length);}catch(_){}}};inCart(id)?state.cart=state.cart.filter(x=>x.id!==id):state.cart.push(svById(id));render()});app.querySelectorAll('[data-cattg]').forEach(el=>el.onclick=()=>{state.catOpen=state.catOpen||{};state.catOpen[el.dataset.cattg]=!state.catOpen[el.dataset.cattg];render()});
-  app.querySelectorAll('[data-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();const id=b.dataset.add;const sv=svById(id);if(sv&&sv.cat==='addon'&&!inCart(id)&&!cartHasMain()){alert('オプションメニューは、先に施術メニューをお選びいただいてから追加できます。');return;}if(sv&&sv.cat==='tfree'&&!inCart(id)){const st=state.b&&state.b.staff;const peel=(state.cart||[]).some(x=>x.id==='pe1'||x.id==='pe2'||x.cat==='peel');if(!peel){alert('この無料オプションは、先にハーブピーリングまたはニードルピーリングをお選びいただくと選択できます（TOMOMI指名）。');return;}}inCart(id)?state.cart=state.cart.filter(x=>x.id!==id):state.cart.push(sv);if(!cartHasMain())state.cart=state.cart.filter(x=>x.cat!=='addon');render()});
+  app.querySelectorAll('[data-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();const id=b.dataset.add;const sv=svById(id);if(sv&&!inCart(id)&&!menuRankOK(sv)){alert(rankUpHint(sv).replace(/<[^>]+>/g,''));return;}if(sv&&sv.cat==='addon'&&!inCart(id)&&!cartHasMain()){alert('オプションメニューは、先に施術メニューをお選びいただいてから追加できます。');return;}if(sv&&sv.cat==='tfree'&&!inCart(id)){const st=state.b&&state.b.staff;const peel=(state.cart||[]).some(x=>x.id==='pe1'||x.id==='pe2'||x.cat==='peel');if(!peel){alert('この無料オプションは、先にハーブピーリングまたはニードルピーリングをお選びいただくと選択できます（TOMOMI指名）。');return;}}inCart(id)?state.cart=state.cart.filter(x=>x.id!==id):state.cart.push(sv);if(!cartHasMain())state.cart=state.cart.filter(x=>x.cat!=='addon');render()});
   const n=byId('next');if(n)n.onclick=()=>{state.step=1;render()};
 }
 function nextAvailLabel(sid){try{const base=new Date(today);const cutoff=Date.now()+3*60*60*1000;const totalMin=(state.cart||[]).reduce((a,x)=>a+(x.min||0),0);const closeMin=LAST_RECEPTION*60;for(let d=0;d<21;d++){const dd=new Date(base);dd.setDate(base.getDate()+d);const ds=fmtDate(dd);if(typeof salonClosed==='function'&&salonClosed(ds))continue;for(let mm=OPEN_HOUR*60;mm<=LAST_RECEPTION*60;mm+=30){if(totalMin&&mm+totalMin>closeMin)continue;const slotTime=new Date(ds+'T'+minToTime(mm)+':00').getTime();if(slotTime<cutoff)continue;const okslot=sid!=='s0'?staffSlotOpen30(sid,ds,mm):anyStaffSlot30(ds,mm);if(okslot){const t=minToTime(mm);return (d===0?'本日':d===1?'明日':mdLabel(ds))+' '+t+'〜';}}}return '空き枠は要確認';}catch(e){return '';}}
@@ -2651,7 +2655,8 @@ function adminChat(){
   // トークルーム内
   if(!rooms.some(r=>r.id===state.chatRoom)){state.chatRoom=null;return adminChat();}
   const msgs=(WORK.chats[state.chatRoom]||[]).slice(-80);
-  const list=msgs.length?msgs.map(chMsgHtml).join('')
+  const _me=meName()||'';let _lastDay='';let _unreadMarked=false;
+  const list=msgs.length?msgs.map(m=>{let h='';const day=fmtDate(new Date(m.at||0));if(day!==_lastDay){_lastDay=day;h+=`<div style="text-align:center;margin:10px 0 6px"><span style="background:var(--paper-2);color:var(--ink-soft);font-size:11px;border-radius:100px;padding:3px 12px">${mdLabel(day)}</span></div>`;}const unread=m.by!==_me&&!(m.reads||[]).includes(_me);if(unread&&!_unreadMarked){_unreadMarked=true;h+=`<div style="display:flex;align-items:center;gap:8px;margin:8px 0;color:var(--rose);font-size:11px;font-weight:700"><span style="flex:1;height:1px;background:var(--rose)"></span>ここから未読<span style="flex:1;height:1px;background:var(--rose)"></span></div>`;}return h+chMsgHtml(m);}).join('')
     :'<div class="empty">まだメッセージがありません。最初のひとことをどうぞ😊</div>';
   const staged=(state.chatImgs||[]).length?`<div class="chstgs">${state.chatImgs.map((d,i)=>`<div class="chstg"><img src="${d}"><button data-chrm="${i}">✕</button></div>`).join('')}<span class="note">${state.chatImgs.length}/10枚</span></div>`:'';
   const zoom=state.chatZoom?`<div class="chzoom" id="ch-zoomclose"><img src="${state.chatZoom}"><div class="chzoom-x">✕ 閉じる</div></div>`:'';
@@ -2853,7 +2858,8 @@ function adminReport(){
     <div style="display:flex;gap:8px;align-items:center"><label class="chimgbtn" style="flex:none">📷 画像<input type="file" id="rp-img" accept="image/*" multiple hidden></label>${(state.repImgs&&state.repImgs.length)?`<span class="note">${state.repImgs.length}/5枚</span>`:''}</div>
     ${(state.repImgs&&state.repImgs.length)?`<div class="chstgs">${state.repImgs.map((d,i)=>`<div class="chstg"><img src="${d}"><button data-rprm="${i}">✕</button></div>`).join('')}</div>`:''}
     <button class="btn btn-primary" id="rp-send">報告を提出する</button></div>`;
-  const list=reps.length?reps.map(r=>`<div class="rep"><div class="rep-h"><span class="rep-cat ${r.cat}">${({'報告':'📋','連絡':'📢','相談':'🙋'}[r.cat]||'📋')} ${r.cat}</span><b>${r.name||r.staff}</b> ${r.mode==='home'?'🏠':'🏢'}<span class="rep-t">${mdLabel(r.date)} ${actAgo(r.at)}</span></div><div class="rep-w">${r.work}</div>${r.note?`<div class="rep-n">💭 ${r.note}</div>`:''}${r.url?`<a class="chu" href="${r.url}" target="_blank" rel="noopener">🔗 リンク</a>`:''}${(r.imgs&&r.imgs.length)?`<div class="chimgs">${r.imgs.map(im=>`<img src="${im}" data-chzoom="1">`).join('')}</div>`:''}<div class="ann-m" style="margin-top:6px">${['👍','✅','😊'].map(e=>{const who=((r.reacts||{})[e]||[]);return `<button class="ann-r ${who.includes(meName())?'on':''}" data-repreact="${r.id}|${e}" title="${who.join('、')}">${e}${who.length||''}</button>`;}).join('')}${(r.staff===me||meName()==='SAKURA')?`<button class="ann-del" data-repdel="${r.id}">削除</button>`:''}</div></div>`).join(''):'<div class="empty">まだ報告はありません</div>';
+  let _rd='';
+  const list=reps.length?reps.map(r=>`${(()=>{const d=r.date||fmtDate(new Date(r.at||0));if(d!==_rd){_rd=d;return `<div class="subhead" style="margin:14px 0 6px;font-size:13px">📅 ${mdLabel(d)}</div>`;}return '';})()}<div class="rep"><div class="rep-h"><span class="rep-cat ${r.cat}">${({'報告':'📋','連絡':'📢','相談':'🙋'}[r.cat]||'📋')} ${r.cat}</span><b>${r.name||r.staff}</b> ${r.mode==='home'?'🏠':'🏢'}<span class="rep-t">${mdLabel(r.date)} ${actAgo(r.at)}</span></div><div class="rep-w">${r.work}</div>${r.note?`<div class="rep-n">💭 ${r.note}</div>`:''}${r.url?`<a class="chu" href="${r.url}" target="_blank" rel="noopener">🔗 リンク</a>`:''}${(r.imgs&&r.imgs.length)?`<div class="chimgs">${r.imgs.map(im=>`<img src="${im}" data-chzoom="1">`).join('')}</div>`:''}<div class="ann-m" style="margin-top:6px">${['👍','✅','😊'].map(e=>{const who=((r.reacts||{})[e]||[]);return `<button class="ann-r ${who.includes(meName())?'on':''}" data-repreact="${r.id}|${e}" title="${who.join('、')}">${e}${who.length||''}</button>`;}).join('')}${(r.staff===me||meName()==='SAKURA')?`<button class="ann-del" data-repdel="${r.id}">削除</button>`:''}</div></div>`).join(''):'<div class="empty">まだ報告はありません</div>';
   return `${form}<div class="subhead" style="margin:16px 0 8px">みんなの報告（全員が確認できます）</div>${list}`;}
 async function reportSend(){const me=localGet('salon:me');if(!me||me==='owner'){alert('先に担当者を選んでください。');return;}
   const work=(byId('rp-work').value||'').trim();if(!work){alert('本日の実務をご入力ください。');return;}
@@ -3617,8 +3623,9 @@ async function gcalShiftSweep(){/* SAKURA・HARUKAの既存シフト予定をGoo
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 function adminSettingsHub(){
   const sub=state.setSub||'home';
-  const items=[['menu','📋','メニュー','施術メニューの追加・編集・料金・オプション'],
-    ['staff','💇','スタッフ','スタッフの追加・担当メニュー・時給・カレンダー'],
+  const items=[['staff','👥','スタッフの管理','スタッフの追加・プロフィール写真・バッジ・担当メニュー・時給'],
+    ['homedisp','🖼','トップの写真・お知らせを変える','お客様が最初に見るトップ画像・お知らせ文の編集'],
+    ['menu','📋','メニューの編集','施術メニューの追加・編集・料金・会員ランク・オプション'],
     ['broadcast','✉️','一斉配信','全員／会員ランク別にメッセージ配信'],
     ['feedback','💭','ご意見箱','お客様からのご意見の確認'],
     ['care','📄','ケア・同意書','来店前案内・アフターケア・同意書'],
@@ -3630,7 +3637,7 @@ function adminSettingsHub(){
   const back=`<button class="chip" data-setsub="home" style="margin:0 0 12px">‹ 設定メニューへ戻る</button>`;
   if(sub==='menu')return back+adminMenu();
   if(sub==='staff')return back+adminStaff();
-  if(sub==='homedisp')return back+adminHomeDisplay()+'<div class="subhead" style="margin:26px 0 12px;padding-top:18px;border-top:2px solid var(--line)">📣 告知・クーポン・キャンペーン</div>'+adminCampaigns();
+  if(sub==='homedisp')return back+adminHomeDisplay();
   if(sub==='broadcast')return back+adminBroadcast();
   if(sub==='feedback')return back+adminFeedback();
   if(sub==='shop')return back+adminShop();
@@ -3738,6 +3745,7 @@ function adminMenu(){
       <div class="msec">⚙️ その他の設定</div>
       <label class="chk-field"><input type="checkbox" id="m-pair" ${(!sv||sv.pair!==false)?'checked':''}><span>おふたりが同時に受けられるメニュー</span></label>
       <label class="chk-field" style="margin-top:8px"><input type="checkbox" id="m-mens" ${(sv&&sv.mens)?'checked':''}><span>「メンズにおすすめ」カテゴリーにも表示する</span></label>
+      <div class="field" style="margin-top:10px"><label>利用できる会員ランク</label><select id="m-minrank"><option value="0" ${(!sv||!sv.minRank)?'selected':''}>全員（通常会員から）</option><option value="1" ${(sv&&sv.minRank===1)?'selected':''}>🥈 シルバー会員以上</option><option value="2" ${(sv&&sv.minRank===2)?'selected':''}>🥇 ゴールド会員のみ</option></select><div class="note" style="margin-top:4px">ランクが足りないお客様には🔒と「あと◯回でランクアップ」の案内が表示され、選べません。</div></div>
       <div style="display:flex;gap:9px;margin-top:20px"><button class="btn btn-ghost" id="m-cancel">やめる</button><button class="btn btn-primary" id="m-save">保存する</button></div>
       ${editing?`<button class="btn btn-ghost" id="m-del" style="width:100%;margin-top:10px;color:var(--rose);border-color:#D8B6BF">このメニューを削除</button>`:''}</div>`;
   }
@@ -4022,9 +4030,9 @@ async function saveMenu(){const name=byId('m-name').value.trim();if(!name){alert
   const existingSv=state.menuEdit!=='new'?svById(state.menuEdit):null;
   let photos=state.menuPhotos&&state.menuPhotos.filter(Boolean).length?state.menuPhotos.filter(Boolean).slice(0,3):(existingSv?(existingSv.photos&&existingSv.photos.length?existingSv.photos:(existingSv.img?[existingSv.img]:[])):[]);
   let id;
-  const pairOk=byId('m-pair')?byId('m-pair').checked:true;const mensOk=byId('m-mens')?byId('m-mens').checked:false;
-  if(state.menuEdit==='new'){id='m'+Date.now();DATA.services.push({id,cat,name,i18n,min,price,desc,detail,img:photos[0]||'',photos,addons,pair:pairOk,mens:mensOk,_u:Date.now()});}
-  else{id=existingSv.id;existingSv.cat=cat;existingSv.name=name;existingSv.i18n=i18n;existingSv.price=price;existingSv.min=min;existingSv.desc=desc;existingSv.detail=detail;existingSv.addons=addons;existingSv.photos=photos;existingSv.img=photos[0]||existingSv.img||'';existingSv.pair=pairOk;existingSv.mens=mensOk;}
+  const pairOk=byId('m-pair')?byId('m-pair').checked:true;const mensOk=byId('m-mens')?byId('m-mens').checked:false;const minRank=byId('m-minrank')?(parseInt(byId('m-minrank').value)||0):0;
+  if(state.menuEdit==='new'){id='m'+Date.now();DATA.services.push({id,cat,name,i18n,min,price,desc,detail,img:photos[0]||'',photos,addons,pair:pairOk,mens:mensOk,minRank:minRank,_u:Date.now()});}
+  else{id=existingSv.id;existingSv.cat=cat;existingSv.name=name;existingSv.i18n=i18n;existingSv.price=price;existingSv.min=min;existingSv.desc=desc;existingSv.detail=detail;existingSv.addons=addons;existingSv.photos=photos;existingSv.img=photos[0]||existingSv.img||'';existingSv.pair=pairOk;existingSv.mens=mensOk;existingSv.minRank=minRank;}
   // per-menu staff assignment
   const allIds=DATA.services.map(x=>x.id);
   staff.filter(s=>s.id!=='s0').forEach(st=>{const box=document.querySelector(`[data-mstaff="${st.id}"]`);if(!box)return;const checked=box.checked;const hasAll=!(st.services||[]).length;
