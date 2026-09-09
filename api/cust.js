@@ -1,6 +1,6 @@
 // お客様向け操作（サーバー側で実行。他のお客様の情報はブラウザに一切出さない） POST /api/cust
-const SUPA_URL='https://tehcaufdztgpbrknpshk.supabase.co';
-const SUPA_KEY='sb_publishable_CnOCyO9QU69K47vbbLRkYg__cEv53CJ';
+const SUPA_URL=process.env.SUPABASE_URL||'https://tehcaufdztgpbrknpshk.supabase.co';
+const SUPA_KEY=process.env.SUPABASE_KEY||'sb_publishable_CnOCyO9QU69K47vbbLRkYg__cEv53CJ';
 const H={apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY};
 const norm=p=>String(p||'').replace(/[^0-9]/g,'');
 async function kvGet(key){const r=await fetch(SUPA_URL+'/rest/v1/kv?key=eq.'+key+'&select=value',{headers:H});if(!r.ok)throw new Error('load-'+r.status);const j=await r.json();if(!Array.isArray(j)||!j.length)return null;let v=j[0].value;for(let i=0;i<4;i++){if(typeof v==='string'){try{v=JSON.parse(v);continue}catch(e){break}}if(Array.isArray(v)){v=v[0];continue}break}return (v&&typeof v==='object')?v:null;}
