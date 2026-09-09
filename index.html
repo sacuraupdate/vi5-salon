@@ -961,7 +961,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260910m';
+const APP_REV='r20260910n';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1546,6 +1546,32 @@ function showInstallGuide(){const ios=/iPhone|iPad|iPod/i.test(navigator.userAge
 document.addEventListener('click',async e=>{const ra=e.target&&e.target.closest&&e.target.closest('[data-readall]');if(ra&&state.view==='mypage'){e.preventDefault();const k=normPhone(state.mpPhone);const c=DATA.customers[k];if(!c)return;(c.notices||[]).forEach(n=>n.read=true);render();try{await apiOp('readNotices',{phone:state.mpPhone});}catch(e2){try{await custApi('readNotices',{phone:state.mpPhone,pw:localGet('salon:custpw')||''});}catch(e3){}}return;}});
 const PRESS_SEL='button,a.btn,.chip,.cattile,.sc-cell[data-block],.mrow>summary,.tg-step,.staff[data-staff],.menu-item,.cal-day:not(.dis),.slot,.mi-add,.nv-t,nav button,[data-add],[data-staff],[data-fc],[data-d],[data-date],[data-slot],[data-view],[data-nav],[data-cust],[data-open],[data-selcoupon],[data-setcoupon],[data-tab],[data-at],[data-setsub],details>summary';
 function _pressOn(t){const b=t&&t.closest&&t.closest(PRESS_SEL);if(!b||b.disabled||b.getAttribute('aria-disabled')==='true')return null;b.classList.add('pressed');return b;}
+(function(){
+  const BUSY_SEL='button,.chip,[data-add],[data-staff],[data-fc],[data-d],[data-date],[data-slot],[data-selcoupon],[data-setcoupon],[data-at],[data-setsub],[data-visit],[data-cancel],[data-confirm],[data-dupfix],[data-bkedit],[data-annack],[data-cpsend],[data-cpe],[data-cpd],[data-readall]';
+  function lock(b){
+    if(b.dataset._busy==='1')return false;
+    b.dataset._busy='1';b.classList.add('pressed');
+    const wasHtml=b.innerHTML;const wasDisabled=b.disabled;
+    /* 文字のあるボタンだけ「処理中…」に差し替え（アイコンのみは見た目維持） */
+    if((b.textContent||'').trim().length>2){b.dataset._html=wasHtml;b.innerHTML='<span style="opacity:.8">⏳ 処理中…</span>';}
+    b.disabled=true;
+    const unlock=()=>{ if(b.dataset._busy!=='1')return; delete b.dataset._busy; b.classList.remove('pressed');
+      if(b.dataset._html!=null){b.innerHTML=b.dataset._html;delete b.dataset._html;}
+      b.disabled=wasDisabled; };
+    /* 処理が終わって画面が描き直されれば要素ごと消えるので、保険で最大8秒後に解除 */
+    setTimeout(unlock,8000);
+    return true;
+  }
+  document.addEventListener('click',function(e){
+    const b=e.target&&e.target.closest&&e.target.closest(BUSY_SEL);
+    if(!b)return;
+    if(b.dataset._busy==='1'){e.preventDefault();e.stopImmediatePropagation();return;} /* 連打は無視 */
+    if(b.type==='submit'||b.getAttribute('aria-disabled')==='true'||b.disabled)return;
+    /* 入力欄・タブ切替など即時のものはロックしない */
+    if(b.closest('.atabs')||b.hasAttribute('data-tkf')||b.hasAttribute('data-fc')||b.hasAttribute('data-annmore'))return;
+    lock(b);
+  },true);
+})();
 document.addEventListener('touchstart',e=>{const b=_pressOn(e.target);if(b){const clr=()=>b.classList.remove('pressed');b.addEventListener('touchend',clr,{once:true});b.addEventListener('touchcancel',clr,{once:true});setTimeout(clr,320);}},{passive:true});
 document.addEventListener('mousedown',e=>{const b=_pressOn(e.target);if(b){const clr=()=>b.classList.remove('pressed');document.addEventListener('mouseup',clr,{once:true});setTimeout(clr,320);}});
 document.addEventListener('click',e=>{const st=e.target&&e.target.closest&&e.target.closest('[data-setcoupon]');if(st){e.preventDefault();const cp=(DATA.coupons||[]).find(c=>c.id===st.dataset.setcoupon);if(!cp)return;const id='set_'+cp.id;const i=state.cart.findIndex(x=>x.id===id);if(i>=0)state.cart.splice(i,1);else state.cart.push({id:id,cat:'set',name:'【セット】'+cp.title,min:cp.min||60,price:cp.price||0,setId:cp.id});render();return;}const sc=e.target&&e.target.closest&&e.target.closest('[data-selcoupon]');if(sc){e.preventDefault();state.selCoupon=(state.selCoupon===sc.dataset.selcoupon)?null:sc.dataset.selcoupon;render();return;}const uc=e.target&&e.target.closest&&e.target.closest('[data-usecoupon]');if(uc){e.preventDefault();state.selCoupon=uc.dataset.usecoupon;if(typeof startBooking==='function')startBooking();else{state.view='book';}render();showToast&&showToast('🎫 クーポンを選択しました。メニューをお選びください');return;}const b=e.target&&e.target.closest&&e.target.closest('[data-install]');if(b){e.preventDefault();showInstallGuide();}const a=e.target&&e.target.closest&&e.target.closest('[data-addon]');if(a){e.preventDefault();const sv=svById(a.dataset.addon);if(!sv)return;const i=state.cart.findIndex(x=>x.id===sv.id);if(i>=0)state.cart.splice(i,1);else state.cart.push({id:sv.id,cat:sv.cat,name:sv.name,min:sv.min,price:sv.price,addon:true});render();}});
