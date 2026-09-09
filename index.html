@@ -961,7 +961,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260910b';
+const APP_REV='r20260910c';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -2245,7 +2245,7 @@ async function _confirmBookingInner(){
   catch(e){alert('予約の送信に失敗しました。通信状況をご確認ください。');return;}
   if(referrerPhone)await referralPendingDirect(key,b.name,referrerPhone);state.lastBooking={...bk,name:b.name,newCust:!known,referralPending:!!referrerPhone,referralBonus:0};state.selCoupon=null;pushGCal({...bk,name:b.name},'create');
   await refresh();
-  if(state.rescheduleId){try{await apiOp('cancelOwn',{phone:b.phone,password:localGet('salon:custpw')||'',bookingId:state.rescheduleId});pushGCal((DATA.bookings||[]).find(x=>x.id===state.rescheduleId)||{id:state.rescheduleId},'cancel');}catch(e){}state.rescheduleId=null;await refresh();}
+  if(state.rescheduleId){try{const _ob=(DATA.bookings||[]).find(x=>x.id===state.rescheduleId);if(_ob){_ob.cancelledAt=Date.now();_ob.cancelledBy='お客様（時間変更）';}await apiOp('cancelOwn',{phone:b.phone,password:localGet('salon:custpw')||'',bookingId:state.rescheduleId});pushGCal((DATA.bookings||[]).find(x=>x.id===state.rescheduleId)||{id:state.rescheduleId},'cancel');}catch(e){}state.rescheduleId=null;await refresh();}
   state.step=4;render();
 }
 function aftercareText(items){
@@ -2275,7 +2275,7 @@ function startBooking(){state.selCoupon=null;
   if(state.mpPhone){const c=DATA.customers[normPhone(state.mpPhone)];if(c){state.b.name=c.name;state.b.phone=c.phone;}}
   go('book');
 }
-const CANCEL_TXT='前日の21時まで';function cancelPolicyText(){return CANCEL_TXT;}function canModifyBk(b){const t=(b.time||'00:00');return Date.now()<(new Date(b.date+'T'+t+':00').getTime()-3*3600*1000);}
+const CANCEL_TXT='前日の21時まで';function cancelPolicyText(){return CANCEL_TXT;}function canModifyBk(b){/* ご変更・キャンセルは前日21時まで（予約日0時の3時間前） */return Date.now()<(new Date(b.date+'T00:00:00').getTime()-3*3600*1000);}
 async function referralPendingDirect(newPhone,newName,refPhone){try{if(!refPhone)return;await custApi('referral',{phone:newPhone,referrerPhone:refPhone});}catch(e){}}
 async function custApi(op,payload){const r=await fetchT('/api/cust',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({op:op},payload||{}))},12000);let j={};try{j=await r.json();}catch(e){}if(!r.ok||!j.ok)throw Object.assign(new Error((j&&j.error)||('http'+r.status)),{status:r.status});return j;}
 async function registerDirect(cust,referrerPhone){try{await custApi('register',{customer:cust,referrerPhone:referrerPhone||null});}catch(e){if(e&&e.status===409)throw Object.assign(new Error('exists'),{code:'exists'});throw e;}DATA.customers=DATA.customers||{};DATA.customers[cust.phone]=cust;}
@@ -2409,8 +2409,8 @@ ${(()=>{const c=DATA.customers[normPhone(state.mpPhone)];if(!c)return '';const u
   const _pvb=byId('mp-preview-back');if(_pvb)_pvb.onclick=_exitPreview;
   const mpb=byId('mp-book');if(mpb)mpb.onclick=()=>startBooking();
   const mprb=byId('mp-rebook');if(mprb&&lastBk)mprb.onclick=()=>{startBooking();state.cart=(lastBk.items||[]).map(x=>svById(x&&x.id)).filter(Boolean);if(state.cart.length)state.step=1;render();};
-  app.querySelectorAll('[data-cancelmy]').forEach(b=>b.onclick=async()=>{if(!confirm('この予約をキャンセルしますか？'))return;try{await apiOp('cancelOwn',{phone:state.mpPhone,password:localGet('salon:custpw')||'',bookingId:b.dataset.cancelmy});pushGCal((DATA.bookings||[]).find(x=>x.id===b.dataset.cancelmy)||{id:b.dataset.cancelmy},'cancel');}catch(e){alert('キャンセルに失敗しました。');return;}await refresh();render();});
-  app.querySelectorAll('[data-resch]').forEach(b=>b.onclick=()=>{const bk=DATA.bookings.find(x=>x.id===b.dataset.resch);if(!bk)return;if(!confirm('お時間の変更を行います。\nこのあと新しい日時を選んでいただくと、今の予約は自動でキャンセルされ、新しい予約に切り替わります。よろしいですか？'))return;startBooking();state.cart=(bk.items||[]).filter(x=>x.cat!=='option').map(x=>svById(x.id)).filter(Boolean);state.b.staff=stById(bk.staffId);state.b.options=(bk.items||[]).filter(x=>x.cat==='option').map(x=>x.id);state.b.companions=[...(bk.companions||[])];state.b.haste=bk.haste||'';state.b.party2=!!(bk.party&&bk.party.length);state.b.agreed=true;state.b.date=null;state.b.time=null;state.rescheduleId=bk.id;state.step=2;render();window.scrollTo(0,0);});
+  app.querySelectorAll('[data-cancelmy]').forEach(b=>b.onclick=async()=>{const _bk=(DATA.bookings||[]).find(x=>x.id===b.dataset.cancelmy);if(_bk&&!canModifyBk(_bk)){alert('ご変更・キャンセルは前日の21時までにお願いいたします。お急ぎの場合はお電話でご連絡ください。');return;}if(!confirm('この予約をキャンセルしますか？'))return;try{if(_bk){_bk.cancelledAt=Date.now();_bk.cancelledBy='お客様（マイページ）';}await apiOp('cancelOwn',{phone:state.mpPhone,password:localGet('salon:custpw')||'',bookingId:b.dataset.cancelmy});pushGCal((DATA.bookings||[]).find(x=>x.id===b.dataset.cancelmy)||{id:b.dataset.cancelmy},'cancel');}catch(e){alert('キャンセルに失敗しました。');return;}await refresh();render();});
+  app.querySelectorAll('[data-resch]').forEach(b=>b.onclick=()=>{{const _bk=(DATA.bookings||[]).find(x=>x.id===b.dataset.resch);if(_bk&&!canModifyBk(_bk)){alert('ご変更・キャンセルは前日の21時までにお願いいたします。お急ぎの場合はお電話でご連絡ください。');return;}}const bk=DATA.bookings.find(x=>x.id===b.dataset.resch);if(!bk)return;if(!confirm('お時間の変更を行います。\nこのあと新しい日時を選んでいただくと、今の予約は自動でキャンセルされ、新しい予約に切り替わります。よろしいですか？'))return;startBooking();state.cart=(bk.items||[]).filter(x=>x.cat!=='option').map(x=>svById(x.id)).filter(Boolean);state.b.staff=stById(bk.staffId);state.b.options=(bk.items||[]).filter(x=>x.cat==='option').map(x=>x.id);state.b.companions=[...(bk.companions||[])];state.b.haste=bk.haste||'';state.b.party2=!!(bk.party&&bk.party.length);state.b.agreed=true;state.b.date=null;state.b.time=null;state.rescheduleId=bk.id;state.step=2;render();window.scrollTo(0,0);});
   app.querySelectorAll('[data-rebookbk]').forEach(b=>b.onclick=()=>{const bk=DATA.bookings.find(x=>x.id===b.dataset.rebookbk);if(!bk)return;startBooking();state.cart=(bk.items||[]).map(x=>svById(x&&x.id)).filter(Boolean);if(state.cart.length)state.step=1;render();window.scrollTo(0,0)});
   const fbs=byId('fb-send');if(fbs)fbs.onclick=async()=>{const el=byId('fb-text');const t=el?el.value.trim():'';if(!t){alert('ご意見をご入力ください。');return;}const fb={id:'fb'+Date.now(),text:t,date:now()};if(state._busy_fb){return;}state._busy_fb=true;setTimeout(()=>{state._busy_fb=false;},5000);try{await apiOp('addFeedback',{fb,phone:state.mpPhone,points:CONFIG.feedbackPoints,notice:`ご意見をお寄せいただきありがとうございます🙏 ${CONFIG.feedbackPoints}ポイントを差し上げました。`});}catch(e){alert('送信に失敗しました。');return;}await refresh();alert(`送信しました。${CONFIG.feedbackPoints}ポイント差し上げました。ありがとうございます！`);render();};
   const pwsave=byId('mp-pwsave');if(pwsave)pwsave.onclick=async()=>{const v=byId('mp-newpw').value;if(!v||v.length<4){alert('4文字以上で入力してください。');return;}try{await apiOp('changePw',{phone:state.mpPhone,oldpw:localGet('salon:custpw')||'',newpw:v});}catch(e){alert('変更に失敗しました。');return;}localSet('salon:custpw',v);await refresh();alert('パスワードを変更しました。');render();};
@@ -3230,7 +3230,7 @@ async function saveManualBooking(){
 }
 function dupCount(x){return (DATA.bookings||[]).filter(y=>y.status!=='cancelled'&&normPhone(y.phone)===normPhone(x.phone)&&y.date===x.date&&y.time===x.time&&(y.staffId||'')===(x.staffId||'')).length;}
 function bookingRow(x,i){
-  const pillTxt={confirmed:'予約確定',pending:'未確定',visited:'来店済み',cancelled:'キャンセル'}[x.status];const svc=x.items.map(s=>s.name).join(' + ');const ph=normPhone(x.phone);
+  const pillTxt={confirmed:'予約確定',pending:'未確定',visited:'来店済み',cancelled:'キャンセル'+(x.cancelledBy?'（'+x.cancelledBy+(x.cancelledAt?' '+new Date(x.cancelledAt).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'')+'）':'')}[x.status];const svc=x.items.map(s=>s.name).join(' + ');const ph=normPhone(x.phone);
   let tags=x.companions.map(c=>{const o=companionOpts.find(z=>z.id===c);return `<span class="tag">${o.ic} ${o.label}</span>`}).join('');
   if(x.haste==='hurry')tags+=`<span class="tag hurry">⚡ お急ぎ</span>`;if(x.discountRate)tags+=`<span class="tag disc">割引${Math.round(x.discountRate*100)}%</span>`;if(x.couponUsed)tags+=`<span class="tag disc">クーポン¥${x.couponUsed}</span>`;if(x.pointsUsed)tags+=`<span class="tag">${x.pointsUsed}pt利用</span>`;if(x.status==='visited'&&x.awardedPoints)tags+=`<span class="tag">+${x.awardedPoints}pt付与</span>`;if(x.pairId)tags+=`<span class="tag" style="background:var(--gold-bg);color:var(--gold);border-color:var(--gold-soft)">👥 おふたり</span>`;if(x.party&&x.party.length)tags+=`<span class="tag">+${x.party[0].name}様</span>`;if(x.status==='visited'&&!x.thanked)tags+=`<span class="tag hurry">📨 配信未完了</span>`;
   const nm=DATA.customers[ph]?DATA.customers[ph].name:x.phone;
@@ -3962,7 +3962,7 @@ function bindAdmin(){
 }
 let adminTimer=null;
 function adminSoft(after){clearTimeout(adminTimer);adminTimer=setTimeout(()=>{render();if(after)after()},300)}
-async function setStatus(id,st){const bk=DATA.bookings.find(x=>x.id===id);if(bk){bk.status=st;if(st==='cancelled'){try{pushGCal(bk,'cancel');}catch(e){}logAct('予約をキャンセル：'+(bk.name||bk.phone));}await saveData(DATA);render();}}
+async function setStatus(id,st){const bk=DATA.bookings.find(x=>x.id===id);if(bk){bk.status=st;if(st==='cancelled'){bk.cancelledAt=Date.now();bk.cancelledBy='スタッフ：'+(meName()||'不明');try{pushGCal(bk,'cancel');}catch(e){}logAct('予約をキャンセル：'+(bk.name||bk.phone));}await saveData(DATA);render();}}
 async function sendMessage(){const c=DATA.customers[state.custOpen];const t=byId('cmp-msg').value.trim();const _mi=(state.msgImgs||[]).slice(0,5);if(!t&&!_mi.length){alert('メッセージを入力してください。');return;}pushNotice(c,t||'📷 写真をお送りします',_mi);state.msgImgs=[];logAct(c.name+'様へ個別メッセージ送信');await saveData(DATA);alert('お客様のマイページに送信しました。');render();}
 async function saveNote(){const c=DATA.customers[state.custOpen];c.salonNote=byId('cmp-note').value;await saveData(DATA);alert('スタッフメモを保存しました。');}
 async function passDec(s){const[k,pi]=s.split('|');const p=DATA.customers[k].passes[pi];if(p&&p.remaining>0){p.remaining--;await saveData(DATA);render();}}
