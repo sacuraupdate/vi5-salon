@@ -961,7 +961,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260911n';
+const APP_REV='r20260911o';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1490,9 +1490,7 @@ function favServiceIds(p){const cnt={};DATA.bookings.filter(b=>normPhone(b.phone
 function favMenus(p){return favServiceIds(p).map(id=>svById(id).name)}
 function usedPoints(p){return DATA.bookings.some(b=>normPhone(b.phone)===normPhone(p)&&(b.pointsUsed||0)>0)}
 function pushNotice(c,text,imgs){c.notices=c.notices||[];c.notices.unshift({text,imgs:(imgs&&imgs.length)?imgs.slice(0,5):undefined,date:now(),read:false});if(c.notices.length>60)c.notices=c.notices.slice(0,60);}
-async function checkBirthdays(){let changed=false;const y=today.getFullYear();
-  Object.values(DATA.customers).forEach(c=>{if(c.birthday&&c.birthday.slice(5)===todayMD&&c.bdayYear!==y){addPoints(c,CONFIG.birthdayBonus,'お誕生日ポイント');c.bdayYear=y;pushNotice(c,(DATA.settings.birthdayMsg||'').replace('{bonus}',CONFIG.birthdayBonus.toLocaleString()));changed=true;}});
-  if(changed)await saveData(DATA);}
+async function checkBirthdays(){/* 誕生日ポイントの付与は birthdayAutoRun（7日前に1回だけ）に一本化。ここでは何もしない（二重付与防止） */return;}
 async function checkReminders(){let changed=false;const tm=new Date(today);tm.setDate(today.getDate()+1);const tmd=fmtDate(tm);(DATA.bookings||[]).forEach(bk=>{if(!bk||bk.reminded)return;if(bk.status==='cancelled'||bk.status==='visited')return;if(bk.date!==tmd)return;const c=DATA.customers[normPhone(bk.phone)];if(!c)return;const st=stById(bk.staffId);const menu=(bk.items||[]).map(x=>x.name).join('＋');const dow=DOW[new Date(bk.date+'T00:00:00').getDay()];pushNotice(c,`【ご予約リマインド】明日 ${mdLabel(bk.date)}（${dow}）${bk.time}〜／${menu}${st?'／担当 '+st.name:''} でご予約をお待ちしております😊 ご変更・キャンセルは前日21時までにマイページからお願いいたします。`);bk.reminded=true;changed=true;});if(changed)await saveData(DATA);}
 
 /* ===== State ===== */
@@ -3005,6 +3003,16 @@ function renderIntro(){
   ];
   return `<div class="fade intro"><div style="text-align:center;padding:24px 0 6px"><div class="eyebrow">S T A R T HERE</div><h2 style="font-family:'Fraunces',serif;color:var(--navy);margin:8px 0 2px;font-size:30px">はじめに（必ずお読みください）</h2><div class="note" style="color:var(--gold-deep);font-weight:700">🆕 内容が更新されました。ご確認ください（v${INTRO_VER}）</div><div class="note">このアプリは機能が多いので、最初に使い方をまとめました。読み終えたら一番下のボタンを押してください。</div></div>`+secs.map((s,i)=>`<div class="intro-sec"><div class="is-ic">${s[0]}</div><div class="is-b"><div class="is-t">${i+1}. ${s[1]}</div><div class="is-x">${s[2]}</div></div></div>`).join("")+`<label class="intro-chk"><input type="checkbox" id="intro-agree"> 上記の使い方を確認しました</label><button class="btn btn-primary" id="intro-ok" style="width:100%;margin-top:10px">この内容で始める</button><button class="btn btn-ghost" id="intro-later" style="width:100%;margin-top:8px;font-size:12px">あとで読む（今回はスキップ）</button></div>`;}
 
+function birthdayDupFix(){try{if(DATA._bdayDupFixed)return false;DATA._bdayDupFixed=true;const yr=today.getFullYear();let n=0;
+  for(const k in (DATA.customers||{})){const c=DATA.customers[k];if(!c)continue;
+    if(c.bdayYear===yr&&c.bdayAwardedYear===yr){
+      addPoints(c,-CONFIG.birthdayBonus,'誕生日ポイント二重付与の是正（重複分を取消）');
+      const before=(c.notices||[]).length;c.notices=(c.notices||[]).filter(no=>!/お誕生日おめでとうございます🎂✨/.test(no.text||''));
+      if((c.notices||[]).length!==before)n++;else n++;
+      delete c.bdayYear; // 当日側の印は不要（今後は7日前の印だけを使う）
+    }
+  }
+  if(n){logAct('誕生日ポイントの二重付与を是正（'+n+'名）');return true;}return false;}catch(e){return false;}}
 function taskAssigneeSelfFix(){try{if(WORK._taskAsgFixed)return false;WORK._taskAsgFixed=true;let n=0;
   (WORK.tasks||[]).forEach(t=>{if(!t||t.done)return;const ass=taskAssignees(t);if(ass.includes('all'))return;if(!t.by||!ass.includes(t.by))return;const others=ass.filter(a=>a!==t.by);if(!others.length)return;/* 依頼者自身が紛れ込んでいる＝依頼者を除く */t.assignees=others;t.assignee=others[0];n++;});
   return n>0;}catch(e){return false;}}
@@ -3091,7 +3099,7 @@ function renderAdmin(){
   if(!WORK)loadWork().then(()=>render());
   if(!localGet('salon:me')){app.innerHTML=renderMePicker();app.querySelectorAll('[data-me]').forEach(b=>b.onclick=()=>{if(b.dataset.me==='s1'){const p=prompt('オーナー（SAKURA）として入るには暗証番号を入力してください');if(p===null)return;if(String(p).trim()!==ownerPin()){alert('暗証番号が違います。');return;}}setMe(b.dataset.me);});const _mo=byId('me-logout');if(_mo)_mo.onclick=()=>{try{localStorage.removeItem('vi5:datacache');}catch(e){}state.adminAuthed=false;localDel('salon:staff');localDel('salon:staffpw');render();};return;}
   const _idone=localGet('salon:introdone');if(!_idone&&!state.introSkip){app.innerHTML=renderIntro();const _ia=byId('intro-agree');const _iok=byId('intro-ok');if(_iok)_iok.onclick=()=>{if(!_ia||!_ia.checked){alert('「確認しました」にチェックをお願いします。');return;}localSet('salon:introdone',INTRO_VER);render();};const _il=byId('intro-later');if(_il)_il.onclick=()=>{state.introSkip=true;render();};return;}
-  autoRescue();imageShrinkMigrate();autoEshopSync();try{if(extBlocksMigrate())saveData(DATA);}catch(_e){}try{if(state.dataFull&&demoPurge())saveData(DATA);}catch(_e){}try{if(state.adminAuthed&&navigator.onLine!==false&&!state._gcalFlushed){state._gcalFlushed=true;gcalFlushQueue();}}catch(_e){}try{if(state.dataFull&&autoCancelRestore())saveData(DATA);}catch(_e){}try{if(state.dataFull&&futureVisitFix())saveData(DATA);}catch(_e){}try{if(state.dataFull&&birthdayAutoRun())saveData(DATA);}catch(_e){}try{if(state.dataFull&&meName()==='SAKURA'&&campaignReminder()){saveWork();saveData(DATA);}}catch(_e){}try{if(state.dataFull&&WORK&&taskAssigneeSelfFix())saveWork();}catch(_e){}try{if(state.dataFull)seedTasksMigrate();}catch(_e){}try{if(state.dataFull&&!state._gcalSwept){state._gcalSwept=true;if(gcalCancelSweep())saveData(DATA);}}catch(_e){}let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(staffNameMigrate())_clch=true;if(wageMigrate())_clch=true;if(harukaFixMigrate())_clch=true;if(staffMenuMigrate())_clch=true;if(calSetupMigrate())_clch=true;/* 自動保存は廃止：古い端末が新データを上書きする事故の元。編集操作時のみ保存 */
+  autoRescue();imageShrinkMigrate();autoEshopSync();try{if(extBlocksMigrate())saveData(DATA);}catch(_e){}try{if(state.dataFull&&demoPurge())saveData(DATA);}catch(_e){}try{if(state.adminAuthed&&navigator.onLine!==false&&!state._gcalFlushed){state._gcalFlushed=true;gcalFlushQueue();}}catch(_e){}try{if(state.dataFull&&autoCancelRestore())saveData(DATA);}catch(_e){}try{if(state.dataFull&&futureVisitFix())saveData(DATA);}catch(_e){}try{if(state.dataFull&&birthdayAutoRun())saveData(DATA);}catch(_e){}try{if(state.dataFull&&meName()==='SAKURA'&&campaignReminder()){saveWork();saveData(DATA);}}catch(_e){}try{if(state.dataFull&&WORK&&taskAssigneeSelfFix())saveWork();}catch(_e){}try{if(state.dataFull&&birthdayDupFix())saveData(DATA);}catch(_e){}try{if(state.dataFull)seedTasksMigrate();}catch(_e){}try{if(state.dataFull&&!state._gcalSwept){state._gcalSwept=true;if(gcalCancelSweep())saveData(DATA);}}catch(_e){}let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(staffNameMigrate())_clch=true;if(wageMigrate())_clch=true;if(harukaFixMigrate())_clch=true;if(staffMenuMigrate())_clch=true;if(calSetupMigrate())_clch=true;/* 自動保存は廃止：古い端末が新データを上書きする事故の元。編集操作時のみ保存 */
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
   const tabs=[['todo','✅','やること','毎日'],['chat','💬','チャット','毎日'],['bookings','📅','予約','毎日'],['schedule','⏰','シフト','毎日'],['customers','👥','顧客カルテ','お客様'],['report','📝','業務報告','毎日'],['campaign','🎁','クーポン/告知','毎日'],['money','💰','売上・給与','管理'],['settings','⚙️','設定','管理']];
   const _sec=(t)=>`<div class="subhead" style="margin:26px 0 12px;padding-top:18px;border-top:2px solid var(--line)">${t}</div>`;
