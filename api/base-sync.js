@@ -4,8 +4,8 @@
 const PUB = 'https://vi5.shopselect.net';
 const SEC = 'https://vi5beauty.base.shop';
 const SECRET_PW = '5555';
-const SUPA_URL = 'https://tehcaufdztgpbrknpshk.supabase.co';
-const SUPA_KEY = 'sb_publishable_CnOCyO9QU69K47vbbLRkYg__cEv53CJ';
+const SUPA_URL=process.env.SUPABASE_URL||'https://tehcaufdztgpbrknpshk.supabase.co';
+const SUPA_KEY=process.env.SUPABASE_KEY||'sb_publishable_CnOCyO9QU69K47vbbLRkYg__cEv53CJ';
 const UA = { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15' };
 
 function dec(s){return String(s||'').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#0?39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#\d+;/g,'');}
