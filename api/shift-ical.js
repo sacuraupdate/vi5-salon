@@ -1,7 +1,7 @@
 // Vi5 シフトカレンダー配信 (ICS)  /api/shift-ical?s=s1|s2|s3|book
 // Googleカレンダーが自動で購読・更新する方式。Apps Script不要。
-const SUPA_URL = 'https://tehcaufdztgpbrknpshk.supabase.co';
-const SUPA_KEY = 'sb_publishable_CnOCyO9QU69K47vbbLRkYg__cEv53CJ';
+const SUPA_URL=process.env.SUPABASE_URL||'https://tehcaufdztgpbrknpshk.supabase.co';
+const SUPA_KEY=process.env.SUPABASE_KEY||'sb_publishable_CnOCyO9QU69K47vbbLRkYg__cEv53CJ';
 
 const NAMES = { s1: 'SAKURA', s2: 'TOMOMI', s3: 'HARUKA' };
 const MARKS = { s1: '\u{1F7E1}', s2: '\u{1F338}', s3: '\u{1F7E2}' }; // 🟡🌸🟢
