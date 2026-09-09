@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260911w';
+const APP_REV='r20260911x';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -2831,15 +2831,24 @@ function ownerStaffPanel(){
     return `<div style="padding:10px 0;border-top:1px dashed var(--line)"><div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:${dot};flex-shrink:0"></span><b style="flex:1">${s.name}</b>${statusHtml}</div>${reqRow}</div>`;}).join('');
   return `<div class="addform" style="margin-bottom:16px"><div class="subhead" style="margin:0 0 4px">👀 スタッフの状況</div><div class="note" style="margin:0 0 4px">本日出勤予定・明日出勤予定のスタッフのみ表示しています</div>${rows}</div>`;
 }
-async function payAdjTomomiAugSeed(){try{if(!WORK)return false;WORK._payAdjSeeded1=WORK._payAdjSeeded1||{};if(WORK._payAdjSeeded1['2026-08'])return false;
-  WORK.extHours=WORK.extHours||{};WORK.extHours['2026-08']=WORK.extHours['2026-08']||[];
-  const _s2=(staff||[]).find(x=>x.name==='TOMOMI');
-  if(_s2){[['2026-08-03',4.03],['2026-08-05',6.18],['2026-08-06',4.67],['2026-08-17',5.62],['2026-08-21',5.05],['2026-08-26',5.82],['2026-08-27',4.50]].forEach(([d,h])=>{WORK.extHours['2026-08'].push({staff:_s2.id,date:d,hours:h,label:mdLabel(d),by:'SAKURA',at:Date.now()});});}
-  const sid=(staff||[]).find(x=>x.name==='TOMOMI');if(!sid)return false;const mk='2026-08';
-  WORK.payAdj=WORK.payAdj||{};WORK.payAdj[mk]=WORK.payAdj[mk]||[];
-  WORK.payAdj[mk].push({staff:sid.id,label:'経費：LINEプレミアム',amount:890,by:'SAKURA',at:Date.now()});
-  WORK.payAdj[mk].push({staff:sid.id,label:'在宅手当（8/3・8/6・8/21・8/27 各200円）',amount:800,by:'SAKURA',at:Date.now()});
-  WORK._payAdjSeeded1['2026-08']=true;logAct('TOMOMIさんの8月給与に経費・在宅手当を記録');return true;}catch(e){return false;}}
+async function payAdjTomomiAugSeed(){try{if(!WORK)return false;let did=false;
+  WORK._payAdjSeeded1=WORK._payAdjSeeded1||{};
+  if(!WORK._payAdjSeeded1['2026-08']){
+    const sid=(staff||[]).find(x=>x.name==='TOMOMI');
+    if(sid){const mk='2026-08';WORK.payAdj=WORK.payAdj||{};WORK.payAdj[mk]=WORK.payAdj[mk]||[];
+      WORK.payAdj[mk].push({staff:sid.id,label:'経費：LINEプレミアム',amount:890,by:'SAKURA',at:Date.now()});
+      WORK.payAdj[mk].push({staff:sid.id,label:'在宅手当（8/3・8/6・8/21・8/27 各200円）',amount:800,by:'SAKURA',at:Date.now()});
+      WORK._payAdjSeeded1['2026-08']=true;logAct('TOMOMIさんの8月給与に経費・在宅手当を記録');did=true;}
+  }
+  WORK._extHoursSeeded1=WORK._extHoursSeeded1||{};
+  if(!WORK._extHoursSeeded1['2026-08']){
+    const _s2=(staff||[]).find(x=>x.name==='TOMOMI');
+    if(_s2){WORK.extHours=WORK.extHours||{};WORK.extHours['2026-08']=WORK.extHours['2026-08']||[];
+      const already=new Set(WORK.extHours['2026-08'].filter(x=>x.staff===_s2.id).map(x=>x.date));
+      [['2026-08-03',4.03],['2026-08-05',6.18],['2026-08-06',4.67],['2026-08-17',5.62],['2026-08-21',5.05],['2026-08-26',5.82],['2026-08-27',4.50]].forEach(([d,h])=>{if(!already.has(d))WORK.extHours['2026-08'].push({staff:_s2.id,date:d,hours:h,label:mdLabel(d),by:'SAKURA',at:Date.now()});});
+      WORK._extHoursSeeded1['2026-08']=true;logAct('TOMOMIさんの8月給与に外部勤務時間（7日分）を記録');did=true;}
+  }
+  return did;}catch(e){return false;}}
 async function payExtHoursAdd(sid){const mk=state.payMonth||payKey(today);const dEl=byId('pext-date-'+sid);const hEl=byId('pext-hours-'+sid);const date=dEl?dEl.value:'';const hours=parseFloat(hEl?hEl.value:'0')||0;if(!date||!hours){alert('日付と実働時間をご入力ください。');return;}
   await loadWork();WORK.extHours=WORK.extHours||{};WORK.extHours[mk]=WORK.extHours[mk]||[];WORK.extHours[mk].push({staff:sid,date,hours,label:mdLabel(date),by:meName(),at:Date.now()});
   logAct((stById(sid)||{}).name+'さんの外部勤務時間を追加：'+mdLabel(date)+' '+hours+'h');await saveWork();render();}
