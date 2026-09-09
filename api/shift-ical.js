@@ -62,6 +62,14 @@ const VTZ = ['BEGIN:VTIMEZONE', 'TZID:Asia/Tokyo', 'BEGIN:STANDARD', 'DTSTART:19
 module.exports = async (req, res) => {
   try {
     const s = (req.query && req.query.s) || 's1';
+    // SAKURA(s1)・HARUKA(s3)はGoogleカレンダー配信の対象外（アプリ内のみで管理）。購読が残っていても常に空を返す
+    if (s === 's1' || s === 's3') {
+      const empty = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Vi5//shift//JP','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:Vi5 シフト（配信終了）','END:VCALENDAR'].join('\r\n');
+      res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache, max-age=0');
+      res.status(200).send(empty);
+      return;
+    }
     const DATA = await loadData();
     if (!DATA) { res.status(503).send('data unavailable'); return; }
     const now = new Date();
