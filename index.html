@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260912g';
+const APP_REV='r20260912h';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -3119,15 +3119,15 @@ function demoPurge(){if(DATA._demoPurged)return false;try{const DEMO_PH=['090123
   const b0=(DATA.bookings||[]).length;DATA.bookings=(DATA.bookings||[]).filter(b=>{return !(DEMO_ID.includes(String(b&&b.id))&&DEMO_PH.includes(normPhone(b&&b.phone)));});n+=b0-DATA.bookings.length;
   DATA.delBookings=DATA.delBookings||[];DEMO_ID.forEach(id=>{if(!DATA.delBookings.includes(id))DATA.delBookings.push(id);});
   DATA._demoPurged=true;if(n){logAct('サンプルデータを除去（'+n+'件）');}return n>0;}catch(e){return false;}}
-async function staffRestoreFromBackup(){try{if(!state.adminAuthed)return false;const _key='vi5:staffchk';const last=parseInt(localStorage.getItem(_key)||'0')||0;if(Date.now()-last<6*3600000)return false;localStorage.setItem(_key,String(Date.now()));
-  const need=(st)=>!st.photo&&!st.thumb;const targets=(DATA.staff||[]).filter(st=>st.id!=='s0'&&!st.hidden&&need(st));
+async function staffRestoreFromBackup(){try{if(!state.adminAuthed)return false;
+  const FIELDS=['photo','thumb','intro','quals','role','wage','hourly','prices','services'];const isEmpty=(v)=>v==null||v===''||(Array.isArray(v)&&!v.length)||(typeof v==='object'&&!Array.isArray(v)&&v&&!Object.keys(v).length);const need=(st)=>FIELDS.some(k=>isEmpty(st[k]));const targets=(DATA.staff||[]).filter(st=>st.id!=='s0'&&!st.hidden&&need(st));
   if(!targets.length)return false;
   const keys=[];for(let w=0;w<7;w++)keys.push('salon:bak:'+w);for(let m2=1;m2<=12;m2++)keys.push('salon:bak:m'+m2);keys.push('salon:data');
   let best={};
   for(const k of keys){try{const r=await fetchT(KV_URL+'?key=eq.'+k+'&select=value',{headers:KV_H});if(!r.ok)continue;const j=await r.json();if(!Array.isArray(j)||!j.length)continue;let v=j[0].value;for(let i=0;i<4;i++){if(typeof v==='string'){try{v=JSON.parse(v);continue}catch(e){break}}if(Array.isArray(v)){v=v[0];continue}break}const d=(v&&v.d)||v;if(!d||!Array.isArray(d.staff))continue;
     const _at=(v&&v.at)||0;d.staff.forEach(bs=>{if(!bs||!bs.id)return;const cur=best[bs.id];if(!cur){best[bs.id]=bs;bs._bakAt=_at;return;}const ca=cur._bakAt||0;if(_at>ca||(_at===ca&&_rich(bs)>_rich(cur))){bs._bakAt=_at;best[bs.id]=bs;}});}catch(e){}}
-  let n=0;targets.forEach(st=>{const b=best[st.id];if(!b)return;['photo','thumb','intro','quals','role','color','wage','hourly','prices','services'].forEach(k=>{const empty=(st[k]==null||st[k]===''||(Array.isArray(st[k])&&!st[k].length)||(typeof st[k]==='object'&&!Array.isArray(st[k])&&st[k]&&!Object.keys(st[k]).length));if(empty&&b[k]!=null&&b[k]!==''){st[k]=b[k];n++;}});if(n)st._u=Date.now();});
-  if(n){const names=targets.filter(st=>best[st.id]).map(st=>st.name).join('・');logAct('スタッフ情報をバックアップから自動復元（'+n+'項目：'+names+'）');state._rescueMsg='🛟 消えていたスタッフ情報（'+names+'：写真・紹介など'+n+'項目）を自動で復元しました。';try{WORK=WORK||{};WORK.ownerAlerts=WORK.ownerAlerts||[];WORK.ownerAlerts.unshift({id:'sr'+Date.now(),text:'🛟 スタッフ情報の消失を検知し、バックアップから自動復元しました（'+names+'・'+n+'項目）。念のため内容をご確認ください。',by:'システム',at:Date.now(),read:false});saveWork();}catch(_e){}await saveData(DATA);render();return true;}return false;}catch(e){return false;}}
+  let n=0;const restored=[];targets.forEach(st=>{const b=best[st.id];if(!b)return;let c=0;FIELDS.concat(['color']).forEach(k=>{if(isEmpty(st[k])&&!isEmpty(b[k])){st[k]=b[k];n++;c++;}});if(c){st._u=Date.now();restored.push(st.name+'('+c+')');}});
+  if(n){const names=restored.join('・');logAct('スタッフ情報をバックアップから自動復元（'+n+'項目：'+names+'）');state._rescueMsg='🛟 消えていたスタッフ情報（'+names+'：写真・紹介など'+n+'項目）を自動で復元しました。';try{WORK=WORK||{};WORK.ownerAlerts=WORK.ownerAlerts||[];WORK.ownerAlerts.unshift({id:'sr'+Date.now(),text:'🛟 スタッフ情報の消失を検知し、バックアップから自動復元しました（'+names+'・'+n+'項目）。念のため内容をご確認ください。',by:'システム',at:Date.now(),read:false});saveWork();}catch(_e){}await saveData(DATA);render();return true;}return false;}catch(e){return false;}}
 function staffServiceRules(){try{if(DATA._svcRules1)return false;DATA._svcRules1=true;let ch=false;
   const byName=n=>(staff||[]).find(x=>x.name===n);
   const sak=byName('SAKURA');if(sak){sak.services=(services||[]).filter(sv=>sv.cat!=='tfree').map(sv=>sv.id);sak._u=Date.now();ch=true;}
@@ -3815,6 +3815,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-12',v:'r20260912h',items:['【復元が動かなかった原因】復元の判定が「写真が無い場合」だけだったため、写真は残っていて紹介文・資格・時給などだけ消えたスタッフ（TOMOMIさん）が対象外になっていた→どれか1項目でも空なら復元対象に変更','復元の実行間隔制限（6時間に1回）を撤廃し、管理画面を開くたびに点検','設定→スタッフの管理に「🛟 消えたスタッフ情報をバックアップから復元する」ボタンを追加（いつでも手動実行可）']},
  {d:'2026-09-12',v:'r20260912g',items:['【二重付与の真の原因を特定】顧客タブの「今月のお誕生日」パネルの1000ptボタンに二重防止が無く、押すたび何度でも付与できる状態だった（月内ずっと表示されるため誰かが押せば何度でも増える）→パネル自体を非表示にし、自動配信のみに一本化。万一の呼び出しにも「今年は付与済み」で拒否するガードを追加','斉藤美月様の是正処理を毎回自動実行に変更（前回は1回きりの印で止まっていた）。何度開いても余計に引かれない設計','スタッフ情報の自動復元は「最も新しいバックアップ」を優先するよう変更']},
  {d:'2026-09-12',v:'r20260912f',items:['スタッフ情報の自動点検を「1回きり」から「起動ごと（6時間に1回）」に変更。消失を検知したら自動でバックアップから復元し、🔔通知と操作履歴に自動記録（操作不要）','斉藤美月様ほか、同じ年に誕生日メッセージが2通以上あるお客様を確実に是正（1通削除・1,000pt取消）。前回の是正は印の付き方によって効かないケースがあった']},
  {d:'2026-09-12',v:'r20260912e',items:['【重大修正】シフトが勝手に巻き戻る原因を修正（サーバーとの統合で古い端末側が常に勝っていた→更新時刻で新しい方を採用・不明はサーバー優先）。全てのシフト変更を誰が・いつ・何に変えたか記録','HARUKAのシフトを出勤ゼロに初期化（未提出のため）','担当ルールを適用：SAKURA＝全メニュー／TOMOMI＝TOMOMI限定＋ハーブ・ニードルピーリングのみ／KANA・NODOKA＝施術なし（裏方）','メニュー編集の「担当できるスタッフ」から裏方を除外・既定でチェックしない','【重大修正】スタッフ情報（写真・紹介・資格・時給・料金）が消えた原因を修正（統合で写真なし端末が勝っていた）→情報が多い方／サーバー優先に変更し、バックアップから消えた項目を自動復元','予約確認画面の「＋追加メニューオプション」を撤去（メニュー選択時に選ぶため）','メニュー編集の「おふたり同時」「メンズにおすすめ」チェック欄を撤去','クーポン・セットメニュー・告知タブをお客様側・管理側とも撤去','今月の人気商品ランキング・おすすめ商品の設定ページを撤去し、代わりに「トップの写真を変える」ページを新設','資格・バッジは自由入力のみに（プリセット選択を廃止）']},
@@ -3935,7 +3936,7 @@ function adminStaff(){
       <div class="checkgrid">${checks}</div>
       <div style="display:flex;gap:9px;margin-top:16px"><button class="btn btn-ghost" id="st-cancel">やめる</button><button class="btn btn-primary" id="st-save">保存する</button></div>${editing?`<button class="cancelbtn" id="st-del" style="width:100%;margin-top:10px;border-color:#D8B6BF;color:var(--rose)">このスタッフを削除</button>`:''}</div>`;
   }
-  let html=`<details class="faq" style="margin-bottom:10px"><summary>📖 スタッフの追加・変更マニュアル（誰でも操作OK）</summary><div class="faq-a">スタッフの追加・変更は、オーナーでなくても<b>誰でもこの画面から</b>できます。<br><br><b>【追加のしかた】</b><br>①「＋スタッフを追加」を押す → ② 名前を入れる → ③ <b>接客しない裏方さん</b>の場合は「お客様ページに表示しない」にチェック（担当メニューはチェック無しでOK・お客様の画面には一切出ません） → ④ 接客するスタッフは担当できるメニューにチェック → ⑤ 時給を入れて保存。<br><br><b>【変更のしかた】</b><br>スタッフのカードをタップ → 直したい所を変えて保存。<br><br><b>【辞めた・非表示にしたい】</b><br>カードをタップ →「お客様ページに表示しない」にチェックして保存すれば、お客様側から見えなくなります。</div></details><div class="note" style="margin-top:0">スタッフの登録・編集ができます。写真・紹介・資格・対応メニュー・料金を設定でき、予約画面には「選んだメニューに対応できるスタッフ」だけが表示されます。行をタップで編集できます。</div><button class="postbtn" id="st-new">＋ スタッフを追加</button>`;
+  let html=`<button class="btn btn-ghost" id="st-restore" style="width:100%;margin-bottom:10px">🛟 消えたスタッフ情報をバックアップから復元する</button><details class="faq" style="margin-bottom:10px"><summary>📖 スタッフの追加・変更マニュアル（誰でも操作OK）</summary><div class="faq-a">スタッフの追加・変更は、オーナーでなくても<b>誰でもこの画面から</b>できます。<br><br><b>【追加のしかた】</b><br>①「＋スタッフを追加」を押す → ② 名前を入れる → ③ <b>接客しない裏方さん</b>の場合は「お客様ページに表示しない」にチェック（担当メニューはチェック無しでOK・お客様の画面には一切出ません） → ④ 接客するスタッフは担当できるメニューにチェック → ⑤ 時給を入れて保存。<br><br><b>【変更のしかた】</b><br>スタッフのカードをタップ → 直したい所を変えて保存。<br><br><b>【辞めた・非表示にしたい】</b><br>カードをタップ →「お客様ページに表示しない」にチェックして保存すれば、お客様側から見えなくなります。</div></details><div class="note" style="margin-top:0">スタッフの登録・編集ができます。写真・紹介・資格・対応メニュー・料金を設定でき、予約画面には「選んだメニューに対応できるスタッフ」だけが表示されます。行をタップで編集できます。</div><button class="postbtn" id="st-new">＋ スタッフを追加</button>`;
   const _tmr=fmtDate(new Date(today.getFullYear(),today.getMonth(),today.getDate()+1));const _wr=DATA.workReq||{};html+=staff.filter(s=>s.id!=='s0').map(s=>{const q=(s.quals||'').split(/[,、，\n・\/／|;；]+|\s{2,}/).map(x=>x.trim()).filter(Boolean);const svc=(s.services||[]).length?`対応 ${(s.services||[]).length}メニュー`:'全メニュー対応';const cur=(_wr[s.id]||{})[_tmr];return `<div class="staffrow" data-stedit="${s.id}" style="flex-wrap:wrap"><div class="sc-av" style="${s.photo?`background-image:url('${s.photo}');background-size:cover;background-position:center`:`background:${s.color}`};width:52px;height:52px;border-radius:50%;flex-shrink:0">${s.photo?'':nameInitial(s.name)}</div><div class="mb"><div class="mn">${s.name}</div><div class="mm">${s.role||'スタッフ'} ・ ${svc}</div>${q.length?`<div class="quals" style="margin-top:5px">${q.slice(0,3).map(x=>`<span class="qual">🏅 ${x}</span>`).join('')}</div>`:''}</div><span class="strow-edit">編集 ›</span></div>`}).join('');
   return html;
 }
@@ -4146,6 +4147,7 @@ function bindAdmin(){
   const sts=byId('st-save');if(sts)sts.onclick=saveStaff;
   const std=byId('st-del');if(std)std.onclick=async()=>{if(!confirm('このスタッフを削除しますか？（過去の予約データは残ります）'))return;if(!confirm('本当に削除しますか？（元に戻せません）'))return;DATA.delStaff=DATA.delStaff||[];if(!DATA.delStaff.includes(state.staffEdit))DATA.delStaff.push(state.staffEdit);DATA.staff=DATA.staff.filter(s=>s.id!==state.staffEdit);staff=DATA.staff;state.staffEdit=null;state.staffPhotoPending='';await saveData(DATA);render();};
   const stp=byId('st-photo');if(stp)stp.onchange=e=>{const f=e.target.files[0];if(!f)return;handlePhoto(f,d=>{state.staffPhotoPending=d;const fld=stp.closest('.field');if(fld){let pv=fld.querySelector('.preview');if(!pv){pv=document.createElement('div');pv.className='preview';fld.insertBefore(pv,fld.querySelector('.fileinput'));}pv.style.backgroundImage=`url('${d}')`;}},700)};
+  const _sre=byId('st-restore');if(_sre)_sre.onclick=async()=>{const ok=await staffRestoreFromBackup();if(!ok)alert('復元できる情報が見つかりませんでした（すべて入力済み、またはバックアップに該当データがありません）。');};
   app.querySelectorAll('[data-workreq]').forEach(b=>b.onclick=()=>{const[sid,ds,mode]=b.dataset.workreq.split('|');workReqSet(sid,ds,mode);});
   app.querySelectorAll('[data-stedit]').forEach(b=>b.onclick=()=>{state.staffEdit=b.dataset.stedit;state.staffPhotoPending='';render()});
     document.querySelectorAll('[data-recimg]').forEach(inp=>inp.onchange=e=>{const i=+e.target.dataset.recimg;const f=e.target.files[0];if(!f)return;handlePhoto(f,d=>{state.recPhotos[i]=d;const card=e.target.closest('.addform');if(card){let pv=card.querySelector('.preview');if(!pv){pv=document.createElement('div');pv.className='preview';card.insertBefore(pv,card.querySelector('.fileinput'));}pv.style.backgroundImage=`url('${d}')`;}},800)});
