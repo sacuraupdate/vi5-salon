@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260912m';
+const APP_REV='r20260912n';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -3111,6 +3111,10 @@ function renderIntro(){
   ];
   return `<div class="fade intro"><div style="text-align:center;padding:24px 0 6px"><div class="eyebrow">S T A R T HERE</div><h2 style="font-family:'Fraunces',serif;color:var(--navy);margin:8px 0 2px;font-size:30px">はじめに（必ずお読みください）</h2><div class="note" style="color:var(--gold-deep);font-weight:700">🆕 内容が更新されました。ご確認ください（v${INTRO_VER}）</div><div class="note">このアプリは機能が多いので、最初に使い方をまとめました。読み終えたら一番下のボタンを押してください。</div></div>`+secs.map((s,i)=>`<div class="intro-sec"><div class="is-ic">${s[0]}</div><div class="is-b"><div class="is-t">${i+1}. ${s[1]}</div><div class="is-x">${s[2]}</div></div></div>`).join("")+`<label class="intro-chk"><input type="checkbox" id="intro-agree"> 上記の使い方を確認しました</label><button class="btn btn-primary" id="intro-ok" style="width:100%;margin-top:10px">この内容で始める</button><button class="btn btn-ghost" id="intro-later" style="width:100%;margin-top:8px;font-size:12px">あとで読む（今回はスキップ）</button></div>`;}
 
+function ptLabelCleanup(){try{if(DATA._ptLblFix1)return false;DATA._ptLblFix1=true;let n=0;
+  for(const k in (DATA.customers||{})){const c=DATA.customers[k];if(!c||!Array.isArray(c.pointLog))continue;
+    c.pointLog.forEach(e=>{if(e&&PT_INTERNAL.test(String(e.reason||''))&&e.reason!=='内部調整'){e.reason='内部調整';n++;}});}
+  return n>0;}catch(e){return false;}}
 function birthdayDupFix2(){try{const yr=String(today.getFullYear());let n=0;
   for(const k in (DATA.customers||{})){const c=DATA.customers[k];if(!c||!Array.isArray(c.notices))continue;
     const isB=no=>/お誕生日/.test(no.text||'')&&/ポイント/.test(no.text||'');
@@ -3118,14 +3122,14 @@ function birthdayDupFix2(){try{const yr=String(today.getFullYear());let n=0;
     if(bs.length>=2){
       /* 最初の1通（古い方）を残し、残りを削除 */const keep=bs.slice().sort((a,b)=>String(a.no.date).localeCompare(String(b.no.date)))[0];
       c.notices=c.notices.filter((no,i)=>!(isB(no)&&String(no.date||'').startsWith(yr)&&i!==keep.i));
-      const extra=bs.length-1;addPoints(c,-CONFIG.birthdayBonus*extra,'誕生日ポイント二重付与の取消（'+extra+'回分）');
+      const extra=bs.length-1;addPoints(c,-CONFIG.birthdayBonus*extra,'内部調整');
       delete c.bdayYear;n++;logAct((c.name||k)+'様の誕生日ポイント二重付与を是正');}
   }
   return n>0;}catch(e){return false;}}
 function birthdayDupFix(){try{if(DATA._bdayDupFixed)return false;DATA._bdayDupFixed=true;const yr=today.getFullYear();let n=0;
   for(const k in (DATA.customers||{})){const c=DATA.customers[k];if(!c)continue;
     if(c.bdayYear===yr&&c.bdayAwardedYear===yr){
-      addPoints(c,-CONFIG.birthdayBonus,'誕生日ポイント二重付与の是正（重複分を取消）');
+      addPoints(c,-CONFIG.birthdayBonus,'内部調整');
       const before=(c.notices||[]).length;c.notices=(c.notices||[]).filter(no=>!/お誕生日おめでとうございます🎂✨/.test(no.text||''));
       if((c.notices||[]).length!==before)n++;else n++;
       delete c.bdayYear; // 当日側の印は不要（今後は7日前の印だけを使う）
@@ -3234,7 +3238,7 @@ function renderAdmin(){
   if(!WORK)loadWork().then(()=>render());
   if(!localGet('salon:me')){app.innerHTML=renderMePicker();app.querySelectorAll('[data-me]').forEach(b=>b.onclick=()=>{if(b.dataset.me==='s1'){const p=prompt('オーナー（SAKURA）として入るには暗証番号を入力してください');if(p===null)return;if(String(p).trim()!==ownerPin()){alert('暗証番号が違います。');return;}}setMe(b.dataset.me);});const _mo=byId('me-logout');if(_mo)_mo.onclick=()=>{try{localStorage.removeItem('vi5:datacache');}catch(e){}state.adminAuthed=false;localDel('salon:staff');localDel('salon:staffpw');render();};return;}
   const _idone=localGet('salon:introdone');if(!_idone&&!state.introSkip){app.innerHTML=renderIntro();const _ia=byId('intro-agree');const _iok=byId('intro-ok');if(_iok)_iok.onclick=()=>{if(!_ia||!_ia.checked){alert('「確認しました」にチェックをお願いします。');return;}localSet('salon:introdone',INTRO_VER);render();};const _il=byId('intro-later');if(_il)_il.onclick=()=>{state.introSkip=true;render();};return;}
-  autoRescue();imageShrinkMigrate();autoEshopSync();try{if(extBlocksMigrate())saveData(DATA);}catch(_e){}try{if(state.dataFull&&demoPurge())saveData(DATA);}catch(_e){}try{if(state.dataFull&&harukaShiftZero())saveData(DATA);}catch(_e){}try{if(state.dataFull&&staffServiceRules())saveData(DATA);}catch(_e){}try{if(state.dataFull)staffRestoreFromBackup();}catch(_e){}try{if(state.adminAuthed&&navigator.onLine!==false&&!state._gcalFlushed){state._gcalFlushed=true;gcalFlushQueue();}}catch(_e){}try{if(state.dataFull&&autoCancelRestore())saveData(DATA);}catch(_e){}try{if(state.dataFull&&futureVisitFix())saveData(DATA);}catch(_e){}try{if(state.dataFull&&birthdayAutoRun())saveData(DATA);}catch(_e){}try{if(state.dataFull&&WORK&&taskAssigneeSelfFix())saveWork();}catch(_e){}try{if(state.dataFull&&birthdayDupFix())saveData(DATA);}catch(_e){}try{if(state.dataFull&&birthdayDupFix2())saveData(DATA);}catch(_e){}try{if(state.dataFull&&WORK&&payAdjTomomiAugSeed())saveWork();}catch(_e){}try{if(state.dataFull)seedTasksMigrate();}catch(_e){}try{if(state.dataFull&&!state._gcalSwept){state._gcalSwept=true;if(gcalCancelSweep())saveData(DATA);}}catch(_e){}let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(staffNameMigrate())_clch=true;if(wageMigrate())_clch=true;if(harukaFixMigrate())_clch=true;if(staffMenuMigrate())_clch=true;if(calSetupMigrate())_clch=true;/* 自動保存は廃止：古い端末が新データを上書きする事故の元。編集操作時のみ保存 */
+  autoRescue();imageShrinkMigrate();autoEshopSync();try{if(extBlocksMigrate())saveData(DATA);}catch(_e){}try{if(state.dataFull&&demoPurge())saveData(DATA);}catch(_e){}try{if(state.dataFull&&harukaShiftZero())saveData(DATA);}catch(_e){}try{if(state.dataFull&&staffServiceRules())saveData(DATA);}catch(_e){}try{if(state.dataFull)staffRestoreFromBackup();}catch(_e){}try{if(state.adminAuthed&&navigator.onLine!==false&&!state._gcalFlushed){state._gcalFlushed=true;gcalFlushQueue();}}catch(_e){}try{if(state.dataFull&&autoCancelRestore())saveData(DATA);}catch(_e){}try{if(state.dataFull&&futureVisitFix())saveData(DATA);}catch(_e){}try{if(state.dataFull&&birthdayAutoRun())saveData(DATA);}catch(_e){}try{if(state.dataFull&&WORK&&taskAssigneeSelfFix())saveWork();}catch(_e){}try{if(state.dataFull&&birthdayDupFix())saveData(DATA);}catch(_e){}try{if(state.dataFull&&birthdayDupFix2())saveData(DATA);}catch(_e){}try{if(state.dataFull&&ptLabelCleanup())saveData(DATA);}catch(_e){}try{if(state.dataFull&&WORK&&payAdjTomomiAugSeed())saveWork();}catch(_e){}try{if(state.dataFull)seedTasksMigrate();}catch(_e){}try{if(state.dataFull&&!state._gcalSwept){state._gcalSwept=true;if(gcalCancelSweep())saveData(DATA);}}catch(_e){}let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(staffNameMigrate())_clch=true;if(wageMigrate())_clch=true;if(harukaFixMigrate())_clch=true;if(staffMenuMigrate())_clch=true;if(calSetupMigrate())_clch=true;/* 自動保存は廃止：古い端末が新データを上書きする事故の元。編集操作時のみ保存 */
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
   const tabs=[['todo','✅','やること','毎日'],['chat','💬','チャット','毎日'],['bookings','📅','予約','毎日'],['schedule','⏰','シフト','毎日'],['customers','👥','顧客カルテ','お客様'],['report','📝','業務報告','毎日'],['money','💰','売上・給与','管理'],['settings','⚙️','設定','管理'],['updates','📋','更新履歴','管理']];
   const _sec=(t)=>`<div class="subhead" style="margin:26px 0 12px;padding-top:18px;border-top:2px solid var(--line)">${t}</div>`;
@@ -3740,13 +3744,17 @@ function couponCardHtml(cp,phone,forMenu){const usable=couponUsable(cp,phone);co
   const act=(forMenu&&cp.type!=='news')?(usable?`<button class="btn btn-primary" data-usecoupon="${cp.id}" style="width:100%;margin-top:8px">このクーポンでメニューを選ぶ</button>`:`<div class="note" style="margin-top:6px;color:var(--rose)">使用済みです</div>`):'';
   return `<div style="border:2px solid var(--gold);background:linear-gradient(135deg,#fff9e8,#fff);border-radius:16px;padding:14px;margin:0 0 10px">${cp.img?`<img src="${cp.img}" style="width:100%;max-height:150px;object-fit:cover;border-radius:10px;margin-bottom:8px">`:''}<div style="display:flex;align-items:center;gap:8px"><span style="font-size:20px">${cp.type==='news'?'📣':'🎫'}</span><b style="font-size:16px;color:var(--navy)">${cp.title||''}</b>${dd?`<span class="tag disc">${dd}</span>`:''}</div>${cp.desc?`<div style="font-size:13.5px;color:var(--ink-soft);margin-top:6px;line-height:1.7">${cp.desc}</div>`:''}<div class="note" style="margin:6px 0 0">${cp.expiry?cp.expiry.replace(/-/g,'/')+'まで':''} ${staffTxt} ${cp.multi?'':'※お一人1回'}</div>${act}</div>`;}
 function addPoints(c,n,reason){if(!c||!n)return;c.bonusPoints=(c.bonusPoints||0)+n;c.pointLog=c.pointLog||[];c.pointLog.unshift({at:Date.now(),date:fmtDate(today),pts:n,reason:reason||'ポイント付与'});if(c.pointLog.length>200)c.pointLog=c.pointLog.slice(0,200);}
-function pointHistory(phone){const k=normPhone(phone);const c=DATA.customers[k];if(!c)return [];const L=[];
+const PT_INTERNAL=/是正|取消|調整|誤付与|重複|二重/;
+function pointHistory(phone,forStaff){const k=normPhone(phone);const c=DATA.customers[k];if(!c)return [];const L=[];
   (c.pointLog||[]).forEach(e=>L.push({date:e.date||fmtDate(new Date(e.at||0)),pts:e.pts,reason:e.reason,at:e.at||0}));
   (DATA.bookings||[]).filter(b=>normPhone(b.phone)===k&&b.status==='visited').forEach(b=>{if(b.awardedPoints>0)L.push({date:b.date,pts:b.awardedPoints,reason:'ご来店ポイント（'+(b.items||[]).map(i=>i.name).join('＋').slice(0,20)+'）',at:new Date(b.date+'T23:59:00').getTime()});if(b.pointsUsed>0)L.push({date:b.date,pts:-b.pointsUsed,reason:'ポイント利用（ご予約）',at:new Date(b.date+'T23:58:00').getTime()});});
   (c.storeUse||[]).forEach(u=>L.push({date:u.date||fmtDate(new Date(u.at||0)),pts:-(u.pts||0),reason:'店頭でポイント利用',at:u.at||0}));
   // 台帳に無い残高（初期特典など）は「登録特典」として先頭に
-  const known=L.reduce((a,e)=>a+e.pts,0);const bal=pointBalance(k);const diff=bal-known;if(diff!==0)L.push({date:c.joined||'',pts:diff,reason:diff>0?'会員登録・紹介などの特典ポイント':'調整',at:new Date((c.joined||'2020-01-01')+'T00:00:00').getTime()});
-  return L.sort((a,b)=>(b.at||0)-(a.at||0));}
+  let out=L;
+  if(!forStaff){/* お客様には店側の内部調整(是正・取消など)を見せない */out=L.filter(e=>!PT_INTERNAL.test(String(e.reason||'')));}
+  const known=out.reduce((a,e)=>a+e.pts,0);const bal=pointBalance(k);const diff=bal-known;
+  if(diff!==0)out=out.concat([{date:c.joined||'',pts:diff,reason:diff>0?'会員登録・紹介などの特典ポイント':(forStaff?'調整':'ポイント利用'),at:new Date((c.joined||'2020-01-01')+'T00:00:00').getTime()}]);
+  return out.sort((a,b)=>(b.at||0)-(a.at||0));}
 function needsRecord(c){const cutoff=fmtDate(new Date(today.getTime()-60*86400000));const k=normPhone(c.phone);const karteList=(WORK&&WORK.karte&&WORK.karte[k])||[];const custKarte=(c.karte)||[];return DATA.bookings.some(b=>{if(normPhone(b.phone)!==k||b.status!=='visited'||b.date<cutoff)return false;if(b.karteDone||b.karteSkip)return false;if(b.staffComment&&b.staffComment.trim())return false;const vd=new Date(b.date+'T00:00:00').getTime();return !karteList.concat(custKarte).some(e=>(e.at||0)>=vd-86400000);});}
 function adminCustomers(){
   if(state.custOpen)return custDetail(state.custOpen);
@@ -3868,6 +3876,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-12',v:'r20260912n',items:['【重要】お客様のポイント履歴に「二重付与の是正（重複分を取消）」など店側の内部調整が表示されていた問題を修正。お客様には内部調整を一切表示せず、合計は必ず実際の残高と一致するように','過去に記録済みの是正・取消の表記も「内部調整」に統一し、お客様側では非表示に','スタッフのカルテでは全ての履歴（内部調整含む）を確認可能']},
  {d:'2026-09-12',v:'r20260912m',items:['【「更新すると消える」問題の根本対策】これまでは予約・タスク・顧客など個別に保護していたため、保護し忘れたデータ（お知らせ・ご意見・ケア文書・設定・給与の経費/勤務時間など）が更新のたびに消えていた→「保護し忘れが起きない汎用の安全網」を導入。今後どんなデータを追加しても自動的に守られ、消えることが構造的に起きない','お知らせに固有IDと更新時刻を付与し、複数端末で編集しても最新が残るように']},
  {d:'2026-09-12',v:'r20260912j',items:['ポイント操作パネルが画面の上の方に開いていて気づけなかった問題を修正→ボタンのすぐ下に開くように','ポイント操作を「➖減らす／➕増やす」のボタン選択式に変更（既定は減らす）。現在の保有ポイントを大きく表示し、理由も選べる']},
  {d:'2026-09-12',v:'r20260912i',items:['お客様カルテで、配信済みメッセージの「編集」「削除」ができるように（お客様の画面にも即反映）','お客様カルテに「ポイントを操作する」パネルを新設。増減と理由（付与／店頭利用／お詫び／誤付与の取消 など）を選んで反映でき、ポイント履歴もその場で確認できる']},
@@ -4390,7 +4399,7 @@ async function sendFinish(id){const bk=DATA.bookings.find(x=>x.id===id);if(!bk)r
   if(bk.status!=='visited')bk.status='visited';bk.updatedAt=Date.now();bk.awardedPoints=pts;bk.salonMessage=t;bk.thanked=true;bk.updatedAt=Date.now();pushNotice(c,full);
   state.finOpen=null;await saveData(DATA);alert('送信しました。ポイントも付与されました。');render();}
 function ptPanelHtml(key){const c=DATA.customers[key];if(!c)return '';const bal=pointBalance(c.phone);const sign=state.ptSign||'minus';
-  const H=pointHistory(c.phone);
+  const H=pointHistory(c.phone,true);
   return `<div class="addform" style="border:2px solid var(--gold);margin-top:10px">
     <div class="subhead" style="margin:0 0 4px">💎 ${esc(c.name)}様のポイント操作</div>
     <div style="font-size:22px;font-weight:800;color:var(--navy);margin:0 0 10px">現在 ${bal.toLocaleString()}pt</div>
