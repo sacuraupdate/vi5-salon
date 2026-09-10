@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260912p';
+const APP_REV='r20260912q';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1227,13 +1227,35 @@ function mergeProtect(d,srv){if(srv&&srv._seed)return d;if(d&&d._seed&&srv){cons
   if(!srv||typeof srv!=='object')return d;
   if(srv.deletedCust){d.deletedCust=Object.assign({},srv.deletedCust,d.deletedCust||{});}
   {const delB=new Set([...(d.delBookings||[]),...(srv.delBookings||[])]);d.delBookings=[...delB];if(delB.size){d.bookings=(d.bookings||[]).filter(b=>!(b&&delB.has(b.id)));if(Array.isArray(srv.bookings))srv.bookings=srv.bookings.filter(b=>!(b&&delB.has(b.id)));}}
-  if(srv.customers){const merged=Object.assign({},srv.customers,d.customers||{});const dc=d.deletedCust||{};for(const k in dc){if(dc[k]&&!(d.customers||{})[k])delete merged[k];}d.customers=merged;}
+  if(srv.customers){
+    const cTime=c=>Math.max((c&&c._u)||0,(c&&c.updatedAt)||0,0);
+    const L=d.customers||{},S=srv.customers||{};const merged={};
+    new Set([...Object.keys(S),...Object.keys(L)]).forEach(k=>{
+      const a=L[k],b=S[k];
+      if(!a){merged[k]=b;return;} if(!b){merged[k]=a;return;}
+      /* 基本は新しい方を土台にする（更新時刻が無ければ端末側） */
+      const base=(cTime(b)>cTime(a))?Object.assign({},a,b):Object.assign({},b,a);
+      /* ポイントは履歴の多い方＝取りこぼしの無い方を採用 */
+      const la=((a.pointLog||[]).length),lb=((b.pointLog||[]).length);
+      if(lb>la){base.pointLog=b.pointLog;base.bonusPoints=b.bonusPoints;}
+      else if(la>lb){base.pointLog=a.pointLog;base.bonusPoints=a.bonusPoints;}
+      /* 通知は両方を結合（消失防止）。同一メッセージは既読が優先 */
+      const key=n=>String(n&&n.id||'')+'|'+String(n&&n.date||'')+'|'+String(n&&n.text||'').slice(0,40);
+      const map={};[...(b.notices||[]),...(a.notices||[])].forEach(n=>{const kk=key(n);const ex=map[kk];if(!ex){map[kk]=n;return;}if(n.read&&!ex.read)map[kk]=n;});
+      base.notices=Object.values(map).sort((x,y)=>String(y.date||'').localeCompare(String(x.date||'')));
+      merged[k]=base;
+    });
+    const dc=d.deletedCust||{};for(const k in dc){if(dc[k]&&!(d.customers||{})[k])delete merged[k];}
+    d.customers=merged;}
   /* メニュー・スタッフ: IDで統合。両方に在れば更新時刻(_u)が新しい方。片方にしか無ければ残す */
   const _rich=x=>{let n=0;['photo','thumb','intro','quals','role','img','desc','detail'].forEach(k=>{if(x&&x[k])n+=String(x[k]).length>0?1:0;});if(x&&x.photos&&x.photos.length)n+=x.photos.length;if(x&&x.prices&&Object.keys(x.prices).length)n+=1;if(x&&x.services&&x.services.length)n+=1;if(x&&x.wage)n+=1;return n;};
   const _mrg=(a,b)=>{const m={};(b||[]).forEach(x=>{if(x&&x.id)m[x.id]=x;});(a||[]).forEach(x=>{if(!x||!x.id)return;const ex=m[x.id];if(!ex){m[x.id]=x;return;}const ua=x._u||0,ub=ex._u||0;if(ua>ub){m[x.id]=x;return;}if(ub>ua)return;/* 同点: 情報が多い方、同じならサーバー(ex)を残す */if(_rich(x)>_rich(ex))m[x.id]=x;});return Object.values(m);};
   if(Array.isArray(srv.services)&&Array.isArray(d.services)){const delS=new Set([...(d.delServices||[]),...(srv.delServices||[])]);d.delServices=[...delS];d.services=_mrg(d.services,srv.services).filter(x=>!delS.has(x.id));}
   if(Array.isArray(srv.staff)&&Array.isArray(d.staff)){const delT=new Set([...(d.delStaff||[]),...(srv.delStaff||[])]);d.delStaff=[...delT];d.staff=_mrg(d.staff,srv.staff).filter(x=>!delT.has(x.id));}
   if(srv.coupons&&d.coupons){d.coupons=_mrg(d.coupons,srv.coupons);}
+  /* 紹介・ブロック枠: IDで結合し、両方にあれば新しい方 */
+  {const tOf=x=>Math.max((x&&x._u)||0,(x&&x.at)||0,0);
+   ['referrals','blocks'].forEach(k=>{if(!Array.isArray(srv[k]))return;const A=d[k]||[],B=srv[k];const m={};B.forEach(x=>{const id=(x&&x.id)||JSON.stringify(x);m[id]=x;});A.forEach(x=>{const id=(x&&x.id)||JSON.stringify(x);const ex=m[id];if(!ex||tOf(x)>=tOf(ex))m[id]=x;});d[k]=Object.values(m);});}
   if(srv.checklist&&d.checklist){/* 日次チェック: より新しい方の完了状態を採用 */try{['work','home'].forEach(mo=>{const ls=(d.checklist[mo]||[]);const ss=(srv.checklist[mo]||[]);ss.forEach((sc,ci)=>{const lc=ls[ci];if(!lc||!sc)return;(sc.items||[]).forEach((si,ii)=>{const li=lc.items&&lc.items[ii];if(li&&si&&(si.lastDone||'')>(li.lastDone||'')){li.done=si.done;li.lastDone=si.lastDone;li.doneBy=si.doneBy;}});});});}catch(e){}}
   if(srv.shiftOverrides){d.shiftOverrides=d.shiftOverrides||{};const allSid=new Set([...Object.keys(srv.shiftOverrides),...Object.keys(d.shiftOverrides)]);allSid.forEach(sid=>{const S=srv.shiftOverrides[sid]||{},L=d.shiftOverrides[sid]||{};const out={};new Set([...Object.keys(S),...Object.keys(L)]).forEach(ds=>{const a=L[ds],b=S[ds];if(!a){out[ds]=b;return;}if(!b){out[ds]=a;return;}const ua=a._u||0,ub=b._u||0;out[ds]=(ua>ub)?a:(ub>ua?b:b);/* 同時刻/不明はサーバー優先（古い端末の巻き戻し防止） */});d.shiftOverrides[sid]=out;});}
   if(srv.shifts){d.shifts=d.shifts||{};const allSid2=new Set([...Object.keys(srv.shifts),...Object.keys(d.shifts)]);allSid2.forEach(sid=>{const S=srv.shifts[sid]||{},L=d.shifts[sid]||{};const out={};new Set([...Object.keys(S),...Object.keys(L)]).forEach(k=>{const a=L[k],b=S[k];if(!a){out[k]=b;return;}if(!b){out[k]=a;return;}const ua=(a&&a._u)||0,ub=(b&&b._u)||0;out[k]=(ua>ub)?a:b;});d.shifts[sid]=out;});}
@@ -1519,7 +1541,7 @@ function pointBalance(p){const c=DATA.customers[normPhone(p)];if(!c)return 0;let
 function favServiceIds(p){const cnt={};DATA.bookings.filter(b=>normPhone(b.phone)===normPhone(p)&&b.status!=='cancelled').forEach(b=>b.items.forEach(i=>{cnt[i.id]=(cnt[i.id]||0)+1}));return Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([id])=>id).filter(svById)}
 function favMenus(p){return favServiceIds(p).map(id=>svById(id).name)}
 function usedPoints(p){return DATA.bookings.some(b=>normPhone(b.phone)===normPhone(p)&&(b.pointsUsed||0)>0)}
-function pushNotice(c,text,imgs){c.notices=c.notices||[];c.notices.unshift({text,imgs:(imgs&&imgs.length)?imgs.slice(0,5):undefined,date:now(),read:false});if(c.notices.length>60)c.notices=c.notices.slice(0,60);}
+function pushNotice(c,text,imgs){c._u=Date.now();c.notices=c.notices||[];c.notices.unshift({text,imgs:(imgs&&imgs.length)?imgs.slice(0,5):undefined,date:now(),read:false});if(c.notices.length>60)c.notices=c.notices.slice(0,60);}
 async function checkBirthdays(){/* 誕生日ポイントの付与は birthdayAutoRun（7日前に1回だけ）に一本化。ここでは何もしない（二重付与防止） */return;}
 async function checkReminders(){let changed=false;const tm=new Date(today);tm.setDate(today.getDate()+1);const tmd=fmtDate(tm);(DATA.bookings||[]).forEach(bk=>{if(!bk||bk.reminded)return;if(bk.status==='cancelled'||bk.status==='visited')return;if(bk.date!==tmd)return;const c=DATA.customers[normPhone(bk.phone)];if(!c)return;const st=stById(bk.staffId);const menu=(bk.items||[]).map(x=>x.name).join('＋');const dow=DOW[new Date(bk.date+'T00:00:00').getDay()];pushNotice(c,`【ご予約リマインド】明日 ${mdLabel(bk.date)}（${dow}）${bk.time}〜／${menu}${st?'／担当 '+st.name:''} でご予約をお待ちしております😊 ご変更・キャンセルは前日21時までにマイページからお願いいたします。`);bk.reminded=true;changed=true;});if(changed)await saveData(DATA);}
 
@@ -3747,7 +3769,7 @@ function couponCardHtml(cp,phone,forMenu){const usable=couponUsable(cp,phone);co
   const staffTxt=(cp.staff&&cp.staff.length)?'（'+cp.staff.map(id=>(stById(id)||{}).name).join('・')+'指名）':'';
   const act=(forMenu&&cp.type!=='news')?(usable?`<button class="btn btn-primary" data-usecoupon="${cp.id}" style="width:100%;margin-top:8px">このクーポンでメニューを選ぶ</button>`:`<div class="note" style="margin-top:6px;color:var(--rose)">使用済みです</div>`):'';
   return `<div style="border:2px solid var(--gold);background:linear-gradient(135deg,#fff9e8,#fff);border-radius:16px;padding:14px;margin:0 0 10px">${cp.img?`<img src="${cp.img}" style="width:100%;max-height:150px;object-fit:cover;border-radius:10px;margin-bottom:8px">`:''}<div style="display:flex;align-items:center;gap:8px"><span style="font-size:20px">${cp.type==='news'?'📣':'🎫'}</span><b style="font-size:16px;color:var(--navy)">${cp.title||''}</b>${dd?`<span class="tag disc">${dd}</span>`:''}</div>${cp.desc?`<div style="font-size:13.5px;color:var(--ink-soft);margin-top:6px;line-height:1.7">${cp.desc}</div>`:''}<div class="note" style="margin:6px 0 0">${cp.expiry?cp.expiry.replace(/-/g,'/')+'まで':''} ${staffTxt} ${cp.multi?'':'※お一人1回'}</div>${act}</div>`;}
-function addPoints(c,n,reason){if(!c||!n)return;c.bonusPoints=(c.bonusPoints||0)+n;c.pointLog=c.pointLog||[];c.pointLog.unshift({at:Date.now(),date:fmtDate(today),pts:n,reason:reason||'ポイント付与'});if(c.pointLog.length>200)c.pointLog=c.pointLog.slice(0,200);}
+function addPoints(c,n,reason){if(!c||!n)return;c._u=Date.now();c.bonusPoints=(c.bonusPoints||0)+n;c.pointLog=c.pointLog||[];c.pointLog.unshift({at:Date.now(),date:fmtDate(today),pts:n,reason:reason||'ポイント付与'});if(c.pointLog.length>200)c.pointLog=c.pointLog.slice(0,200);}
 const PT_INTERNAL=/是正|取消|調整|誤付与|重複|二重/;
 function pointHistory(phone,forStaff){const k=normPhone(phone);const c=DATA.customers[k];if(!c)return [];const L=[];
   (c.pointLog||[]).forEach(e=>L.push({date:e.date||fmtDate(new Date(e.at||0)),pts:e.pts,reason:e.reason,at:e.at||0}));
@@ -3880,6 +3902,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-12',v:'r20260912q',items:['【アプリ全体の「元に戻る」問題を根本解決】保存時の統合処理を全数調査し、残っていた欠陥をすべて修正。特に顧客データは「端末側が常に勝つ」作りで、古い端末が保存するとポイント残高・既読・お客様情報が丸ごと巻き戻っていた（アプリ全体で戻る現象の中核）','顧客データを「お客様ごとに新しい方を採用」に変更。ポイントは履歴の多い方（取りこぼしの無い方）、通知は両方を結合し既読が優先','紹介・ブロック枠・クーポンなど残る「先勝ち」方式もすべて新しい方優先に統一','ポイント付与・通知送信など顧客情報を変える全操作に更新時刻を記録','全17の統合経路が「新しい方優先」＋保護し忘れが起きない汎用安全網、の二重構成になったことを確認']},
  {d:'2026-09-12',v:'r20260912p',items:['【何度既読にしても・承認しても再び出てくる問題を修正】お知らせと打刻の統合処理が「IDが同じなら端末側をそのまま残す」だけで、既読・承認済みという状態を新しい方に更新していなかった→予約やタスクと同じ「新しい方を採用」方式に統一。既読・承認の時刻を記録し、古い端末の保存で巻き戻らないように']},
  {d:'2026-09-12',v:'r20260912n',items:['【重要】お客様のポイント履歴に「二重付与の是正（重複分を取消）」など店側の内部調整が表示されていた問題を修正。お客様には内部調整を一切表示せず、合計は必ず実際の残高と一致するように','過去に記録済みの是正・取消の表記も「内部調整」に統一し、お客様側では非表示に','スタッフのカルテでは全ての履歴（内部調整含む）を確認可能']},
  {d:'2026-09-12',v:'r20260912m',items:['【「更新すると消える」問題の根本対策】これまでは予約・タスク・顧客など個別に保護していたため、保護し忘れたデータ（お知らせ・ご意見・ケア文書・設定・給与の経費/勤務時間など）が更新のたびに消えていた→「保護し忘れが起きない汎用の安全網」を導入。今後どんなデータを追加しても自動的に守られ、消えることが構造的に起きない','お知らせに固有IDと更新時刻を付与し、複数端末で編集しても最新が残るように']},
