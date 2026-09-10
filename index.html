@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260912h';
+const APP_REV='r20260912i';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -3745,10 +3745,14 @@ function custDetail(key){
   </div></details>
   <button class="btn btn-ghost" id="ce-del" style="width:100%;margin:2px 0 10px;color:var(--rose);border-color:var(--rose)">🗑 この顧客を削除する</button></div>${(()=>{const su=(c.storeUsed||[]);return `<div class="addform" style="margin:10px 0;padding:12px 14px"><b>🎫 店頭でのポイント利用を記録</b><div class="note" style="margin:4px 0 8px">カルテ用の記録です。記録すると保有ポイントから自動で差し引かれます。</div><div style="display:flex;gap:8px"><input id="use-store-pt" type="number" min="1" inputmode="numeric" placeholder="使用ポイント数" style="flex:1"><button class="btn btn-primary" id="use-store-save" style="white-space:nowrap">記録する</button></div>${su.length?`<div class="note" style="margin-top:8px">これまでの店頭利用：${su.slice(-6).map(x=>`${x.date} <b>${x.pts}pt</b>${x.by?`（${x.by}）`:``}`).join(" ／ ")}</div>`:``}</div>`;})()}
     ${composer}
-    <div class="subhead">配信したメッセージ履歴</div>${(c.notices||[]).length?custNotices(c).map(n=>`<div class="hist" style="padding:11px 13px"><div class="hist-staff" style="margin:0 0 5px">${n.date} ・ ${n.read?'既読':'未読'}</div><div style="font-size:13px;color:var(--ink);line-height:1.6">${linkify(n.text)}</div></div>`).join(''):'<div class="note">まだ配信はありません</div>'}
+    <div class="subhead">配信したメッセージ履歴</div><div class="note" style="margin:0 0 8px">編集・削除するとお客様の画面にも反映されます。</div>${(c.notices||[]).length?custNotices(c).map((n,ni)=>`<div class="hist" style="padding:11px 13px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 5px"><span class="hist-staff" style="margin:0">${n.date} ・ ${n.read?'既読':'未読'}</span><span style="display:flex;gap:6px;flex-shrink:0"><button class="chip" data-msgedit="${key}|${n.id||''}|${ni}" style="padding:2px 10px;font-size:11px">編集</button><button class="chip" data-msgdel="${key}|${n.id||''}|${ni}" style="padding:2px 10px;font-size:11px;color:var(--rose);border-color:var(--rose)">削除</button></span></div>${state.msgEdit===((n.id||'')+'|'+ni)?`<textarea id="msg-edit-box" rows="4" style="width:100%;font-size:13px">${esc(n.text)}</textarea><div style="display:flex;gap:8px;margin-top:6px"><button class="chip" data-msgcancel="1">やめる</button><button class="chip" data-msgsave="${key}|${n.id||''}|${ni}" style="background:var(--navy);color:#fff;border-color:var(--navy)">保存する</button></div>`:`<div style="font-size:13px;color:var(--ink);line-height:1.6">${linkify(n.text)}</div>`}</div>`).join(''):'<div class="note">まだ配信はありません</div>'}
+    ${state.ptPanel===key?`<div class="addform" style="border:1.5px solid var(--gold)"><div class="subhead" style="margin:0 0 8px">💎 ポイント操作（現在 ${pointBalance(c.phone).toLocaleString()}pt）</div>
+      <div class="field two"><div><label>増減するポイント</label><input id="pt-amt" type="number" inputmode="numeric" placeholder="例：500 / -200"></div><div><label>理由</label><select id="pt-reason"><option value="サロンからのポイント付与">サロンからのポイント付与</option><option value="店頭でポイント利用">店頭でポイント利用</option><option value="お詫び・サービス">お詫び・サービス</option><option value="誤付与の取消">誤付与の取消</option><option value="その他調整">その他調整</option></select></div></div>
+      <div style="display:flex;gap:8px"><button class="btn btn-ghost" id="pt-cancel" style="flex:1">閉じる</button><button class="btn btn-primary" id="pt-save" style="flex:1">この内容で反映</button></div>
+      <div class="subhead" style="margin:16px 0 6px;font-size:13px">📒 ポイント履歴</div>${(()=>{const H=pointHistory(c.phone);if(!H.length)return '<div class="note">まだ履歴はありません</div>';return H.slice(0,30).map(e=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line);font-size:12.5px"><span><span style="color:var(--ink-soft);font-size:11px">${e.date?e.date.replace(/-/g,'/'):''}</span> ${esc(e.reason)}</span><b style="color:${e.pts>=0?'#2C4433':'var(--rose)'};white-space:nowrap">${e.pts>=0?'+':''}${Number(e.pts).toLocaleString()}pt</b></div>`).join('');})()}</div>`:''}
     <div class="subhead">特別割引</div><div class="disc-set">${ds}</div>
     ${rankSection}
-    <div class="subhead">回数券・オプション残数</div>${passes||'<div class="note">保有なし</div>'}<div class="export"><button data-passadd="${key}">回数券／オプションを追加</button><button data-pw="${key}">パスワード変更</button><button data-adjpts="${key}">ポイント手動調整</button></div>
+    <div class="subhead">回数券・オプション残数</div>${passes||'<div class="note">保有なし</div>'}<div class="export"><button data-passadd="${key}">回数券／オプションを追加</button><button data-pw="${key}">パスワード変更</button><button data-ptpanel="${key}">ポイントを操作する</button></div>
     <div class="note" style="margin:6px 0 0">回数券のほか、プレゼントのオプション（例：ヘッドマッサージ無料1回）も「回数券／オプションを追加」から登録できます。お客様のマイページに残数が表示されます。</div>
     <div class="subhead">💬 お客様へメッセージ（いつでも送れます）</div><div class="composer"><div class="note" style="margin:0 0 8px">お客様のマイページの「サロンからのお知らせ」に表示されます。来店の有無に関わらず、いつでも送れます（アプリ内表示。SMS・LINEには届きません）。画像も添付できます（アフターケアのご案内などに）。</div><textarea id="cust-msg" placeholder="メッセージを入力（例：先日はご来店ありがとうございました。次回のご案内です…）"></textarea>${state.custMsgImg?`<div class="preview" style="background-image:url('${state.custMsgImg}')"></div>`:''}<label class="fileinput" style="margin-top:8px">🖼️ 画像を添付${state.custMsgImg?'（変更）':''}<input type="file" id="cust-msg-img" accept="image/*"></label><div class="comp-tools"><button data-custmsg="${key}">メッセージを送る</button></div></div>
     <div class="subhead">ログイン情報・画面確認（社内用）</div><div class="addform" style="margin-bottom:0"><div class="note" style="margin:0 0 10px">電話番号：<b>${c.phone}</b>　／　暗証番号（パスワード）：<b>${c.password||'（未設定）'}</b><br>この暗証番号でお客様はマイページにログインできます。わからなくなったお客様には、これをお伝えするか「暗証番号を変更」で新しく設定してください。</div><div class="field" style="margin-bottom:8px"><label>お誕生日（未登録なら入力して保存）</label><div style="display:flex;gap:8px"><input id="cust-bday" type="date" value="${c.birthday||''}" style="flex:1"><button class="btn btn-ghost" data-bdaysave="${key}" style="flex:0 0 auto">保存</button></div></div><div class="export" style="margin:0"><button data-preview="${key}">📱 このお客様のマイページ画面を見る</button><button data-pw="${key}">暗証番号を変更</button></div></div>
@@ -3815,6 +3819,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-12',v:'r20260912i',items:['お客様カルテで、配信済みメッセージの「編集」「削除」ができるように（お客様の画面にも即反映）','お客様カルテに「ポイントを操作する」パネルを新設。増減と理由（付与／店頭利用／お詫び／誤付与の取消 など）を選んで反映でき、ポイント履歴もその場で確認できる']},
  {d:'2026-09-12',v:'r20260912h',items:['【復元が動かなかった原因】復元の判定が「写真が無い場合」だけだったため、写真は残っていて紹介文・資格・時給などだけ消えたスタッフ（TOMOMIさん）が対象外になっていた→どれか1項目でも空なら復元対象に変更','復元の実行間隔制限（6時間に1回）を撤廃し、管理画面を開くたびに点検','設定→スタッフの管理に「🛟 消えたスタッフ情報をバックアップから復元する」ボタンを追加（いつでも手動実行可）']},
  {d:'2026-09-12',v:'r20260912g',items:['【二重付与の真の原因を特定】顧客タブの「今月のお誕生日」パネルの1000ptボタンに二重防止が無く、押すたび何度でも付与できる状態だった（月内ずっと表示されるため誰かが押せば何度でも増える）→パネル自体を非表示にし、自動配信のみに一本化。万一の呼び出しにも「今年は付与済み」で拒否するガードを追加','斉藤美月様の是正処理を毎回自動実行に変更（前回は1回きりの印で止まっていた）。何度開いても余計に引かれない設計','スタッフ情報の自動復元は「最も新しいバックアップ」を優先するよう変更']},
  {d:'2026-09-12',v:'r20260912f',items:['スタッフ情報の自動点検を「1回きり」から「起動ごと（6時間に1回）」に変更。消失を検知したら自動でバックアップから復元し、🔔通知と操作履歴に自動記録（操作不要）','斉藤美月様ほか、同じ年に誕生日メッセージが2通以上あるお客様を確実に是正（1通削除・1,000pt取消）。前回の是正は印の付き方によって効かないケースがあった']},
@@ -4249,6 +4254,14 @@ function bindAdmin(){
   
   const finsend=byId('fin-send');if(finsend)finsend.onclick=()=>sendFinish(state.finOpen);
   app.querySelectorAll('[data-adjpts]').forEach(b=>b.onclick=()=>adjPts(b.dataset.adjpts));
+  app.querySelectorAll('[data-ptpanel]').forEach(b=>b.onclick=()=>{state.ptPanel=(state.ptPanel===b.dataset.ptpanel)?null:b.dataset.ptpanel;render();});
+  const _ptc=byId('pt-cancel');if(_ptc)_ptc.onclick=()=>{state.ptPanel=null;render();};
+  const _pts=byId('pt-save');if(_pts)_pts.onclick=async()=>{const key=state.ptPanel;const c=DATA.customers[key];if(!c)return;const n=parseInt((byId('pt-amt')||{}).value||'0')||0;if(!n){alert('増減するポイントを入力してください。');return;}const reason=(byId('pt-reason')||{}).value||'調整';if(!confirm(c.name+'様のポイントを '+(n>0?'+':'')+n+'pt 変更します（理由：'+reason+'）。よろしいですか？'))return;addPoints(c,n,reason);logAct(c.name+'様のポイントを'+(n>0?'+':'')+n+'pt調整（'+reason+'）');await saveData(DATA);alert('反映しました。');render();};
+  app.querySelectorAll('[data-msgedit]').forEach(b=>b.onclick=()=>{const p=b.dataset.msgedit.split('|');state.msgEdit=p[1]+'|'+p[2];render();});
+  const _mc=byId('msg-edit-box');
+  app.querySelectorAll('[data-msgcancel]').forEach(b=>b.onclick=()=>{state.msgEdit=null;render();});
+  app.querySelectorAll('[data-msgsave]').forEach(b=>b.onclick=async()=>{const[key,id,ni]=b.dataset.msgsave.split('|');const c=DATA.customers[key];if(!c)return;const box=byId('msg-edit-box');const tx=box?box.value.trim():'';if(!tx){alert('本文を入力してください。');return;}const list=custNotices(c);const target=list[parseInt(ni)];const real=(c.notices||[]).find(x=>x===target);if(real){real.text=tx;real.editedAt=Date.now();logAct(c.name+'様への配信メッセージを編集');}state.msgEdit=null;await saveData(DATA);render();});
+  app.querySelectorAll('[data-msgdel]').forEach(b=>b.onclick=async()=>{const[key,id,ni]=b.dataset.msgdel.split('|');const c=DATA.customers[key];if(!c)return;if(!confirm('このメッセージを削除します。お客様の画面からも消えます。よろしいですか？'))return;const list=custNotices(c);const target=list[parseInt(ni)];c.notices=(c.notices||[]).filter(x=>x!==target);logAct(c.name+'様への配信メッセージを削除');await saveData(DATA);render();});
   app.querySelectorAll('[data-addvisit]').forEach(b=>b.onclick=()=>addManualVisit(b.dataset.addvisit));
 }
 let adminTimer=null;
