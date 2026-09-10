@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260912j';
+const APP_REV='r20260912m';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1247,6 +1247,32 @@ function mergeProtect(d,srv){if(srv&&srv._seed)return d;if(d&&d._seed&&srv){cons
   if(Array.isArray(srv.referrals)){d.referrals=d.referrals||[];const rf={};d.referrals.forEach(r=>{rf[r.id]=1;});srv.referrals.forEach(r=>{if(!rf[r.id])d.referrals.push(r);});}
   if(Array.isArray(srv.blocks)){d.blocks=d.blocks||[];const bk9={};d.blocks.forEach(b=>{bk9[b.staffId+'|'+b.date+'|'+(b.time||'')]=1;});srv.blocks.forEach(b=>{const k=b.staffId+'|'+b.date+'|'+(b.time||'');if(!bk9[k])d.blocks.push(b);});}
   if(Array.isArray(srv.boards)){const delB=new Set([...(d.delBoards||[]),...(srv.delBoards||[])]);d.delBoards=[...delB];d.boards=(d.boards||[]).filter(b=>!(b&&delB.has(b.id)));const bids={};d.boards.forEach(b=>{if(b&&b.id)bids[b.id]=1;});srv.boards.forEach(b=>{if(b&&b.id&&!bids[b.id]&&!delB.has(b.id))d.boards.push(b);});}
+  /* ===== 汎用セーフティネット =====
+     個別に保護していないキーも、ここで必ず守る。
+     ・配列(idつき)  : 削除記録(delXxx)に無いものは両方から残す。同じidは新しい方(_u/at/editedAt)
+     ・配列(idなし)  : 件数が多い方を採用（消失防止）
+     ・オブジェクト  : サーバー側を土台に、端末側の値で上書き（端末の変更を活かしつつ消さない）
+     これにより「保護し忘れ」で消えることが構造的に起きない */
+  try{
+    const HANDLED=new Set(['customers','bookings','staff','services','shifts','shiftOverrides','boards','checklist','coupons','referrals','blocks','deletedCust','delBoards','delBookings','delServices','delStaff','_seed']);
+    const tOf=x=>Math.max((x&&x._u)||0,(x&&x.editedAt)||0,(x&&x.at)||0,0);
+    Object.keys(srv||{}).forEach(k=>{
+      if(HANDLED.has(k)||k.indexOf('_')===0)return;
+      const S=srv[k],L=d[k];
+      if(S==null)return;
+      if(L==null){d[k]=S;return;}
+      if(Array.isArray(S)&&Array.isArray(L)){
+        const dead=new Set([...(d['del'+k.charAt(0).toUpperCase()+k.slice(1)]||[]),...(srv['del'+k.charAt(0).toUpperCase()+k.slice(1)]||[])]);
+        const hasId=S.concat(L).some(x=>x&&x.id);
+        if(hasId){const m={};S.forEach(x=>{if(x&&x.id&&!dead.has(x.id))m[x.id]=x;});
+          L.forEach(x=>{if(!x||!x.id||dead.has(x.id))return;const ex=m[x.id];if(!ex||tOf(x)>=tOf(ex))m[x.id]=x;});
+          d[k]=Object.values(m);}
+        else if(S.length>L.length){d[k]=S;}
+        return;
+      }
+      if(typeof S==='object'&&typeof L==='object'&&!Array.isArray(S)&&!Array.isArray(L)){d[k]=Object.assign({},S,L);return;}
+    });
+  }catch(e){}
   return d;}
 async function backupSoon(d){/* 曜日別の自動バックアップ（1日1回・失敗しても本処理に影響なし） */
   try{const mk='vi5:bakday';const tag=fmtDate(today);if(localGet(mk)===tag)return;const dow=new Date().getDay();
@@ -2611,7 +2637,7 @@ function thisGoal(){return (DATA.goals&&DATA.goals[goalKey()])||null;}
 async function setGoalPrompt(){const g=thisGoal();const v=prompt('『'+goalLabel()+'の目標』を入力してください（全員の管理画面に1か月間表示されます）。\n例：新規のお客様20名 ／ 店販売上15万円 ／ 口コミ30件',g?g.text:'');if(v===null)return;DATA.goals=DATA.goals||{};if(!v.trim()){delete DATA.goals[goalKey()];logAct(goalLabel()+'の目標を削除');}else{DATA.goals[goalKey()]={text:v.trim(),setBy:meName()||'不明',setAt:Date.now()};logAct(goalLabel()+'の目標を設定');}await saveData(DATA);render();}
 function actAgo(ts){const s=Math.floor((Date.now()-ts)/1000);if(s<60)return 'たった今';if(s<3600)return Math.floor(s/60)+'分前';if(s<86400)return Math.floor(s/3600)+'時間前';return Math.floor(s/86400)+'日前';}
 async function annReact(id,emo){const a=(DATA.announcements||[]).find(x=>x.id===id);if(!a)return;a.reactions=a.reactions||{};a.reactions[emo]=a.reactions[emo]||[];const me=meName()||'不明';const i=a.reactions[emo].indexOf(me);if(i>=0)a.reactions[emo].splice(i,1);else a.reactions[emo].push(me);await saveData(DATA);render();}
-async function annPost(){const t=byId('ann-text').value.trim();const u=(byId('ann-url').value||'').trim();if(!t){alert('お知らせの内容をご入力ください。');return;}DATA.announcements=DATA.announcements||[];const img=state.annImg||null;if(state.annEdit){const a=DATA.announcements.find(x=>x.id===state.annEdit);if(a){a.text=t;a.url=u;if(state.annImg!==undefined&&state.annImg!==null)a.img=state.annImg;a.editedAt=Date.now();}logAct('お知らせを編集');}else{DATA.announcements.unshift({id:'an'+Date.now(),text:t,url:u,img:img,by:meName()||'不明',at:Date.now(),reactions:{}});logAct('お知らせを投稿');}state.annOpen=false;state.annEdit=null;state.annImg=null;await saveData(DATA);render();}
+async function annPost(){const t=byId('ann-text').value.trim();const u=(byId('ann-url').value||'').trim();if(!t){alert('お知らせの内容をご入力ください。');return;}DATA.announcements=DATA.announcements||[];const img=state.annImg||null;if(state.annEdit){const a=DATA.announcements.find(x=>x.id===state.annEdit);if(a){a.text=t;a.url=u;if(state.annImg!==undefined&&state.annImg!==null)a.img=state.annImg;a.editedAt=Date.now();a._u=Date.now();}logAct('お知らせを編集');}else{DATA.announcements.unshift({id:'an'+Date.now()+Math.random().toString(36).slice(2,5),text:t,url:u,img:img,by:meName()||'不明',at:Date.now(),_u:Date.now(),reactions:{}});logAct('お知らせを投稿');}state.annOpen=false;state.annEdit=null;state.annImg=null;await saveData(DATA);render();}
 async function annDel(id){if(!confirm('このお知らせを削除しますか？'))return;DATA.announcements=(DATA.announcements||[]).filter(x=>x.id!==id);logAct('お知らせを削除');await saveData(DATA);render();}
 /* ===== 業務データ(別保管)とチャット ===== */
 let WORK=null;
@@ -2634,6 +2660,33 @@ function mergeWork(local,srv){if(!srv)return local;const delT=new Set([...(local
   local.reports=mergeById(local.reports,srv.reports,'id',delR,r=>r.at||0);
   local.orders=mergeById(local.orders,srv.orders,'id',delO,o=>Math.max(o.at||0,o.statusAt||0));local.ownerAlerts=byId(local.ownerAlerts,srv.ownerAlerts,'id');local.clock=byId(local.clock,srv.clock,'id');local.events=byId(local.events,srv.events,'id');
   local.karte=local.karte||{};for(const k in (srv.karte||{})){const L=local.karte[k]||[];const seen=new Set(L.map(x=>x.at+'|'+x.by));(srv.karte[k]||[]).forEach(x=>{if(!seen.has(x.at+'|'+x.by))L.push(x);});L.sort((a,b)=>(b.at||0)-(a.at||0));local.karte[k]=L;}
+  /* 汎用セーフティネット（業務データ側）: 保護し忘れたキーも必ず守る */
+  try{
+    const HANDLED=new Set(['chats','tasks','reports','orders','clock','karte','ownerAlerts','events','delTasks','delOrders','delReports']);
+    const tOf=x=>Math.max((x&&x._u)||0,(x&&x.editedAt)||0,(x&&x.at)||0,0);
+    Object.keys(srv||{}).forEach(k=>{
+      if(HANDLED.has(k)||k.indexOf('_')===0)return;
+      const S=srv[k],L=local[k];
+      if(S==null)return;
+      if(L==null){local[k]=S;return;}
+      if(Array.isArray(S)&&Array.isArray(L)){
+        const hasId=S.concat(L).some(x=>x&&x.id);
+        if(hasId){const m={};S.forEach(x=>{if(x&&x.id)m[x.id]=x;});L.forEach(x=>{if(!x||!x.id)return;const ex=m[x.id];if(!ex||tOf(x)>=tOf(ex))m[x.id]=x;});local[k]=Object.values(m);}
+        else if(S.length>L.length){local[k]=S;}
+        return;
+      }
+      if(typeof S==='object'&&typeof L==='object'&&!Array.isArray(S)&&!Array.isArray(L)){
+        /* 月ごと(payAdj/extHours/payConfirm)など: 月単位で配列を結合し取りこぼさない */
+        const out=Object.assign({},S);
+        Object.keys(L).forEach(mk=>{const a=L[mk],b=S[mk];
+          if(Array.isArray(a)&&Array.isArray(b)){const seen=new Set();const merged=[];b.concat(a).forEach(x=>{const sig=JSON.stringify([x&&x.staff,x&&x.label,x&&x.amount,x&&x.date,x&&x.hours,x&&x.at]);if(seen.has(sig))return;seen.add(sig);merged.push(x);});out[mk]=merged;}
+          else if(a!=null&&typeof a==='object'&&b!=null&&typeof b==='object'&&!Array.isArray(a)){out[mk]=Object.assign({},b,a);}
+          else if(a!=null){out[mk]=a;}
+        });
+        local[k]=out;return;
+      }
+    });
+  }catch(e){}
   return local;}
 async function saveWork(){if(!WORK)return;
   try{const srv=await fetchWorkFresh();if(srv)WORK=mergeWork(WORK,srv);
@@ -3815,6 +3868,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-12',v:'r20260912m',items:['【「更新すると消える」問題の根本対策】これまでは予約・タスク・顧客など個別に保護していたため、保護し忘れたデータ（お知らせ・ご意見・ケア文書・設定・給与の経費/勤務時間など）が更新のたびに消えていた→「保護し忘れが起きない汎用の安全網」を導入。今後どんなデータを追加しても自動的に守られ、消えることが構造的に起きない','お知らせに固有IDと更新時刻を付与し、複数端末で編集しても最新が残るように']},
  {d:'2026-09-12',v:'r20260912j',items:['ポイント操作パネルが画面の上の方に開いていて気づけなかった問題を修正→ボタンのすぐ下に開くように','ポイント操作を「➖減らす／➕増やす」のボタン選択式に変更（既定は減らす）。現在の保有ポイントを大きく表示し、理由も選べる']},
  {d:'2026-09-12',v:'r20260912i',items:['お客様カルテで、配信済みメッセージの「編集」「削除」ができるように（お客様の画面にも即反映）','お客様カルテに「ポイントを操作する」パネルを新設。増減と理由（付与／店頭利用／お詫び／誤付与の取消 など）を選んで反映でき、ポイント履歴もその場で確認できる']},
  {d:'2026-09-12',v:'r20260912h',items:['【復元が動かなかった原因】復元の判定が「写真が無い場合」だけだったため、写真は残っていて紹介文・資格・時給などだけ消えたスタッフ（TOMOMIさん）が対象外になっていた→どれか1項目でも空なら復元対象に変更','復元の実行間隔制限（6時間に1回）を撤廃し、管理画面を開くたびに点検','設定→スタッフの管理に「🛟 消えたスタッフ情報をバックアップから復元する」ボタンを追加（いつでも手動実行可）']},
