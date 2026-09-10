@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260912f';
+const APP_REV='r20260912g';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -3058,7 +3058,7 @@ function renderIntro(){
   ];
   return `<div class="fade intro"><div style="text-align:center;padding:24px 0 6px"><div class="eyebrow">S T A R T HERE</div><h2 style="font-family:'Fraunces',serif;color:var(--navy);margin:8px 0 2px;font-size:30px">はじめに（必ずお読みください）</h2><div class="note" style="color:var(--gold-deep);font-weight:700">🆕 内容が更新されました。ご確認ください（v${INTRO_VER}）</div><div class="note">このアプリは機能が多いので、最初に使い方をまとめました。読み終えたら一番下のボタンを押してください。</div></div>`+secs.map((s,i)=>`<div class="intro-sec"><div class="is-ic">${s[0]}</div><div class="is-b"><div class="is-t">${i+1}. ${s[1]}</div><div class="is-x">${s[2]}</div></div></div>`).join("")+`<label class="intro-chk"><input type="checkbox" id="intro-agree"> 上記の使い方を確認しました</label><button class="btn btn-primary" id="intro-ok" style="width:100%;margin-top:10px">この内容で始める</button><button class="btn btn-ghost" id="intro-later" style="width:100%;margin-top:8px;font-size:12px">あとで読む（今回はスキップ）</button></div>`;}
 
-function birthdayDupFix2(){try{if(DATA._bdayDupFixed2)return false;DATA._bdayDupFixed2=true;const yr=String(today.getFullYear());let n=0;
+function birthdayDupFix2(){try{const yr=String(today.getFullYear());let n=0;
   for(const k in (DATA.customers||{})){const c=DATA.customers[k];if(!c||!Array.isArray(c.notices))continue;
     const isB=no=>/お誕生日/.test(no.text||'')&&/ポイント/.test(no.text||'');
     const bs=c.notices.map((no,i)=>({no,i})).filter(x=>isB(x.no)&&String(x.no.date||'').startsWith(yr));
@@ -3125,7 +3125,7 @@ async function staffRestoreFromBackup(){try{if(!state.adminAuthed)return false;c
   const keys=[];for(let w=0;w<7;w++)keys.push('salon:bak:'+w);for(let m2=1;m2<=12;m2++)keys.push('salon:bak:m'+m2);keys.push('salon:data');
   let best={};
   for(const k of keys){try{const r=await fetchT(KV_URL+'?key=eq.'+k+'&select=value',{headers:KV_H});if(!r.ok)continue;const j=await r.json();if(!Array.isArray(j)||!j.length)continue;let v=j[0].value;for(let i=0;i<4;i++){if(typeof v==='string'){try{v=JSON.parse(v);continue}catch(e){break}}if(Array.isArray(v)){v=v[0];continue}break}const d=(v&&v.d)||v;if(!d||!Array.isArray(d.staff))continue;
-    d.staff.forEach(bs=>{if(!bs||!bs.id)return;const cur=best[bs.id];if(!cur||_rich(bs)>_rich(cur))best[bs.id]=bs;});}catch(e){}}
+    const _at=(v&&v.at)||0;d.staff.forEach(bs=>{if(!bs||!bs.id)return;const cur=best[bs.id];if(!cur){best[bs.id]=bs;bs._bakAt=_at;return;}const ca=cur._bakAt||0;if(_at>ca||(_at===ca&&_rich(bs)>_rich(cur))){bs._bakAt=_at;best[bs.id]=bs;}});}catch(e){}}
   let n=0;targets.forEach(st=>{const b=best[st.id];if(!b)return;['photo','thumb','intro','quals','role','color','wage','hourly','prices','services'].forEach(k=>{const empty=(st[k]==null||st[k]===''||(Array.isArray(st[k])&&!st[k].length)||(typeof st[k]==='object'&&!Array.isArray(st[k])&&st[k]&&!Object.keys(st[k]).length));if(empty&&b[k]!=null&&b[k]!==''){st[k]=b[k];n++;}});if(n)st._u=Date.now();});
   if(n){const names=targets.filter(st=>best[st.id]).map(st=>st.name).join('・');logAct('スタッフ情報をバックアップから自動復元（'+n+'項目：'+names+'）');state._rescueMsg='🛟 消えていたスタッフ情報（'+names+'：写真・紹介など'+n+'項目）を自動で復元しました。';try{WORK=WORK||{};WORK.ownerAlerts=WORK.ownerAlerts||[];WORK.ownerAlerts.unshift({id:'sr'+Date.now(),text:'🛟 スタッフ情報の消失を検知し、バックアップから自動復元しました（'+names+'・'+n+'項目）。念のため内容をご確認ください。',by:'システム',at:Date.now(),read:false});saveWork();}catch(_e){}await saveData(DATA);render();return true;}return false;}catch(e){return false;}}
 function staffServiceRules(){try{if(DATA._svcRules1)return false;DATA._svcRules1=true;let ch=false;
@@ -3701,7 +3701,7 @@ function adminCustomers(){
   const bdays=Object.values(DATA.customers).filter(c=>c.birthday&&c.birthday.slice(5,7)===curMonth.slice(5)).sort((a,b)=>a.birthday.slice(5).localeCompare(b.birthday.slice(5)));
   const pend=(DATA.referrals||[]).filter(r=>r.status==='pending');
   const refHtml=pend.length?`<div class="addform" style="margin:0 0 12px;border:1.5px solid var(--gold)"><b>🎁 紹介ポイント 承認待ち（${pend.length}件）</b><div class="note" style="margin:4px 0 8px">ご登録のあるお客様からの紹介だけが並びます。内容を確認して「承認」を押すと、紹介した方・された方の両方に${CONFIG.referralBonus}ptが付与され、お知らせが届きます。</div>${pend.map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:13.5px"><span><b>${r.refName||r.refPhone}</b>様 → <b>${r.newName||r.newPhone}</b>様<br><span class="note" style="margin:0">${new Date(r.at).toLocaleDateString('ja-JP')} ・ ${r.newPhone}</span></span><span style="display:flex;gap:6px"><button class="chip" data-refok="${r.id}" style="border-color:#3F5A46;color:#2C4433;font-weight:700">承認</button><button class="chip" data-refng="${r.id}">却下</button></span></div>`).join('')}</div>`:'';
-  const bdayHtml=(!q&&bdays.length)?`<div class="subhead" style="margin-top:0">🎂 今月のお誕生日</div>${bdays.map(c=>`<div class="bday-row"><div class="bd"><div class="bn">${c.name} 様</div><div class="bdt">${bdayLabel(c.birthday)}</div></div><div class="ba"><button data-bpt="${normPhone(c.phone)}">${CONFIG.birthdayBonus}ptプレゼント</button><button data-bmsg="${normPhone(c.phone)}">メッセージ</button></div></div>`).join('')}<div class="note">お誕生日当日になると自動でメッセージ配信とポイント付与が行われます。手動でも配信できます。</div>`:'';
+  const bdayHtml=false?`<div class="subhead" style="margin-top:0">🎂 今月のお誕生日</div>${bdays.map(c=>`<div class="bday-row"><div class="bd"><div class="bn">${c.name} 様</div><div class="bdt">${bdayLabel(c.birthday)}</div></div><div class="ba"><button data-bpt="${normPhone(c.phone)}">${CONFIG.birthdayBonus}ptプレゼント</button><button data-bmsg="${normPhone(c.phone)}">メッセージ</button></div></div>`).join('')}<div class="note">お誕生日当日になると自動でメッセージ配信とポイント付与が行われます。手動でも配信できます。</div>`:'';
   entries.sort((a,b)=>{const na=needsRecord(a)?1:0,nb=needsRecord(b)?1:0;if(na!==nb)return nb-na;return pointBalance(b.phone)-pointBalance(a.phone);});
   const nrCount=entries.filter(needsRecord).length;
   const nrNote=(!q&&nrCount)?`<div class="nr-summary">📝 施術記録が未入力のお客様が <b>${nrCount}名</b> います（一覧の上に表示しています）。カルテを開いて「お客様へのコメント」を記録してください。</div>`:'';
@@ -3815,6 +3815,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-12',v:'r20260912g',items:['【二重付与の真の原因を特定】顧客タブの「今月のお誕生日」パネルの1000ptボタンに二重防止が無く、押すたび何度でも付与できる状態だった（月内ずっと表示されるため誰かが押せば何度でも増える）→パネル自体を非表示にし、自動配信のみに一本化。万一の呼び出しにも「今年は付与済み」で拒否するガードを追加','斉藤美月様の是正処理を毎回自動実行に変更（前回は1回きりの印で止まっていた）。何度開いても余計に引かれない設計','スタッフ情報の自動復元は「最も新しいバックアップ」を優先するよう変更']},
  {d:'2026-09-12',v:'r20260912f',items:['スタッフ情報の自動点検を「1回きり」から「起動ごと（6時間に1回）」に変更。消失を検知したら自動でバックアップから復元し、🔔通知と操作履歴に自動記録（操作不要）','斉藤美月様ほか、同じ年に誕生日メッセージが2通以上あるお客様を確実に是正（1通削除・1,000pt取消）。前回の是正は印の付き方によって効かないケースがあった']},
  {d:'2026-09-12',v:'r20260912e',items:['【重大修正】シフトが勝手に巻き戻る原因を修正（サーバーとの統合で古い端末側が常に勝っていた→更新時刻で新しい方を採用・不明はサーバー優先）。全てのシフト変更を誰が・いつ・何に変えたか記録','HARUKAのシフトを出勤ゼロに初期化（未提出のため）','担当ルールを適用：SAKURA＝全メニュー／TOMOMI＝TOMOMI限定＋ハーブ・ニードルピーリングのみ／KANA・NODOKA＝施術なし（裏方）','メニュー編集の「担当できるスタッフ」から裏方を除外・既定でチェックしない','【重大修正】スタッフ情報（写真・紹介・資格・時給・料金）が消えた原因を修正（統合で写真なし端末が勝っていた）→情報が多い方／サーバー優先に変更し、バックアップから消えた項目を自動復元','予約確認画面の「＋追加メニューオプション」を撤去（メニュー選択時に選ぶため）','メニュー編集の「おふたり同時」「メンズにおすすめ」チェック欄を撤去','クーポン・セットメニュー・告知タブをお客様側・管理側とも撤去','今月の人気商品ランキング・おすすめ商品の設定ページを撤去し、代わりに「トップの写真を変える」ページを新設','資格・バッジは自由入力のみに（プリセット選択を廃止）']},
  {d:'2026-09-11',v:'r20260911u',items:['【重大修正】「やること」バナーに依頼したタスクが件数として出続けていた本当の原因を特定・修正（バナーとカレンダーの2箇所に古い計算式が残っていた）','旧導入案内の自動タスク生成を恒久無効化（端末により再実行され重複を生む危険を排除）','自分のタスク一覧に「これは違う→外す」ボタン（自分で即修正できる）','「なぜこの件数？」診断パネル（各タスクの依頼者・担当者の生データを確認できる）','管理画面に「更新履歴」タブを新設（このページ・過去分は削除しない）']},
@@ -4260,7 +4261,7 @@ async function passAdd(k){const label=prompt('回数券・オプション名（�
 async function setRank(s){const[k,r]=s.split('|');const c=DATA.customers[k];c.rank=parseInt(r)||0;c.rankSet=fmtDate(today);await saveData(DATA);render();}
 async function saveRankMemo(k){const el=byId('rank-memo');if(!el)return;DATA.customers[k].rankMemo=el.value;await saveData(DATA);alert('メモを保存しました。');}
 async function changePw(k){const pw=prompt('新しいパスワード（4文字以上）');if(!pw||pw.length<4){if(pw!==null)alert('4文字以上で入力してください。');return;}DATA.customers[k].password=pw;await saveData(DATA);alert('パスワードを変更しました。');}
-async function bdayPoints(k){const c=DATA.customers[k];const msg=(S().birthdayMsg||'').replace('{bonus}',CONFIG.birthdayBonus.toLocaleString());if(!confirm(`${c.name}様に${CONFIG.birthdayBonus}ポイントを付与し、次の内容を送信します。よろしいですか？\n\n${msg}`))return;addPoints(c,CONFIG.birthdayBonus,'お誕生日ポイント');pushNotice(c,msg);await saveData(DATA);alert(`${c.name}様に${CONFIG.birthdayBonus}ポイントを付与し、メッセージを送りました。`);render();}
+async function bdayPoints(k){const c=DATA.customers[k];const yr=today.getFullYear();if(c.bdayAwardedYear===yr||c.bdayYear===yr){alert(c.name+'様には今年すでにお誕生日ポイントを付与済みです。二重付与はできません。');return;}const msg=(S().birthdayMsg||'').replace('{bonus}',CONFIG.birthdayBonus.toLocaleString());if(!confirm(`${c.name}様に${CONFIG.birthdayBonus}ポイントを付与し、次の内容を送信します。よろしいですか？\n\n${msg}`))return;addPoints(c,CONFIG.birthdayBonus,'お誕生日ポイント');c.bdayAwardedYear=yr;pushNotice(c,msg);await saveData(DATA);alert(`${c.name}様に${CONFIG.birthdayBonus}ポイントを付与し、メッセージを送りました。`);render();}
 async function bdayMsg(k){const c=DATA.customers[k];const m=prompt('お誕生日メッセージ',(S().birthdayMsg||'').replace('{bonus}',CONFIG.birthdayBonus.toLocaleString()));if(m===null)return;pushNotice(c,m);await saveData(DATA);alert('メッセージを送信しました。');render();}
 async function saveMenu(){const name=byId('m-name').value.trim();if(!name){alert('メニュー名を入力してください。');return;}
   const i18n={en:(byId('m-name-en')?byId('m-name-en').value.trim():''),zh:(byId('m-name-zh')?byId('m-name-zh').value.trim():''),tw:(byId('m-name-tw')?byId('m-name-tw').value.trim():''),ko:(byId('m-name-ko')?byId('m-name-ko').value.trim():''),ru:(byId('m-name-ru')?byId('m-name-ru').value.trim():'')};
