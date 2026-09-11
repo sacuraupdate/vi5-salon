@@ -12,9 +12,9 @@ export default async function SalesPage() {
 
   const [summary, daily, courseSales, countrySales] = await Promise.all([
     adminRepository.getSalesSummary(role),
-    adminRepository.listDailySales(),
+    adminRepository.listDailySales(role),
     adminRepository.listCourseSales(role),
-    adminRepository.listCountrySales(),
+    adminRepository.listCountrySales(role),
   ]);
 
   const total = courseSales.reduce((n, s) => n + s.jpy, 0);

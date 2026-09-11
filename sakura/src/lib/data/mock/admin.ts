@@ -26,6 +26,12 @@ export const salesSummaryInstructor: SalesSummary = {
 };
 
 /** 直近30日の日次売上（グラフ用） */
+/**
+ * 講師の売上が全体に占める割合（モックの按分用）。
+ * Phase 2 では実データを instructorId で絞るため、この定数は不要になる。
+ */
+export const instructorSalesShare = salesSummaryInstructor.monthJpy / salesSummaryOwner.monthJpy;
+
 export const dailySales: DailySales[] = [
   62000, 74000, 51000, 88000, 96000, 71000, 64000, 103000, 118000, 92000,
   77000, 69000, 85000, 124000, 141000, 96000, 88000, 73000, 91000, 132000,

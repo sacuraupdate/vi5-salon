@@ -1,7 +1,13 @@
 import { Medal } from 'lucide-react';
 import ComingSoon from '@/components/admin/ComingSoon';
+import AccessDenied from '@/components/admin/AccessDenied';
+import { ownerOnly } from '@/lib/admin-auth';
 
-export default function Page() {
+export default async function Page() {
+  // メニューから隠すだけでは URL 直打ちを防げないため、サーバー側で必ず判定する
+  const { allowed } = await ownerOnly();
+  if (!allowed) return <AccessDenied what="修了証・認定証の管理" />;
+
   return (
     <ComingSoon
       icon={Medal}

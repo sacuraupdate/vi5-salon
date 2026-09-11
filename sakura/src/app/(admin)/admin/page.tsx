@@ -42,7 +42,7 @@ export default async function AdminDashboard() {
 
   const [summary, daily, courseSales, tasks, inquiries] = await Promise.all([
     adminRepository.getSalesSummary(role),
-    adminRepository.listDailySales(),
+    adminRepository.listDailySales(role),
     adminRepository.listCourseSales(role),
     adminRepository.listTasks(role),
     adminRepository.listInquiries(role),

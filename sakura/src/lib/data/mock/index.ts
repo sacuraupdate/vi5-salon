@@ -15,6 +15,7 @@ import {
   inquiries,
   salesSummaryInstructor,
   salesSummaryOwner,
+  instructorSalesShare,
   posts,
   students,
 } from './admin';
@@ -75,14 +76,24 @@ export const mockAdmin: AdminRepository = {
   async getSalesSummary(role) {
     return role === 'owner' ? salesSummaryOwner : salesSummaryInstructor;
   },
-  async listDailySales() {
-    return dailySales;
+  async listDailySales(role) {
+    // 講師には全体の売上推移を見せない。自分の売上規模に合わせて返す
+    if (role === 'owner') return dailySales;
+    const share = instructorSalesShare;
+    return dailySales.map((d) => ({ ...d, jpy: Math.round(d.jpy * share) }));
   },
   async listCourseSales(role) {
     return role === 'owner' ? courseSales : courseSales.filter((s) => s.instructorId === instructorOf(role));
   },
-  async listCountrySales() {
-    return countrySales;
+  async listCountrySales(role) {
+    // 国別も同様。オーナー以外に全体の内訳を渡さない
+    if (role === 'owner') return countrySales;
+    const share = instructorSalesShare;
+    return countrySales.map((c) => ({
+      ...c,
+      orders: Math.max(1, Math.round(c.orders * share)),
+      jpy: Math.round(c.jpy * share),
+    }));
   },
   async listTasks(role) {
     const id = instructorOf(role);

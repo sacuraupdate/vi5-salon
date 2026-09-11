@@ -69,6 +69,53 @@ const check = (name, ok, detail = '') => results.push({ 確認項目: name, 結�
   await ctx.close();
 }
 
+// --- 権限：TOMOMI がオーナー専用URLを直打ちしても入れない ---
+{
+  // メニュー定義（instructor: false）から対象を導出する。ガードの付け忘れをここで検出する
+  const { adminNav } = await import('../src/lib/admin-nav.ts').catch(() => ({ adminNav: null }));
+  const ownerOnly = adminNav
+    ? adminNav.filter((i) => !i.instructor).map((i) => i.href)
+    : ['/admin/studio', '/admin/certificates', '/admin/ai', '/admin/system', '/admin/settings'];
+
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await ctx.addCookies([{ name: 'sjb_admin_role', value: 'instructor', url: BASE }]);
+  const page = await ctx.newPage();
+  const leaked = [];
+  for (const path of ownerOnly) {
+    await page.goto(`${BASE}${path}`);
+    const denied = await page.getByText('このページは開けません').count();
+    if (!denied) leaked.push(path);
+  }
+  check(
+    'TOMOMIがオーナー専用URLを直打ちしても入れない',
+    leaked.length === 0,
+    leaked.length ? `入れてしまう: ${leaked.join(', ')}` : `${ownerOnly.length}件すべて拒否`,
+  );
+  await ctx.close();
+}
+
+// --- 権限：TOMOMI の売上画面に全体の数字が出ていない ---
+{
+  const read = async (role) => {
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    await ctx.addCookies([{ name: 'sjb_admin_role', value: role, url: BASE }]);
+    const page = await ctx.newPage();
+    await page.goto(`${BASE}/admin/sales`);
+    const text = await page.locator('main').innerText();
+    await ctx.close();
+    return text;
+  };
+  const owner = await read('owner');
+  const instructor = await read('instructor');
+  // 国別売上の金額行がオーナーと一致していたら、全体データが漏れている
+  const amounts = (t) => (t.match(/￥[\d,]+/g) ?? []).join('|');
+  check(
+    'TOMOMIの売上に全体の数字が混ざっていない',
+    amounts(owner) !== amounts(instructor),
+    amounts(owner) === amounts(instructor) ? 'オーナーと同じ金額が出ている' : '別の数字になっている',
+  );
+}
+
 // --- 管理画面：SAKURA と TOMOMI でメニュー数が違う ---
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });

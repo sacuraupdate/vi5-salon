@@ -50,9 +50,9 @@ export type LearnerRepository = {
 
 export type AdminRepository = {
   getSalesSummary(role: AdminRole): Promise<SalesSummary>;
-  listDailySales(): Promise<DailySales[]>;
+  listDailySales(role: AdminRole): Promise<DailySales[]>;
   listCourseSales(role: AdminRole): Promise<CourseSales[]>;
-  listCountrySales(): Promise<CountrySales[]>;
+  listCountrySales(role: AdminRole): Promise<CountrySales[]>;
   listTasks(role: AdminRole): Promise<AdminTask[]>;
   listInquiries(role: AdminRole): Promise<Inquiry[]>;
   listStudents(role: AdminRole): Promise<Student[]>;
