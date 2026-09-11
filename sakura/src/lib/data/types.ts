@@ -257,6 +257,31 @@ export type Inquiry = {
   instructorId: InstructorId | null;
 };
 
+/** 投稿の状態。公開済みと予約を混同させない */
+export type PostStatus = 'draft' | 'scheduled' | 'published';
+
+/** 発信先。サイトのお知らせと SNS を1画面で扱う */
+export type PostChannel = 'site' | 'instagram' | 'facebook';
+
+export type Post = {
+  id: string;
+  /** 日本語原本。管理画面は日本語のみ */
+  title: string;
+  body: string;
+  channel: PostChannel;
+  status: PostStatus;
+  /** 公開日（published）または公開予定日（scheduled）。下書きは null */
+  publishAt: string | null;
+  updatedAt: string;
+  /** 誰が書いたか。講師は自分の投稿だけを扱う */
+  authorId: InstructorId;
+  /**
+   * 各言語の翻訳状況。日本語が原本なので ja は持たない。
+   * 'done' 以外は「翻訳がまだ」と分かるようにする。
+   */
+  translations: Partial<Record<Exclude<Locale, 'ja'>, 'draft' | 'done'>>;
+};
+
 export type Student = {
   id: string;
   name: string;

@@ -15,6 +15,7 @@ import {
   inquiries,
   salesSummaryInstructor,
   salesSummaryOwner,
+  posts,
   students,
 } from './admin';
 
@@ -94,5 +95,11 @@ export const mockAdmin: AdminRepository = {
   async listStudents(role) {
     const id = instructorOf(role);
     return role === 'owner' ? students : students.filter((s) => s.instructorIds.includes(id));
+  },
+  async listPosts(role) {
+    const id = instructorOf(role);
+    // 講師は自分が書いた投稿だけを扱う。他講師の投稿は見せない
+    const mine = role === 'owner' ? posts : posts.filter((p) => p.authorId === id);
+    return [...mine].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   },
 };

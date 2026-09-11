@@ -37,7 +37,7 @@ export const adminNav: AdminNavItem[] = [
   { href: '/admin/students', label: '受講者', icon: Users, instructor: true, instructorLabel: 'お客様' },
   { href: '/admin/certificates', label: '修了証・認定証', icon: Medal, instructor: false },
   { href: '/admin/posts', label: '投稿・発信', icon: Megaphone, instructor: true },
-  { href: '/admin/products', label: '商品・クーポン', icon: Ticket, instructor: false },
+  { href: '/admin/products', label: '商品・クーポン', icon: Ticket, instructor: true, instructorLabel: 'クーポン' },
   { href: '/admin/inquiries', label: 'お問い合わせ', icon: Inbox, instructor: true },
   { href: '/admin/ai', label: 'AI作業センター', icon: Sparkles, instructor: false },
   { href: '/admin/system', label: 'システム状況', icon: Activity, instructor: false },

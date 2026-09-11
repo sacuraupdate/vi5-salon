@@ -13,6 +13,7 @@ import type {
   Instructor,
   InstructorId,
   LearnerProfile,
+  Post,
   SalesSummary,
   Student,
 } from './types';
@@ -55,4 +56,6 @@ export type AdminRepository = {
   listTasks(role: AdminRole): Promise<AdminTask[]>;
   listInquiries(role: AdminRole): Promise<Inquiry[]>;
   listStudents(role: AdminRole): Promise<Student[]>;
+  /** 講師ロールでは自分が書いた投稿だけを返す */
+  listPosts(role: AdminRole): Promise<Post[]>;
 };
