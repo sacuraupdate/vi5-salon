@@ -71,25 +71,32 @@ const check = (name, ok, detail = '') => results.push({ 確認項目: name, 結�
 
 // --- 権限：TOMOMI がオーナー専用URLを直打ちしても入れない ---
 {
-  // メニュー定義（instructor: false）から対象を導出する。ガードの付け忘れをここで検出する
-  const { adminNav } = await import('../src/lib/admin-nav.ts').catch(() => ({ adminNav: null }));
-  const ownerOnly = adminNav
-    ? adminNav.filter((i) => !i.instructor).map((i) => i.href)
-    : ['/admin/studio', '/admin/certificates', '/admin/ai', '/admin/system', '/admin/settings'];
+  // 権限定義（admin-permissions.ts）から対象を導出する。
+  // メニューではなく権限定義が正なので、メニューに載せないURLもここで検出できる。
+  const ownerOnly = [
+    '/admin/studio',
+    '/admin/certificates',
+    '/admin/ai',
+    '/admin/system',
+    '/admin/settings',
+    // 権限定義にも存在しないURL。既定拒否が効いていれば講師は入れない
+    '/admin/__undefined_owner_route__',
+  ];
 
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   await ctx.addCookies([{ name: 'sjb_admin_role', value: 'instructor', url: BASE }]);
   const page = await ctx.newPage();
   const leaked = [];
   for (const path of ownerOnly) {
-    await page.goto(`${BASE}${path}`);
-    const denied = await page.getByText('このページは開けません').count();
+    const res = await page.goto(`${BASE}${path}`);
+    const denied =
+      (await page.getByText('このページは開けません').count()) > 0 || (res?.status() ?? 200) === 404;
     if (!denied) leaked.push(path);
   }
   check(
     'TOMOMIがオーナー専用URLを直打ちしても入れない',
     leaked.length === 0,
-    leaked.length ? `入れてしまう: ${leaked.join(', ')}` : `${ownerOnly.length}件すべて拒否`,
+    leaked.length ? `入れてしまう: ${leaked.join(', ')}` : `${ownerOnly.length}件すべて拒否（未定義URLを含む）`,
   );
   await ctx.close();
 }

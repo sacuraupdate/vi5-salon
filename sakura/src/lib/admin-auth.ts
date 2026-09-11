@@ -1,4 +1,4 @@
-import { adminNav } from './admin-nav';
+import { adminRoutes, canAccessRoute, routesDeniedTo } from './admin-permissions';
 import { getAdminRole } from './admin-session';
 import type { AdminRole, InstructorId } from './data/types';
 
@@ -16,14 +16,17 @@ export function instructorIdOf(role: AdminRole): InstructorId | null {
 }
 
 /**
- * オーナー専用のパス。メニュー定義（instructor: false）から導出するので、
- * メニューとガードが食い違うことがない。
+ * オーナー専用のパス。権限定義（admin-permissions.ts）から導出する。
+ * メニューには依存しない＝メニューに載せないURLも漏れない。
  */
-export const ownerOnlyPaths: string[] = adminNav.filter((i) => !i.instructor).map((i) => i.href);
+export const ownerOnlyPaths: string[] = routesDeniedTo('instructor').map((r) => r.route);
 
 export function isOwnerOnlyPath(pathname: string): boolean {
-  return ownerOnlyPaths.includes(pathname);
+  return !canAccessRoute('instructor', pathname);
 }
+
+/** 定義済みの管理URL一覧（自動検査が使う） */
+export const knownAdminRoutes: string[] = adminRoutes.map((r) => r.route);
 
 /**
  * オーナー専用ページのガード。

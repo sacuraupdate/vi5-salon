@@ -3,7 +3,16 @@ import AdminSidebar from '@/components/admin/AdminSidebar';
 import RoleSwitcher from '@/components/admin/RoleSwitcher';
 import { getAdminRole } from '@/lib/admin-session';
 import { roleLabel } from '@/lib/admin-nav';
+import { isAdminDemoMode } from '@/lib/admin-permissions';
+import AdminLocked from '@/components/admin/AdminLocked';
 import '../../globals.css';
+
+/**
+ * ADMIN_DEMO_MODE は実行時の環境変数なので、ビルド時に焼き込ませない。
+ * これが無いと、本番ビルドで「ロック状態」が静的生成されてしまい、
+ * 確認環境でフラグを立てても管理画面が開かなくなる。
+ */
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: '管理画面 | SAKURA JAPAN BEAUTY',
@@ -12,6 +21,20 @@ export const metadata: Metadata = {
 
 export default async function AdminRootLayout({ children }: { children: React.ReactNode }) {
   // 管理画面は多言語化しない。lang は常に日本語で固定する。
+  const demo = isAdminDemoMode();
+
+  // 認証が未実装の間、本番では管理画面そのものを出さない。
+  // すべての管理ページがこのレイアウトを通るため、ページを足しても漏れない。
+  if (!demo) {
+    return (
+      <html lang="ja">
+        <body className="bg-washi text-ink">
+          <AdminLocked />
+        </body>
+      </html>
+    );
+  }
+
   const role = await getAdminRole();
 
   return (

@@ -492,10 +492,18 @@ SAKURA 本人をブランドの顔として大きく見せる（写真を主役�
   TOMOMI は AI 作業センターを使わない前提のため、引き続き非表示にしている。
 - **クーポン（`/admin/products`）は TOMOMI にも表示する**（第9章の権限表に合わせた。講師向けラベルは「クーポン」）。
   講師が扱えるのは自分の講座に紐づくクーポンのみ。全商品対象・サイト全体・他講師の講座は対象にできない。
-- **権限判定は `sakura/src/lib/admin-auth.ts` の1か所に集約する。**
-  オーナー専用パスはメニュー定義（`instructor: false`）から導出しているため、メニューとガードが食い違わない。
-  **メニューから隠すだけでは URL 直打ちを防げない。**オーナー専用ページは必ず `ownerOnly()` を呼び、
-  権限が無ければ `AccessDenied` を返す。`tools/ux-check.mjs` が全オーナー専用URLを講師ロールで叩いて回帰を検出する。
+- **権限の唯一の正は `sakura/src/lib/admin-permissions.ts` の `adminRoutes`。**
+  route と allowedRoles を並べた定義で、サイドメニュー・URLガード・ページガード・自動検査がすべてこれを参照する。
+  **定義に無い管理URLはオーナー専用として拒否する（既定拒否）。**
+  メニュー（`admin-nav.ts`）はラベルとアイコンだけを持ち、誰に見せるかは判断しない。
+- **URLアクセス制御は `src/proxy.ts` で行う。** 全 `/admin/*` がここを通るため、
+  ページ側で `ownerOnly()` を書き忘れても素通りしない。ページ側のガードは二重化として残す。
+- **本番では管理画面を動かさない。** 認証が未実装のため、`ADMIN_DEMO_MODE=true` を
+  明示した環境（開発・確認用）でのみ管理画面が開く。本番（`NODE_ENV=production` かつフラグなし）では
+  レイアウトが `AdminLocked` を返し、Cookie を書き換えても OWNER にはならない
+  （`getAdminRole()` が最小権限を返し、`setAdminRole()` も受け付けない）。
+  **`wrangler.jsonc` に `ADMIN_DEMO_MODE` を設定しないこと。**
+  管理レイアウトは `export const dynamic = 'force-dynamic'`（フラグを実行時に読むため）。
 - **一覧データの絞り込みはリポジトリ層で行う。** `listDailySales` / `listCountrySales` も `role` を必須引数にしてあり、
   画面側が渡し忘れるとコンパイルエラーになる。
 - **決済・動画ストリーミング・認証・AI API 接続は未実装**（Phase 1 の対象外）。
