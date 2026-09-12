@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260912w';
+const APP_REV='r20260912x';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1530,7 +1530,10 @@ function staffBusyAt(sid,dateStr,startMin,durMin){/* 既存予約と時間帯が
   return (DATA.bookings||[]).some(b=>{if(b.staffId!==sid||b.date!==dateStr||b.status==='cancelled')return false;const bs=bkStartMinOf(b),be=bs+bkDurMinOf(b);return startMin<be&&end>bs;});}
 function shiftCovers(sid,dateStr,startMin,durMin){if(typeof salonClosed==='function'&&salonClosed(dateStr))return false;if(typeof isDayOff==='function'&&isDayOff(sid,dateStr))return false;const sh=effectiveShift(sid,dateStr);if(!sh.on||!sh.ranges)return false;const end=startMin+(durMin||60);return sh.ranges.some(r=>startMin>=r.start*60&&end<=r.end*60);}
 function staffSlotOpen30(sid,dateStr,startMin){const dur=(state.cart||[]).reduce((a,x)=>a+(x.min||0),0)||60;if(!shiftCovers(sid,dateStr,startMin,dur))return false;for(let m=startMin;m<startMin+dur;m+=15){if(isBlocked(sid,dateStr,minToTime(m)))return false;}return !staffBusyAt(sid,dateStr,startMin,dur);}
-function anyStaffSlot30(dateStr,startMin){return staff.filter(s=>s.id!=='s0').some(s=>staffSlotOpen30(s.id,dateStr,startMin))}
+function staffEligibleFor(p,ids){if(!p||p.id==='s0')return false;const sv=p.services||[];if(p.hidden||sv.includes('none'))return false;if(!sv.length)return true;return (ids||[]).every(id=>sv.includes(id));}
+function cartMainIds(){return (state.cart||[]).filter(x=>x.cat!=='addon'&&x.cat!=='tfree'||true).map(x=>x.id);}
+function eligibleFreeStaff(dateStr,startMin){const ids=(state.cart||[]).map(x=>x.id);const cands=staff.filter(s=>staffEligibleFor(s,ids)&&staffSlotOpen30(s.id,dateStr,startMin));/* SAKURAを優先 */cands.sort((a,b)=>(a.name==='SAKURA'?-1:0)-(b.name==='SAKURA'?-1:0));return cands;}
+function anyStaffSlot30(dateStr,startMin){/* 指名なし: その施術ができて、かつ空いているスタッフがいる時だけ「空き」 */return eligibleFreeStaff(dateStr,startMin).length>0;}
 function getCamp(id){return DATA.campaigns.find(c=>c.id===id)}
 function isDayOff(s,d){return DATA.blocks.some(b=>b.staffId===s&&b.date===d&&!b.time)}
 function isBlocked(s,d,t){return isDayOff(s,d)||DATA.blocks.some(b=>b.staffId===s&&b.date===d&&b.time===t)}
@@ -2329,7 +2332,9 @@ async function confirmBooking(){
   const b=state.b;if(!b.name.trim()||!b.phone.trim()){alert('お名前と電話番号をご入力ください。');return;}
   if(b.date<fmtDate(today)){alert('過去の日付には予約できません。日付を選び直してください。');state.step=2;render();return;}
   try{const fresh=await directLoad();if(fresh&&Array.isArray(fresh.bookings)){/* 公開データがどれだけズレていても、確定の瞬間は必ず本物のデータベースで再チェックする（二重予約防止の最終防衛線） */DATA.bookings=fresh.bookings;if(Array.isArray(fresh.blocks))DATA.blocks=fresh.blocks;if(fresh.shiftOverrides)DATA.shiftOverrides=fresh.shiftOverrides;if(fresh.shifts)DATA.shifts=fresh.shifts;}}catch(_e){}
-  {const dur=(state.cart||[]).reduce((a,x)=>a+(x.min||0),0)||60;const sm=(function(){const p=String(b.time).split(':');return (+p[0])*60+(+p[1]);})();if(b.staff&&b.staff.id&&(staffBusyAt(b.staff.id,b.date,sm,dur)||!shiftCovers(b.staff.id,b.date,sm,dur))){alert('申し訳ありません。この時間帯はたった今埋まってしまいました。別の時間をお選びください。');state.step=3;render();return;}}
+  {const dur=(state.cart||[]).reduce((a,x)=>a+(x.min||0),0)||60;const sm=(function(){const p=String(b.time).split(':');return (+p[0])*60+(+p[1]);})();
+   if(!b.staff||b.staff.id==='s0'){/* 指名なし: 実際に施術できて空いている担当を割り当てる（枠を確実に塞ぐ） */const c=eligibleFreeStaff(b.date,sm);if(!c.length){alert('申し訳ありません。この時間帯はたった今埋まってしまいました。別の時間をお選びください。');state.step=3;render();return;}b.staff=c[0];b.autoAssigned=true;}
+   if(b.staff&&b.staff.id&&(staffBusyAt(b.staff.id,b.date,sm,dur)||!shiftCovers(b.staff.id,b.date,sm,dur))){alert('申し訳ありません。この時間帯はたった今埋まってしまいました。別の時間をお選びください。');state.step=3;render();return;}}
   {const P=normPhone(b.phone);const dup=(DATA.bookings||[]).find(x=>x.status!=='cancelled'&&normPhone(x.phone)===P&&x.date===b.date&&x.time===b.time);if(dup){alert('同じ日時のご予約がすでに入っています（'+mdLabel(b.date)+' '+b.time+'）。マイページの「予約・履歴」からご確認ください。');state.view='mypage';render();return;}}
   state._booking=true;const _cb=byId('confirm');if(_cb){_cb.disabled=true;_cb.textContent='予約を確定しています…';}
   try{await _confirmBookingInner();}finally{state._booking=false;const _cb2=byId('confirm');if(_cb2){_cb2.disabled=false;}}
@@ -3908,6 +3913,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-12',v:'r20260912x',items:['【「指名なし」で紛らわしい案内が出ていた問題を修正】指名なしの空き判定が「その施術ができないスタッフ」まで空きとして数えていたため、実際は誰も対応できない時間が選べてしまい、最後の確定で断られる形になっていた→「施術ができて、かつ空いているスタッフがいる時間」だけを最初から表示。対応できない時間は最初から選べない','指名なしで確定した時、担当が決まらないまま保存され誰の枠も塞がない（隠れた二重予約の経路）になっていた→確定時に実際に対応できる担当（SAKURA優先）を自動で割り当て、その担当の枠を確実に塞ぐ']},
  {d:'2026-09-12',v:'r20260912w',items:['【ダブルブッキング対策・恒久】お客様の空き状況表示は、私が編集できない別のプログラム(Supabase Edge Function)が作っており、実際の予約と表示がズレることがあると判明。この表示のズレ自体は直せないが、予約を確定する直前に必ず本物のデータベースへ直接アクセスして再チェックする仕組みを追加し、表示がどれだけズレていても二重予約が成立しないようにした（最終防衛線）','時間選択の画面に入った瞬間にも裏で本物のデータを取得し、表示自体もできる限り最新に近づける']},
  {d:'2026-09-12',v:'r20260912v',items:['お客様の予約画面で「業務データの保存に失敗しました」（スタッフ用の警告）が何度も出ていた問題を修正。お客様側の画面では業務保存の警告を一切出さず、管理画面でも連発せず1分に1回まで。画像軽量化などの自動処理は管理画面を開いている時だけ実行']},
  {d:'2026-09-12',v:'r20260912u',items:['【スタッフの「更新できません」の原因】私が入れた「顧客が激減したら保存中止」の安全装置が、お客様情報を持たないスタッフ端末（TOMOMIさん等）を『データ消失』と誤判定し、掃除チェックなど全ての保存を止めていた→統合後に判定する方式に修正。正しい消失検知はそのまま維持','掃除などの「毎日のタスク」は消えていません（「やること」内の📋毎日のタスク）。スタッフが開いた時は毎日のタスクを初期表示に変更']},
