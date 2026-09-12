@@ -1,3 +1,4 @@
+const L=require('./_lib');
 // BASE商品インポート  /api/base-import?shop=public|secret&page=1&pw=xxxx
 // 公開: vi5.shopselect.net / 非公開: vi5beauty.base.shop（パスワードでログインして取得）
 const PUB = 'https://vi5.shopselect.net';
@@ -58,7 +59,7 @@ async function secretSession(pw) {
   return jar.join('; ');
 }
 
-module.exports = async (req, res) => {
+module.exports=async(req,res)=>{L.noStore(res);const me=await L.authenticate(req).catch(()=>null);if(!me){res.status(401).json({ok:false,error:'unauth'});return;}
   try {
     const q = req.query || {};
     const shop = q.shop === 'secret' ? 'secret' : 'public';
