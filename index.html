@@ -961,7 +961,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260914a';
+const APP_REV='r20260914b';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1222,7 +1222,7 @@ function defaultData(){const __d=(function(){
 })();__d._seed=true;return __d;}
 async function loadData(){
   let d=null,role='public';
-  try{ if(localGet('salon:staff')){ const w=await staffApi('whoami'); if(w&&w.ok){ state.adminAuthed=true; state.staffRole=w.role; localSet('salon:me',w.staffId); if(w.mustChange)state.pwChangeRequired=true; const j=await staffApi('load'); d=j.data; state.dataVersion=j.version; role='staff'; } } }catch(e){ localDel('salon:staff'); }
+  try{ if(localGet('salon:staff')){ const w=await staffApi('whoami'); if(w&&w.ok){ state.adminAuthed=true; const j=await staffApi('load'); d=j.data; state.dataVersion=j.version; role='staff'; } } }catch(e){ localDel('salon:staff'); }
   if(!d){ const ph=localGet('salon:session'); if(ph){ try{ const j=await api({action:'customer',phone:ph,password:localGet('salon:custpw')||''}); d=j.data; role='customer'; }catch(e){} } }
   if(!d){ try{ const j=await api({action:'public'}); d=j.data; }catch(e){} }
   if(!d){ d=defaultData(); }
@@ -2489,17 +2489,11 @@ ${(()=>{const c=DATA.customers[normPhone(state.mpPhone)];if(!c)return '';const u
 
 /* ===== サロン管理 ===== */
 function renderStaffLogin(){
-  const reals=(staff||[]).filter(x=>x.id!=='s0'&&!x.hidden);
-  if(state.pwChangeRequired){
-    app.innerHTML=`<div class="fade"><div class="eyebrow">Staff Only</div><div class="h-title">パスワードの設定</div><div class="h-sub">初回ログインまたは再発行後は、ご自身のパスワードに変更してから利用します（10文字以上）。</div><div class="loginbox"><div class="field"><label>現在の（一時）パスワード</label><input id="pw-cur" type="password"></div><div class="field"><label>新しいパスワード（10文字以上）</label><input id="pw-new" type="password"></div><div class="field"><label>新しいパスワード（確認）</label><input id="pw-new2" type="password"></div><button class="btn btn-primary" id="pw-save" style="width:100%">変更して続ける</button></div></div>`;
-    byId('pw-save').onclick=async()=>{const c=byId('pw-cur').value,n=byId('pw-new').value,n2=byId('pw-new2').value;if(n.length<10){alert('新しいパスワードは10文字以上にしてください。');return;}if(n!==n2){alert('確認用のパスワードが一致しません。');return;}try{await staffApi('changePassword',{current:c,next:n});state.pwChangeRequired=false;toast('✅ パスワードを変更しました');await afterStaffLogin();}catch(e){alert(e&&e.status===401?'現在のパスワードが違います。':'変更に失敗しました（'+(e&&e.message||'')+'）');}};
-    return;
-  }
-  app.innerHTML=`<div class="fade"><div class="eyebrow">Staff Only</div><div class="h-title">スタッフログイン</div><div class="h-sub">ご自身の名前を選び、パスワードを入力してください。</div><div class="loginbox"><div class="field"><label>スタッフ</label><select id="st-who">${reals.map(x=>`<option value="${x.id}">${x.name}</option>`).join('')}${reals.length?'':'<option value="s1">SAKURA</option>'}</select></div><div class="field"><label>パスワード</label><input id="st-pw" type="password" placeholder="パスワードを入力" autocomplete="current-password"></div><button class="btn btn-primary" id="st-login" style="width:100%;margin-top:4px">ログイン</button><div class="note" style="margin-top:8px">パスワードを忘れた場合はオーナー（SAKURA）に再発行を依頼してください。</div></div></div>`;
+  app.innerHTML=`<div class="fade"><div class="eyebrow">Staff Only</div><div class="h-title">スタッフログイン</div><div class="h-sub">スタッフ専用です。パスワードを入力してください。</div><div class="loginbox"><div class="field"><label>パスワード</label><input id="st-pw" type="password" placeholder="パスワードを入力" autocomplete="current-password"></div><button class="btn btn-primary" id="st-login" style="width:100%;margin-top:4px">ログイン</button></div></div>`;
   const el=byId('st-pw');if(el)el.focus();
-  byId('st-login').onclick=async()=>{const sid=byId('st-who').value;const p=byId('st-pw').value;if(!p){alert('パスワードをご入力ください。');return;}
-    try{const j=await staffApi('login',{staffId:sid,password:p});state.adminAuthed=true;localSet('salon:staff','1');localSet('salon:me',j.staffId);state.staffRole=j.role;if(j.mustChange){state.pwChangeRequired=true;render();return;}await afterStaffLogin();}
-    catch(e){if(e&&e.status===401)alert('スタッフ名またはパスワードが違います。');else if(e&&e.status===429)alert('試行回数が多すぎます。10分ほど待ってからお試しください。');else alert('サーバーに接続できません（'+(e&&e.message||'')+'）。電波の良い場所で、もう一度お試しください。');}};
+  byId('st-login').onclick=async()=>{const p=byId('st-pw').value.trim();if(!p){alert('パスワードをご入力ください。');return;}
+    try{await staffApi('login',{password:p});state.adminAuthed=true;localSet('salon:staff','1');await afterStaffLogin();}
+    catch(e){if(e&&e.status===401)alert('パスワードが違います。');else if(e&&e.status===429)alert('試行回数が多すぎます。10分ほど待ってからお試しください。');else alert('サーバーに接続できません（'+(e&&e.message||'')+'）。電波の良い場所で、もう一度お試しください。');}};
 }
 async function afterStaffLogin(){try{const r=await staffApi('load');DATA=r.data;state.dataVersion=r.version;services=DATA.services||services;staff=DATA.staff||staff;state.dataFull=true;state.dataFromDB=true;await loadWork();}catch(e){}render();}
 async function staffLogout(){try{await staffApi('logout');}catch(e){}state.adminAuthed=false;state.dataFull=false;localDel('salon:staff');localDel('salon:me');localDel('salon:staffpw');go('home');}
@@ -3231,7 +3225,7 @@ function todayDash(chatN,todoN){
   return `<div style="margin:4px 0 2px"><div class="note" style="margin:0">${gr}</div><div style="font-family:'Fraunces',serif;font-size:26px;color:var(--navy);font-weight:600;margin:0 0 4px">${nm}さん</div></div>${bell}${clockApproveBlock()}${bkCard}${note}${installBtnHtml('スタッフ用にホーム画面へ追加（1タップで管理画面）')}`;
 }
 function renderAdmin(){
-  if(!state.adminAuthed||state.pwChangeRequired)return renderStaffLogin();
+  if(!state.adminAuthed)return renderStaffLogin();
   if(!WORK)loadWork().then(()=>render());
   if(!localGet('salon:me')){app.innerHTML=renderMePicker();app.querySelectorAll('[data-me]').forEach(b=>b.onclick=()=>{if(b.dataset.me==='s1'){const p=prompt('オーナー（SAKURA）として入るには暗証番号を入力してください');if(p===null)return;if(String(p).trim()!==ownerPin()){alert('暗証番号が違います。');return;}}setMe(b.dataset.me);});const _mo=byId('me-logout');if(_mo)_mo.onclick=()=>{try{localStorage.removeItem('vi5:datacache');}catch(e){}state.adminAuthed=false;localDel('salon:staff');localDel('salon:staffpw');render();};return;}
   const _idone=localGet('salon:introdone');if(!_idone&&!state.introSkip){app.innerHTML=renderIntro();const _ia=byId('intro-agree');const _iok=byId('intro-ok');if(_iok)_iok.onclick=()=>{if(!_ia||!_ia.checked){alert('「確認しました」にチェックをお願いします。');return;}localSet('salon:introdone',INTRO_VER);render();};const _il=byId('intro-later');if(_il)_il.onclick=()=>{state.introSkip=true;render();};return;}
