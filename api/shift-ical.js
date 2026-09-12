@@ -1,26 +1,13 @@
+const L=require('./_lib');
 // Vi5 シフトカレンダー配信 (ICS)  /api/shift-ical?s=s1|s2|s3|book
 // Googleカレンダーが自動で購読・更新する方式。Apps Script不要。
-const SUPA_URL=process.env.SUPABASE_URL||'https://tehcaufdztgpbrknpshk.supabase.co';
-const SUPA_KEY=process.env.SUPABASE_KEY||'sb_publishable_CnOCyO9QU69K47vbbLRkYg__cEv53CJ';
 
 const NAMES = { s1: 'SAKURA', s2: 'TOMOMI', s3: 'HARUKA' };
 const MARKS = { s1: '\u{1F7E1}', s2: '\u{1F338}', s3: '\u{1F7E2}' }; // 🟡🌸🟢
 const CLOSED_DOW = 2;
 
 async function loadData() {
-  const r = await fetch(SUPA_URL + '/rest/v1/kv?key=eq.salon:data&select=value', {
-    headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY }
-  });
-  if (!r.ok) throw new Error('rest-' + r.status);
-  const j = await r.json();
-  if (!Array.isArray(j) || !j.length) return null;
-  let v = j[0].value;
-  for (let i = 0; i < 4; i++) {
-    if (typeof v === 'string') { try { v = JSON.parse(v); continue; } catch (e) { break; } }
-    if (Array.isArray(v)) { v = v[0]; continue; }
-    break;
-  }
-  return (v && typeof v === 'object' && !Array.isArray(v)) ? v : null;
+  const d=await L.kvGet('salon:data');
 }
 
 function fmtDate(d) {
@@ -59,7 +46,7 @@ function esc(t) { return String(t || '').replace(/\\/g, '\\\\').replace(/;/g, '\
 const VTZ = ['BEGIN:VTIMEZONE', 'TZID:Asia/Tokyo', 'BEGIN:STANDARD', 'DTSTART:19700101T000000',
   'TZOFFSETFROM:+0900', 'TZOFFSETTO:+0900', 'TZNAME:JST', 'END:STANDARD', 'END:VTIMEZONE'];
 
-module.exports = async (req, res) => {
+module.exports=async(req,res)=>{const tok=(req.query&&req.query.t)||'';if(!process.env.ICS_TOKEN||tok!==process.env.ICS_TOKEN){res.status(401).send('unauthorized');return;}
   try {
     const s = (req.query && req.query.s) || 's1';
     // SAKURA(s1)・HARUKA(s3)はGoogleカレンダー配信の対象外（アプリ内のみで管理）。購読が残っていても常に空を返す
