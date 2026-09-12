@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260912t';
+const APP_REV='r20260912v';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1321,7 +1321,7 @@ async function saveData(d){DATA=d;
   try{for(const sv of (d.services||[])){if(sv.img&&sv.img.indexOf('data:image')===0&&sv._thumbSrc!==sv.img.length){const t=await shrinkDataURL(sv.img,260,0.62,20000);if(t){sv.thumb=t;sv._thumbSrc=sv.img.length;}}}}catch(_e){}
   // ★保存前に必ずサーバーの実データと統合（古い端末による上書き消失を構造的に防止）
   let srv=null;try{srv=await directLoad();}catch(_e){}
-  if(srv){const g=preSaveGuard(d,srv);if(!g.ok){alert('⚠️ 安全のため保存を中止しました：'+g.why+'\n画面を開き直してから、もう一度操作してください。');try{logAct('保存中止: '+g.why);}catch(_e){}return;}d=mergeProtect(d,srv);DATA=d;state.dataFull=true;}
+  if(srv){d=mergeProtect(d,srv);const g=preSaveGuard(d,srv);/* 統合後に判定：スタッフ端末の部分データを『消失』と誤判定しない */if(!g.ok){alert('⚠️ 安全のため保存を中止しました：'+g.why+'\n画面を開き直してから、もう一度操作してください。');try{logAct('保存中止: '+g.why);}catch(_e){}return;}DATA=d;state.dataFull=true;}
   try{const iss=safetyReport(d);if(iss.length&&WORK){WORK.ownerAlerts=WORK.ownerAlerts||[];const txt='🛡 データ点検で気になる点: '+iss.slice(0,3).join(' / ')+(iss.length>3?' ほか'+(iss.length-3)+'件':'');if(!WORK.ownerAlerts.some(a=>a.text===txt)){WORK.ownerAlerts.unshift({id:'sf'+Date.now(),text:txt,by:'システム',at:Date.now(),read:false});}}}catch(_e){}
   if(!state.dataFull&&!state.dataFromDB){console.warn('save skipped: full data not confirmed');return;}
   const staffCount=(d&&Array.isArray(d.staff))?d.staff.filter(s=>s&&s.id!=='s0').length:0;
@@ -1334,7 +1334,7 @@ async function saveData(d){DATA=d;
     catch(e){alert('保存できませんでした（コード: WRITE-'+(e.status||'0')+'）。この画面をそのままお知らせください。');}
     return;
   }
-  if(localGet('salon:staffpw')){try{await api({action:'save',pw:localGet('salon:staffpw'),data:d});state._lastSaveOk=Date.now();backupSoon(d);try{fetchT(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:eshop',value:JSON.stringify({products:(d.eshop&&d.eshop.products)||[],syncedAt:Date.now()})})}).catch(()=>{});}catch(_e){}}catch(e){alert('保存に失敗しました。通信状況をご確認ください。');}}}
+  if(localGet('salon:staffpw')){try{await api({action:'save',pw:localGet('salon:staffpw'),data:d});state._lastSaveOk=Date.now();backupSoon(d);try{fetchT(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:eshop',value:JSON.stringify({products:(d.eshop&&d.eshop.products)||[],syncedAt:Date.now()})})}).catch(()=>{});}catch(_e){}}catch(e){try{console.warn('saveData failed',e);}catch(_e){}if(state.view==='admin'){const now=Date.now();if(!state._dataAlertAt||now-state._dataAlertAt>60000){state._dataAlertAt=now;alert('保存に失敗しました（'+(e&&e.message||'通信')+'）。通信状況をご確認ください。');}}}}}
 async function downloadBackup(){
   try{
     let d=DATA;try{const fresh=await directLoad();if(fresh)d=fresh;}catch(_e){}
@@ -2719,7 +2719,7 @@ async function saveWork(){if(!WORK)return;
   try{const srv=await fetchWorkFresh();if(srv)WORK=mergeWork(WORK,srv);
     const r=await fetchT(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:work',value:JSON.stringify(WORK)})});
     if(!r.ok)throw new Error('w-'+r.status);}
-  catch(e){alert('業務データの保存に失敗しました。通信状況をご確認ください。');}}
+  catch(e){state._workSaveFail=(state._workSaveFail||0)+1;try{console.warn('saveWork failed',e);}catch(_e){}if(state.view==='admin'){const now=Date.now();if(!state._workAlertAt||now-state._workAlertAt>60000){state._workAlertAt=now;alert('業務データの保存に失敗しました（'+(e&&e.message||'通信')+'）。通信状況をご確認ください。');}}}}
 function wkCompress(file,cb){const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{const mx=900;let w=img.width,hh=img.height;if(w>mx){hh=Math.round(hh*mx/w);w=mx;}const cv=document.createElement('canvas');cv.width=w;cv.height=hh;cv.getContext('2d').drawImage(img,0,0,w,hh);cb(cv.toDataURL('image/jpeg',0.68));};img.src=e.target.result;};r.readAsDataURL(file);}
 function chatRooms(){const me=localGet('salon:me');const reals=staff.filter(s=>s.id!=='s0');const rooms=[{id:'all',label:'全体トーク',icon:'👥',kind:'all'}];
   if(me&&me!=='owner'){reals.filter(s=>s.id!==me).forEach(s=>rooms.push({id:'dm:'+[me,s.id].sort().join('|'),label:s.name,icon:'💬',kind:'dm'}));}
@@ -2789,7 +2789,7 @@ function taskOpenCount(){const me=localGet('salon:me');return ((WORK&&WORK.tasks
 function adminTodo(){
   if(!WORK){loadWork().then(()=>render());return '<div class="empty" style="padding:40px 0">✅ 読み込み中…</div>';}
   const me=localGet('salon:me');const meNm=meName();const reals=staff.filter(s=>s.id!=='s0');
-  const tmode=state.taskTab||'personal';const modeSw=`<div class="taskseg"><button data-ttab="daily" class="${tmode==='daily'?'on':''}"><span class="ts-ic">📋</span><span>毎日のタスク</span><span class="ts-s">店舗・在宅の毎日の項目</span></button><button data-ttab="personal" class="${tmode==='personal'?'on':''}"><span class="ts-ic">🙋</span><span>個人のタスク</span><span class="ts-s">自分・依頼された仕事</span></button></div>`;if(tmode==='daily')return modeSw+adminTasks();  if(state.taskOpen){return taskDetail(state.taskOpen);}
+  const tmode=state.taskTab||(meName()==='SAKURA'?'personal':'daily');const modeSw=`<div class="taskseg"><button data-ttab="daily" class="${tmode==='daily'?'on':''}"><span class="ts-ic">📋</span><span>毎日のタスク</span><span class="ts-s">店舗・在宅の毎日の項目</span></button><button data-ttab="personal" class="${tmode==='personal'?'on':''}"><span class="ts-ic">🙋</span><span>個人のタスク</span><span class="ts-s">自分・依頼された仕事</span></button></div>`;if(tmode==='daily')return modeSw+adminTasks();  if(state.taskOpen){return taskDetail(state.taskOpen);}
   const flt=state.taskFilter||'mine';
   let ts=(WORK.tasks||[]).slice();
   if(flt==='allt'){}else if(flt==='mine')ts=ts.filter(t=>taskFor(t,me));
@@ -3265,7 +3265,7 @@ function renderAdmin(){
   if(!WORK)loadWork().then(()=>render());
   if(!localGet('salon:me')){app.innerHTML=renderMePicker();app.querySelectorAll('[data-me]').forEach(b=>b.onclick=()=>{if(b.dataset.me==='s1'){const p=prompt('オーナー（SAKURA）として入るには暗証番号を入力してください');if(p===null)return;if(String(p).trim()!==ownerPin()){alert('暗証番号が違います。');return;}}setMe(b.dataset.me);});const _mo=byId('me-logout');if(_mo)_mo.onclick=()=>{try{localStorage.removeItem('vi5:datacache');}catch(e){}state.adminAuthed=false;localDel('salon:staff');localDel('salon:staffpw');render();};return;}
   const _idone=localGet('salon:introdone');if(!_idone&&!state.introSkip){app.innerHTML=renderIntro();const _ia=byId('intro-agree');const _iok=byId('intro-ok');if(_iok)_iok.onclick=()=>{if(!_ia||!_ia.checked){alert('「確認しました」にチェックをお願いします。');return;}localSet('salon:introdone',INTRO_VER);render();};const _il=byId('intro-later');if(_il)_il.onclick=()=>{state.introSkip=true;render();};return;}
-  autoRescue();imageShrinkMigrate();autoEshopSync();try{if(extBlocksMigrate())saveData(DATA);}catch(_e){}try{if(state.dataFull&&demoPurge())saveData(DATA);}catch(_e){}try{if(state.dataFull&&harukaShiftZero())saveData(DATA);}catch(_e){}try{if(state.dataFull&&staffServiceRules())saveData(DATA);}catch(_e){}try{if(state.dataFull)staffRestoreFromBackup();}catch(_e){}try{if(state.adminAuthed&&navigator.onLine!==false&&!state._gcalFlushed){state._gcalFlushed=true;gcalFlushQueue();}}catch(_e){}try{if(state.dataFull&&autoCancelRestore())saveData(DATA);}catch(_e){}try{if(state.dataFull&&futureVisitFix())saveData(DATA);}catch(_e){}try{if(state.dataFull&&birthdayAutoRun())saveData(DATA);}catch(_e){}try{if(state.dataFull&&WORK&&taskAssigneeSelfFix())saveWork();}catch(_e){}try{if(state.dataFull&&birthdayDupFix())saveData(DATA);}catch(_e){}try{if(state.dataFull&&birthdayDupFix2())saveData(DATA);}catch(_e){}try{if(state.dataFull&&ptLabelCleanup())saveData(DATA);}catch(_e){}try{if(state.dataFull&&WORK&&payAdjTomomiAugSeed())saveWork();}catch(_e){}try{if(state.dataFull)seedTasksMigrate();}catch(_e){}try{if(state.dataFull&&!state._gcalSwept){state._gcalSwept=true;if(gcalCancelSweep())saveData(DATA);}}catch(_e){}let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(staffNameMigrate())_clch=true;if(wageMigrate())_clch=true;if(harukaFixMigrate())_clch=true;if(staffMenuMigrate())_clch=true;if(calSetupMigrate())_clch=true;/* 自動保存は廃止：古い端末が新データを上書きする事故の元。編集操作時のみ保存 */
+  autoRescue();if(state.view==='admin')imageShrinkMigrate();autoEshopSync();try{if(extBlocksMigrate())saveData(DATA);}catch(_e){}try{if(state.dataFull&&demoPurge())saveData(DATA);}catch(_e){}try{if(state.dataFull&&harukaShiftZero())saveData(DATA);}catch(_e){}try{if(state.dataFull&&staffServiceRules())saveData(DATA);}catch(_e){}try{if(state.dataFull)staffRestoreFromBackup();}catch(_e){}try{if(state.adminAuthed&&navigator.onLine!==false&&!state._gcalFlushed){state._gcalFlushed=true;gcalFlushQueue();}}catch(_e){}try{if(state.dataFull&&autoCancelRestore())saveData(DATA);}catch(_e){}try{if(state.dataFull&&futureVisitFix())saveData(DATA);}catch(_e){}try{if(state.dataFull&&birthdayAutoRun())saveData(DATA);}catch(_e){}try{if(state.dataFull&&WORK&&taskAssigneeSelfFix())saveWork();}catch(_e){}try{if(state.dataFull&&birthdayDupFix())saveData(DATA);}catch(_e){}try{if(state.dataFull&&birthdayDupFix2())saveData(DATA);}catch(_e){}try{if(state.dataFull&&ptLabelCleanup())saveData(DATA);}catch(_e){}try{if(state.dataFull&&WORK&&payAdjTomomiAugSeed())saveWork();}catch(_e){}try{if(state.dataFull)seedTasksMigrate();}catch(_e){}try{if(state.dataFull&&!state._gcalSwept){state._gcalSwept=true;if(gcalCancelSweep())saveData(DATA);}}catch(_e){}let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(staffNameMigrate())_clch=true;if(wageMigrate())_clch=true;if(harukaFixMigrate())_clch=true;if(staffMenuMigrate())_clch=true;if(calSetupMigrate())_clch=true;/* 自動保存は廃止：古い端末が新データを上書きする事故の元。編集操作時のみ保存 */
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
   const tabs=[['todo','✅','やること','毎日'],['chat','💬','チャット','毎日'],['bookings','📅','予約','毎日'],['schedule','⏰','シフト','毎日'],['customers','👥','顧客カルテ','お客様'],['report','📝','業務報告','毎日'],['money','💰','売上・給与','管理'],['settings','⚙️','設定','管理'],['updates','📋','更新履歴','管理']];
   const _sec=(t)=>`<div class="subhead" style="margin:26px 0 12px;padding-top:18px;border-top:2px solid var(--line)">${t}</div>`;
@@ -3906,6 +3906,8 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-12',v:'r20260912v',items:['お客様の予約画面で「業務データの保存に失敗しました」（スタッフ用の警告）が何度も出ていた問題を修正。お客様側の画面では業務保存の警告を一切出さず、管理画面でも連発せず1分に1回まで。画像軽量化などの自動処理は管理画面を開いている時だけ実行']},
+ {d:'2026-09-12',v:'r20260912u',items:['【スタッフの「更新できません」の原因】私が入れた「顧客が激減したら保存中止」の安全装置が、お客様情報を持たないスタッフ端末（TOMOMIさん等）を『データ消失』と誤判定し、掃除チェックなど全ての保存を止めていた→統合後に判定する方式に修正。正しい消失検知はそのまま維持','掃除などの「毎日のタスク」は消えていません（「やること」内の📋毎日のタスク）。スタッフが開いた時は毎日のタスクを初期表示に変更']},
  {d:'2026-09-12',v:'r20260912t',items:['承認済みの勤務記録（打刻）を削除できるように。売上・給与タブ→スタッフの「🕒打刻・出勤時間の明細」の各行に「削除」ボタンを追加','削除すると給与計算からも即座に外れ、他の端末と同期しても復活しません']},
  {d:'2026-09-12',v:'r20260912s',items:['【既読にしても何度も出てくる本当の原因】TOMOMIさんの端末が申請を送るたびに、毎回“別の新しいお知らせ”が作られていた。SAKURAさんが既読にしたものとは別物なので、消しても消しても新しいものが出続けていた→同じ内容の通知は作り直さない（既に既読ならそのまま）ように修正','承認済みの打刻が承認待ち一覧に再表示されないよう厳密化','どうしても消えない時のために「全部消す」（お知らせ）「この申請を消す」（打刻）ボタンを追加。私を待たずその場で片付けられます']},
  {d:'2026-09-12',v:'r20260912q',items:['【アプリ全体の「元に戻る」問題を根本解決】保存時の統合処理を全数調査し、残っていた欠陥をすべて修正。特に顧客データは「端末側が常に勝つ」作りで、古い端末が保存するとポイント残高・既読・お客様情報が丸ごと巻き戻っていた（アプリ全体で戻る現象の中核）','顧客データを「お客様ごとに新しい方を採用」に変更。ポイントは履歴の多い方（取りこぼしの無い方）、通知は両方を結合し既読が優先','紹介・ブロック枠・クーポンなど残る「先勝ち」方式もすべて新しい方優先に統一','ポイント付与・通知送信など顧客情報を変える全操作に更新時刻を記録','全17の統合経路が「新しい方優先」＋保護し忘れが起きない汎用安全網、の二重構成になったことを確認']},
