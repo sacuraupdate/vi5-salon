@@ -91,11 +91,7 @@ async function ensurePreRlsBackup() {
   return !!res.ok;
 }
 
-// ---------- パスワード / セッション ----------
-function pbkdf2(pw, salt) { return crypto.pbkdf2Sync(String(pw), salt, 100000, 32, 'sha256').toString('hex'); }
-function hashPassword(pw) { const salt = crypto.randomBytes(16).toString('hex'); return { salt, hash: pbkdf2(pw, salt) }; }
-function verifyPassword(pw, rec) { if (!rec || !rec.salt || !rec.hash) return false; const h = pbkdf2(pw, rec.salt); return crypto.timingSafeEqual(Buffer.from(h, 'hex'), Buffer.from(rec.hash, 'hex')); }
-function genTempPassword() { return crypto.randomBytes(12).toString('base64url'); } // 16文字程度・一時用
+// ---------- パスワード / セッション（P0改修前と同じ「スタッフ専用の共通パスワード」方式。認証の輸送はCookie/署名/CASのまま維持） ----------
 function b64u(s) { return Buffer.from(s).toString('base64url'); }
 function signToken(payload) { const body = b64u(JSON.stringify(payload)); const sig = crypto.createHmac('sha256', must(SESSION_SECRET, 'SESSION_SECRET')).update(body).digest('base64url'); return body + '.' + sig; }
 function verifyToken(tok) { if (!tok || tok.indexOf('.') < 0) return null; const [body, sig] = tok.split('.'); const exp = crypto.createHmac('sha256', must(SESSION_SECRET, 'SESSION_SECRET')).update(body).digest('base64url'); if (sig.length !== exp.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(exp))) return null; try { const p = JSON.parse(Buffer.from(body, 'base64url').toString()); if (!p || !p.exp || p.exp < Date.now()) return null; return p; } catch (e) { return null; } }
@@ -103,14 +99,12 @@ function parseCookies(req) { const h = req.headers.cookie || ''; const out = {};
 function setSessionCookie(res, token) { res.setHeader('Set-Cookie', COOKIE_NAME + '=' + encodeURIComponent(token) + '; HttpOnly; Secure; SameSite=Strict; Path=/api; Max-Age=' + (SESSION_DAYS * 86400)); }
 function clearSessionCookie(res) { res.setHeader('Set-Cookie', COOKIE_NAME + '=; HttpOnly; Secure; SameSite=Strict; Path=/api; Max-Age=0'); }
 
-// 認証：Cookie の署名・期限・sessionVersion を検証。salon:auth はここでしか読まない。
+// 認証：署名と期限だけを検証する単純なCookieセッション（スタッフ個別アカウントは持たない）
 async function authenticate(req) {
-  const tok = parseCookies(req)[COOKIE_NAME]; const p = verifyToken(tok); if (!p) return null;
-  const auth = (await kvGet('salon:auth')) || {}; const rec = auth[p.sid]; if (!rec) return null;
-  if ((rec.sessionVersion || 0) !== (p.sv || 0)) return null; // 失効
-  if (rec.disabled) return null;
-  return { staffId: p.sid, role: rec.role || 'staff', mustChange: !!rec.mustChange, sv: rec.sessionVersion || 0 };
+  const tok = parseCookies(req)[COOKIE_NAME]; const p = verifyToken(tok); if (!p || p.role !== 'staff') return null;
+  return { staffId: 'shared', role: 'owner', mustChange: false };
 }
+function checkStaffPassword(pw) { const expected = process.env.STAFF_PASSWORD || ''; if (!expected) throw Object.assign(new Error('STAFF_PASSWORD not set'), { status: 500 }); if (String(pw || '').length !== expected.length) return false; try { return crypto.timingSafeEqual(Buffer.from(String(pw || '')), Buffer.from(expected)); } catch (e) { return false; } }
 function requireOrigin(req) {
   const o = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer).origin : '');
   return o === ALLOWED_ORIGIN;
@@ -271,4 +265,4 @@ function publicDataAllowlist(d) {
   return { staff, services, settings, docs: d.docs || [], announcements: [], campaigns: [], coupons: [], boards: (d.boards || []).map(b => ({ id: b.id, owner: '', name: b.name || '', text: b.text || '', at: b.at, img: b.img || '' })) };
 }
 
-module.exports = { SUPA_URL, ALLOWED_ORIGIN, COOKIE_NAME, jstNow, jstDateStr, jstMinutesOfDay, jstEpochOf, jstDow, isDateStr, addDays, kvGet, kvGetRow, kvCasPut, kvSaveWithRetry, ensurePreRlsBackup, hashPassword, verifyPassword, genTempPassword, signToken, verifyToken, parseCookies, setSessionCookie, clearSessionCookie, authenticate, requireOrigin, noStore, rateLimit, mergeData, mergeWork, applyStaffDataChanges, applyStaffWorkChanges, findOverlap, bkStartMin, bkDurMin, publicDataAllowlist };
+module.exports = { SUPA_URL, ALLOWED_ORIGIN, COOKIE_NAME, jstNow, jstDateStr, jstMinutesOfDay, jstEpochOf, jstDow, isDateStr, addDays, kvGet, kvGetRow, kvCasPut, kvSaveWithRetry, ensurePreRlsBackup, checkStaffPassword, signToken, verifyToken, parseCookies, setSessionCookie, clearSessionCookie, authenticate, requireOrigin, noStore, rateLimit, mergeData, mergeWork, findOverlap, bkStartMin, bkDurMin, publicDataAllowlist };
