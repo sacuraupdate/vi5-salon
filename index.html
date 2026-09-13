@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260913q';
+const APP_REV='r20260913r';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -4192,6 +4192,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-13',v:'r20260913r',items:['設定に「🔎 予約できない原因をしらべる」を追加。スタッフと日付を選ぶと、非表示設定・担当メニュー・定休日・個別休み・カレンダーのシフト・曜日の基本シフト・最終的な勤務時間・予約を受けられる時間を1つずつ表示し、原因と対処方法まで示します']},
  {d:'2026-09-13',v:'r20260913q',items:['【新機能】メニューごとに担当が違う場合でも、1回のご予約でまとめてお受けできるように（例：まつげ=SAKURA＋ハーブピーリング=TOMOMI）','順番はサロン側で自動決定。空いている担当から先にご案内し、間の待ち時間なく続けて施術します（例：11時にSAKURAが埋まっていれば、11時ピーリング→12時まつげ）','すべて続けてお受けできる時間だけが選べます。成立しない時間は最初から表示されません','その日に全部そろわない場合は「この日は◯時から◯◯のみ承れます」と、「すべて受けられる最短の日時」をご案内し、ワンタップでその時間に移動できます','内部では担当ごとの予約として記録するため、各スタッフの予定が正しく埋まり、二重予約は起きません。キャンセル・来店なしは連動して処理されます']},
  {d:'2026-09-13',v:'r20260913p',items:['【TOMOMIがピーリングで選べなかった原因】担当メニューの設定が一度しか実行されず、後から追加したメニュー（ピーリングの回数券など）がTOMOMIの担当に入っていませんでした→名前に「ピーリング」を含むメニューは自動でTOMOMIの担当に入るようにし、メニューを追加・変更しても毎回自動で正しく保たれるように修正','1人の担当では受けられないメニューの組み合わせを選んだ場合、「どの担当がどのメニューを担当できるか」と「メニューを分けて2件ご予約ください」という案内を表示するように']},
  {d:'2026-09-13',v:'r20260913n',items:['家族割引のお客様にはポイントを付与しないように変更（割引が特典のため）。知人割20%OFF・通常のお客様・会員ランク割引は従来どおり付与されます','来店確定の画面に「家族割のお客様のため、ポイントは付与されません」と理由を表示','予約完了画面でも家族割のお客様には「家族割引が適用されます」と表示（ポイント加算の案内は出しません）','「初回来店分でポイントが付いていないお客様」の一覧からも家族割のお客様を除外']},
@@ -4271,10 +4272,43 @@ function adminSettingsHub(){
   if(sub==='care')return back+adminDocs();
   return back+adminSettings();
 }
+
+/* 「なぜ予約できないのか」を、実データで1つずつ確認する診断ツール（管理→設定） */
+function bookDiagPanel(){
+  if(!state.bookDiag)return '';
+  const sid=state.bookDiagStaff||((staff.find(x=>x.name==='TOMOMI')||{}).id)||'s2';
+  const ds=state.bookDiagDate||fmtDate(today);
+  const st=stById(sid)||{};
+  const ov=(DATA.shiftOverrides&&DATA.shiftOverrides[sid]&&DATA.shiftOverrides[sid][ds])||null;
+  const wk=(DATA.shifts&&DATA.shifts[sid]&&DATA.shifts[sid][new Date(ds+'T00:00:00').getDay()])||null;
+  const eff=effectiveShift(sid,ds);
+  const closed=salonClosed(ds);
+  const dayOff=isDayOff(sid,ds);
+  const svAll=(services||[]).filter(x=>x.cat!=='addon');
+  const canList=svAll.filter(x=>{const sv=st.services||[];if(sv.includes('none'))return false;if(!sv.length)return true;return sv.includes(x.id);});
+  const row=(k,v,ok)=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13px"><span>${k}</span><b style="text-align:right;color:${ok===true?'#2C4433':(ok===false?'var(--rose)':'var(--ink)')}">${v}</b></div>`;
+  // 実際に枠が開くか（1時間の施術と仮定）
+  const trial=[];
+  for(let m=9*60;m<=20*60;m+=60){const okS=shiftCovers(sid,ds,m,60);const busy=staffBusyAt(sid,ds,m,60);if(okS&&!busy)trial.push(minToTime(m));}
+  return `<div class="addform" style="border:2px solid var(--navy);margin:10px 0">
+    <div class="subhead" style="margin:0 0 8px">🔎 予約できない原因をしらべる</div>
+    <div class="field two"><div><label>スタッフ</label><select id="bd-staff">${staff.filter(x=>x.id!=='s0').map(x=>`<option value="${x.id}" ${x.id===sid?'selected':''}>${esc(x.name)}</option>`).join('')}</select></div><div><label>日付</label><input type="date" id="bd-date" value="${ds}"></div></div>
+    ${row('① 非表示/非稼働',(st.hidden?'非表示':'')+(st.inactive?' 非稼働':'')||'なし',!(st.hidden||st.inactive))}
+    ${row('② 担当できるメニュー数',canList.length+'件'+(canList.length?'（例：'+esc(canList.slice(0,3).map(x=>x.name).join('、'))+'）':''),canList.length>0)}
+    ${row('③ この日は定休/臨時休業か',closed?'休み':'営業日',!closed)}
+    ${row('④ この日の個別お休み設定',dayOff?'お休みあり':'なし',!dayOff)}
+    ${row('⑤ この日のシフト（カレンダー入力）',ov?(ov.off?'「休み」で登録':'出勤 '+(ov.ranges||[]).map(r=>hlabel(r.start)+'-'+hlabel(r.end)).join('/')):'未入力',ov?!ov.off:null)}
+    ${row('⑥ 曜日ごとの基本シフト',wk?(wk.on===false?'休み':'出勤 '+(wk.ranges?wk.ranges.map(r=>hlabel(r.start)+'-'+hlabel(r.end)).join('/'):hlabel(wk.start)+'-'+hlabel(wk.end))):'未設定',null)}
+    ${row('⑦ 最終的な勤務時間',eff.on&&eff.ranges.length?eff.ranges.map(r=>hlabel(r.start)+'-'+hlabel(r.end)).join(' / '):'勤務なし',!!(eff.on&&eff.ranges.length))}
+    ${row('⑧ 予約を受けられる時間（1時間の施術）',trial.length?trial.join(' '):'なし',trial.length>0)}
+    <div class="note" style="margin-top:10px">${(!eff.on||!eff.ranges.length)?'→ <b>⑦が「勤務なし」です。</b>⑤か⑥のシフトが入っていないか、「休み」で登録されています。シフトのカレンダーで、この日を出勤に設定して「保存して完了」を押してください。':(canList.length?(trial.length?'→ 勤務時間も担当メニューも問題ありません。お客様の画面で選べない場合は、お客様側の画面を一度閉じて開き直してください（古い情報が残っている可能性があります）。':'→ 勤務はしていますが、その時間はすでに予約で埋まっています。'):'→ <b>②が0件です。</b>このスタッフが担当できるメニューがありません。設定→スタッフの管理から担当メニューを設定してください。')}</div>
+    <button class="btn btn-ghost" id="bd-close" style="width:100%;margin-top:10px">閉じる</button>
+  </div>`;
+}
 function adminSettings(){
   const s=S();const tx=s.texts||{};
   const _gl=((WORK&&WORK.gcalLog)||[]).slice(0,15);const _gq=gcalQueue().length;const gcalPanel=`<div class="addform"><div class="subhead" style="margin:0 0 8px">📅 Googleカレンダー送信の記録</div><div class="note" style="margin:0 0 8px">最近の送信 ${_gl.length}件${_gq?` ・ <b style="color:var(--rose)">未送信の保留 ${_gq}件（次回開いた時に自動再送）</b>`:''}</div>${_gl.map(g=>`<div style="font-size:12px;padding:4px 0;border-top:1px dashed var(--line)">${g.ok?'✅':'⚠️'} ${g.action} ${esc(g.id||'')} <span style="color:var(--ink-soft)">${new Date(g.at).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</span>${g.err?` <span style="color:var(--rose)">${esc(g.err)}</span>`:''}</div>`).join('')||'<div class="note">まだ記録がありません</div>'}</div>`;
-  return `${gcalPanel}${promoFormHtml()}<div class="addform"><div class="subhead" style="margin:0 0 12px">バックアップ</div>
+  return `<button class="btn btn-ghost" id="bd-open" style="width:100%;margin:0 0 10px;border-color:var(--navy);color:var(--navy)">🔎 予約できない原因をしらべる</button>${bookDiagPanel()}${gcalPanel}${promoFormHtml()}<div class="addform"><div class="subhead" style="margin:0 0 12px">バックアップ</div>
     <div style="font-size:13px;color:#777;margin-bottom:8px">現在のデータ（予約・顧客・スタッフ・設定すべて）を1つのファイルとして手元に保存できます。定期的に押しておくと安心です。</div>
     <div class="field"><label>オーナー暗証番号（担当で「SAKURA」を選ぶ時に必要）</label><div style="display:flex;gap:8px"><input id="set-ownerpin" type="password" inputmode="numeric" placeholder="新しい暗証番号" style="flex:1"><button class="btn btn-ghost" id="set-ownerpin-save" style="white-space:nowrap">変更</button></div></div><button class="btn btn-ghost" id="set-backup" style="width:100%;margin-bottom:10px">💾 バックアップをダウンロード</button><div class="subhead" style="margin:0 0 8px">🛟 データ復元</div><div style="font-size:13px;color:#777;margin-bottom:8px">お客様情報などが消えてしまった場合、この端末に残っているデータや自動バックアップから復元できます（今あるデータに<b>足す</b>だけなので、押しても消えることはありません）。各スタッフの端末でも試してください。</div><button class="btn btn-ghost" id="rescue-check" style="width:100%;margin-bottom:18px">🛟 復元できるデータを探す</button><div class="subhead" style="margin:0 0 10px">📢 かんたん設定（誰でもOK）</div><div class="field"><label>臨時のお知らせ（トップに帯で表示）<span class="opt">例）年末年始休業 12/30〜1/3</span></label><input id="set-noticebar" value="${(s.noticeBar||'').replace(/"/g,'&quot;')}"></div><div class="field"><label>Instagram のURL</label><input id="set-ig" value="${(s.igUrl||'').replace(/"/g,'&quot;')}" placeholder="https://instagram.com/..."></div><div class="field"><label>お店の電話番号</label><input id="set-tel" value="${(s.tel||'').replace(/"/g,'&quot;')}" placeholder="06-...."></div><button class="btn btn-primary" id="set-easy-save" style="width:100%;margin-bottom:18px">かんたん設定を保存</button><div class="subhead" style="margin:0 0 10px">🔑 サロン管理パスワード</div><div class="note" style="margin-bottom:6px">スタッフ全員が使うログインパスワードです（現在：数字）。変更すると全員が新しいパスワードでログインします。</div><input id="set-newpw" inputmode="numeric" placeholder="新しいパスワード（4桁以上）" style="width:100%;margin-bottom:6px"><button class="btn btn-ghost" id="set-pwsave" style="width:100%;margin-bottom:16px">パスワードを変更する</button><div class="subhead" style="margin:0 0 10px">👥 スタッフの追加・編集</div><div class="note" style="margin-bottom:6px">スタッフの追加・時給・「お客様に表示しない裏方スタッフ」の設定は「スタッフ」タブで行えます。</div><button class="btn btn-ghost" id="set-gostaff" style="width:100%;margin-bottom:16px">👥 スタッフ管理を開く</button><div class="subhead" style="margin:0 0 10px">🔔 通知</div><details class="shopguide" style="margin-bottom:10px"><summary>📱 アプリの入れ方・通知の設定（スタッフ用）</summary><div class="sg-b"><b>① スマホのホーム画面に追加（アプリのように使えます）</b><br>・iPhone（Safari）：このページで下の<b>共有ボタン（□に↑）</b>→「<b>ホーム画面に追加</b>」→「追加」。ホームにVi5アイコンができます。<br>・Android（Chrome）：右上の<b>⋮</b>→「<b>ホーム画面に追加</b>」。<br><br><b>② 通知をオンにする</b><br>・<b>ホーム画面に追加したアイコンから開いて</b>、下の「🔔通知をオンにする」を押して「許可」。<br>・出ない時：iPhoneは「設定アプリ→通知→Vi5」をオン。<br><br><b>③ 毎日の流れ</b><br>出勤（店舗/在宅を選ぶ）→ 休憩（何回でもOK）→ 業務報告 → 退勤。打刻はこのアプリで行います（Squareは不要）。連絡はすべて「💬チャット」で。</div></details><button class="btn btn-ghost" id="intro-reopen" style="width:100%;margin-bottom:8px">📖 「はじめに（使い方）」をもう一度読む</button><button class="btn btn-ghost" id="ntf-on" style="width:100%;margin-bottom:8px">🔔 このスマホで通知をオンにする</button><div class="note" style="margin-bottom:18px">※iPhoneの場合：Safariで「共有→ホーム画面に追加」したアプリから開き、上のボタン→「許可」。うまくいかない時は iPhoneの設定→通知→Vi5 をオンにしてください。</div><div class="subhead" style="margin:0 0 10px">💡 アプリへの意見・要望</div><div class="note" style="margin-bottom:8px">「こういう機能が欲しい」「ここが使いにくい」など、何でもどうぞ。アプリの改善に使います（誰が書いたか記録されます）。</div><textarea id="idea-text" rows="3" placeholder="例）予約一覧を印刷できるようにしてほしい"></textarea><button class="btn btn-primary" id="idea-send" style="width:100%;margin:8px 0 10px">意見を送る</button>${(()=>{const ideas=((typeof WORK!==`undefined`&&WORK&&WORK.appIdeas)||[]).slice(0,10);if(!ideas.length)return ``;return ideas.map(x=>`<div class="pass"><span class="pl">💡 ${x.text}<br><span style="font-size:11px;color:var(--ink-soft)">${x.by}・${actAgo(x.at)}</span></span></div>`).join(``);})()}<div style="height:14px"></div>
     <div class="subhead" style="margin:0 0 12px">サイトの文言</div>
@@ -4651,6 +4685,10 @@ function bindAdmin(){
   const _vcc=byId('vc-cancel');if(_vcc)_vcc.onclick=()=>{state.visitConfirm=null;render();};
   const _vco=byId('vc-ok');if(_vco)_vco.onclick=visitConfirmSave;
   app.querySelectorAll('[data-vcedit]').forEach(b=>b.onclick=()=>openVisitConfirm(b.dataset.vcedit));
+  const _bdo=byId('bd-open');if(_bdo)_bdo.onclick=()=>{state.bookDiag=true;render();};
+  const _bdc=byId('bd-close');if(_bdc)_bdc.onclick=()=>{state.bookDiag=false;render();};
+  const _bds=byId('bd-staff');if(_bds)_bds.onchange=()=>{state.bookDiagStaff=_bds.value;render();};
+  const _bdd=byId('bd-date');if(_bdd)_bdd.onchange=()=>{state.bookDiagDate=_bdd.value;render();};
   const _fo=byId('fvpt-open');if(_fo)_fo.onclick=()=>{state.fvptOpen=true;render();};
   const _fc=byId('fvpt-close');if(_fc)_fc.onclick=()=>{state.fvptOpen=false;render();};
   app.querySelectorAll('[data-fvpt]').forEach(b=>b.onclick=()=>firstVisitPtGrant(b.dataset.fvpt));
