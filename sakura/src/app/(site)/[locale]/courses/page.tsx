@@ -2,6 +2,7 @@ import { SearchX } from 'lucide-react';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { catalogRepository } from '@/lib/data';
+import { publishedLocales } from '@/lib/format';
 import CourseCard from '@/components/public/CourseCard';
 import CourseFilters from '@/components/public/CourseFilters';
 import { EmptyState } from '@/components/ui/Card';
@@ -30,15 +31,26 @@ export default async function CoursesPage({
 
   const c = await getTranslations({ locale, namespace: 'courses' });
 
-  const [courses, categories] = await Promise.all([
+  const [courses, allPublic, categories] = await Promise.all([
     catalogRepository.listCourses({
       categoryId: current.category,
       instructorId: current.instructor,
       level: current.level,
       language: current.language,
     }),
+    // 絞り込みの選択肢を、実際に公開している講座から作るための一覧
+    catalogRepository.listCourses(),
     catalogRepository.listCategories(),
   ]);
+
+  // 結果が 0 件にしかならない選択肢を出さない
+  // （公開していない講座のカテゴリー・講師・レベルを残さないため）
+  const available = {
+    categories: categories.filter((cat) => allPublic.some((x) => x.categoryId === cat.id)),
+    instructorIds: [...new Set(allPublic.map((x) => x.instructorId))],
+    levels: [...new Set(allPublic.map((x) => x.level))],
+    languages: [...new Set(allPublic.flatMap((x) => publishedLocales(x)))],
+  };
 
   // 10件以上を一度に縦へ並べない（CLAUDE.md 第6章）
   const showAll = one('more') === '1';
@@ -56,7 +68,15 @@ export default async function CoursesPage({
 
       <div className="grid gap-6 lg:grid-cols-[260px_1fr] lg:gap-8">
         <aside className="lg:sticky lg:top-20 lg:self-start">
-          <CourseFilters locale={locale} categories={categories} current={current} resultCount={courses.length} />
+          <CourseFilters
+            locale={locale}
+            categories={available.categories}
+            instructorIds={available.instructorIds}
+            levels={available.levels}
+            languages={available.languages}
+            current={current}
+            resultCount={courses.length}
+          />
         </aside>
 
         <div>

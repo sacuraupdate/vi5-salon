@@ -15,7 +15,7 @@ export default async function Page() {
   const { allowed } = await ownerOnly();
   if (!allowed) return <AccessDenied what="講座制作" />;
 
-  const courses = await catalogRepository.listCourses();
+  const courses = await catalogRepository.listCourses({ includeUnlisted: true });
   // 動画IDの登録が必要な講座（制作中のものを上に出す）
   const target = courses.filter((c) => !c.isFree);
 

@@ -194,7 +194,9 @@
     "start": "Open",
     "ctaTitle": "The rest is in the courses",
     "ctaBody": "Free content covers the entrance. The procedures you can use on the floor are in the courses.",
-    "cta": "Browse courses"
+    "cta": "Browse courses",
+    "emptyTitle": "Free material is being prepared",
+    "emptyBody": "We are producing the free videos and downloads. They will appear here once they are ready."
   },
   "auth": {
     "loginTitle": "Log in",

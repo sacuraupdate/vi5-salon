@@ -13,7 +13,7 @@ export default async function MyCoursesPage({ params }: { params: Promise<{ loca
   const preparing = (await getTranslations({ locale, namespace: 'common' }))('preparing');
   const [enrollments, courses] = await Promise.all([
     learnerRepository.listEnrollments(),
-    catalogRepository.listCourses(),
+    catalogRepository.listCourses({ includeUnlisted: true }),
   ]);
   const bySlug = new Map(courses.map((c) => [c.slug, c]));
 

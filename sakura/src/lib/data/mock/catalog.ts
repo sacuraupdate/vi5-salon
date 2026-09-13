@@ -138,7 +138,7 @@ const faq = [
 type CourseSeed = Pick<
   Course,
   | 'slug' | 'title' | 'summary' | 'description' | 'instructorId' | 'categoryId' | 'level'
-  | 'pricing' | 'isFree' | 'certificate' | 'featured' | 'tone' | 'highlights'
+  | 'pricing' | 'isFree' | 'certificate' | 'featured' | 'tone' | 'highlights' | 'unlisted'
   | 'audience' | 'assessment' | 'salonCertification' | 'availability'
 > & {
   chapters: Chapter[];
@@ -296,6 +296,8 @@ export const courses: Course[] = [
   }),
   build({
     slug: 'omotenashi-counselling',
+    // 確認用のサンプル。実体が無いため一般ユーザーには見せない
+    unlisted: true,
     title: { ja: 'おもてなしカウンセリング', en: 'Omotenashi Counselling', ko: '오모테나시 카운슬링', 'zh-TW': '款待式諮詢' },
     summary: { ja: '聞く順番を変えるだけで、提案は通ります。日本式カウンセリングの型。', en: 'Change the order you ask, and your suggestions land. The Japanese counselling framework.', ko: '묻는 순서를 바꾸는 것만으로 제안이 통합니다.', 'zh-TW': '只要改變提問順序，提案就能被接受。' },
     description: { ja: 'カウンセリングは質問の数ではなく順番で決まります。お客様が本当の要望を話せる状態をつくるための問診設計、言いにくいことの伝え方、提案が押し売りにならない線引きを、実際の会話例とともに学びます。', en: 'Counselling is decided by the order of your questions, not the number. Learn how to create the state where a guest can voice what they really want, how to say difficult things, and where the line is before a suggestion becomes a hard sell.' },
@@ -312,6 +314,8 @@ export const courses: Course[] = [
   }),
   build({
     slug: 'salon-management-basics',
+    // 確認用のサンプル。実体が無いため一般ユーザーには見せない
+    unlisted: true,
     title: { ja: '日本式サロン経営の基礎', en: 'Japanese Salon Management: Basics', ko: '일본식 살롱 경영 기초', 'zh-TW': '日式沙龍經營基礎' },
     summary: { ja: '価格・リピート・スタッフ教育。小さなサロンが続く仕組みをつくる。', en: 'Pricing, repeat visits and staff training — the system that keeps a small salon going.', ko: '가격·재방문·스태프 교육. 작은 살롱이 지속되는 구조.', 'zh-TW': '定價、回訪、員工教育：小型沙龍持續經營的機制。' },
     description: { ja: '席数が少ないサロンほど、仕組みが利益を決めます。価格の決め方、リピート率の見方、スタッフに任せるための教育手順を、実際の数字の見方とあわせて学びます。', en: 'The fewer seats you have, the more your systems decide your profit. Learn how to set prices, read repeat rates, and train staff so you can delegate.' },
@@ -328,6 +332,8 @@ export const courses: Course[] = [
   }),
   build({
     slug: 'eyelash-technique',
+    // 確認用のサンプル。実体が無いため一般ユーザーには見せない
+    unlisted: true,
     title: { ja: '日本のまつげ技術 実践', en: 'Japanese Eyelash Technique', ko: '일본 속눈썹 기술 실전', 'zh-TW': '日本睫毛技術實務' },
     summary: { ja: '持ちを左右するのは接着ではなく前処理。日本の現場基準を手順で学ぶ。', en: 'Retention is decided by prep, not glue. Learn the Japanese standard, step by step.', ko: '유지력을 좌우하는 것은 접착이 아니라 전처리입니다.', 'zh-TW': '決定持久度的是前置處理，而非黏著。' },
     description: { ja: '仕上がりの美しさよりも、2週間後の状態で評価されるのが日本のまつげ施術です。毛周期の見立て、前処理、接着の量、アフターカウンセリングまでを一連の手順として学びます。', en: 'Japanese lash work is judged by how it looks two weeks later, not on the day. Learn cycle assessment, preparation, adhesive volume and after-care as one connected procedure.' },
@@ -345,6 +351,8 @@ export const courses: Course[] = [
   }),
   build({
     slug: 'brow-design',
+    // 確認用のサンプル。実体が無いため一般ユーザーには見せない
+    unlisted: true,
     title: { ja: '眉デザインの考え方', en: 'Designing Brows', ko: '눈썹 디자인의 사고법', 'zh-TW': '眉型設計思維' },
     summary: { ja: '左右対称ではなく骨格に合わせる。日本式の眉設計。', en: 'Match the bone structure, not symmetry. Japanese brow design.', ko: '좌우대칭이 아니라 골격에 맞춥니다.', 'zh-TW': '不追求左右對稱，而是順應骨架。' },
     description: { ja: '眉は左右対称に整えるほど不自然になります。骨格・目の位置・表情の癖から、その人だけの眉を設計する手順を学びます。', en: 'The more symmetrical you make brows, the less natural they look. Learn to design brows from bone structure, eye position and habitual expression.' },
@@ -361,6 +369,8 @@ export const courses: Course[] = [
   }),
   build({
     slug: 'makeup-for-photo',
+    // 確認用のサンプル。実体が無いため一般ユーザーには見せない
+    unlisted: true,
     title: { ja: '写真に強いメイク', en: 'Makeup That Photographs Well', ko: '사진에 강한 메이크업', 'zh-TW': '上鏡妝容' },
     summary: { ja: 'SNSで選ばれるサロンの、光を計算したメイク設計。', en: 'Light-aware makeup design for salons chosen on social media.', ko: 'SNS에서 선택받는 살롱의 빛을 계산한 메이크업.', 'zh-TW': '為社群而生、計算光線的妝容設計。' },
     description: { ja: '目の前では美しいのに写真では沈む。その原因は光の反射設計にあります。撮影を前提としたベース設計と、サロンの照明の整え方を学びます。', en: 'Beautiful in person, flat in photos — the cause is how light reflects. Learn base design for the camera and how to set your salon lighting.' },
@@ -377,6 +387,8 @@ export const courses: Course[] = [
   }),
   build({
     slug: 'inbound-guest',
+    // 確認用のサンプル。実体が無いため一般ユーザーには見せない
+    unlisted: true,
     title: { ja: 'インバウンド接客の基礎', en: 'Serving International Guests', ko: '인바운드 접객 기초', 'zh-TW': '接待外國顧客基礎' },
     summary: { ja: '言葉が通じなくても伝わる、日本のサロンの接客設計。', en: 'Japanese salon service that lands even without a shared language.', ko: '말이 통하지 않아도 전해지는 접객 설계.', 'zh-TW': '即使語言不通也能傳達的接待設計。' },
     description: { ja: '海外からのお客様に必要なのは翻訳ではなく、迷わせない設計です。予約から会計までの導線、指差しで伝わる資料の作り方、宗教・文化への配慮を学びます。', en: 'International guests need a journey without confusion more than they need translation. Learn the path from booking to payment, point-and-show materials, and cultural considerations.' },
@@ -393,6 +405,8 @@ export const courses: Course[] = [
   }),
   build({
     slug: 'femcare-basics',
+    // 確認用のサンプル。実体が無いため一般ユーザーには見せない
+    unlisted: true,
     title: { ja: 'フェムケア基礎', en: 'Femcare Basics', ko: '펨케어 기초', 'zh-TW': '女性照護基礎' },
     summary: { ja: '月経周期と肌・体調の関係を、サロンの提案に変える。', en: 'Turn the link between cycle, skin and condition into salon advice.', ko: '월경 주기와 피부·컨디션의 관계를 제안으로.', 'zh-TW': '將月經週期與肌膚狀況的關聯轉為提案。' },
     description: { ja: 'お客様の肌の調子が毎回違う理由の多くは、周期にあります。基礎知識を体系的に押さえ、サロンで踏み込みすぎずに提案するための境界線を学びます。', en: 'Much of why a guest’s skin differs each visit comes down to their cycle. Build the foundational knowledge, and learn where the line is when advising in a salon.' },
@@ -409,6 +423,8 @@ export const courses: Course[] = [
   }),
   build({
     slug: 'life-stage-care',
+    // 確認用のサンプル。実体が無いため一般ユーザーには見せない
+    unlisted: true,
     title: { ja: '女性のライフステージとケア', en: 'Life Stages and Care', ko: '여성의 라이프 스테이지와 케어', 'zh-TW': '女性生命階段與照護' },
     summary: { ja: '20代から更年期前後まで。年代で変わる提案の軸を持つ。', en: 'From the twenties through menopause — an advisory axis that shifts with age.', ko: '20대부터 갱년기 전후까지 연령별 제안 축.', 'zh-TW': '從20代到更年期前後，依年齡調整提案。' },
     description: { ja: '同じ施術でも、年代によって喜ばれる理由は変わります。ライフステージごとの体の変化と、サロンでの提案の軸を整理します。', en: 'The same treatment is appreciated for different reasons at different ages. Organise the physical changes of each life stage, and the advisory axis that follows.' },
@@ -425,6 +441,8 @@ export const courses: Course[] = [
   }),
   build({
     slug: 'femcare-for-pros',
+    // 確認用のサンプル。実体が無いため一般ユーザーには見せない
+    unlisted: true,
     title: { ja: '美容従事者のためのフェムケア実践', en: 'Femcare for Beauty Professionals', ko: '미용 종사자를 위한 펨케어 실전', 'zh-TW': '美容從業者的女性照護實務' },
     summary: { ja: 'サロンで実際に聞かれる質問に、根拠を持って答えられるようになる。', en: 'Answer the questions guests actually ask, with grounding.', ko: '살롱에서 실제로 받는 질문에 근거를 갖고 답합니다.', 'zh-TW': '面對顧客的實際提問，能有根據地回答。' },
     description: { ja: '「これは相談していいことなのか」とお客様が迷う領域こそ、サロンの信頼が決まる場所です。よくある質問と、答えてよい範囲を整理します。', en: 'Trust is decided in the areas where guests hesitate to ask. Organise the common questions and the range you can safely answer.' },
@@ -441,6 +459,8 @@ export const courses: Course[] = [
   }),
   build({
     slug: 'salon-space-design',
+    // 確認用のサンプル。実体が無いため一般ユーザーには見せない
+    unlisted: true,
     title: { ja: 'サロン空間のつくり方', en: 'Designing the Salon Space', ko: '살롱 공간 만들기', 'zh-TW': '沙龍空間營造' },
     summary: { ja: '香り・音・光・視線。空間が伝える「丁寧さ」を設計する。', en: 'Scent, sound, light and sightlines — designing the care a space conveys.', ko: '향기·소리·빛·시선. 공간이 전하는 정중함.', 'zh-TW': '香氣、聲音、光線、視線：設計空間傳達的細膩。' },
     description: { ja: 'お客様は入店から数秒でサロンの丁寧さを判断しています。香り、音、光、視線の抜け方を、費用をかけずに整える方法を学びます。', en: 'Guests judge how careful a salon is within seconds of entering. Learn to tune scent, sound, light and sightlines without spending much.' },
@@ -456,6 +476,8 @@ export const courses: Course[] = [
   }),
   build({
     slug: 'repeat-and-retail',
+    // 確認用のサンプル。実体が無いため一般ユーザーには見せない
+    unlisted: true,
     title: { ja: 'リピートと店販の考え方', en: 'Repeat Visits and Retail', ko: '재방문과 매장 판매', 'zh-TW': '回訪與店販思維' },
     summary: { ja: '売り込まずに続く。日本のサロンのリピート設計。', en: 'Continuity without selling — the Japanese approach to repeat business.', ko: '팔지 않고 이어지는 재방문 설계.', 'zh-TW': '不推銷也能延續的回訪設計。' },
     description: { ja: 'リピートは技術の結果ではなく設計の結果です。次回来店の理由づくり、店販を「押し売り」にしない伝え方を学びます。', en: 'Repeat visits are the result of design, not technique. Learn to create a reason to return and to talk about products without pushing.' },
@@ -472,10 +494,15 @@ export const courses: Course[] = [
   }),
 ];
 
+/**
+ * 無料コンテンツ。現在はすべて確認用のサンプルで、実体（動画・記事・PDF）が無い。
+ * そのため unlisted: true を付け、一般ユーザーには見せない。
+ * 実物ができたら、その項目の unlisted を外す。
+ */
 export const freeContents: FreeContent[] = [
-  { id: 'f1', type: 'video', title: { ja: '日本のサロンが清潔感を最優先する理由', en: 'Why Japanese salons put cleanliness first', ko: '일본 살롱이 청결감을 최우선하는 이유', 'zh-TW': '日式沙龍為何最重視清潔感' }, summary: { ja: '5分で分かる、日本式サロンの前提。', en: 'The premise of a Japanese salon, in five minutes.', ko: '5분으로 이해하는 일본식 살롱의 전제.', 'zh-TW': '五分鐘理解日式沙龍的前提。' }, instructorId: 'sakura', minutes: 5, tone: 0 },
-  { id: 'f2', type: 'article', title: { ja: 'カウンセリングで最初に聞くべき質問', en: 'The first question to ask in counselling', ko: '카운슬링에서 가장 먼저 물어야 할 질문', 'zh-TW': '諮詢時該先問的問題' }, summary: { ja: '順番を変えるだけで会話が変わります。', en: 'Change the order and the conversation changes.', ko: '순서를 바꾸는 것만으로 대화가 달라집니다.', 'zh-TW': '只要改變順序，對話就會不同。' }, instructorId: 'sakura', minutes: 4, tone: 1 },
-  { id: 'f3', type: 'pdf', title: { ja: '衛生管理チェックリスト（無料配布）', en: 'Hygiene checklist (free download)', ko: '위생 관리 체크리스트 (무료)', 'zh-TW': '衛生管理檢核表（免費）' }, summary: { ja: '毎日の確認項目を1枚にまとめました。', en: 'Your daily checks, on a single sheet.', ko: '매일 확인 항목을 한 장에 정리했습니다.', 'zh-TW': '將每日確認項目整理成一頁。' }, instructorId: 'sakura', minutes: 2, tone: 2 },
-  { id: 'f4', type: 'video', title: { ja: '月経周期と肌の関係を3分で', en: 'Cycle and skin, in three minutes', ko: '월경 주기와 피부의 관계 3분 정리', 'zh-TW': '三分鐘看懂週期與肌膚' }, summary: { ja: 'フェムケアのいちばん最初の一歩。', en: 'The very first step into femcare.', ko: '펨케어의 첫걸음.', 'zh-TW': '女性照護的第一步。' }, instructorId: 'tomomi', minutes: 3, tone: 3 },
-  { id: 'f5', type: 'article', title: { ja: '海外のお客様を迷わせない店内表示', en: 'In-salon signage that avoids confusion', ko: '해외 고객이 헤매지 않는 안내 표시', 'zh-TW': '不讓外國顧客迷惑的店內標示' }, summary: { ja: '翻訳より先にできることがあります。', en: 'There is something to do before translating.', ko: '번역보다 먼저 할 수 있는 일이 있습니다.', 'zh-TW': '在翻譯之前，還有能做的事。' }, instructorId: 'sakura', minutes: 6, tone: 0 },
+  { id: 'f1', unlisted: true, type: 'video', title: { ja: '日本のサロンが清潔感を最優先する理由', en: 'Why Japanese salons put cleanliness first', ko: '일본 살롱이 청결감을 최우선하는 이유', 'zh-TW': '日式沙龍為何最重視清潔感' }, summary: { ja: '5分で分かる、日本式サロンの前提。', en: 'The premise of a Japanese salon, in five minutes.', ko: '5분으로 이해하는 일본식 살롱의 전제.', 'zh-TW': '五分鐘理解日式沙龍的前提。' }, instructorId: 'sakura', minutes: 5, tone: 0 },
+  { id: 'f2', unlisted: true, type: 'article', title: { ja: 'カウンセリングで最初に聞くべき質問', en: 'The first question to ask in counselling', ko: '카운슬링에서 가장 먼저 물어야 할 질문', 'zh-TW': '諮詢時該先問的問題' }, summary: { ja: '順番を変えるだけで会話が変わります。', en: 'Change the order and the conversation changes.', ko: '순서를 바꾸는 것만으로 대화가 달라집니다.', 'zh-TW': '只要改變順序，對話就會不同。' }, instructorId: 'sakura', minutes: 4, tone: 1 },
+  { id: 'f3', unlisted: true, type: 'pdf', title: { ja: '衛生管理チェックリスト（無料配布）', en: 'Hygiene checklist (free download)', ko: '위생 관리 체크리스트 (무료)', 'zh-TW': '衛生管理檢核表（免費）' }, summary: { ja: '毎日の確認項目を1枚にまとめました。', en: 'Your daily checks, on a single sheet.', ko: '매일 확인 항목을 한 장에 정리했습니다.', 'zh-TW': '將每日確認項目整理成一頁。' }, instructorId: 'sakura', minutes: 2, tone: 2 },
+  { id: 'f4', unlisted: true, type: 'video', title: { ja: '月経周期と肌の関係を3分で', en: 'Cycle and skin, in three minutes', ko: '월경 주기와 피부의 관계 3분 정리', 'zh-TW': '三分鐘看懂週期與肌膚' }, summary: { ja: 'フェムケアのいちばん最初の一歩。', en: 'The very first step into femcare.', ko: '펨케어의 첫걸음.', 'zh-TW': '女性照護的第一步。' }, instructorId: 'tomomi', minutes: 3, tone: 3 },
+  { id: 'f5', unlisted: true, type: 'article', title: { ja: '海外のお客様を迷わせない店内表示', en: 'In-salon signage that avoids confusion', ko: '해외 고객이 헤매지 않는 안내 표시', 'zh-TW': '不讓外國顧客迷惑的店內標示' }, summary: { ja: '翻訳より先にできることがあります。', en: 'There is something to do before translating.', ko: '번역보다 먼저 할 수 있는 일이 있습니다.', 'zh-TW': '在翻譯之前，還有能做的事。' }, instructorId: 'sakura', minutes: 6, tone: 0 },
 ];

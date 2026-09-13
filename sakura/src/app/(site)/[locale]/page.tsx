@@ -68,17 +68,20 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     technique: { label: h('routeTechnique'), desc: h('routeTechniqueDesc') },
     femcare: { label: h('routeFemcare'), desc: h('routeFemcareDesc') },
   };
-  const routes = learningRoutes.map((r) => {
+  // 学習ルートは公開中の講座からのみ組み立てる。
+  // 実体の無い講座を順路に並べないため、2件未満になったルートは出さない
+  const routes = learningRoutes
+    .map((r) => {
     // 終点は実データから判定する。認定対象が無いルートで「認定へ」と出さない
-    const goalKind = routeGoalKind(courses, r.slugs);
-    return {
-      id: r.id,
-      label: routeLabels[r.id].label,
-      desc: routeLabels[r.id].desc,
-      goalKind,
-      goalLabel: goalKind === 'certification' ? h('routeGoal') : h('routeGoalCompletion'),
-      flagshipLabel: q('flagship'),
-      steps: r.slugs
+      const goalKind = routeGoalKind(courses, r.slugs);
+      return {
+        id: r.id,
+        label: routeLabels[r.id].label,
+        desc: routeLabels[r.id].desc,
+        goalKind,
+        goalLabel: goalKind === 'certification' ? h('routeGoal') : h('routeGoalCompletion'),
+        flagshipLabel: q('flagship'),
+        steps: r.slugs
         .map((slug) => bySlug.get(slug))
         .filter((c): c is NonNullable<typeof c> => Boolean(c))
         .map((c) => ({
@@ -89,8 +92,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           freeLabel: common('free'),
           isFlagship: c.slug === r.flagship,
         })),
-    };
-  });
+      };
+    })
+    .filter((r) => r.steps.length >= 2);
 
   // 迷ったら、まずこれ＝日本式サロンの旗艦講座
   const firstPick = bySlug.get('japanese-salon-standard');
@@ -224,17 +228,23 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {/* ①-2 どこから学びますか？ ─ 先に3つの入口、その後に「迷ったら、まずこれ」 */}
       <section className="border-b border-line bg-bg">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
-          <SectionHeading eyebrow="Learning Routes" title={h('routesTitle')} lead={h('routesLead')} />
+          {/* 公開中の講座で組めるルートが2つ以上あるときだけ出す。
+              1講座しか公開していない段階で「学ぶ順番」を見せても意味がないため */}
+          {routes.length >= 2 ? (
+            <>
+              <SectionHeading eyebrow="Learning Routes" title={h('routesTitle')} lead={h('routesLead')} />
 
-          {/* 診断はここに置く。購入の手前ではなく、順番に迷った人のための補助導線 */}
-          <div className="mt-4">
-            <CourseQuiz routes={routes} label={h('quizAside')} variant="ghost" />
-          </div>
+              {/* 診断はここに置く。購入の手前ではなく、順番に迷った人のための補助導線 */}
+              <div className="mt-4">
+                <CourseQuiz routes={routes} label={h('quizAside')} variant="ghost" />
+              </div>
 
-          {/* まず3つの入口。ここで自分の学ぶ順番を決めてもらう */}
-          <div className="mt-6">
-            <LearningRoutes routes={routes} />
-          </div>
+              {/* まず3つの入口。ここで自分の学ぶ順番を決めてもらう */}
+              <div className="mt-6">
+                <LearningRoutes routes={routes} />
+              </div>
+            </>
+          ) : null}
 
           {/* それでも決められない人の逃げ道。旗艦講座を1件だけ、コンパクトに示す */}
           {firstPick ? (
@@ -274,9 +284,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               </IconFrame>
               <h3 className="mt-4 font-serif text-[15px] tracking-[0.08em] text-ink">{g.title}</h3>
               <p className="mt-2 text-xs leading-loose text-ink-muted">{g.desc}</p>
-              <span className="mt-4 inline-block text-[10px] tracking-[0.14em] text-vermilion">
-                {h('catCount', { count: countOf(g.group) })}
-              </span>
+              {/* 公開中の講座が無い領域では件数を出さない（「0講座」と見せない）。
+                  領域そのものは、何を学べるかを伝えるために残す */}
+              {countOf(g.group) > 0 ? (
+                <span className="mt-4 inline-block text-[10px] tracking-[0.14em] text-vermilion">
+                  {h('catCount', { count: countOf(g.group) })}
+                </span>
+              ) : null}
             </Link>
           ))}
         </div>

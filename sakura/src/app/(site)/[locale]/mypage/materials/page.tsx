@@ -21,7 +21,7 @@ export default async function MaterialsPage({ params }: { params: Promise<{ loca
   const preparing = (await getTranslations({ locale, namespace: 'common' }))('preparing');
   const [enrollments, courses] = await Promise.all([
     learnerRepository.listEnrollments(),
-    catalogRepository.listCourses(),
+    catalogRepository.listCourses({ includeUnlisted: true }),
   ]);
   const owned = courses.filter((c) => enrollments.some((e) => e.courseSlug === c.slug));
 

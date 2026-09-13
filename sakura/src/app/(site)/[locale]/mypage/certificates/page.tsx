@@ -17,7 +17,7 @@ export default async function CertificatesPage({ params }: { params: Promise<{ l
   const preparing = common('preparing');
   const [certificates, courses] = await Promise.all([
     learnerRepository.listCertificates(),
-    catalogRepository.listCourses(),
+    catalogRepository.listCourses({ includeUnlisted: true }),
   ]);
   const bySlug = new Map(courses.map((c) => [c.slug, c]));
 

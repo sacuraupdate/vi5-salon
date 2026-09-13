@@ -222,6 +222,14 @@ export type Course = {
    * 講座単位の認定証（certificate: 'certification'）とは別物。混同させない。
    */
   salonCertification?: boolean;
+  /**
+   * 一般ユーザーに見せない講座。
+   * 確認用のサンプルなど、実体が無いものに付ける。
+   * true の講座は、公開一覧・検索・おすすめ・講師ページ・購入導線のすべてに出ない。
+   * **データは消さない。** 管理画面からは引き続き確認でき、
+   * 既に購入済みの人の受講画面も開ける（出品を止めるだけで、権利は取り上げない）。
+   */
+  unlisted?: boolean;
   curriculum: Chapter[];
   materials: Material[];
   reviews: Review[];
@@ -234,6 +242,8 @@ export type FreeContentType = 'video' | 'article' | 'pdf';
 
 export type FreeContent = {
   id: string;
+  /** 一般ユーザーに見せない。実体が無い確認用データに付ける */
+  unlisted?: boolean;
   type: FreeContentType;
   title: Localized;
   summary: Localized;

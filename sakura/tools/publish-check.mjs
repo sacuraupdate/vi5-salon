@@ -55,16 +55,65 @@ const visible = (page) =>
 
   // 事実でない実績を出していないこと。
   // 架空のレビュー・評価は Stripe の審査でも不利になり、恒久ルールでも禁止している
-  for (const slug of ['omotenashi-counselling', 'eyelash-technique', 'japanese-salon-standard']) {
+  await page.goto(`${BASE}/en/courses/japanese-salon-standard`, { waitUntil: 'networkidle' });
+  await page.getByRole('tab', { name: /Reviews/i }).click().catch(() => {});
+  const reviewTab = await visible(page);
+  check(
+    '架空のレビュー・評価を出していない',
+    /No reviews yet/i.test(reviewTab) && !/Jasmine|Minji|Chloe/.test(reviewTab),
+    /No reviews yet/i.test(reviewTab) ? 'レビューなしと表示' : reviewTab.slice(0, 50),
+  );
+
+  /* 公開サイトに出すのは実商品だけ */
+  await page.goto(`${BASE}/en/courses`, { waitUntil: 'networkidle' });
+  const cards = await page.locator('a[href*="/en/courses/"]').count();
+  const listText = await visible(page);
+  // 絞り込みの選択肢に、公開していない講座のカテゴリーが残っていないか
+  const filterText = await page.locator('aside').innerText().catch(() => '');
+  check('公開一覧に実商品だけが出ている', cards === 1, `講座カード ${cards} 件`);
+  const leak = /Counselling|Eyelash|Brow|Femcare|Makeup|Inbound/i;
+  check('公開一覧にサンプル講座が出ていない', !leak.test(listText), listText.match(leak)?.[0] ?? 'なし');
+  check(
+    '絞り込みに結果が0件になる選択肢が残っていない',
+    !leak.test(filterText),
+    filterText.match(leak)?.[0] ?? 'なし',
+  );
+
+  for (const slug of ['omotenashi-counselling', 'eyelash-technique', 'femcare-basics']) {
     await page.goto(`${BASE}/en/courses/${slug}`, { waitUntil: 'networkidle' });
-    await page.getByRole('tab', { name: /Reviews/i }).click().catch(() => {});
-    const tab = await visible(page);
-    check(
-      `${slug} に架空のレビュー・評価を出していない`,
-      /No reviews yet/i.test(tab) && !/Jasmine|Minji|Chloe/.test(tab),
-      /No reviews yet/i.test(tab) ? 'レビューなしと表示' : tab.slice(0, 50),
-    );
+    const t = await visible(page);
+    check(`サンプル講座 ${slug} はURLを直接開いても見えない`, /Page not found/i.test(t), t.split('\n').find(Boolean));
   }
+
+  // 実体の無い無料コンテンツを並べない
+  await page.goto(`${BASE}/en/free`, { waitUntil: 'networkidle' });
+  check('無料コンテンツは準備中と伝える', /being prepared/i.test(await visible(page)));
+
+  // 講座が無い講師ページで空の一覧を出さない
+  await page.goto(`${BASE}/en/instructors/tomomi`, { waitUntil: 'networkidle' });
+  const tomomiCards = await page.locator('article a[href*="/en/courses/"]').count();
+  check('講座が無い講師ページに空の講座一覧を出さない', tomomiCards === 0, `講座カード ${tomomiCards} 件`);
+
+  // 組めない学習ルートを出さない
+  await page.goto(`${BASE}/en`, { waitUntil: 'networkidle' });
+  const home = await visible(page);
+  check('公開できる講座で組めない学習ルートを出さない', !/Learning Routes/i.test(home));
+  check('「0講座」と表示していない', !/\b0 courses?\b/i.test(home));
+
+  // Stripe が確認する最低限（ログイン不要で読めること）
+  check('対象者が書いてある', /salon owner|staff|start|beauty business/i.test(home));
+  check('何を学べるかが書いてある', /omotenashi|hospitality|standard|management|technique/i.test(home));
+
+  // 制作中であることを隠していない
+  await page.goto(`${BASE}/en/courses/japanese-salon-standard`, { waitUntil: 'networkidle' });
+  const detail = await visible(page);
+  check('3章が制作中と分かる', /in production|Coming soon|preparation/i.test(detail));
+
+  // 法務の Draft 表記を消していないこと
+  await page.goto(`${BASE}/en/legal/tokusho`, { waitUntil: 'networkidle' });
+  const tok = await visible(page);
+  check('法務ページの Draft 表記を消していない', /not yet in force/i.test(tok));
+  check('事業者情報が未確定だと分かる', /TO BE CONFIRMED/i.test(tok));
 
   // 法務・問い合わせ
   for (const [path, word] of [

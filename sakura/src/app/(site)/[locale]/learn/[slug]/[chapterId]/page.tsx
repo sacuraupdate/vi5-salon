@@ -34,7 +34,7 @@ export default async function LearnChapterPage({
   const session = await getSession();
   if (!session) redirect(`/${locale}/login?next=/${locale}/learn/${slug}/${chapterId}`);
 
-  const course = await catalogRepository.getCourse(slug);
+  const course = await catalogRepository.getCourseAny(slug);
   if (!course) notFound();
 
   const index = course.curriculum.findIndex((c) => c.id === chapterId);

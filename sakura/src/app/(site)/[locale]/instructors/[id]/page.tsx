@@ -115,6 +115,8 @@ export default async function InstructorPage({
         </div>
       </section>
 
+      {/* 公開中の講座が無い講師では、この節そのものを出さない（空の一覧を見せない） */}
+      {courses.length === 0 ? null : (
       <section className="border-t border-line bg-washi">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
           <SectionHeading
@@ -134,6 +136,7 @@ export default async function InstructorPage({
           </div>
         </div>
       </section>
+      )}
     </>
   );
 }

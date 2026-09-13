@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
 
     // 初めて記録できたときだけメールを送る（再送で二重に届かないようにする）
     if (purchase) {
-      const course = await catalogRepository.getCourse(courseSlug);
+      const course = await catalogRepository.getCourseAny(courseSlug);
       const title = (course ? tc(course.title, locale) : null) ?? courseSlug;
       const mail = await sendMail(
         purchaseCompleteMail(locale, {

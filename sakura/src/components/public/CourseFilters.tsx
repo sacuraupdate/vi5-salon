@@ -2,7 +2,7 @@ import { SlidersHorizontal, X } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { tcText } from '@/lib/format';
-import type { Category, Locale } from '@/lib/data';
+import type { Category, CourseLevel, InstructorId, Locale } from '@/lib/data';
 
 type Query = Record<string, string | undefined>;
 
@@ -56,11 +56,21 @@ function Row({
 export default async function CourseFilters({
   locale,
   categories,
+  instructorIds,
+  levels,
+  languages,
   current,
   resultCount,
 }: {
   locale: string;
+  /** 公開中の講座があるカテゴリーだけを渡す */
   categories: Category[];
+  /** 公開中の講座がある講師だけを渡す */
+  instructorIds: InstructorId[];
+  /** 公開中の講座にあるレベルだけを渡す */
+  levels: CourseLevel[];
+  /** 公開中の講座が実際に公開している言語だけを渡す */
+  languages: Locale[];
   current: Query;
   resultCount: number;
 }) {
@@ -78,25 +88,21 @@ export default async function CourseFilters({
     {
       label: c('instructor'),
       paramKey: 'instructor',
-      options: [all, { value: 'sakura', label: 'SAKURA' }, { value: 'tomomi', label: 'TOMOMI' }],
+      options: [
+        all,
+        ...instructorIds.map((id) => ({ value: id, label: id === 'sakura' ? 'SAKURA' : 'TOMOMI' })),
+      ],
     },
     {
       label: c('level'),
       paramKey: 'level',
-      options: [
-        all,
-        { value: 'beginner', label: common('level.beginner') },
-        { value: 'intermediate', label: common('level.intermediate') },
-        { value: 'advanced', label: common('level.advanced') },
-      ],
+      options: [all, ...levels.map((l) => ({ value: l, label: common(`level.${l}`) }))],
     },
     {
       label: c('language'),
       paramKey: 'language',
-      options: [
-        all,
-        ...(['ja', 'en', 'ko', 'zh-TW'] as Locale[]).map((l) => ({ value: l, label: l.toUpperCase() })),
-      ],
+      // 言語は、公開中の講座が実際に公開している言語だけを出す
+      options: [all, ...languages.map((l) => ({ value: l, label: l.toUpperCase() }))],
     },
   ];
 

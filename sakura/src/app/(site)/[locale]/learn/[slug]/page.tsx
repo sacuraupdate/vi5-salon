@@ -25,7 +25,7 @@ export default async function LearnCoursePage({
   const session = await getSession();
   if (!session) redirect(`/${locale}/login?next=/${locale}/learn/${slug}`);
 
-  const course = await catalogRepository.getCourse(slug);
+  const course = await catalogRepository.getCourseAny(slug);
   if (!course) notFound();
 
   const l = await getTranslations({ locale, namespace: 'learn' });

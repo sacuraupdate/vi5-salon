@@ -12,7 +12,7 @@ export default async function AdminCoursesPage() {
   const role = await getAdminRole();
   const isOwner = role === 'owner';
 
-  const all = await catalogRepository.listCourses();
+  const all = await catalogRepository.listCourses({ includeUnlisted: true });
   const courses = isOwner ? all : all.filter((c) => c.instructorId === 'tomomi');
   const sales = await adminRepository.listCourseSales(role);
   const salesBySlug = new Map(sales.map((s) => [s.courseSlug, s]));

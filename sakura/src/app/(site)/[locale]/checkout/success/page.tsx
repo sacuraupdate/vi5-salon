@@ -66,7 +66,7 @@ export default async function CheckoutSuccessPage({
     );
   }
 
-  const course = await catalogRepository.getCourse(mine.courseSlug);
+  const course = await catalogRepository.getCourseAny(mine.courseSlug);
 
   return (
     <div className="mx-auto max-w-lg px-4 py-16">

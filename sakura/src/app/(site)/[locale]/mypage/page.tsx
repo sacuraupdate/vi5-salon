@@ -20,7 +20,7 @@ export default async function MyPage({ params }: { params: Promise<{ locale: str
     learnerRepository.listEnrollments(),
     learnerRepository.listCertificates(),
     learnerRepository.getContinueLearning(),
-    catalogRepository.listCourses(),
+    catalogRepository.listCourses({ includeUnlisted: true }),
   ]);
 
   const bySlug = new Map(courses.map((c) => [c.slug, c]));

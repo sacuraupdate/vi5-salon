@@ -29,6 +29,8 @@ export const mockCatalog: CatalogRepository = {
   async listCourses(filter: CourseFilter = {}) {
     return courses.filter(
       (c) =>
+        // 既定拒否：明示的に指定されない限り、非公開の講座は返さない
+        (filter.includeUnlisted || !c.unlisted) &&
         matches(filter.categoryId, c.categoryId) &&
         matches(filter.instructorId, c.instructorId) &&
         matches(filter.level, c.level) &&
@@ -36,10 +38,14 @@ export const mockCatalog: CatalogRepository = {
     );
   },
   async getCourse(slug) {
+    const course = courses.find((c) => c.slug === slug);
+    return course && !course.unlisted ? course : null;
+  },
+  async getCourseAny(slug) {
     return courses.find((c) => c.slug === slug) ?? null;
   },
   async listFeaturedCourses(limit = 3) {
-    return courses.filter((c) => c.featured).slice(0, limit);
+    return courses.filter((c) => c.featured && !c.unlisted).slice(0, limit);
   },
   async listCategories() {
     return categories;
@@ -51,7 +57,8 @@ export const mockCatalog: CatalogRepository = {
     return instructors.find((i) => i.id === id) ?? null;
   },
   async listFreeContents() {
-    return freeContents;
+    // 実体の無いサンプルは一般ユーザーに見せない
+    return freeContents.filter((f) => !f.unlisted);
   },
 };
 

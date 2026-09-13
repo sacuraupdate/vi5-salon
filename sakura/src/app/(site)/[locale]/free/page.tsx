@@ -4,7 +4,7 @@ import { catalogRepository } from '@/lib/data';
 import type { FreeContentType } from '@/lib/data';
 import { tcText } from '@/lib/format';
 import PhotoFrame from '@/components/brand/PhotoFrame';
-import { Badge, Card } from '@/components/ui/Card';
+import { Badge, Card, EmptyState } from '@/components/ui/Card';
 import { buttonClass } from '@/components/ui/Button';
 import { Link } from '@/i18n/navigation';
 
@@ -31,6 +31,14 @@ export default async function FreePage({ params }: { params: Promise<{ locale: s
         <p className="max-w-2xl text-sm leading-relaxed text-ink-muted">{f('lead')}</p>
       </header>
 
+      {/* 実体のあるコンテンツだけを出す。無い間は空の一覧ではなく、準備中と伝える */}
+      {items.length === 0 ? (
+        <EmptyState
+          icon={<FileText className="h-5 w-5" strokeWidth={1.5} />}
+          title={f('emptyTitle')}
+          body={f('emptyBody')}
+        />
+      ) : (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => {
           const Icon = icons[item.type];
@@ -66,6 +74,7 @@ export default async function FreePage({ params }: { params: Promise<{ locale: s
           );
         })}
       </div>
+      )}
 
       <Card className="mt-10 flex flex-col items-start gap-3 border-line bg-washi p-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-1">
