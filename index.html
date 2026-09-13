@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260913f';
+const APP_REV='r20260913g';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -2164,6 +2164,7 @@ function stepInfo(){
     <div class="field"><label>オプション <span class="opt">(必要に応じて追加)</span></label>${optChips(b.options,'opt')}</div>
     <div class="field"><label>ご要望・ご連絡事項 <span class="opt">(任意)</span></label><textarea id="f-note" placeholder="アレルギー、当日のご希望、その他お伝えしたいことがあればご記入ください。">${b.note||''}</textarea></div>
     ${addonPanel()}${previsitNote()}<div class="cancel-note">🕐 ご予約の<b>変更・キャンセルは前日の21時まで</b>、マイページから承ります。</div><div class="field"><label>同意書</label><div class="terms"><b>ご予約・施術に関する同意事項</b>${TERMS.split('\n').join('<br>')}</div><div class="agree ${b.agreed?'on':''}" id="agree"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>上記に同意して予約します</div></div>
+    <div class="kalert" style="background:#EEF2F7;border-color:var(--navy);color:var(--navy);margin:10px 0;text-align:left">📱 <b>予約確定メールは送信されません。</b><br><span style="font-size:12.5px">ご予約が完了すると次の画面に「ご予約を承りました」と表示されます。その後のご確認・変更・キャンセルは<b>マイページ</b>からお願いいたします。</span></div>
   </div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">戻る</button><button class="btn btn-primary" id="confirm" ${b.agreed?'':'disabled'}>この内容で予約する</button></div>`;
   byId('f-name').oninput=e=>state.b.name=e.target.value;
   byId('f-phone').oninput=e=>{state.b.phone=e.target.value;const c=DATA.customers[normPhone(e.target.value)];if(c)state.b.name=c.name;softInfo()};
@@ -2379,10 +2380,14 @@ function stepDone(){if(!state.lastBooking){go('home');return '';}
   const partyTxt=bk.party.length?`<div class="sum-row"><span class="k">ご一緒の方</span><span class="v">${bk.party[0].name} 様</span></div>`:'';
   const _rk=effectiveRank(c)||0;const rankBox=`<div class="promo" style="margin:14px 0"><div class="promo-h">💳 会員ランクについて</div><div style="font-size:13.5px;line-height:1.7;color:var(--navy)">${_rk>=2?'あなたは<b>🥇ゴールド会員</b>（毎回10%OFF）です。いつもありがとうございます👑':_rk===1?'あなたは<b>🥈シルバー会員</b>（毎回5%OFF）。<b>月2回のご来店を続ける</b>と🥇ゴールド（10%OFF）へ！この調子でぜひ続けてご予約ください😊':'どなたでも通常会員から。<b>月1回のご来店を続けると🥈シルバー（5%OFF）</b>、<b>月2回で🥇ゴールド（10%OFF）</b>にランクアップ！次回もぜひご予約くださいね😊'}</div></div>`;
   const policyBox=`<div class="aftercare" style="white-space:pre-line;text-align:left"><b>📋 ご予約にあたってのお願い</b>\n\n${S().bookingPolicy||DEFAULT_POLICY}</div>`;
-  app.innerHTML=`<div class="done"><div class="done-check"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div><h2>ご予約を承りました</h2><p>${c.name} 様、ありがとうございます。<br>確認のご連絡を ${bk.phone} 宛に差し上げます。</p><div class="kalert" style="background:#FFF8E6;border-color:var(--gold);color:#6b5410;margin:8px 0">🕐 <b>ご変更・キャンセルは前日の21時まで</b>にマイページからお願いいたします（それ以降はお電話でご連絡ください）</div><div class="code">${bk.id}</div>
+  app.innerHTML=`<div class="done"><div class="done-check"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div><h2>ご予約を承りました</h2><p>${c.name} 様、ありがとうございます。</p>
+    <div class="kalert" style="background:#E8F6EC;border-color:#3F5A46;color:#2C4433;margin:10px 0;text-align:left">✅ <b>この画面が表示された時点で、ご予約は確定しています。</b><br><span style="font-size:12.5px">予約確定メールは送信されません。ご予約の確認・変更・キャンセルは、下の「マイページ」からいつでもご確認いただけます。</span></div>
+    <button class="btn btn-primary" id="done-mypage" style="width:100%;margin:6px 0 10px">👤 マイページでご予約を確認する</button>
+    <div class="kalert" style="background:#FFF8E6;border-color:var(--gold);color:#6b5410;margin:8px 0;text-align:left">🕐 <b>ご変更・キャンセルは前日の21時まで</b>にマイページからお願いいたします（それ以降はお電話でご連絡ください）</div><div class="code">${bk.id}</div>
     <div class="ptgain">${loggedIn?`${earned>0?`今回の獲得予定 <b>+${earned.toLocaleString()}pt</b><br>`:`<span style="color:var(--ink-soft)">初回ご来店のため通常ポイントは2回目から付与されます。</span><br>`}${bk.referralPending?`ご紹介ありがとうございます🎁 サロンで確認後にご紹介ポイントを付与いたします。<br>`:''}現在の保有ポイント <b>${bal.toLocaleString()}pt</b>`:`ポイントはご来店時に加算されます。${bk.referralPending?`<br>ご紹介ありがとうございます🎁 サロンで確認後にご紹介ポイントを付与いたします。${''&&bk.referralBonus}pt</b>`:''}<br><span style="color:var(--ink-soft)">マイページにログインすると保有ポイントを確認できます。</span>`}</div>
     <div class="summary" style="text-align:left"><div class="sum-row"><span class="k">メニュー</span><span class="sum-list">${bk.items.map(x=>`${itemName(x)} <span class="sub">${yen(x.price)}</span>`).join('<br>')}</span></div><div class="sum-row"><span class="k">担当</span><span class="v">${stName(bk.staffId)}</span></div><div class="sum-row"><span class="k">日時</span><span class="v">${mdLabel(bk.date)} ${bk.time}</span></div>${partyTxt}<div class="sum-row sum-total"><span class="k">お支払い</span><span class="v">${yen(bkPayment(bk))}</span></div></div>
     ${loggedIn?rankBox:''}${previsitNote.call?(()=>{const a=S().address||'';const mu='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(a||'vi5 北浜');return `<div class="summary" style="text-align:left"><div class="sum-row"><span class="k">📍 アクセス</span><span class="sum-list">${a}<br><a href="${mu}" target="_blank" style="color:var(--gold);font-weight:700">Googleマップで道順を見る</a></span></div></div>`;})():''}${policyBox}<button class="btn btn-primary" id="again" style="width:100%">${t('toHome')}</button></div>`;
+  const _dmp=byId('done-mypage');if(_dmp)_dmp.onclick=()=>{const ph=normPhone((state.lastBooking&&state.lastBooking.phone)||'');const c=DATA.customers[ph];if(c){/* ご予約直後は本人確認済みのためそのままマイページへ */state.mpPhone=c.phone;localSet('salon:session',c.phone);}go('mypage');};
   byId('again').onclick=()=>{state.cart=[];state.openCat=null;state.bookMode='single';state.pairPerson=1;state.pairA=null;state.cartA=[];state.cartB=[];state.staffA=null;state.staffB=null;state.optA=[];state.optB=[];state.pairEditing='A';state.b.options=[];state.b={staff:null,date:null,time:null,name:'',phone:'',companions:[],referrer:'',usePoints:0,haste:null,agreed:false,party2:false,p2name:'',p2phone:'',birthday:'',password:'',b2name:'',b2phone:'',b2birthday:'',b2password:'',options:[]};state.calMonth=new Date(today.getFullYear(),today.getMonth(),1);state.step=0;go('home')};
 }
 
@@ -3966,6 +3971,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-13',v:'r20260913g',items:['【お客様からの誤解を防止】予約完了画面の「確認のご連絡を差し上げます」を撤去（メールが届くと誤解される表現でした）','予約完了画面に「✅ この画面が表示された時点でご予約は確定しています／予約確定メールは送信されません。ご確認・変更はマイページから」と明示','予約完了画面に「👤 マイページでご予約を確認する」ボタンを追加（ご予約直後はそのままマイページを開けます）','予約する直前の確認画面にも「予約確定メールは送信されません」の案内を追加し、先に分かるように']},
  {d:'2026-09-13',v:'r20260913f',items:['予約タブを開いた時点で「今日以降すべて」の予約一覧が表示されるように変更（ボタンを押さなくても明日以降の予約が見えます）','月をまたいでも表示されるように（今日〜翌月以降の予約も一覧に出ます）','日付の見出しに「本日」「明日（9月14日）」と表示','絞り込みに「明日」を追加し、並び順を 今日以降すべて／今日／明日／来店済み／キャンセル／この月すべて に整理']},
  {d:'2026-09-13',v:'r20260913e',items:['【重要】昨日以前で「来店済み」にできていないご予約を、管理トップの最上部に赤く表示（日付が変わっても消えません）。このままではポイントが付かないため、その場で確定できます','来店済みだがカルテが未入力のお客様を管理トップに一覧表示（「カルテを書く」からすぐ移動できます）','タスクの日付を「🗓 カレンダーから何日かまとめて選ぶ」で複数選択できるように。「今週のうち何日か」で1週間分を一括指定も可能','お客様の予約：「指名なし」は、そのメニューを担当できるスタッフが2人以上いる時だけ表示するように変更','お客様の予約：その日に空きが1つも無い場合、選べない時間を並べず「この日は◯◯の空きがございません」と最初から明示するように']},
  {d:'2026-09-13',v:'r20260913d',items:['「来店済み」を押すと、すぐ確定せず確認パネルが開くように変更。実際に行った施術に直してから確定できます（メニューの追加・削除で、お会計と付与ポイントが自動で計算し直されます）','確認パネルで「お礼メッセージと口コミのお願いを送る／送らない」を選べるように','確定した後でも「施術内容を直す」から内容を修正でき、ポイントも自動で再計算されます（お礼メッセージは再送しません）','施術内容を変更した場合は、予約の履歴に「施術内容の変更」として記録されます']},
