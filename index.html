@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260913h';
+const APP_REV='r20260913i';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1010,7 +1010,7 @@ function localSet(k,v){try{localStorage.setItem('vi5:'+k,v)}catch(e){}}
 function localDel(k){try{localStorage.removeItem('vi5:'+k)}catch(e){}}
 async function refresh(){try{let j,_full=false;if(state.adminAuthed&&localGet('salon:staffpw')){_full=true;if(isDirect()){try{j=await api({action:'full',pw:localGet('salon:staffpw')});localDel('salon:direct');}catch(e){const d=await directLoad();if(d){DATA=d;services=DATA.services;staff=DATA.staff;}return;}}else{j=await api({action:'full',pw:localGet('salon:staffpw')});}}else if(state.mpPhone){j=await api({action:'customer',phone:state.mpPhone,password:localGet('salon:custpw')||''});}else{j=await api({action:'public'});}if(j&&j.data){DATA=j.data;services=DATA.services;staff=DATA.staff;if(_full)state.dataFull=true;}}catch(e){}}
 /* ===== 設定 ===== */
-const CONFIG={pointsPer1000:50,referralBonus:1000,birthdayBonus:1000,signupBonus:500,sharePoints:10,galleryPoints:5,feedbackPoints:10,newCustomerEarnsFrom:2,discounts:{family:0.5,friend:0.2}};
+const CONFIG={pointsPer1000:50,referralBonus:1000,birthdayBonus:1000,signupBonus:500,sharePoints:10,galleryPoints:5,feedbackPoints:10,newCustomerEarnsFrom:1,discounts:{family:0.5,friend:0.2}};
 const DEFAULT_POLICY=`■当日のキャンセル/無断キャンセルは施術料金の100%を頂戴いたします
 ※10分以上連絡無しでご来店がなかった場合、自動的に無断キャンセル扱いとなります
 ■前日の21時までは、マイページのご予約履歴よりお客様自身でキャンセルがおこなえます。
@@ -2384,7 +2384,7 @@ function stepDone(){if(!state.lastBooking){go('home');return '';}
     <div class="kalert" style="background:#E8F6EC;border-color:#3F5A46;color:#2C4433;margin:10px 0;text-align:left">✅ <b>この画面が表示された時点で、ご予約は確定しています。</b><br><span style="font-size:12.5px">予約確定メールは送信されません。ご予約の確認・変更・キャンセルは、下の「マイページ」からいつでもご確認いただけます。</span></div>
     <button class="btn btn-primary" id="done-mypage" style="width:100%;margin:6px 0 10px">👤 マイページでご予約を確認する</button>
     <div class="kalert" style="background:#FFF8E6;border-color:var(--gold);color:#6b5410;margin:8px 0;text-align:left">🕐 <b>ご変更・キャンセルは前日の21時まで</b>にマイページからお願いいたします（それ以降はお電話でご連絡ください）</div><div class="code">${bk.id}</div>
-    <div class="ptgain">${loggedIn?`${earned>0?`今回の獲得予定 <b>+${earned.toLocaleString()}pt</b><br>`:`<span style="color:var(--ink-soft)">初回ご来店のため通常ポイントは2回目から付与されます。</span><br>`}${bk.referralPending?`ご紹介ありがとうございます🎁 サロンで確認後にご紹介ポイントを付与いたします。<br>`:''}現在の保有ポイント <b>${bal.toLocaleString()}pt</b>`:`ポイントはご来店時に加算されます。${bk.referralPending?`<br>ご紹介ありがとうございます🎁 サロンで確認後にご紹介ポイントを付与いたします。${''&&bk.referralBonus}pt</b>`:''}<br><span style="color:var(--ink-soft)">マイページにログインすると保有ポイントを確認できます。</span>`}</div>
+    <div class="ptgain">${loggedIn?`${earned>0?`今回の獲得予定 <b>+${earned.toLocaleString()}pt</b><br>`:`<span style="color:var(--ink-soft)">ポイントはご来店時に加算されます。</span><br>`}${bk.referralPending?`ご紹介ありがとうございます🎁 サロンで確認後にご紹介ポイントを付与いたします。<br>`:''}現在の保有ポイント <b>${bal.toLocaleString()}pt</b>`:`ポイントはご来店時に加算されます。${bk.referralPending?`<br>ご紹介ありがとうございます🎁 サロンで確認後にご紹介ポイントを付与いたします。${''&&bk.referralBonus}pt</b>`:''}<br><span style="color:var(--ink-soft)">マイページにログインすると保有ポイントを確認できます。</span>`}</div>
     <div class="summary" style="text-align:left"><div class="sum-row"><span class="k">メニュー</span><span class="sum-list">${bk.items.map(x=>`${itemName(x)} <span class="sub">${yen(x.price)}</span>`).join('<br>')}</span></div><div class="sum-row"><span class="k">担当</span><span class="v">${stName(bk.staffId)}</span></div><div class="sum-row"><span class="k">日時</span><span class="v">${mdLabel(bk.date)} ${bk.time}</span></div>${partyTxt}<div class="sum-row sum-total"><span class="k">お支払い</span><span class="v">${yen(bkPayment(bk))}</span></div></div>
     ${loggedIn?rankBox:''}${previsitNote.call?(()=>{const a=S().address||'';const mu='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(a||'vi5 北浜');return `<div class="summary" style="text-align:left"><div class="sum-row"><span class="k">📍 アクセス</span><span class="sum-list">${a}<br><a href="${mu}" target="_blank" style="color:var(--gold);font-weight:700">Googleマップで道順を見る</a></span></div></div>`;})():''}${policyBox}<button class="btn btn-primary" id="again" style="width:100%">${t('toHome')}</button></div>`;
   const _dmp=byId('done-mypage');if(_dmp)_dmp.onclick=()=>{const ph=normPhone((state.lastBooking&&state.lastBooking.phone)||'');const c=DATA.customers[ph];if(c){/* ご予約直後は本人確認済みのためそのままマイページへ */state.mpPhone=c.phone;localSet('salon:session',c.phone);}go('mypage');};
@@ -3971,6 +3971,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-13',v:'r20260913i',items:['ポイントを初回のご来店から付与するように変更（これまでは2回目以降からでした）。お会計1,000円ごとに50ポイントは従来どおり','これに伴い「初回のため2回目から付与されます」という案内文を、予約完了画面と来店確定画面の両方から削除']},
  {d:'2026-09-13',v:'r20260913h',items:['予約フォームの電話番号欄に用途を明記：「マイページのログインに使います。当日に急なご連絡が必要な場合のみお電話します（SMS・メールの自動送信はありません）」。お客様がSMSや確認メールを待ってしまう誤解を防止']},
  {d:'2026-09-13',v:'r20260913g',items:['【お客様からの誤解を防止】予約完了画面の「確認のご連絡を差し上げます」を撤去（メールが届くと誤解される表現でした）','予約完了画面に「✅ この画面が表示された時点でご予約は確定しています／予約確定メールは送信されません。ご確認・変更はマイページから」と明示','予約完了画面に「👤 マイページでご予約を確認する」ボタンを追加（ご予約直後はそのままマイページを開けます）','予約する直前の確認画面にも「予約確定メールは送信されません」の案内を追加し、先に分かるように']},
  {d:'2026-09-13',v:'r20260913f',items:['予約タブを開いた時点で「今日以降すべて」の予約一覧が表示されるように変更（ボタンを押さなくても明日以降の予約が見えます）','月をまたいでも表示されるように（今日〜翌月以降の予約も一覧に出ます）','日付の見出しに「本日」「明日（9月14日）」と表示','絞り込みに「明日」を追加し、並び順を 今日以降すべて／今日／明日／来店済み／キャンセル／この月すべて に整理']},
@@ -4541,7 +4542,7 @@ function visitConfirmPanel(){
     <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1.5px solid var(--line);font-size:14px"><span>お会計</span><b>¥${pay.toLocaleString()}</b></div>
     ${total!==pay?`<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-soft)"><span>（施術計 ¥${total.toLocaleString()} − 割引・ポイント利用）</span></div>`:''}
     <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px"><span>付与ポイント</span><b style="color:#2C4433">${pts.toLocaleString()}pt</b></div>
-    ${pts===0?`<div class="note" style="color:var(--gold-deep,#9c7a12)">初回のご来店のためポイントは付きません（2回目以降から付与）。</div>`:''}
+    ${pts===0?`<div class="note" style="color:var(--gold-deep,#9c7a12)">お会計が1,000円未満のため、付与ポイントは0ptです。</div>`:''}
     ${bk.thanked?`<div class="note" style="margin-top:10px">お礼メッセージは送信済みです（再送しません）。</div>`:`<label class="chk-field" style="margin-top:10px"><input type="checkbox" id="vc-send" ${vc.send?'checked':''}><span>お礼メッセージと口コミのお願いを送る</span></label>`}
     <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-ghost" id="vc-cancel" style="flex:1">やめる</button><button class="btn btn-primary" id="vc-ok" style="flex:1">${vc.redo?'この内容に直す':'この内容で確定する'}</button></div>
   </div>`;
