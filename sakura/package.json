@@ -16,7 +16,8 @@
     "check:portraits": "node tools/check-portraits.mjs",
     "launch-check": "node tools/launch-check.mjs",
     "prod-guard-check": "node tools/prod-guard-check.mjs",
-    "commerce-check": "node tools/commerce-check.mjs"
+    "commerce-check": "node tools/commerce-check.mjs",
+    "publish-check": "node tools/publish-check.mjs"
   },
   "dependencies": {
     "lucide-react": "1.41.0",

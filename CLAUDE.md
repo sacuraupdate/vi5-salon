@@ -597,6 +597,18 @@ SAKURA 本人をブランドの顔として大きく見せる（写真を主役�
 - **認証は未実装。** 決済に進めるのはログイン済みの人だけだが、そのログイン自体が
   まだ本物ではない（`getSession()` は本番で常に null）。ここが最後の未実装のP0。
 - **AI API 接続は未実装。**
+
+### 公開（Stripe 審査用の確認URL）
+
+- **公開先は Cloudflare Workers。Worker 名は `sakura-japan-beauty`。**
+  既存の Vi5 予約サイト（Vercel）とは別サービス・別名にしてあり、互いに影響しない。
+  以前は Worker 名が `vi5-salon` で紛らわしかったため変更した。
+- **手順は `sakura/docs/deploy.md`。** ブラウザだけで完結する手順（Cloudflare の GitHub 連携）を主にしてある。
+- **検索エンジンへの掲載は既定で無効。** `SITE_INDEXABLE=true` を設定した時だけ載る。
+  販売開始前のサイトが検索結果に出ると、あとから印象を直しにくいため。
+  直接URLを開く分には影響しないので、Stripe の審査には支障がない。
+- **公開環境に `SITE_DEMO_MODE` / `ADMIN_DEMO_MODE` / `SITE_INDEXABLE` を設定しないこと。**
+  前2つを設定すると、管理画面と購入者画面が誰でも開ける状態になる。
 - データはすべてモック。`sakura/src/lib/data/` のリポジトリ層経由で取得しており、
   Phase 2 で Supabase 実装に差し替えても画面側の変更は不要な構造にしてある。
 - **次の指示があるまで Phase 2 を開始しない。**
@@ -619,9 +631,13 @@ SAKURA 本人をブランドの顔として大きく見せる（写真を主役�
 | `npm run launch-check` | **海外公開の事故防止**：未ログイン・未購入での到達、日本語混入、未確定価格の表示、通貨の固定、法務・問い合わせへの到達、404の言語、hreflang、スマホの横スクロール |
 | `npm run prod-guard-check` | 本番相当で購入者向け画面と管理画面が閉じていること |
 | `npm run commerce-check` | **決済の安全**：鍵がコードに無いこと、権限付与が Webhook だけであること、署名検証が偽物を弾くこと、冪等性の作り。サーバーは自分で起動するので事前準備は不要 |
+| `npm run publish-check` | **公開前**：4言語の表示、日本語混入、法務・問い合わせへの到達、購入者画面と管理画面が閉じていること、HTMLに秘密情報が無いこと、検索エンジンへの非掲載。**本番と同じビルド成果物に対して流す** |
 
 `ux-check` / `launch-check` は `SITE_DEMO_MODE=true npm run dev` を起動してから実行する。
 `prod-guard-check` は逆に、**フラグを設定せずに** `npm run build && npx next start -p 3100` してから実行する。
+`publish-check` は Cloudflare の実行環境で確認する：
+`npm run cf:build && npx wrangler dev --port 3300 --local`（環境変数を設定せずに起動）してから
+`BASE_URL=http://localhost:3300 npm run publish-check`。
 
 ### 実装上の落とし穴（実際に踏んだもの）
 

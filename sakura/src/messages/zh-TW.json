@@ -172,7 +172,12 @@
     "priceNotSold": "您所在的市場尚未開賣",
     "launchLabel": "開課價",
     "listLabel": "原價",
-    "chaptersPlanned": "共 {total} 章"
+    "chaptersPlanned": "共 {total} 章",
+    "termsTitle": "關於這門課程",
+    "termsOneTime": "一次買斷，不是訂閱制",
+    "termsNoExpiry": "沒有觀看期限，可以反覆觀看",
+    "termsFutureChapters": "日後新增的章節不需額外費用",
+    "termsStreaming": "影片僅提供串流，PDF 教材可以下載"
   },
   "instructor": {
     "profile": "簡介",

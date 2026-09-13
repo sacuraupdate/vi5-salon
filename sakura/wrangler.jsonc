@@ -1,7 +1,9 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  // Phase 1 の画面確認用 Worker。既存の予約サイト（Vercel）とは完全に別物。
-  "name": "vi5-salon",
+  // SAKURA JAPAN BEAUTY の Worker。
+  // 既存の Vi5 予約サイト（Vercel でホスティング）とは完全に別物。
+  // 取り違えを防ぐため、Worker 名も別にしてある（以前は "vi5-salon" だった）。
+  "name": "sakura-japan-beauty",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { alternatesFor, openGraphLocale, SITE_URL } from '@/lib/site';
+import { isSiteIndexable } from '@/lib/env';
 import { routing } from '@/i18n/routing';
 import SiteHeader from '@/components/public/SiteHeader';
 import SiteFooter from '@/components/public/SiteFooter';
@@ -25,6 +26,8 @@ export async function generateMetadata({
 
   return {
     metadataBase: new URL(SITE_URL),
+    // 販売開始前は検索結果に載せない（robots.ts と揃える）
+    robots: isSiteIndexable() ? undefined : { index: false, follow: false },
     title: { default: m('title'), template: m('titleTemplate') },
     description: m('description'),
     alternates: alternatesFor(locale),

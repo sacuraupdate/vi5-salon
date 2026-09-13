@@ -172,7 +172,12 @@
     "priceNotSold": "고객님의 시장에서는 아직 판매하지 않습니다",
     "launchLabel": "런칭 가격",
     "listLabel": "정상 가격",
-    "chaptersPlanned": "총 {total}챕터"
+    "chaptersPlanned": "총 {total}챕터",
+    "termsTitle": "이 강좌에 대하여",
+    "termsOneTime": "일회성 구매입니다. 정기 결제가 아닙니다",
+    "termsNoExpiry": "시청 기한이 없습니다. 몇 번이든 보실 수 있습니다",
+    "termsFutureChapters": "나중에 추가되는 챕터도 추가 비용 없이 보실 수 있습니다",
+    "termsStreaming": "영상은 스트리밍만 제공되며, PDF 자료는 다운로드할 수 있습니다"
   },
   "instructor": {
     "profile": "프로필",

@@ -172,7 +172,12 @@
     "priceNotSold": "お住まいの市場では販売準備中です",
     "launchLabel": "ローンチ価格",
     "listLabel": "通常価格",
-    "chaptersPlanned": "全{total}章"
+    "chaptersPlanned": "全{total}章",
+    "termsTitle": "この講座について",
+    "termsOneTime": "買い切りです。月額課金ではありません",
+    "termsNoExpiry": "視聴期限はありません。何度でもご覧いただけます",
+    "termsFutureChapters": "あとから追加される章も追加料金なしでご覧いただけます",
+    "termsStreaming": "動画はストリーミングのみ。PDF教材はダウンロードできます"
   },
   "instructor": {
     "profile": "プロフィール",

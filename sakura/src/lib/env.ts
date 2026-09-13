@@ -52,12 +52,27 @@ export function isEmailConfigured(): boolean {
   return resendEnv.apiKey().startsWith('re_') && resendEnv.from().includes('@');
 }
 
+/* ---------- 検索エンジンへの公開 ---------- */
+
+/**
+ * 検索エンジンに載せてよいか。
+ *
+ * **既定は「載せない」。** 販売開始前のサイトが検索結果に出ると、
+ * 「準備中」だらけのページが先に見つかってしまい、あとから直しにくい。
+ * Stripe の審査担当者はURLを直接開くため、この設定の影響を受けない。
+ *
+ * 実際に販売を開始する日に SITE_INDEXABLE=true を設定する。
+ */
+export function isSiteIndexable(): boolean {
+  return process.env.SITE_INDEXABLE === 'true';
+}
+
 /**
  * 接続状況のまとめ。管理画面の「システム状況」に出して、
  * SAKURA が設定漏れに日本語で気づけるようにする。
  */
 export type IntegrationStatus = {
-  key: 'stripe' | 'stripeWebhook' | 'supabase' | 'email';
+  key: 'stripe' | 'stripeWebhook' | 'supabase' | 'email' | 'indexing';
   label: string;
   ready: boolean;
   /** 未設定のときに何をすればよいか（日本語） */
@@ -66,6 +81,12 @@ export type IntegrationStatus = {
 
 export function integrationStatuses(): IntegrationStatus[] {
   return [
+    {
+      key: 'indexing',
+      label: '検索エンジンへの掲載',
+      ready: isSiteIndexable(),
+      todo: '販売を開始する日に SITE_INDEXABLE=true を設定してください。それまでは検索結果に出ません（意図した動作です）。',
+    },
     {
       key: 'supabase',
       label: 'データベース（Supabase）',

@@ -198,6 +198,20 @@ export default async function CourseDetailPage({
         </div>
       </dl>
 
+      {/* 販売条件。タブを開かなくても必ず見えるようにする
+          （買い切りかどうか・期限の有無は、購入前にいちばん知りたい情報） */}
+      <div className="mt-4 border-t border-line pt-4">
+        <h3 className="text-[11px] tracking-[0.14em] text-ink-muted uppercase">{d('termsTitle')}</h3>
+        <ul className="mt-2.5 flex flex-col gap-1.5">
+          {['termsOneTime', 'termsNoExpiry', 'termsFutureChapters', 'termsStreaming'].map((key) => (
+            <li key={key} className="flex items-start gap-2 text-[12px] leading-relaxed text-ink-2">
+              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-pine" strokeWidth={1.5} />
+              {d(key)}
+            </li>
+          ))}
+        </ul>
+      </div>
+
       <div className="mt-5">{purchaseForm}</div>
     </Card>
   );

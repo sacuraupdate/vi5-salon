@@ -172,7 +172,12 @@
     "priceNotSold": "Not on sale in your market yet",
     "launchLabel": "Launch price",
     "listLabel": "Regular price",
-    "chaptersPlanned": "{total} chapters"
+    "chaptersPlanned": "{total} chapters",
+    "termsTitle": "How this course works",
+    "termsOneTime": "One-time purchase — not a subscription",
+    "termsNoExpiry": "No expiry. Watch as many times as you like",
+    "termsFutureChapters": "Chapters added later are included at no extra cost",
+    "termsStreaming": "Videos are streaming only; PDF materials can be downloaded"
   },
   "instructor": {
     "profile": "Profile",
