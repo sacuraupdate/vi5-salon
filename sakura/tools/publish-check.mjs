@@ -109,11 +109,33 @@ const visible = (page) =>
   const detail = await visible(page);
   check('3章が制作中と分かる', /in production|Coming soon|preparation/i.test(detail));
 
-  // 法務の Draft 表記を消していないこと
+  // 特商法：事業者情報が正式に載っていること
   await page.goto(`${BASE}/en/legal/tokusho`, { waitUntil: 'networkidle' });
   const tok = await visible(page);
+  check('販売事業者名が表示されている', /Sakura Ando/.test(tok));
+  check('個人事業主であることが分かる', /sole proprietor/i.test(tok));
+  check('サービス名が別項目で表示されている', /Service name/i.test(tok) && /SAKURA JAPAN BEAUTY/.test(tok));
+  check('所在地が表示されている', /Osaka/i.test(tok) && /Nishitenma/i.test(tok));
+  check('電話番号が表示されている', /\+81-90-2781-3789/.test(tok));
+  check('問い合わせ先メールが表示されている', /oooh\.vi5\.information@gmail\.com/.test(tok));
+
+  await page.goto(`${BASE}/ja/legal/tokusho`, { waitUntil: 'networkidle' });
+  const tokJa = await visible(page);
+  check('日本語版にも販売事業者名が出ている', /安藤さくら/.test(tokJa));
+  check('日本語版に所在地が出ている', /西天満/.test(tokJa));
+
+  // まだ確定していない項目は確定させていないこと
   check('法務ページの Draft 表記を消していない', /not yet in force/i.test(tok));
-  check('事業者情報が未確定だと分かる', /TO BE CONFIRMED/i.test(tok));
+  check('販売価格・支払方法はまだ未確定と分かる', /TO BE CONFIRMED/i.test(tok));
+
+  // 連絡先を特商法ページ以外へ重複表示していないこと
+  const contactLeak = [];
+  for (const p of ['/en', '/en/courses/japanese-salon-standard', '/en/contact', '/en/legal/terms', '/en/legal/privacy', '/en/legal/refund']) {
+    await page.goto(`${BASE}${p}`, { waitUntil: 'networkidle' });
+    const t = await visible(page);
+    if (/2781-3789|Nishitenma|西天満/.test(t)) contactLeak.push(p);
+  }
+  check('電話番号・住所を特商法ページ以外に出していない', contactLeak.length === 0, contactLeak.join(' | ') || '6ページを確認');
 
   // 法務・問い合わせ
   for (const [path, word] of [
