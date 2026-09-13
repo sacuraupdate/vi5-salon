@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260913v';
+const APP_REV='r20260913w';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -2157,11 +2157,17 @@ function miStaffPick(x){
     state.b=state.b||{};state.b.assign=state.b.assign||{};
     if(cands.length===1){state.b.assign[x.id]=cands[0].id;
       return `<div style="padding:0 12px 10px;font-size:12px;color:var(--ink-soft)">担当：<b style="color:var(--navy)">${esc(cands[0].name)}</b></div>`;}
+    /* フェイス系（ピーリング等）はTOMOMIがご専門。出勤日は既定でTOMOMIをおすすめする */
+    const tom=cands.find(p=>p.name==='TOMOMI');
+    const isFace=!!(x&&(x.cat==='peel'||x.cat==='tfree'||/ピーリング|フェイス|毛穴|スキンケア|パック/.test(x.name||'')));
+    if(isFace&&tom&&!state.b.assign[x.id])state.b.assign[x.id]=tom.id;
     const cur=state.b.assign[x.id]||'auto';
     const chips=[{id:'auto',name:'おまかせ',sub:'空いている担当'}].concat(cands.map(c=>({id:c.id,name:c.name,sub:''}))).map(c=>{
       const on=cur===c.id;
-      return `<button type="button" data-asg="${x.id}|${c.id}" style="flex:1;min-width:90px;padding:10px 8px;border-radius:12px;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;border:2px solid ${on?'var(--navy)':'var(--line)'};background:${on?'var(--navy)':'#fff'};color:${on?'#fff':'var(--ink)'};box-shadow:${on?'0 2px 8px rgba(30,42,71,.25)':'none'}">${on?'✓ ':''}${esc(c.name)}${c.sub?`<div style="font-size:10.5px;font-weight:400;margin-top:2px;color:${on?'rgba(255,255,255,.8)':'var(--ink-soft)'}">${c.sub}</div>`:''}</button>`;}).join('');
-    return `<div style="margin:0 12px 10px;padding:10px;border-radius:12px;background:#F5F6F8"><div style="font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:7px">👤 担当をお選びください</div><div style="display:flex;gap:7px;flex-wrap:wrap">${chips}</div></div>`;
+      const rec=isFace&&tom&&c.id===tom.id;
+      return `<button type="button" data-asg="${x.id}|${c.id}" style="position:relative;flex:1;min-width:90px;padding:10px 8px;border-radius:12px;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;border:2px solid ${on?'var(--navy)':(rec?'var(--gold)':'var(--line)')};background:${on?'var(--navy)':'#fff'};color:${on?'#fff':'var(--ink)'};box-shadow:${on?'0 2px 8px rgba(30,42,71,.25)':'none'}">${on?'✓ ':''}${esc(c.name)}${rec?`<div style="font-size:10px;font-weight:700;margin-top:2px;color:${on?'#F3D27A':'var(--gold-deep,#9c7a12)'}">⭐ おすすめ</div>`:(c.sub?`<div style="font-size:10.5px;font-weight:400;margin-top:2px;color:${on?'rgba(255,255,255,.8)':'var(--ink-soft)'}">${c.sub}</div>`:'')}</button>`;}).join('');
+    const faceNote=(isFace&&tom)?`<div style="font-size:11.5px;color:var(--gold-deep,#9c7a12);font-weight:700;margin-bottom:6px">⭐ フェイスメニューは TOMOMI がご専門です（無料オプションもお選びいただけます）</div>`:'';
+    return `<div style="margin:0 12px 10px;padding:10px;border-radius:12px;background:#F5F6F8"><div style="font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:7px">👤 担当をお選びください</div>${faceNote}<div style="display:flex;gap:7px;flex-wrap:wrap">${chips}</div></div>`;
   }catch(e){return '';}
 }
 
@@ -2310,7 +2316,22 @@ function stepDate(){if(!state.b||!state.b.staff){state.step=2;return typeof step
   {const _ge=byId('go-earliest');if(_ge)_ge.onclick=()=>{state.b.date=_ge.dataset.eqd;state.b.time=_ge.dataset.eqt;state.calMonth=new Date(_ge.dataset.eqd+'T00:00:00');render();};}app.querySelectorAll('[data-q3]').forEach(b=>b.onclick=()=>{const p=b.dataset.q3.split('|');state.b.date=p[0];state.b.time=p[1];render();window.scrollTo(0,0);});
   byId('back').onclick=()=>{state.step=1;render()};byId('next').onclick=()=>{state.step=3;render()};
 }
-function itemsLines(staffId){return state.cart.map(x=>`${itemName(x)} <span class="sub">${yen(priceFor(x.id,staffId))}</span>`).join('<br>')}
+function itemsLines(staffId){
+  /* メニューごとの担当（と開始時刻）が分かるように表示する */
+  let planMap={};
+  try{
+    const gs=cartGroups();
+    if(gs&&gs.length&&state.b&&state.b.date&&state.b.time){
+      const sm=(function(){const p=String(state.b.time).split(':');return (+p[0])*60+(+p[1]||0);})();
+      const pl=planAt(state.b.date,sm,gs);
+      if(pl)pl.forEach(p=>p.items.forEach(it=>{planMap[it.id]={name:p.staff.name,t:minToTime(p.startMin)};}));
+    }
+    if(!Object.keys(planMap).length&&gs&&gs.length){
+      gs.forEach(g=>{const asg=(state.b&&state.b.assign)||{};g.items.forEach(it=>{const want=asg[it.id];const who=(want&&want!=='auto')?(stById(want)||{}).name:(g.cands.length===1?g.cands[0].name:'');if(who)planMap[it.id]={name:who,t:''};});});
+    }
+  }catch(e){}
+  return state.cart.map(x=>{const p=planMap[x.id];const who=p?p.name:'';const tm=p&&p.t?p.t+'〜 ':'';
+    return `${itemName(x)} <span class="sub">${yen(priceFor(x.id,staffId))}</span>${who?`<div style="font-size:11.5px;color:var(--gold-deep,#9c7a12);font-weight:700;margin-top:1px">${tm}担当：${esc(who)}</div>`:''}`;}).join('<div style="height:7px"></div>')}
 function dateLabel(){return `${mdLabel(state.b.date)} ${state.b.time}`}
 function addonPanel(){return '';/* 確認画面では出さない（メニュー選択時にオプションを選ぶため） */}
 function _addonPanel_unused(){const st=state.b&&state.b.staff;if(!st)return '';let adds=addonAvailable(st.id);const tfEl=(st.id==='s2'&&(state.cart||[]).some(x=>x.id==='pe1'||x.id==='pe2'||x.cat==='peel'));if(tfEl){adds=adds.concat((DATA.services||[]).filter(x=>x.cat==='tfree'));}if(!adds.length)return '';
@@ -2336,7 +2357,7 @@ function stepInfo(){
   const newFields=!known?`<div class="field two"><div><label>生年月日</label><input id="f-bday" inputmode="numeric" value="${b.birthday}" placeholder="例）19900615（数字8桁）"></div><div><label>パスワード <span class="opt">(マイページ用)</span></label><input id="f-pw" type="password" value="${b.password}" placeholder="4文字以上"></div></div><div class="field"><label>ご紹介者の電話番号 <span class="opt">(任意・紹介でお互いに${CONFIG.referralBonus}pt)</span></label><input id="f-ref" value="${b.referrer}" inputmode="tel" placeholder="090-..."></div><div class="note" style="margin-top:-2px;color:var(--gold)">※ 会員登録は<b>初回のみ</b>（お名前・電話番号・生年月日・パスワード）。ご登録で<b>${CONFIG.signupBonus}ポイント</b>プレゼント🎁 パスワードはマイページのログインに使います。お忘れの場合は公式LINEへご連絡ください。次回以降はログインするだけでOKです。</div>`:'';
   const party='';
   app.innerHTML=stepsBar(3)+`<div class="fade"><div class="eyebrow">Step 04</div><div class="h-title">${t('confirmT')}</div><div class="h-sub">${t('confirmSub')}</div>${recog}
-    <div class="summary"><div class="sum-row"><span class="k">メニュー</span><span class="sum-list">${itemsLines(b.staff&&b.staff.id)}</span></div><div class="sum-row"><span class="k">所要時間</span><span class="v">約${cartMin()}分</span></div><div class="sum-row"><span class="k">ご退店目安</span><span class="v">約${cartMin()+15}分後（お会計・お見送り含む）</span></div><div class="sum-row"><span class="k">担当</span><span class="v">${b.staff.name}</span></div><div class="sum-row"><span class="k">日時</span><span class="v">${dateLabel()}</span></div><div class="sum-row"><span class="k">小計</span><span class="v">${yen(gross)}</span></div>${rate>0?`<div class="sum-row"><span class="k">${dd.label}</span><span class="v disc">-${yen(gross-afterDisc)}</span></div>`:''}${coupon>0?`<div class="sum-row"><span class="k">🎫 クーポン${(()=>{const cp=state.selCoupon?(DATA.coupons||[]).find(c=>c.id===state.selCoupon):null;return cp?'（'+cp.title+'）':'';})()}</span><span class="v disc">-${yen(coupon)}</span></div>`:''}${use>0?`<div class="sum-row"><span class="k">ポイント利用</span><span class="v pt">-${yen(use)}</span></div>`:''}<div class="sum-row sum-total"><span class="k">お支払い</span><span class="v">${yen(payment)}</span></div></div>
+    <div class="summary"><div class="sum-row"><span class="k">メニュー</span><span class="sum-list">${itemsLines(b.staff&&b.staff.id)}</span></div><div class="sum-row"><span class="k">所要時間</span><span class="v">約${cartMin()}分</span></div><div class="sum-row"><span class="k">ご退店目安</span><span class="v">約${cartMin()+15}分後（お会計・お見送り含む）</span></div>${(b.staff&&b.staff.id!=='s0')?`<div class="sum-row"><span class="k">担当</span><span class="v">${b.staff.name}</span></div>`:`<div class="sum-row"><span class="k">担当</span><span class="v" style="font-size:12.5px;color:var(--ink-soft)">上のメニューごとに記載</span></div>`}<div class="sum-row"><span class="k">日時</span><span class="v">${dateLabel()}</span></div><div class="sum-row"><span class="k">小計</span><span class="v">${yen(gross)}</span></div>${rate>0?`<div class="sum-row"><span class="k">${dd.label}</span><span class="v disc">-${yen(gross-afterDisc)}</span></div>`:''}${coupon>0?`<div class="sum-row"><span class="k">🎫 クーポン${(()=>{const cp=state.selCoupon?(DATA.coupons||[]).find(c=>c.id===state.selCoupon):null;return cp?'（'+cp.title+'）':'';})()}</span><span class="v disc">-${yen(coupon)}</span></div>`:''}${use>0?`<div class="sum-row"><span class="k">ポイント利用</span><span class="v pt">-${yen(use)}</span></div>`:''}<div class="sum-row sum-total"><span class="k">お支払い</span><span class="v">${yen(payment)}</span></div></div>
     <div class="field"><label>お名前</label><input id="f-name" value="${b.name||(known?known.name:'')}" placeholder="山田 花子"></div>
     <div class="field"><label>電話番号 <span class="opt">(登録済みなら自動で会員情報を表示)</span></label><input id="f-phone" value="${b.phone}" inputmode="tel" placeholder="09012345678（ハイフンなし）"><div class="note" style="margin-top:4px">※ マイページのログインに使います。当日に急なご連絡が必要な場合のみサロンからお電話いたします（<b>SMS・メールの自動送信はありません</b>）。</div></div>
     ${useField}${newFields}
@@ -2596,7 +2617,7 @@ function stepDone(){if(!state.lastBooking){go('home');return '';}
     <button class="btn btn-primary" id="done-mypage" style="width:100%;margin:6px 0 10px">👤 マイページでご予約を確認する</button>
     <div class="kalert" style="background:#FFF8E6;border-color:var(--gold);color:#6b5410;margin:8px 0;text-align:left">🕐 <b>ご変更・キャンセルは前日の21時まで</b>にマイページからお願いいたします（それ以降はお電話でご連絡ください）</div><div class="code">${bk.id}</div>
     <div class="ptgain">${loggedIn?`${earned>0?`今回の獲得予定 <b>+${earned.toLocaleString()}pt</b><br>`:`<span style="color:var(--ink-soft)">${noEarnCust(c)?'家族割引が適用されます。':'ポイントはご来店時に加算されます。'}</span><br>`}${bk.referralPending?`ご紹介ありがとうございます🎁 サロンで確認後にご紹介ポイントを付与いたします。<br>`:''}現在の保有ポイント <b>${bal.toLocaleString()}pt</b>`:`ポイントはご来店時に加算されます。${bk.referralPending?`<br>ご紹介ありがとうございます🎁 サロンで確認後にご紹介ポイントを付与いたします。${''&&bk.referralBonus}pt</b>`:''}<br><span style="color:var(--ink-soft)">マイページにログインすると保有ポイントを確認できます。</span>`}</div>
-    <div class="summary" style="text-align:left"><div class="sum-row"><span class="k">メニュー</span><span class="sum-list">${bk.items.map(x=>`${itemName(x)} <span class="sub">${yen(x.price)}</span>`).join('<br>')}</span></div><div class="sum-row"><span class="k">担当</span><span class="v">${stName(bk.staffId)}</span></div><div class="sum-row"><span class="k">日時</span><span class="v">${mdLabel(bk.date)} ${bk.time}</span></div>${partyTxt}<div class="sum-row sum-total"><span class="k">お支払い</span><span class="v">${yen(bkPayment(bk))}</span></div></div>
+    <div class="summary" style="text-align:left"><div class="sum-row"><span class="k">メニュー</span><span class="sum-list">${bk.items.map(x=>`${itemName(x)} <span class="sub">${yen(x.price)}</span>`).join('<br>')}</span></div>${(bk.groupParts&&bk.groupParts.length>1)?`<div class="sum-row"><span class="k">担当・時間</span><span class="sum-list">${bk.groupParts.map(p=>`${p.time}〜 ${esc(p.staff)}<span class="sub"> ${p.items.map(esc).join('＋')}</span>`).join('<br>')}</span></div>`:`<div class="sum-row"><span class="k">担当</span><span class="v">${stName(bk.staffId)}</span></div><div class="sum-row"><span class="k">日時</span><span class="v">${mdLabel(bk.date)} ${bk.time}</span></div>`}${partyTxt}<div class="sum-row sum-total"><span class="k">お支払い</span><span class="v">${yen(bkPayment(bk))}</span></div></div>
     ${loggedIn?rankBox:''}${previsitNote.call?(()=>{const a=S().address||'';const mu='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(a||'vi5 北浜');return `<div class="summary" style="text-align:left"><div class="sum-row"><span class="k">📍 アクセス</span><span class="sum-list">${a}<br><a href="${mu}" target="_blank" style="color:var(--gold);font-weight:700">Googleマップで道順を見る</a></span></div></div>`;})():''}${policyBox}<button class="btn btn-primary" id="again" style="width:100%">${t('toHome')}</button></div>`;
   const _dmp=byId('done-mypage');if(_dmp)_dmp.onclick=()=>{const ph=normPhone((state.lastBooking&&state.lastBooking.phone)||'');const c=DATA.customers[ph];if(c){/* ご予約直後は本人確認済みのためそのままマイページへ */state.mpPhone=c.phone;localSet('salon:session',c.phone);}go('mypage');};
   byId('again').onclick=()=>{state.cart=[];state.openCat=null;state.bookMode='single';state.pairPerson=1;state.pairA=null;state.cartA=[];state.cartB=[];state.staffA=null;state.staffB=null;state.optA=[];state.optB=[];state.pairEditing='A';state.b.options=[];state.b={staff:null,date:null,time:null,name:'',phone:'',companions:[],referrer:'',usePoints:0,haste:null,agreed:false,party2:false,p2name:'',p2phone:'',birthday:'',password:'',b2name:'',b2phone:'',b2birthday:'',b2password:'',options:[]};state.calMonth=new Date(today.getFullYear(),today.getMonth(),1);state.step=0;go('home')};
@@ -4266,6 +4287,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-13',v:'r20260913w',items:['ご予約確定前の確認画面で、メニューごとに「開始時刻＋担当」を表示するように（例：10:00〜 担当：SAKURA／11:00〜 担当：TOMOMI）。誰が何を担当するかが一目で分かります','予約完了画面でも、担当が分かれる場合は時間と担当の内訳を表示','フェイスメニュー（ピーリング・毛穴・スキンケア等）は TOMOMI を既定の担当に変更。「⭐ フェイスメニューは TOMOMI がご専門です（無料オプションもお選びいただけます）」と案内し、TOMOMIのボタンに⭐おすすめを表示']},
  {d:'2026-09-13',v:'r20260913v',items:['「別のメニューも選ぶ」の案内を、一覧の一番下から「いま選んだメニューのすぐ下」へ移動。スクロールしなくても次にできることが分かります','選んだメニューの直下に「＋ 別のメニュー」と「日時を選ぶ →」の2つのボタンを並べ、その場でどちらにも進めるように','担当えらびを見やすく改善：「👤 担当をお選びください」の見出しを付け、枠で囲んで表示。選択中は濃紺＋✓で一目で分かるように、未選択は白地の大きなボタンに']},
  {d:'2026-09-13',v:'r20260913u',items:['メニューを1つ選んだ直後に「✅ 選択中：◯◯（約◯分）」と「＋ 別のメニューも選ぶ」を大きく表示。戻り方が分からず迷うことがなくなります','「同じご来店で別のメニューも続けてお受けいただけます。担当が違うメニューでも自動で組み立てます」と明記','担当を選ぶ画面が無くなったため、下部のボタンを「次へ：スタッフを選ぶ」から「次へ：日時を選ぶ」に変更']},
  {d:'2026-09-13',v:'r20260913t',items:['【工程を大幅に短縮】担当を選ぶ専用画面を廃止し、メニュー一覧の各メニューの中で担当を選べるように変更。メニューを選んだら、そのまま日時選択へ進みます','担当が1人しかいないメニューは「担当：SAKURA」と表示されるだけでタップ不要。複数いるメニューだけ「おまかせ／SAKURA／TOMOMI」が出ます','既定は「おまかせ」なので、こだわりがなければ一度もタップせずに進めます','眉→担当→日時→戻ってピーリング→担当…という行き来がなくなり、メニューを続けて選ぶだけで完了します']},
