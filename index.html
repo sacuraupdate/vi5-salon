@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260913m';
+const APP_REV='r20260913n';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1539,8 +1539,9 @@ function getCamp(id){return DATA.campaigns.find(c=>c.id===id)}
 function isDayOff(s,d){return DATA.blocks.some(b=>b.staffId===s&&b.date===d&&!b.time)}
 function isBlocked(s,d,t){return isDayOff(s,d)||DATA.blocks.some(b=>b.staffId===s&&b.date===d&&b.time===t)}
 function custBookings(p){return DATA.bookings.filter(b=>normPhone(b.phone)===normPhone(p)&&b.status!=='cancelled').sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time))}
-function earnedFor(b,vi){if(vi+1<CONFIG.newCustomerEarnsFrom)return 0;return Math.floor(bkPayment(b)/1000)*CONFIG.pointsPer1000}
-function suggestPoints(bk){const prior=DATA.bookings.filter(b=>normPhone(b.phone)===normPhone(bk.phone)&&b.status==='visited'&&b.id!==bk.id).length;return (prior+1<CONFIG.newCustomerEarnsFrom)?0:Math.floor(bkPayment(bk)/1000)*CONFIG.pointsPer1000}
+function noEarnCust(c){return !!(c&&c.discount==='family');} /* 家族割のお客様はポイント付与なし */
+function earnedFor(b,vi){if(vi+1<CONFIG.newCustomerEarnsFrom)return 0;if(noEarnCust(DATA.customers[normPhone(b.phone)]))return 0;return Math.floor(bkPayment(b)/1000)*CONFIG.pointsPer1000}
+function suggestPoints(bk){if(noEarnCust(DATA.customers[normPhone(bk.phone)]))return 0;const prior=DATA.bookings.filter(b=>normPhone(b.phone)===normPhone(bk.phone)&&b.status==='visited'&&b.id!==bk.id).length;return (prior+1<CONFIG.newCustomerEarnsFrom)?0:Math.floor(bkPayment(bk)/1000)*CONFIG.pointsPer1000}
 function pointBalance(p){const c=DATA.customers[normPhone(p)];if(!c)return 0;let e=0,u=0;DATA.bookings.filter(b=>normPhone(b.phone)===normPhone(p)).forEach(b=>{if(b.status==='visited')e+=(b.awardedPoints||0);if(b.status!=='cancelled')u+=(b.pointsUsed||0)});u+=((c.storeUsed||[]).reduce((a,x)=>a+(+x.pts||0),0));return Math.max(0,e+(c.bonusPoints||0)-u)}
 function favServiceIds(p){const cnt={};DATA.bookings.filter(b=>normPhone(b.phone)===normPhone(p)&&b.status!=='cancelled').forEach(b=>b.items.forEach(i=>{cnt[i.id]=(cnt[i.id]||0)+1}));return Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([id])=>id).filter(svById)}
 function favMenus(p){return favServiceIds(p).map(id=>svById(id).name)}
@@ -2384,7 +2385,7 @@ function stepDone(){if(!state.lastBooking){go('home');return '';}
     <div class="kalert" style="background:#E8F6EC;border-color:#3F5A46;color:#2C4433;margin:10px 0;text-align:left">✅ <b>この画面が表示された時点で、ご予約は確定しています。</b><br><span style="font-size:12.5px">予約確定メールは送信されません。ご予約の確認・変更・キャンセルは、下の「マイページ」からいつでもご確認いただけます。</span></div>
     <button class="btn btn-primary" id="done-mypage" style="width:100%;margin:6px 0 10px">👤 マイページでご予約を確認する</button>
     <div class="kalert" style="background:#FFF8E6;border-color:var(--gold);color:#6b5410;margin:8px 0;text-align:left">🕐 <b>ご変更・キャンセルは前日の21時まで</b>にマイページからお願いいたします（それ以降はお電話でご連絡ください）</div><div class="code">${bk.id}</div>
-    <div class="ptgain">${loggedIn?`${earned>0?`今回の獲得予定 <b>+${earned.toLocaleString()}pt</b><br>`:`<span style="color:var(--ink-soft)">ポイントはご来店時に加算されます。</span><br>`}${bk.referralPending?`ご紹介ありがとうございます🎁 サロンで確認後にご紹介ポイントを付与いたします。<br>`:''}現在の保有ポイント <b>${bal.toLocaleString()}pt</b>`:`ポイントはご来店時に加算されます。${bk.referralPending?`<br>ご紹介ありがとうございます🎁 サロンで確認後にご紹介ポイントを付与いたします。${''&&bk.referralBonus}pt</b>`:''}<br><span style="color:var(--ink-soft)">マイページにログインすると保有ポイントを確認できます。</span>`}</div>
+    <div class="ptgain">${loggedIn?`${earned>0?`今回の獲得予定 <b>+${earned.toLocaleString()}pt</b><br>`:`<span style="color:var(--ink-soft)">${noEarnCust(c)?'家族割引が適用されます。':'ポイントはご来店時に加算されます。'}</span><br>`}${bk.referralPending?`ご紹介ありがとうございます🎁 サロンで確認後にご紹介ポイントを付与いたします。<br>`:''}現在の保有ポイント <b>${bal.toLocaleString()}pt</b>`:`ポイントはご来店時に加算されます。${bk.referralPending?`<br>ご紹介ありがとうございます🎁 サロンで確認後にご紹介ポイントを付与いたします。${''&&bk.referralBonus}pt</b>`:''}<br><span style="color:var(--ink-soft)">マイページにログインすると保有ポイントを確認できます。</span>`}</div>
     <div class="summary" style="text-align:left"><div class="sum-row"><span class="k">メニュー</span><span class="sum-list">${bk.items.map(x=>`${itemName(x)} <span class="sub">${yen(x.price)}</span>`).join('<br>')}</span></div><div class="sum-row"><span class="k">担当</span><span class="v">${stName(bk.staffId)}</span></div><div class="sum-row"><span class="k">日時</span><span class="v">${mdLabel(bk.date)} ${bk.time}</span></div>${partyTxt}<div class="sum-row sum-total"><span class="k">お支払い</span><span class="v">${yen(bkPayment(bk))}</span></div></div>
     ${loggedIn?rankBox:''}${previsitNote.call?(()=>{const a=S().address||'';const mu='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(a||'vi5 北浜');return `<div class="summary" style="text-align:left"><div class="sum-row"><span class="k">📍 アクセス</span><span class="sum-list">${a}<br><a href="${mu}" target="_blank" style="color:var(--gold);font-weight:700">Googleマップで道順を見る</a></span></div></div>`;})():''}${policyBox}<button class="btn btn-primary" id="again" style="width:100%">${t('toHome')}</button></div>`;
   const _dmp=byId('done-mypage');if(_dmp)_dmp.onclick=()=>{const ph=normPhone((state.lastBooking&&state.lastBooking.phone)||'');const c=DATA.customers[ph];if(c){/* ご予約直後は本人確認済みのためそのままマイページへ */state.mpPhone=c.phone;localSet('salon:session',c.phone);}go('mypage');};
@@ -3903,9 +3904,10 @@ function firstVisitPtPanel(){
   (DATA.bookings||[]).forEach(b=>{
     if(!b||b.status!=='visited')return;
     if((b.awardedPoints||0)>0)return;
+    const c=DATA.customers[normPhone(b.phone)];if(!c)return;
+    if(noEarnCust(c))return; /* 家族割は対象外 */
     const should=Math.floor(bkPayment(b)/1000)*CONFIG.pointsPer1000;
     if(should<=0)return;
-    const c=DATA.customers[normPhone(b.phone)];if(!c)return;
     rows.push({b,c,should});
   });
   rows.sort((x,y)=>(y.b.date||'').localeCompare(x.b.date||''));
@@ -3921,6 +3923,7 @@ function firstVisitPtPanel(){
 async function firstVisitPtGrant(bkId){
   const b=(DATA.bookings||[]).find(x=>x.id===bkId);if(!b)return;
   const c=DATA.customers[normPhone(b.phone)];if(!c)return;
+  if(noEarnCust(c)){alert('家族割のお客様のため、ポイントは付与されません。');return;}
   const should=Math.floor(bkPayment(b)/1000)*CONFIG.pointsPer1000;
   if(should<=0)return;
   if(!confirm(c.name+'様に '+should+'pt を付与します。\n（'+mdLabel(b.date)+' ご来店分・お会計¥'+bkPayment(b).toLocaleString()+'）\nよろしいですか？'))return;
@@ -3933,7 +3936,7 @@ function adminCustomers(){
   const q=state.custQuery.trim();const nq=normPhone(q);let entries=Object.values(DATA.customers);if(q)entries=entries.filter(c=>c.name.includes(q)||(c.kana||'').includes(q)||normPhone(c.phone).includes(nq));
   const bdays=Object.values(DATA.customers).filter(c=>c.birthday&&c.birthday.slice(5,7)===curMonth.slice(5)).sort((a,b)=>a.birthday.slice(5).localeCompare(b.birthday.slice(5)));
   const pend=(DATA.referrals||[]).filter(r=>r.status==='pending');
-  const _fvptN=(DATA.bookings||[]).filter(b=>b&&b.status==='visited'&&!(b.awardedPoints>0)&&Math.floor(bkPayment(b)/1000)*CONFIG.pointsPer1000>0&&DATA.customers[normPhone(b.phone)]).length;
+  const _fvptN=(DATA.bookings||[]).filter(b=>b&&b.status==='visited'&&!(b.awardedPoints>0)&&Math.floor(bkPayment(b)/1000)*CONFIG.pointsPer1000>0&&DATA.customers[normPhone(b.phone)]&&!noEarnCust(DATA.customers[normPhone(b.phone)])).length;
   const fvptBtn=_fvptN?`<button class="btn btn-ghost" id="fvpt-open" style="width:100%;margin:0 0 10px;border-color:var(--gold);color:#6b5410">💎 初回来店分でポイントが付いていないお客様（${_fvptN}件）を確認する</button>`:'';
   const refHtml=pend.length?`<div class="addform" style="margin:0 0 12px;border:1.5px solid var(--gold)"><b>🎁 紹介ポイント 承認待ち（${pend.length}件）</b><div class="note" style="margin:4px 0 8px">ご登録のあるお客様からの紹介だけが並びます。内容を確認して「承認」を押すと、紹介した方・された方の両方に${CONFIG.referralBonus}ptが付与され、お知らせが届きます。</div>${pend.map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:13.5px"><span><b>${r.refName||r.refPhone}</b>様 → <b>${r.newName||r.newPhone}</b>様<br><span class="note" style="margin:0">${new Date(r.at).toLocaleDateString('ja-JP')} ・ ${r.newPhone}</span></span><span style="display:flex;gap:6px"><button class="chip" data-refok="${r.id}" style="border-color:#3F5A46;color:#2C4433;font-weight:700">承認</button><button class="chip" data-refng="${r.id}">却下</button></span></div>`).join('')}</div>`:'';
   const bdayHtml=false?`<div class="subhead" style="margin-top:0">🎂 今月のお誕生日</div>${bdays.map(c=>`<div class="bday-row"><div class="bd"><div class="bn">${c.name} 様</div><div class="bdt">${bdayLabel(c.birthday)}</div></div><div class="ba"><button data-bpt="${normPhone(c.phone)}">${CONFIG.birthdayBonus}ptプレゼント</button><button data-bmsg="${normPhone(c.phone)}">メッセージ</button></div></div>`).join('')}<div class="note">お誕生日当日になると自動でメッセージ配信とポイント付与が行われます。手動でも配信できます。</div>`:'';
@@ -4050,6 +4053,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-13',v:'r20260913n',items:['家族割引のお客様にはポイントを付与しないように変更（割引が特典のため）。知人割20%OFF・通常のお客様・会員ランク割引は従来どおり付与されます','来店確定の画面に「家族割のお客様のため、ポイントは付与されません」と理由を表示','予約完了画面でも家族割のお客様には「家族割引が適用されます」と表示（ポイント加算の案内は出しません）','「初回来店分でポイントが付いていないお客様」の一覧からも家族割のお客様を除外']},
  {d:'2026-09-13',v:'r20260913m',items:['【お知らせが消えない原因】他スタッフ宛の指示（「◯日は出勤でお願いします」等）がSAKURAさんの画面にも出ていました→お知らせは宛先本人にだけ表示し、「全部消す」で自分の分は確実に消えるように（他スタッフ宛は残ります）','管理トップの「こんにちは」の挨拶を撤去','「📘 このページの使い方」を各ページの一番下へ移動','管理トップ（🏠トップ）をタスク作成ページではなく、その日の状況を把握する画面に変更','「ショップの更新（週1回）をしましょう」の表示を撤去','出勤・退勤ボタンの下に「今日のひとこと」を追加。美容の豆知識・接客や仕事のコツを毎日1つ表示します（全員に同じ内容・日替わり）']},
  {d:'2026-09-13',v:'r20260913k',items:['「来店なし」（当日キャンセル・無断キャンセル）を記録できるボタン🚫を予約一覧に追加。当日以降の予約に表示されます','来店なしはポイントを付けず、お客様への通知も一切送りません（サロン内の記録のみ）','来店なしにすると予約枠が解放され、別のお客様がその時間を予約できます','来店なしの予約は「未処理のご来店」「お礼メッセージ未送信」の一覧には出ません。誰がいつ記録したかは予約の履歴に残ります']},
  {d:'2026-09-13',v:'r20260913j',items:['顧客タブに「💎 初回来店分でポイントが付いていないお客様」の確認パネルを追加。「2回目から付与」だった頃にご来店され、ポイントが0のままのお客様と必要ポイント数を一覧表示します','各お客様の「付与」ボタンで、その場で正しいポイントを付与できます（自動では付けません）。付与すると一覧から消えるため、二重付与の心配はありません']},
@@ -4637,7 +4641,7 @@ function visitConfirmPanel(){
     <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1.5px solid var(--line);font-size:14px"><span>お会計</span><b>¥${pay.toLocaleString()}</b></div>
     ${total!==pay?`<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-soft)"><span>（施術計 ¥${total.toLocaleString()} − 割引・ポイント利用）</span></div>`:''}
     <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px"><span>付与ポイント</span><b style="color:#2C4433">${pts.toLocaleString()}pt</b></div>
-    ${pts===0?`<div class="note" style="color:var(--gold-deep,#9c7a12)">お会計が1,000円未満のため、付与ポイントは0ptです。</div>`:''}
+    ${pts===0?`<div class="note" style="color:var(--gold-deep,#9c7a12)">${noEarnCust(c)?'家族割のお客様のため、ポイントは付与されません。':'お会計が1,000円未満のため、付与ポイントは0ptです。'}</div>`:''}
     ${bk.thanked?`<div class="note" style="margin-top:10px">お礼メッセージは送信済みです（再送しません）。</div>`:`<label class="chk-field" style="margin-top:10px"><input type="checkbox" id="vc-send" ${vc.send?'checked':''}><span>お礼メッセージと口コミのお願いを送る</span></label>`}
     <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-ghost" id="vc-cancel" style="flex:1">やめる</button><button class="btn btn-primary" id="vc-ok" style="flex:1">${vc.redo?'この内容に直す':'この内容で確定する'}</button></div>
   </div>`;
