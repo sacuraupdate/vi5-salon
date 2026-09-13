@@ -113,11 +113,12 @@ const materials = (slug: string): Material[] => [
   { id: `${slug}-m5`, courseSlug: slug, type: 'quiz', title: { ja: '確認テスト', en: 'Quiz', ko: '확인 테스트', 'zh-TW': '測驗' }, meta: '全20問' },
 ];
 
-const reviews = (a: string, b: string): Review[] => [
-  { id: 'r1', author: 'Jasmine L.', country: { ja: 'シンガポール', en: 'Singapore', ko: '싱가포르', 'zh-TW': '新加坡' }, rating: 5, body: { ja: a, en: a } },
-  { id: 'r2', author: 'Minji K.', country: { ja: '韓国', en: 'Korea', ko: '한국', 'zh-TW': '韓國' }, rating: 5, body: { ja: b, en: b } },
-  { id: 'r3', author: 'Chloe M.', country: { ja: 'オーストラリア', en: 'Australia', ko: '호주', 'zh-TW': '澳洲' }, rating: 4, body: { ja: '自分のサロンにすぐ持ち帰れる内容でした。', en: 'Things I could bring back to my own salon immediately.' } },
-];
+/**
+ * レビューは実際に寄せられたものだけを表示する。
+ * 架空のレビュー・評価は置かない（公開サイトに事実でない数字を出さないため）。
+ * 実データが入るまで、どの講座も空配列にしておく。
+ */
+const noReviews = (): Review[] => [];
 
 const faq = [
   {
@@ -161,12 +162,7 @@ const build = (s: CourseSeed): Course => {
     totalMinutes,
     curriculum: s.chapters,
     materials: s.materials ?? materials(s.slug),
-    reviews:
-      s.reviews ??
-      reviews(
-        '説明が具体的で、翌日から接客が変わりました。',
-        '「なぜそうするのか」まで教えてくれるのが良かったです。',
-      ),
+    reviews: s.reviews ?? noReviews(),
     faq,
     publishedAt: '2026-06-01',
   };
@@ -307,7 +303,7 @@ export const courses: Course[] = [
     pricing: priced(24800, 186, 236000, 5300), isFree: false,
     certificate: 'certification', featured: true, tone: 1,
     highlights: { ja: ['要望を引き出す問診の順番を設計する', '言いにくい提案を角を立てずに伝える', '押し売りにならない店販の線引きを持つ'], en: ['Design the question order that draws out real needs', 'Deliver difficult suggestions without friction', 'Hold a clear line so retail never feels pushy'] },
-    languages: ['ja', 'en', 'ko'], rating: 4.8, reviewCount: 96, studentCount: 287,
+    languages: ['ja', 'en', 'ko'], rating: 0, reviewCount: 0, studentCount: 0,
     translation: { masterUpdatedAt: '2026-08-28', translations: { en: { updatedAt: '2026-08-28' }, ko: { updatedAt: '2026-05-10' } } },
     chapters: [
       chapter('c1', 'カウンセリングの構造', 'The structure of counselling', [['最初の3分で決まること', 9], ['質問の順番を設計する', 11], ['沈黙の使い方', 7]]),
@@ -323,7 +319,7 @@ export const courses: Course[] = [
     pricing: priced(34800, 262, 332000, 7400), isFree: false,
     certificate: 'certification', featured: true, tone: 2,
     highlights: { ja: ['原価と時間から適正価格を出す', 'リピート率を分解して改善点を見つける', 'スタッフ教育を手順書に落とす'], en: ['Derive fair pricing from cost and time', 'Break down repeat rates to find what to fix', 'Turn staff training into a written procedure'] },
-    languages: ['ja', 'en'], rating: 4.7, reviewCount: 54, studentCount: 143,
+    languages: ['ja', 'en'], rating: 0, reviewCount: 0, studentCount: 0,
     translation: { masterUpdatedAt: '2026-08-30', translations: { en: { updatedAt: '2026-08-30' } } },
     chapters: [
       chapter('c1', '数字を読む', 'Reading the numbers', [['席数と回転から考える', 10], ['原価と時間の計算', 12], ['値上げの伝え方', 9]]),
@@ -339,7 +335,7 @@ export const courses: Course[] = [
     pricing: priced(29800, 224, 284000, 6300), isFree: false,
     certificate: 'completion', featured: false, tone: 3,
     highlights: { ja: ['毛周期から本数と太さを決める', '前処理で持ちを2週間伸ばす', 'アフターカウンセリングの型'], en: ['Decide count and thickness from the lash cycle', 'Add two weeks of retention through preparation', 'A framework for after-care counselling'] },
-    languages: ['ja', 'en', 'zh-TW'], rating: 4.9, reviewCount: 211, studentCount: 508,
+    languages: ['ja', 'en', 'zh-TW'], rating: 0, reviewCount: 0, studentCount: 0,
     translation: { masterUpdatedAt: '2026-07-02', translations: { en: { updatedAt: '2026-07-02' }, 'zh-TW': { updatedAt: '2026-07-02' } } },
     chapters: [
       chapter('c1', '見立てる', 'Assessment', [['毛周期を読む', 9], ['お客様の希望と現実の差', 8]]),
@@ -356,7 +352,7 @@ export const courses: Course[] = [
     pricing: priced(16800, 126, 160000, 3600), isFree: false,
     certificate: 'completion', featured: false, tone: 1,
     highlights: { ja: ['骨格から眉山の位置を決める', '表情の癖を読む', '仕上がりを言葉で説明する'], en: ['Set the arch from bone structure', 'Read habitual expression', 'Explain the result in words'] },
-    languages: ['ja', 'en'], rating: 4.6, reviewCount: 71, studentCount: 226,
+    languages: ['ja', 'en'], rating: 0, reviewCount: 0, studentCount: 0,
     translation: { masterUpdatedAt: '2026-06-18', translations: { en: { updatedAt: '2026-06-18' } } },
     chapters: [
       chapter('c1', '設計する', 'Designing', [['骨格の見方', 10], ['眉山と眉尻', 9]]),
@@ -372,7 +368,7 @@ export const courses: Course[] = [
     pricing: priced(22800, 171, 217000, 4900), isFree: false,
     certificate: 'completion', featured: false, tone: 2,
     highlights: { ja: ['光の反射からベースを設計する', 'サロン照明を撮影向きに整える', '色が沈まない仕上げ'], en: ['Design the base around light reflection', 'Tune salon lighting for the camera', 'Finishes that keep colour alive'] },
-    languages: ['ja', 'en', 'ko', 'zh-TW'], rating: 4.7, reviewCount: 88, studentCount: 301,
+    languages: ['ja', 'en', 'ko', 'zh-TW'], rating: 0, reviewCount: 0, studentCount: 0,
     translation: full('2026-06-25'),
     chapters: [
       chapter('c1', '光を知る', 'Understanding light', [['照明と肌の関係', 9], ['反射のコントロール', 10]]),
@@ -388,7 +384,7 @@ export const courses: Course[] = [
     pricing: priced(14800, 111, 141000, 3200), isFree: false,
     certificate: 'completion', featured: false, tone: 0,
     highlights: { ja: ['迷わせない予約から会計までの導線', '指差しで伝わる資料をつくる', '文化・宗教への配慮'], en: ['A confusion-free path from booking to payment', 'Build point-and-show materials', 'Cultural and religious considerations'] },
-    languages: ['ja', 'en', 'ko', 'zh-TW'], rating: 4.5, reviewCount: 42, studentCount: 176,
+    languages: ['ja', 'en', 'ko', 'zh-TW'], rating: 0, reviewCount: 0, studentCount: 0,
     translation: { masterUpdatedAt: '2026-09-01', translations: { en: { updatedAt: '2026-06-01' }, ko: { updatedAt: '2026-06-01' }, 'zh-TW': { updatedAt: '2026-06-01' } } },
     chapters: [
       chapter('c1', '迎える', 'Welcoming', [['予約時に伝えること', 8], ['来店から着席まで', 9]]),
@@ -404,7 +400,7 @@ export const courses: Course[] = [
     pricing: priced(18800, 141, 179000, 4000), isFree: false,
     certificate: 'completion', featured: true, tone: 1,
     highlights: { ja: ['月経周期と肌の変化を結びつける', '踏み込みすぎない提案の境界線', 'お客様への言葉の選び方'], en: ['Connect the cycle to changes in the skin', 'Know the line you should not cross', 'Choose your words with care'] },
-    languages: ['ja', 'en', 'ko'], rating: 4.8, reviewCount: 64, studentCount: 198,
+    languages: ['ja', 'en', 'ko'], rating: 0, reviewCount: 0, studentCount: 0,
     translation: { masterUpdatedAt: '2026-07-15', translations: { en: { updatedAt: '2026-07-15' }, ko: { updatedAt: '2026-07-15' } } },
     chapters: [
       chapter('c1', '体を知る', 'Understanding the body', [['月経周期の基礎', 10], ['肌と体調の変化', 9]]),
@@ -420,7 +416,7 @@ export const courses: Course[] = [
     pricing: priced(21800, 164, 208000, 4600), isFree: false,
     certificate: 'completion', featured: false, tone: 3,
     highlights: { ja: ['年代ごとの体の変化を整理する', '更年期前後の基礎知識', '提案の軸を年代で切り替える'], en: ['Organise the changes of each decade', 'Foundations around menopause', 'Switch your advisory axis by age'] },
-    languages: ['ja', 'en'], rating: 4.7, reviewCount: 38, studentCount: 121,
+    languages: ['ja', 'en'], rating: 0, reviewCount: 0, studentCount: 0,
     translation: { masterUpdatedAt: '2026-08-05', translations: { en: { updatedAt: '2026-08-05' } } },
     chapters: [
       chapter('c1', '年代を知る', 'Knowing the decades', [['20代〜30代', 9], ['40代以降', 10]]),
@@ -436,7 +432,7 @@ export const courses: Course[] = [
     pricing: priced(27800, 209, 265000, 5900), isFree: false,
     certificate: 'certification', featured: false, tone: 2,
     highlights: { ja: ['よくある質問と回答の範囲', '医療との線引き', '記録と引き継ぎ'], en: ['Common questions and safe answers', 'The line with medical advice', 'Records and handover'] },
-    languages: ['ja', 'en'], rating: 4.9, reviewCount: 29, studentCount: 84,
+    languages: ['ja', 'en'], rating: 0, reviewCount: 0, studentCount: 0,
     translation: { masterUpdatedAt: '2026-08-22', translations: {} },
     chapters: [
       chapter('c1', '答える', 'Answering', [['よくある質問', 11], ['医療との線引き', 10]]),
@@ -452,7 +448,7 @@ export const courses: Course[] = [
     pricing: { status: 'confirmed', byMarket: {} }, isFree: true,
     certificate: null, featured: false, tone: 0,
     highlights: { ja: ['入店数秒で伝わるものを知る', '費用をかけずに整える', '視線の抜け方を設計する'], en: ['Know what lands in the first seconds', 'Improve without spending', 'Design where the eye travels'] },
-    languages: ['ja', 'en', 'ko', 'zh-TW'], rating: 4.6, reviewCount: 156, studentCount: 892,
+    languages: ['ja', 'en', 'ko', 'zh-TW'], rating: 0, reviewCount: 0, studentCount: 0,
     translation: full('2026-05-30'),
     chapters: [
       chapter('c1', '整える', 'Setting the space', [['香りと音', 8], ['光と視線', 9]]),
@@ -467,7 +463,7 @@ export const courses: Course[] = [
     pricing: priced(19800, 148, 189000, 4200), isFree: false,
     certificate: 'completion', featured: false, tone: 1,
     highlights: { ja: ['次回来店の理由をつくる', '店販の伝え方', '数字で効果を確認する'], en: ['Create a reason to return', 'How to talk about products', 'Confirm the effect in numbers'] },
-    languages: ['ja', 'en', 'ko'], rating: 4.6, reviewCount: 47, studentCount: 165,
+    languages: ['ja', 'en', 'ko'], rating: 0, reviewCount: 0, studentCount: 0,
     translation: { masterUpdatedAt: '2026-07-28', translations: { en: { updatedAt: '2026-07-28' }, ko: { updatedAt: '2026-07-28' } } },
     chapters: [
       chapter('c1', '設計する', 'Designing', [['次回の理由', 9], ['声かけの型', 10]]),

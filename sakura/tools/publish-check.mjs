@@ -53,6 +53,19 @@ const visible = (page) =>
   check('3章構成が見える', (course.match(/Chapter|Japanese Beauty Philosophy/gi) ?? []).length > 0);
   check('買い切り・視聴期限なしが書いてある', /no expiry|time limit/i.test(course));
 
+  // 事実でない実績を出していないこと。
+  // 架空のレビュー・評価は Stripe の審査でも不利になり、恒久ルールでも禁止している
+  for (const slug of ['omotenashi-counselling', 'eyelash-technique', 'japanese-salon-standard']) {
+    await page.goto(`${BASE}/en/courses/${slug}`, { waitUntil: 'networkidle' });
+    await page.getByRole('tab', { name: /Reviews/i }).click().catch(() => {});
+    const tab = await visible(page);
+    check(
+      `${slug} に架空のレビュー・評価を出していない`,
+      /No reviews yet/i.test(tab) && !/Jasmine|Minji|Chloe/.test(tab),
+      /No reviews yet/i.test(tab) ? 'レビューなしと表示' : tab.slice(0, 50),
+    );
+  }
+
   // 法務・問い合わせ
   for (const [path, word] of [
     ['/en/contact', /Contact us/i],
