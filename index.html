@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260914b';
+const APP_REV='r20260914c';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -4329,6 +4329,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-14',v:'r20260914c',items:['設定に「📦 データの重さを見る（保存が遅い時）」を追加。チャット・業務報告・カルテ・タスクなど、どこが重いかと画像の枚数を表示します（1.5MB超で遅く、3MB超で失敗しやすい目安つき）','「🧹 古いチャット画像を削除して軽くする」を追加。3か月より前の画像だけを削除し、文章と最近の画像はそのまま残します']},
  {d:'2026-09-14',v:'r20260914b',items:['【「Fetch is aborted」でタスクが作れない原因】保存のたびにチャットや業務報告の画像を含む全データを送信しており、データが大きいと送信しきれず時間切れになっていました→保存前にサイズを確認し、大きい場合は画像を自動で軽量化。さらにサイズに応じて待ち時間を最大2分まで自動延長','保存に失敗した時は「保存できませんでした」と表示し、入力した内容をそのまま残すように変更（作り直し不要。もう一度「追加する」を押すだけ）','これまでは失敗しても「タスクを追加しました」と出ていたため、追加できたと誤解する状態でした。成功した時だけ「✅ 追加しました」と表示します']},
  {d:'2026-09-13',v:'r20260914a',items:['【「取消」を押しても戻る原因】シフトの「保存して完了」を押すたびに、その月が自動で再登録される作りでした（取消→保存で復活の繰り返し）→購読方式では不要な仕組みのため、「Googleカレンダーに反映中の月」の表示と取消ボタンごと撤去しました','シフト画面には購読URLと、古い予定の消し方の案内だけを残しました','【毎回ログインが必要だった原因】通信が一度失敗しただけでログイン情報が消える作りでした→通信の失敗ではログアウトせず、パスワードが違う時だけ解除するように変更。スタッフもお客様も、一度ログインすれば次回から入力不要です']},
  {d:'2026-09-13',v:'r20260913z',items:['【「電波が悪い」と頻繁に出ていた原因】通信が1回でも失敗すると即座に諦める作りで、再試行が一度もありませんでした。データ量が多いと12秒の制限を超えることがあり、電波が良くても失敗扱いになっていました→通信を自動で最大3回まで試すように変更（間隔を空けて再試行）','読み込みの待ち時間を12秒→25秒、保存を30秒→45秒に延長','これにより、一時的な通信の乱れでサンプルデータが出たり、タスクの完了が保存されなかったりする事象の大半が解消されます']},
@@ -4452,10 +4453,59 @@ function bookDiagPanel(){
     <button class="btn btn-ghost" id="bd-close" style="width:100%;margin-top:10px">閉じる</button>
   </div>`;
 }
+
+/* データの重さの内訳を表示し、重い画像を減らせるようにする（保存が遅い・失敗する原因の特定用） */
+function sizeOf(o){try{return JSON.stringify(o||'').length;}catch(e){return 0;}}
+function fmtMB(n){return (Math.round(n/1000)/1000).toFixed(2)+'MB';}
+function countImgs(o,acc){acc=acc||{n:0,bytes:0};const seen=new Set();
+  (function go(x,d){if(!x||d>8||typeof x!=='object'||seen.has(x))return;seen.add(x);
+    if(Array.isArray(x)){x.forEach(v=>{if(typeof v==='string'&&v.indexOf('data:image')===0){acc.n++;acc.bytes+=v.length;}else go(v,d+1);});return;}
+    Object.keys(x).forEach(k=>{const v=x[k];
+      if(typeof v==='string'&&v.indexOf('data:image')===0){acc.n++;acc.bytes+=v.length;}
+      else go(v,d+1);});})(o,0);
+  return acc;}
+function dataSizePanel(){
+  if(!state.sizeOpen)return '';
+  const W=WORK||{};
+  const parts=[
+    ['チャットの画像・本文',sizeOf(W.chats),countImgs(W.chats)],
+    ['業務報告',sizeOf(W.reports),countImgs(W.reports)],
+    ['カルテの記録',sizeOf(W.karte),countImgs(W.karte)],
+    ['タスク',sizeOf(W.tasks),countImgs(W.tasks)],
+    ['打刻',sizeOf(W.clock),{n:0,bytes:0}],
+    ['ショップ・注文',sizeOf(W.orders)+sizeOf(W.shopItems),countImgs(W.shopItems)],
+  ].sort((a,b)=>b[1]-a[1]);
+  const total=sizeOf(W);
+  const dTotal=sizeOf(DATA);const dImg=countImgs(DATA);
+  const rows=parts.map(p=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:13px"><span>${p[0]}${p[2].n?`<span style="color:var(--ink-soft);font-size:11px"> ・画像${p[2].n}枚</span>`:''}</span><b style="white-space:nowrap;color:${p[1]>1000000?'var(--rose)':'var(--ink)'}">${fmtMB(p[1])}</b></div>`).join('');
+  return `<div class="addform" style="border:2px solid var(--navy);margin:10px 0">
+    <div class="subhead" style="margin:0 0 4px">📦 データの重さ</div>
+    <div class="note" style="margin:0 0 8px">保存が遅い・失敗する原因を確認できます。<b>1.5MBを超えると保存に時間がかかり、3MBを超えると失敗しやすくなります。</b></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1.5px solid var(--line);border-bottom:1.5px solid var(--line);font-size:15px"><b>業務データ 合計</b><b style="color:${total>3000000?'var(--rose)':(total>1500000?'var(--gold-deep,#9c7a12)':'#2C4433')}">${fmtMB(total)}</b></div>
+    <div style="margin-top:8px">${rows}</div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;margin-top:6px;border-top:1px solid var(--line);font-size:13px"><span>予約・顧客データ（別枠）<span style="color:var(--ink-soft);font-size:11px"> ・画像${dImg.n}枚</span></span><b>${fmtMB(dTotal)}</b></div>
+    <div class="note" style="margin-top:10px">画像が多いほど重くなります。下のボタンで、<b>3か月より前のチャット画像</b>を削除できます（文章は残ります）。</div>
+    <button class="btn btn-ghost" id="size-clean" style="width:100%;margin-top:8px;color:var(--rose);border-color:var(--rose)">🧹 古いチャット画像を削除して軽くする</button>
+    <button class="btn btn-ghost" id="size-close" style="width:100%;margin-top:8px">閉じる</button>
+  </div>`;
+}
+async function cleanOldImages(){
+  const cut=Date.now()-90*86400000;let n=0,freed=0;
+  await loadWork();
+  Object.keys(WORK.chats||{}).forEach(rk=>{(WORK.chats[rk]||[]).forEach(m=>{
+    if(m&&m.at&&m.at<cut){['img','image','photo'].forEach(k=>{if(typeof m[k]==='string'&&m[k].indexOf('data:image')===0){freed+=m[k].length;delete m[k];n++;}});
+      if(Array.isArray(m.imgs)){m.imgs.forEach(v=>{if(typeof v==='string'&&v.indexOf('data:image')===0)freed+=v.length;});n+=m.imgs.length;m.imgs=[];}}});});
+  (WORK.reports||[]).forEach(r=>{if(r&&r.at&&r.at<cut&&Array.isArray(r.imgs)&&r.imgs.length){r.imgs.forEach(v=>{if(typeof v==='string')freed+=v.length;});n+=r.imgs.length;r.imgs=[];}});
+  if(!n){alert('3か月より前の画像はありませんでした。');return;}
+  if(!confirm('3か月より前の画像 '+n+'枚（約'+fmtMB(freed)+'）を削除します。\n文章は残ります。元に戻せません。よろしいですか？'))return;
+  const ok=await saveWork();
+  alert(ok?('✅ '+n+'枚を削除し、約'+fmtMB(freed)+'軽くなりました。'):'⚠ 保存できませんでした。もう一度お試しください。');
+  render();
+}
 function adminSettings(){
   const s=S();const tx=s.texts||{};
   const _gl=((WORK&&WORK.gcalLog)||[]).slice(0,15);const _gq=gcalQueue().length;const gcalPanel=`<div class="addform"><div class="subhead" style="margin:0 0 8px">📅 Googleカレンダー送信の記録</div><div class="note" style="margin:0 0 8px">最近の送信 ${_gl.length}件${_gq?` ・ <b style="color:var(--rose)">未送信の保留 ${_gq}件（次回開いた時に自動再送）</b>`:''}</div>${_gl.map(g=>`<div style="font-size:12px;padding:4px 0;border-top:1px dashed var(--line)">${g.ok?'✅':'⚠️'} ${g.action} ${esc(g.id||'')} <span style="color:var(--ink-soft)">${new Date(g.at).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</span>${g.err?` <span style="color:var(--rose)">${esc(g.err)}</span>`:''}</div>`).join('')||'<div class="note">まだ記録がありません</div>'}</div>`;
-  return `${gcalPanel}${promoFormHtml()}<div class="addform"><div class="subhead" style="margin:0 0 12px">バックアップ</div>
+  return `<button class="btn btn-ghost" id="size-open" style="width:100%;margin:0 0 10px;border-color:var(--navy);color:var(--navy)">📦 データの重さを見る（保存が遅い時）</button>${dataSizePanel()}${gcalPanel}${promoFormHtml()}<div class="addform"><div class="subhead" style="margin:0 0 12px">バックアップ</div>
     <div style="font-size:13px;color:#777;margin-bottom:8px">現在のデータ（予約・顧客・スタッフ・設定すべて）を1つのファイルとして手元に保存できます。定期的に押しておくと安心です。</div>
     <div class="field"><label>オーナー暗証番号（担当で「SAKURA」を選ぶ時に必要）</label><div style="display:flex;gap:8px"><input id="set-ownerpin" type="password" inputmode="numeric" placeholder="新しい暗証番号" style="flex:1"><button class="btn btn-ghost" id="set-ownerpin-save" style="white-space:nowrap">変更</button></div></div><button class="btn btn-ghost" id="set-backup" style="width:100%;margin-bottom:10px">💾 バックアップをダウンロード</button><div class="subhead" style="margin:0 0 8px">🛟 データ復元</div><div style="font-size:13px;color:#777;margin-bottom:8px">お客様情報などが消えてしまった場合、この端末に残っているデータや自動バックアップから復元できます（今あるデータに<b>足す</b>だけなので、押しても消えることはありません）。各スタッフの端末でも試してください。</div><button class="btn btn-ghost" id="rescue-check" style="width:100%;margin-bottom:18px">🛟 復元できるデータを探す</button><div class="subhead" style="margin:0 0 10px">📢 かんたん設定（誰でもOK）</div><div class="field"><label>臨時のお知らせ（トップに帯で表示）<span class="opt">例）年末年始休業 12/30〜1/3</span></label><input id="set-noticebar" value="${(s.noticeBar||'').replace(/"/g,'&quot;')}"></div><div class="field"><label>Instagram のURL</label><input id="set-ig" value="${(s.igUrl||'').replace(/"/g,'&quot;')}" placeholder="https://instagram.com/..."></div><div class="field"><label>お店の電話番号</label><input id="set-tel" value="${(s.tel||'').replace(/"/g,'&quot;')}" placeholder="06-...."></div><button class="btn btn-primary" id="set-easy-save" style="width:100%;margin-bottom:18px">かんたん設定を保存</button><div class="subhead" style="margin:0 0 10px">🔑 サロン管理パスワード</div><div class="note" style="margin-bottom:6px">スタッフ全員が使うログインパスワードです（現在：数字）。変更すると全員が新しいパスワードでログインします。</div><input id="set-newpw" inputmode="numeric" placeholder="新しいパスワード（4桁以上）" style="width:100%;margin-bottom:6px"><button class="btn btn-ghost" id="set-pwsave" style="width:100%;margin-bottom:16px">パスワードを変更する</button><div class="subhead" style="margin:0 0 10px">👥 スタッフの追加・編集</div><div class="note" style="margin-bottom:6px">スタッフの追加・時給・「お客様に表示しない裏方スタッフ」の設定は「スタッフ」タブで行えます。</div><button class="btn btn-ghost" id="set-gostaff" style="width:100%;margin-bottom:16px">👥 スタッフ管理を開く</button><div class="subhead" style="margin:0 0 10px">🔔 通知</div><details class="shopguide" style="margin-bottom:10px"><summary>📱 アプリの入れ方・通知の設定（スタッフ用）</summary><div class="sg-b"><b>① スマホのホーム画面に追加（アプリのように使えます）</b><br>・iPhone（Safari）：このページで下の<b>共有ボタン（□に↑）</b>→「<b>ホーム画面に追加</b>」→「追加」。ホームにVi5アイコンができます。<br>・Android（Chrome）：右上の<b>⋮</b>→「<b>ホーム画面に追加</b>」。<br><br><b>② 通知をオンにする</b><br>・<b>ホーム画面に追加したアイコンから開いて</b>、下の「🔔通知をオンにする」を押して「許可」。<br>・出ない時：iPhoneは「設定アプリ→通知→Vi5」をオン。<br><br><b>③ 毎日の流れ</b><br>出勤（店舗/在宅を選ぶ）→ 休憩（何回でもOK）→ 業務報告 → 退勤。打刻はこのアプリで行います（Squareは不要）。連絡はすべて「💬チャット」で。</div></details><button class="btn btn-ghost" id="intro-reopen" style="width:100%;margin-bottom:8px">📖 「はじめに（使い方）」をもう一度読む</button><button class="btn btn-ghost" id="ntf-on" style="width:100%;margin-bottom:8px">🔔 このスマホで通知をオンにする</button><div class="note" style="margin-bottom:18px">※iPhoneの場合：Safariで「共有→ホーム画面に追加」したアプリから開き、上のボタン→「許可」。うまくいかない時は iPhoneの設定→通知→Vi5 をオンにしてください。</div><div class="subhead" style="margin:0 0 10px">💡 アプリへの意見・要望</div><div class="note" style="margin-bottom:8px">「こういう機能が欲しい」「ここが使いにくい」など、何でもどうぞ。アプリの改善に使います（誰が書いたか記録されます）。</div><textarea id="idea-text" rows="3" placeholder="例）予約一覧を印刷できるようにしてほしい"></textarea><button class="btn btn-primary" id="idea-send" style="width:100%;margin:8px 0 10px">意見を送る</button>${(()=>{const ideas=((typeof WORK!==`undefined`&&WORK&&WORK.appIdeas)||[]).slice(0,10);if(!ideas.length)return ``;return ideas.map(x=>`<div class="pass"><span class="pl">💡 ${x.text}<br><span style="font-size:11px;color:var(--ink-soft)">${x.by}・${actAgo(x.at)}</span></span></div>`).join(``);})()}<div style="height:14px"></div>
     <div class="subhead" style="margin:0 0 12px">サイトの文言</div>
@@ -4836,6 +4886,9 @@ function bindAdmin(){
   const _bdc=byId('bd-close');if(_bdc)_bdc.onclick=()=>{state.bookDiag=false;render();};
   const _bds=byId('bd-staff');if(_bds)_bds.onchange=()=>{state.bookDiagStaff=_bds.value;render();};
   const _bdd=byId('bd-date');if(_bdd)_bdd.onchange=()=>{state.bookDiagDate=_bdd.value;render();};
+  const _so=byId('size-open');if(_so)_so.onclick=()=>{state.sizeOpen=true;render();};
+  const _sc=byId('size-close');if(_sc)_sc.onclick=()=>{state.sizeOpen=false;render();};
+  const _scl=byId('size-clean');if(_scl)_scl.onclick=cleanOldImages;
   const _fo=byId('fvpt-open');if(_fo)_fo.onclick=()=>{state.fvptOpen=true;render();};
   const _fc=byId('fvpt-close');if(_fc)_fc.onclick=()=>{state.fvptOpen=false;render();};
   app.querySelectorAll('[data-fvpt]').forEach(b=>b.onclick=()=>firstVisitPtGrant(b.dataset.fvpt));
