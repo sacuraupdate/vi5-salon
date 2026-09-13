@@ -1,4 +1,3 @@
-const L=require('./_lib');
 // AI文章整え  POST /api/ai  { text, mode }
 // APIキーはサーバー側（Vercel環境変数 ANTHROPIC_API_KEY）に置く。フロントには出さない。
 const SYS = {
@@ -6,7 +5,7 @@ const SYS = {
   campaign: 'あなたは美容サロンの広報担当です。入力されたざっくりした内容を、お客様向けのお知らせ文に整えてください。必ず丁寧な敬語（です・ます調）で、2〜3文・適度に絵文字。上品な文体に。出力は本文のみ。',
   message: 'あなたは美容サロンのスタッフです。入力内容を、お客様にお送りする文章に整えてください。必ず丁寧な敬語（です・ます調）で、温かく上品な文体に。なれなれしい表現やタメ口は使わない。適度に絵文字を使い3〜4文程度。出力は本文のみ。'
 };
-module.exports=async(req,res)=>{L.noStore(res);const me=await L.authenticate(req).catch(()=>null);if(!me){res.status(401).json({ok:false,error:'unauth'});return;}
+module.exports = async (req, res) => {
   if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
   try {
     let body = req.body;
