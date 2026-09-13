@@ -1,7 +1,7 @@
 // Vi5 シフトカレンダー配信 (ICS)  /api/shift-ical?s=s1|s2|s3|book
 // Googleカレンダーが自動で購読・更新する方式。Apps Script不要。
-const SUPA_URL = 'https://tehcaufdztgpbrknpshk.supabase.co';
-const SUPA_KEY = 'sb_publishable_CnOCyO9QU69K47vbbLRkYg__cEv53CJ';
+const SUPA_URL=process.env.SUPABASE_URL||'https://tehcaufdztgpbrknpshk.supabase.co';
+const SUPA_KEY=process.env.SUPABASE_KEY||'sb_publishable_CnOCyO9QU69K47vbbLRkYg__cEv53CJ';
 
 const NAMES = { s1: 'SAKURA', s2: 'TOMOMI', s3: 'HARUKA' };
 const MARKS = { s1: '\u{1F7E1}', s2: '\u{1F338}', s3: '\u{1F7E2}' }; // 🟡🌸🟢
@@ -62,6 +62,14 @@ const VTZ = ['BEGIN:VTIMEZONE', 'TZID:Asia/Tokyo', 'BEGIN:STANDARD', 'DTSTART:19
 module.exports = async (req, res) => {
   try {
     const s = (req.query && req.query.s) || 's1';
+    // SAKURA(s1)・HARUKA(s3)はGoogleカレンダー配信の対象外（アプリ内のみで管理）。購読が残っていても常に空を返す
+    if (s === 's1' || s === 's3') {
+      const empty = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Vi5//shift//JP','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:Vi5 シフト（配信終了）','END:VCALENDAR'].join('\r\n');
+      res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache, max-age=0');
+      res.status(200).send(empty);
+      return;
+    }
     const DATA = await loadData();
     if (!DATA) { res.status(503).send('data unavailable'); return; }
     const now = new Date();
@@ -83,13 +91,14 @@ module.exports = async (req, res) => {
     } else {
       const name = NAMES[s] || s;
       lines.push('X-WR-CALNAME:Vi5 ' + name + ' シフト', 'X-WR-TIMEZONE:Asia/Tokyo', ...VTZ);
-      const months = Array.isArray(DATA.shiftMonths) ? DATA.shiftMonths : null;
+      // 提出済みの月だけ配信。未設定なら「今月だけ」。来月以降は提出しない限り絶対に出さない
+      const curM = fmtDate(now).slice(0,7);
+      const months = Array.isArray(DATA.shiftMonths) && DATA.shiftMonths.length ? DATA.shiftMonths : [curM];
       const start = new Date(now.getTime() - 30 * 86400000);
       for (let i = 0; i < 400; i++) {
         const d = new Date(start.getTime() + i * 86400000);
         const ds = fmtDate(d), dow = d.getDay();
-        // 提出済みの月だけ配信（未提出/取消の月はカレンダーに出さない）
-        if (months && months.indexOf(ds.slice(0,7)) < 0) continue;
+        if (months.indexOf(ds.slice(0,7)) < 0) continue;
         if (salonClosed(DATA, ds, dow) || isDayOff(DATA, s, ds)) continue;
         const sh = effectiveShift(DATA, s, ds, dow);
         if (!sh.on || !sh.ranges || !sh.ranges.length) continue;
@@ -102,7 +111,7 @@ module.exports = async (req, res) => {
     }
     lines.push('END:VCALENDAR');
     res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, max-age=300');
+    res.setHeader('Cache-Control', 'no-cache, max-age=0');
     res.status(200).send(lines.join('\r\n'));
   } catch (e) {
     res.status(500).send('error: ' + (e && e.message));
