@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260913p';
+const APP_REV='r20260913q';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1530,7 +1530,83 @@ function staffBusyAt(sid,dateStr,startMin,durMin){/* 既存予約と時間帯が
   const end=startMin+(durMin||60);
   return (DATA.bookings||[]).some(b=>{if(b.staffId!==sid||b.date!==dateStr||b.status==='cancelled'||b.status==='noshow')return false;const bs=bkStartMinOf(b),be=bs+bkDurMinOf(b);return startMin<be&&end>bs;});}
 function shiftCovers(sid,dateStr,startMin,durMin){if(typeof salonClosed==='function'&&salonClosed(dateStr))return false;if(typeof isDayOff==='function'&&isDayOff(sid,dateStr))return false;const sh=effectiveShift(sid,dateStr);if(!sh.on||!sh.ranges)return false;const end=startMin+(durMin||60);return sh.ranges.some(r=>startMin>=r.start*60&&end<=r.end*60);}
-function staffSlotOpen30(sid,dateStr,startMin){const dur=(state.cart||[]).reduce((a,x)=>a+(x.min||0),0)||60;if(!shiftCovers(sid,dateStr,startMin,dur))return false;for(let m=startMin;m<startMin+dur;m+=15){if(isBlocked(sid,dateStr,minToTime(m)))return false;}return !staffBusyAt(sid,dateStr,startMin,dur);}
+
+/* ===== 複数担当のご予約（メニューごとに担当が違う場合） =====
+   例：まつげ(SAKURA)＋ハーブピーリング(TOMOMI)
+   空いている担当から順に、間を空けずに続けて施術する組み立てを作る。
+   順番はサロン側（このロジック）が決める。移動時間は0分。 */
+
+/* そのメニューを担当できるスタッフ（施術可能・非表示/非稼働を除く） */
+function staffFor(svId){const ids=[svId];return staff.filter(p=>p.id!=='s0'&&!p.hidden&&!p.inactive&&(()=>{const sv=p.services||[];if(sv.includes('none'))return false;if(!sv.length)return true;return ids.every(id=>sv.includes(id));})());}
+
+/* カートを「担当ごとのかたまり」に分ける。1人で全部できるなら1かたまり（従来どおり） */
+function cartGroups(){
+  const cart=state.cart||[];if(!cart.length)return [];
+  const all=staff.filter(p=>p.id!=='s0'&&!p.hidden&&!p.inactive);
+  const solo=all.filter(p=>{const sv=p.services||[];if(sv.includes('none'))return false;if(!sv.length)return true;return cart.every(x=>sv.includes(x.id));});
+  if(solo.length)return [{items:cart.slice(),cands:solo}];
+  const map=new Map();
+  for(const x of cart){
+    const cands=staffFor(x.id);if(!cands.length)return null; /* 誰も担当できないメニューがある */
+    const key=cands.map(p=>p.id).sort().join(',');
+    if(!map.has(key))map.set(key,{items:[],cands});
+    map.get(key).items.push(x);
+  }
+  return [...map.values()];
+}
+const grpMin=g=>g.items.reduce((a,x)=>a+(x.min||0),0)||60;
+
+/* 指定の開始時刻から、かたまりを順に詰められるか試す。
+   成立すれば [{staff,items,startMin,min}] を返す。順番は全通り試して最初に成立したもの。 */
+function planAt(dateStr,startMin,groups){
+  if(!groups||!groups.length)return null;
+  const idx=groups.map((_,i)=>i);
+  const perms=[];
+  (function permute(cur,rest){if(!rest.length){perms.push(cur.slice());return;}for(let i=0;i<rest.length;i++){permute(cur.concat([rest[i]]),rest.slice(0,i).concat(rest.slice(i+1)));}})([],idx);
+  for(const order of perms){
+    let t=startMin;const out=[];let ok=true;
+    for(const gi of order){
+      const g=groups[gi];const d=grpMin(g);
+      /* そのかたまりを担当できる人のうち、この時間に空いている人 */
+      const who=g.cands.find(p=>shiftCovers(p.id,dateStr,t,d)&&!staffBusyAt(p.id,dateStr,t,d)&&!out.some(o=>o.staff.id===p.id&&t<o.startMin+o.min&&t+d>o.startMin));
+      if(!who){ok=false;break;}
+      out.push({staff:who,items:g.items,startMin:t,min:d});t+=d;
+    }
+    if(ok)return out;
+  }
+  return null;
+}
+
+/* その時間に「一部だけなら受けられる」かたまりを返す（片方しか空いていない時のご案内用） */
+function partialAt(dateStr,startMin,groups){
+  const out=[];
+  for(const g of groups){const d=grpMin(g);
+    const who=g.cands.find(p=>shiftCovers(p.id,dateStr,startMin,d)&&!staffBusyAt(p.id,dateStr,startMin,d));
+    if(who)out.push({staff:who,items:g.items,min:d});}
+  return out;
+}
+
+/* 全部そろって受けられる最短の時間を探す（当日〜14日先まで） */
+function earliestFullSlot(groups,fromDate){
+  const total=groups.reduce((a,g)=>a+grpMin(g),0);
+  for(let d=0;d<14;d++){
+    const dt=new Date((fromDate?new Date(fromDate+'T00:00:00'):today).getTime()+d*86400000);
+    const ds=fmtDate(dt);
+    if(typeof salonClosed==='function'&&salonClosed(ds))continue;
+    for(let m=OPEN_HOUR*60;m+total<=LAST_RECEPTION*60+60;m+=30){
+      if(new Date(ds+'T'+minToTime(m)+':00').getTime()<Date.now()+3*3600000)continue;
+      if(planAt(ds,m,groups))return {date:ds,startMin:m};
+    }
+  }
+  return null;
+}
+function staffSlotOpen30(sid,dateStr,startMin){const dur=(state.cart||[]).reduce((a,x)=>a+(x.min||0),0)||60;
+  /* メニューごとに担当が分かれる場合は、続けて入れられるかで判定する */
+  const gs=cartGroups();
+  if(gs&&gs.length>1){const p=planAt(dateStr,startMin,gs);return !!(p&&(sid==='s0'||p.some(x=>x.staff.id===sid)));}
+  if(!shiftCovers(sid,dateStr,startMin,dur))return false;
+  for(let m=startMin;m<startMin+dur;m+=15){if(isBlocked(sid,dateStr,minToTime(m)))return false;}
+  return !staffBusyAt(sid,dateStr,startMin,dur);}
 function staffEligibleFor(p,ids){if(!p||p.id==='s0')return false;const sv=p.services||[];if(p.hidden||sv.includes('none'))return false;if(!sv.length)return true;return (ids||[]).every(id=>sv.includes(id));}
 function cartMainIds(){return (state.cart||[]).filter(x=>x.cat!=='addon'&&x.cat!=='tfree'||true).map(x=>x.id);}
 function eligibleFreeStaff(dateStr,startMin){const ids=(state.cart||[]).map(x=>x.id);const cands=staff.filter(s=>staffEligibleFor(s,ids)&&staffSlotOpen30(s.id,dateStr,startMin));/* SAKURAを優先 */cands.sort((a,b)=>(a.name==='SAKURA'?-1:0)-(b.name==='SAKURA'?-1:0));return cands;}
@@ -2091,7 +2167,19 @@ function stepStaff(){
   const realEligible=staff.filter(p=>p.id!=='s0'&&!p.inactive&&eligible(p));
   const cards=staff.filter(p=>(p.id==='s0'?realEligible.length>=2:(!p.hidden&&!p.inactive&&(p.services||[]).length>0))).sort((a,b)=>{if(a.id==='s0')return -1;if(b.id==='s0')return 1;return (eligible(b)?1:0)-(eligible(a)?1:0);}).map((p,i)=>{const ok=eligible(p);const sel=ok&&state.b.staff&&state.b.staff.id===p.id;const initial=p.id==='s0'?'?':nameInitial(p.name);const bg=p.photo?`background-image:url('${p.photo}')`:`background:${p.color}`;
     const okStyle=ok?'border:2px solid #E39A3B;background:#FFF6EA;box-shadow:0 2px 10px rgba(227,154,59,.18)':'border:2px solid #2A2E38;background:#2A2E38;filter:grayscale(1);opacity:.6';const nameCol=ok?'':'color:#cfd2da';return `<div class="staff ${sel?'sel':''}" ${ok?`data-staff="${p.id}"`:''} style="${okStyle};animation-delay:${i*.06}s"><div class="photo" style="${bg}">${p.photo?'':initial}<div class="staff-check"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div></div><div class="staff-body"><div class="staff-top"><span class="staff-name" style="${nameCol}">${p.name}</span><span class="staff-role" style="${nameCol}">${p.role}</span>${p.id==='s0'?'':(ok?'<span style="background:#E39A3B;color:#fff;border-radius:12px;padding:2px 9px;font-size:11px;font-weight:700;margin-left:6px">予約OK</span>':'<span style="background:#4a4f5c;color:#c7cad2;border-radius:12px;padding:2px 9px;font-size:11px;font-weight:700;margin-left:6px">担当不可</span>')}</div><div class="staff-intro" style="${ok?'':'color:#c7cad2'}">${ok?p.intro:'選択中のメニューは担当できません（別の担当者をお選びください）。'}</div>${ok?`<div class="staff-next">🕐 最短 ${nextAvailLabel(p.id)}</div>`:''}${(ok&&p.quals)?`<div class="quals">${p.quals.split(/[,、，\n・\/／|;；]+|\s{2,}/).map(q=>q.trim()).filter(Boolean).map(q=>`<span class="qual">🏅 ${q}</span>`).join('')}</div>`:''}${ok&&state.cart.length?`<div class="staff-intro" style="color:var(--gold);font-weight:700;margin-top:4px">この内容で ${yen(cartTotal(p.id))}</div>`:''}</div></div>`}).join('');
-  /* 1人で全メニューを担当できない組み合わせのときは、理由と分け方をご案内する */
+  /* メニューごとに担当が分かれる場合は、自動で組み立ててそのまま進めていただく */
+  const _gs=cartGroups();
+  if(_gs&&_gs.length>1){
+    const rows=_gs.map(g=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13.5px"><span>${g.items.map(x=>esc(x.name)).join('＋')}</span><b style="white-space:nowrap">${g.cands.map(p=>esc(p.name)).join(' / ')}</b></div>`).join('');
+    state.b.staff={id:'s0',name:'担当はサロンでお決めします'};
+    app.innerHTML=stepsBar(1)+`<div class="fade"><div class="eyebrow">Step 02</div><div class="h-title">担当のご案内</div><div class="h-sub">お選びのメニューは担当が分かれるため、サロンで順番を組み立ててご案内します。</div>
+      <div class="addform" style="border:1.5px solid var(--gold)"><div class="subhead" style="margin:0 0 6px">メニューと担当</div>${rows}
+      <div class="note" style="margin:10px 0 0">続けてお受けいただけるよう、<b>空いている担当から順に</b>ご案内します（間の待ち時間はありません）。次の画面で、すべて続けてお受けいただける時間だけが表示されます。</div></div>
+      </div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">${t('backBtn')}</button><button class="btn btn-primary" id="next">${t('nextBtn')}</button></div>`;
+    byId('back').onclick=()=>{state.step=1;render()};byId('next').onclick=()=>{state.step=3;render()};
+    return;
+  }
+  /* 誰も担当できないメニューが含まれる場合のご案内 */
   let noOne='';
   if(!realEligible.length&&cartIds.length){
     const per={};staff.filter(p=>p.id!=='s0'&&!p.hidden&&!p.inactive&&(p.services||[]).length).forEach(p=>{
@@ -2130,13 +2218,24 @@ function stepDate(){if(!state.b||!state.b.staff){state.step=2;return typeof step
       if(open)openCount++;
     }
     /* 空き枠が1つも無い日は、選べない枠を並べず「なぜ選べないか」を先に伝える */
+    let _multiNote='';
+    {const _gs=cartGroups();
+     if(_gs&&_gs.length>1&&!openCount){
+       let partial=null;const ds2=state.b.date;
+       for(let m=OPEN_HOUR*60;m<=LAST_RECEPTION*60;m+=30){
+         if(new Date(ds2+'T'+minToTime(m)+':00').getTime()<Date.now()+3*3600000)continue;
+         const pa=partialAt(ds2,m,_gs);if(pa.length){partial={m,pa};break;}}
+       const eq=earliestFullSlot(_gs,ds2);
+       _multiNote=`<div class="kalert" style="background:#FFF6E5;border-color:var(--gold);color:#6b5410;text-align:left;margin:0 0 10px">${partial?`この日は <b>${minToTime(partial.m)}</b> から <b>${partial.pa.map(x=>x.items.map(i2=>esc(i2.name)).join('＋')).join('・')}</b> のみ承れます（担当：${partial.pa.map(x=>esc(x.staff.name)).join('・')}）。<br>`:''}${eq?`すべて続けてお受けいただける最短は <b>${mdLabel(eq.date)} ${minToTime(eq.startMin)}</b> です。<button class="btn btn-ghost" id="go-earliest" data-eqd="${eq.date}" data-eqt="${minToTime(eq.startMin)}" style="width:100%;margin-top:10px">この時間で予約する</button>`:'しばらくの間、すべてを続けてお受けできる時間がございません。お手数ですが公式LINEへご相談ください。'}</div>`;
+     }}
     const slotsBlock=openCount?`<div class="slots">${opts}</div>`:`<div class="kalert" style="background:#FFF6E5;border-color:var(--gold);color:#6b5410">${shown?'この日は'+(sid!=='s0'?esc(state.b.staff.name)+'の':'')+'空きがございません。カレンダーで🟡印のある別の日をお選びください。':'この日はご予約を承れません。カレンダーで🟡印のある日をお選びください。'}</div>`;
-    slotHtml=`<div class="slot-wrap"><div class="slot-label">開始時間（21:00までに終わる枠のみ・ご予約は3時間前まで）</div>${slotsBlock}<div class="note" style="margin-top:8px">選択中のメニュー所要 約${totalMin}分。本日分は現在時刻の3時間後以降のみご予約いただけます。</div></div>`;
+    slotHtml=`<div class="slot-wrap"><div class="slot-label">開始時間（21:00までに終わる枠のみ・ご予約は3時間前まで）</div>${_multiNote}${slotsBlock}<div class="note" style="margin-top:8px">選択中のメニュー所要 約${totalMin}分。本日分は現在時刻の3時間後以降のみご予約いただけます。</div></div>`;
   }
   app.innerHTML=stepsBar(2)+`<div class="fade"><div class="eyebrow">Step 03</div><div class="h-title">${t('selectDate')}</div><div class="h-sub">${state.b.staff.name} ／ 営業 9:00〜（最終受付 21:00）・火曜定休</div><div class="cal"><div class="cal-head"><button class="cal-nav" id="prev" ${canPrev?'':'disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><div class="cal-title">${y}年 ${mo+1}月</div><button class="cal-nav" id="nextm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></div>${(()=>{const sid=(state.b.staff&&state.b.staff.id)||'s0';const c3=next3Slots(sid);if(!c3.length)return '';return `<div class="quick3"><div class="q3-h">🕐 最短のご予約候補</div><div class="q3-btns">`+c3.map(x=>`<button type="button" class="q3-btn" data-q3="${x.date}|${x.time}">${x.label}〜</button>`).join('')+`</div></div>`;})()}<div class="cal-grid">${cells}</div><div class="cal-legend">🟡 空きあり／🔵 選択中／グレー＝定休・お休み</div></div>${slotHtml}</div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">${t('backBtn')}</button><button class="btn btn-primary" id="next" ${state.b.date&&state.b.time?'':'disabled'}>${t('ctaNextInfo')}</button></div>`;
   const pv=byId('prev');if(pv&&canPrev)pv.onclick=()=>{state.calMonth=new Date(y,mo-1,1);render()};byId('nextm').onclick=()=>{state.calMonth=new Date(y,mo+1,1);render()};
   app.querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>{state.b.date=b.dataset.date;state.b.time=null;render()});
-  app.querySelectorAll('.slot[data-slot]').forEach(b=>b.onclick=()=>{state.b.time=b.dataset.slot;render()});app.querySelectorAll('[data-q3]').forEach(b=>b.onclick=()=>{const p=b.dataset.q3.split('|');state.b.date=p[0];state.b.time=p[1];render();window.scrollTo(0,0);});
+  app.querySelectorAll('.slot[data-slot]').forEach(b=>b.onclick=()=>{state.b.time=b.dataset.slot;render()});
+  {const _ge=byId('go-earliest');if(_ge)_ge.onclick=()=>{state.b.date=_ge.dataset.eqd;state.b.time=_ge.dataset.eqt;state.calMonth=new Date(_ge.dataset.eqd+'T00:00:00');render();};}app.querySelectorAll('[data-q3]').forEach(b=>b.onclick=()=>{const p=b.dataset.q3.split('|');state.b.date=p[0];state.b.time=p[1];render();window.scrollTo(0,0);});
   byId('back').onclick=()=>{state.step=1;render()};byId('next').onclick=()=>{state.step=3;render()};
 }
 function itemsLines(staffId){return state.cart.map(x=>`${itemName(x)} <span class="sub">${yen(priceFor(x.id,staffId))}</span>`).join('<br>')}
@@ -2262,7 +2361,8 @@ function stepDatePair(){
   app.innerHTML=stepsBar(2)+`<div class="fade"><div class="eyebrow">Step 03</div><div class="h-title">${t('selectDate')}</div><div class="h-sub">👥 ${state.staffA.name}（お一人目）＋ ${state.staffB.name}（お二人目）</div>${warnPair}<div class="cal"><div class="cal-head"><button class="cal-nav" id="prev" ${canPrev?'':'disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><div class="cal-title">${y}年 ${mo+1}月</div><button class="cal-nav" id="nextm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></div><div class="cal-grid">${cells}</div><div class="cal-legend">グレーの日はおふたりのどちらかがお休みです</div></div>${slotHtml}</div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">${t('backBtn')}</button><button class="btn btn-primary" id="next" ${state.b.date&&state.b.time?'':'disabled'}>${t('ctaNextInfo')}</button></div>`;
   const pv=byId('prev');if(pv&&canPrev)pv.onclick=()=>{state.calMonth=new Date(y,mo-1,1);render()};byId('nextm').onclick=()=>{state.calMonth=new Date(y,mo+1,1);render()};
   app.querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>{state.b.date=b.dataset.date;state.b.time=null;render()});
-  app.querySelectorAll('.slot[data-slot]').forEach(b=>b.onclick=()=>{state.b.time=b.dataset.slot;render()});app.querySelectorAll('[data-q3]').forEach(b=>b.onclick=()=>{const p=b.dataset.q3.split('|');state.b.date=p[0];state.b.time=p[1];render();window.scrollTo(0,0);});
+  app.querySelectorAll('.slot[data-slot]').forEach(b=>b.onclick=()=>{state.b.time=b.dataset.slot;render()});
+  {const _ge=byId('go-earliest');if(_ge)_ge.onclick=()=>{state.b.date=_ge.dataset.eqd;state.b.time=_ge.dataset.eqt;state.calMonth=new Date(_ge.dataset.eqd+'T00:00:00');render();};}app.querySelectorAll('[data-q3]').forEach(b=>b.onclick=()=>{const p=b.dataset.q3.split('|');state.b.date=p[0];state.b.time=p[1];render();window.scrollTo(0,0);});
   byId('back').onclick=()=>{state.step=1;render()};byId('next').onclick=()=>{state.step=3;render()};
 }
 function stepInfoPair(){
@@ -2349,8 +2449,17 @@ async function confirmBooking(){
   const b=state.b;if(!b.name.trim()||!b.phone.trim()){alert('お名前と電話番号をご入力ください。');return;}
   if(b.date<fmtDate(today)){alert('過去の日付には予約できません。日付を選び直してください。');state.step=2;render();return;}
   try{const fresh=await directLoad();if(fresh&&Array.isArray(fresh.bookings)){/* 公開データがどれだけズレていても、確定の瞬間は必ず本物のデータベースで再チェックする（二重予約防止の最終防衛線） */DATA.bookings=fresh.bookings;if(Array.isArray(fresh.blocks))DATA.blocks=fresh.blocks;if(fresh.shiftOverrides)DATA.shiftOverrides=fresh.shiftOverrides;if(fresh.shifts)DATA.shifts=fresh.shifts;}}catch(_e){}
+  /* メニューごとに担当が分かれる場合は、ここで順番と担当を確定する */
+  {const _gs=cartGroups();
+   if(_gs&&_gs.length>1){
+     const sm0=(function(){const p=String(b.time).split(':');return (+p[0])*60+(+p[1]);})();
+     const plan=planAt(b.date,sm0,_gs);
+     if(!plan){alert('申し訳ありません。この時間はすべてを続けてお受けできなくなりました。別の時間をお選びください。');state.step=3;render();return;}
+     state._plan=plan;
+   } else { state._plan=null; }}
   {const dur=(state.cart||[]).reduce((a,x)=>a+(x.min||0),0)||60;const sm=(function(){const p=String(b.time).split(':');return (+p[0])*60+(+p[1]);})();
-   if(!b.staff||b.staff.id==='s0'){/* 指名なし: 実際に施術できて空いている担当を割り当てる（枠を確実に塞ぐ） */const c=eligibleFreeStaff(b.date,sm);if(!c.length){alert('申し訳ありません。この時間帯はたった今埋まってしまいました。別の時間をお選びください。');state.step=3;render();return;}b.staff=c[0];b.autoAssigned=true;}
+   if(state._plan){/* 複数担当のときは下で個別に検査するため、ここは通す */}
+   else if(!b.staff||b.staff.id==='s0'){/* 指名なし: 実際に施術できて空いている担当を割り当てる（枠を確実に塞ぐ） */const c=eligibleFreeStaff(b.date,sm);if(!c.length){alert('申し訳ありません。この時間帯はたった今埋まってしまいました。別の時間をお選びください。');state.step=3;render();return;}b.staff=c[0];b.autoAssigned=true;}
    if(b.staff&&b.staff.id&&(staffBusyAt(b.staff.id,b.date,sm,dur)||!shiftCovers(b.staff.id,b.date,sm,dur))){alert('申し訳ありません。この時間帯はたった今埋まってしまいました。別の時間をお選びください。');state.step=3;render();return;}}
   {const P=normPhone(b.phone);const dup=(DATA.bookings||[]).find(x=>x.status!=='cancelled'&&normPhone(x.phone)===P&&x.date===b.date&&x.time===b.time);if(dup){alert('同じ日時のご予約がすでに入っています（'+mdLabel(b.date)+' '+b.time+'）。マイページの「予約・履歴」からご確認ください。');state.view='mypage';render();return;}}
   state._booking=true;const _cb=byId('confirm');if(_cb){_cb.disabled=true;_cb.textContent='予約を確定しています…';}
@@ -2370,6 +2479,24 @@ async function _confirmBookingInner(){
   if(state.selCoupon){const cp=(DATA.coupons||[]).find(c=>c.id===state.selCoupon);if(cp){cp.usedBy=cp.usedBy||[];if(!cp.usedBy.map(normPhone).includes(normPhone(b.phone)))cp.usedBy.push(normPhone(b.phone));}}const id='B-'+Date.now().toString(36).toUpperCase()+Math.random().toString(36).slice(2,5).toUpperCase();const party=b.party2?[{name:'ご一緒の方',phone:''}]:[];
   const bk={id,createdAt:Date.now(),updatedAt:Date.now(),history:[{at:Date.now(),type:'作成',detail:(b.date||'')+' '+(b.time||'')+' '+((b.staff&&b.staff.name)||''),by:(state.adminAuthed?('スタッフ：'+(meName()||'不明')):'お客様')}],phone:b.phone,items:state.cart.map(x=>({id:x.id,cat:x.cat,name:x.name,min:x.min,price:priceFor(x.id,b.staff.id)})).concat(optBkItems(b.options)),staffId:b.staff.id,date:b.date,time:b.time,companions:[...b.companions],haste:b.haste,party,pointsUsed:use,couponUsed:coupon,discountRate:rate,salonMessage:'',customerMemo:(b.note||''),status:'confirmed'};
   const passesAdd=[];state.cart.forEach(it=>{if(it.pass)passesAdd.push({label:it.pass.label,total:it.pass.count,remaining:it.pass.count})});
+  /* メニューごとに担当が分かれる場合：担当ごとに予約を作り、groupIdで1件のご予約として結ぶ */
+  const _plan=state._plan;
+  if(_plan&&_plan.length>1){
+    const gid='G-'+Date.now().toString(36).toUpperCase();
+    const parts=_plan.map((p,pi)=>Object.assign({},bk,{
+      id:(pi===0?id:('B-'+Date.now().toString(36).toUpperCase()+pi+Math.random().toString(36).slice(2,4).toUpperCase())),
+      staffId:p.staff.id,time:minToTime(p.startMin),
+      items:p.items.map(x=>({id:x.id,cat:x.cat,name:x.name,min:x.min,price:priceFor(x.id,p.staff.id)})),
+      groupId:gid,groupSeq:pi+1,groupTotal:_plan.length,
+      pointsUsed:(pi===0?use:0),couponUsed:(pi===0?coupon:0),
+      history:[{at:Date.now(),type:'作成',detail:b.date+' '+minToTime(p.startMin)+' '+p.staff.name,by:(state.adminAuthed?('スタッフ：'+(meName()||'不明')):'お客様')}]}));
+    try{for(let pi=0;pi<parts.length;pi++){await apiOp('createBooking',{booking:parts[pi],customer:(pi===0?newCustObj:null),phone:b.phone,couponUsed:(pi===0?coupon:0),passesAdd:(pi===0?passesAdd:[]),referrerPhone:null,referrerNotice:'',referrerBonus:0,nextId:(DATA.nextId||1047)+1+pi});}}
+    catch(e){const code=(e&&e.body&&e.body.error)||'';alert('予約の送信に失敗しました'+(code?'（'+code+'）':'')+'。通信状況をご確認ください。');return;}
+    state._plan=null;
+    if(referrerPhone)await referralPendingDirect(key,b.name,referrerPhone);
+    state.lastBooking=Object.assign({},parts[0],{name:b.name,newCust:!known,groupParts:parts.map(p=>({time:p.time,staff:(staff.find(s2=>s2.id===p.staffId)||{}).name||'',items:p.items.map(i2=>i2.name)}))});
+    state.selCoupon=null;await refresh();state.step=4;render();return;
+  }
   try{await apiOp('createBooking',{booking:bk,customer:newCustObj,phone:b.phone,couponUsed:coupon,passesAdd:passesAdd,referrerPhone:null,referrerNotice:'',referrerBonus:0,nextId:(DATA.nextId||1047)+1});}
   catch(e){alert('予約の送信に失敗しました。通信状況をご確認ください。');return;}
   if(referrerPhone)await referralPendingDirect(key,b.name,referrerPhone);state.lastBooking={...bk,name:b.name,newCust:!known,referralPending:!!referrerPhone,referralBonus:0};state.selCoupon=null;pushGCal({...bk,name:b.name},'create');
@@ -4065,6 +4192,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-13',v:'r20260913q',items:['【新機能】メニューごとに担当が違う場合でも、1回のご予約でまとめてお受けできるように（例：まつげ=SAKURA＋ハーブピーリング=TOMOMI）','順番はサロン側で自動決定。空いている担当から先にご案内し、間の待ち時間なく続けて施術します（例：11時にSAKURAが埋まっていれば、11時ピーリング→12時まつげ）','すべて続けてお受けできる時間だけが選べます。成立しない時間は最初から表示されません','その日に全部そろわない場合は「この日は◯時から◯◯のみ承れます」と、「すべて受けられる最短の日時」をご案内し、ワンタップでその時間に移動できます','内部では担当ごとの予約として記録するため、各スタッフの予定が正しく埋まり、二重予約は起きません。キャンセル・来店なしは連動して処理されます']},
  {d:'2026-09-13',v:'r20260913p',items:['【TOMOMIがピーリングで選べなかった原因】担当メニューの設定が一度しか実行されず、後から追加したメニュー（ピーリングの回数券など）がTOMOMIの担当に入っていませんでした→名前に「ピーリング」を含むメニューは自動でTOMOMIの担当に入るようにし、メニューを追加・変更しても毎回自動で正しく保たれるように修正','1人の担当では受けられないメニューの組み合わせを選んだ場合、「どの担当がどのメニューを担当できるか」と「メニューを分けて2件ご予約ください」という案内を表示するように']},
  {d:'2026-09-13',v:'r20260913n',items:['家族割引のお客様にはポイントを付与しないように変更（割引が特典のため）。知人割20%OFF・通常のお客様・会員ランク割引は従来どおり付与されます','来店確定の画面に「家族割のお客様のため、ポイントは付与されません」と理由を表示','予約完了画面でも家族割のお客様には「家族割引が適用されます」と表示（ポイント加算の案内は出しません）','「初回来店分でポイントが付いていないお客様」の一覧からも家族割のお客様を除外']},
  {d:'2026-09-13',v:'r20260913m',items:['【お知らせが消えない原因】他スタッフ宛の指示（「◯日は出勤でお願いします」等）がSAKURAさんの画面にも出ていました→お知らせは宛先本人にだけ表示し、「全部消す」で自分の分は確実に消えるように（他スタッフ宛は残ります）','管理トップの「こんにちは」の挨拶を撤去','「📘 このページの使い方」を各ページの一番下へ移動','管理トップ（🏠トップ）をタスク作成ページではなく、その日の状況を把握する画面に変更','「ショップの更新（週1回）をしましょう」の表示を撤去','出勤・退勤ボタンの下に「今日のひとこと」を追加。美容の豆知識・接客や仕事のコツを毎日1つ表示します（全員に同じ内容・日替わり）']},
@@ -4552,7 +4680,10 @@ function bindAdmin(){
 }
 let adminTimer=null;
 function adminSoft(after){clearTimeout(adminTimer);adminTimer=setTimeout(()=>{render();if(after)after()},300)}
-async function setStatus(id,st){const bk=DATA.bookings.find(x=>x.id===id);if(bk){bk.status=st;bk.updatedAt=Date.now();
+async function setStatus(id,st){const bk=DATA.bookings.find(x=>x.id===id);if(bk){
+  /* 複数担当の1件のご予約（groupId）は、キャンセル・来店なしを連動させる */
+  if((st==='cancelled'||st==='noshow')&&bk.groupId){(DATA.bookings||[]).forEach(o=>{if(o&&o.id!==bk.id&&o.groupId===bk.groupId&&o.status!=='cancelled'&&o.status!=='noshow'){o.status=st;o.updatedAt=Date.now();if(st==='cancelled'){o.cancelledAt=Date.now();o.cancelledBy='スタッフ：'+(meName()||'不明');}else{o.noshowAt=Date.now();o.awardedPoints=0;}try{pushGCal(o,'cancel');}catch(e){}}});}
+  bk.status=st;bk.updatedAt=Date.now();
   if(st==='cancelled'){bk.cancelledAt=Date.now();bk.cancelledBy='スタッフ：'+(meName()||'不明');bkLog(bk,'キャンセル','','スタッフ：'+(meName()||'不明'));try{pushGCal(bk,'cancel');}catch(e){}logAct('予約をキャンセル：'+(bk.name||bk.phone));}
   /* 来店なし（当日キャンセル・無断キャンセル）。ポイントは付けず、お客様へ通知も送らない（サロン内の記録のみ） */
   if(st==='noshow'){bk.noshowAt=Date.now();bk.noshowBy='スタッフ：'+(meName()||'不明');bk.awardedPoints=0;bkLog(bk,'来店なし','','スタッフ：'+(meName()||'不明'));try{pushGCal(bk,'cancel');}catch(e){}logAct('来店なしとして記録：'+(bk.name||bk.phone));}
