@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260913r';
+const APP_REV='r20260913s';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1542,6 +1542,21 @@ function staffFor(svId){const ids=[svId];return staff.filter(p=>p.id!=='s0'&&!p.
 /* カートを「担当ごとのかたまり」に分ける。1人で全部できるなら1かたまり（従来どおり） */
 function cartGroups(){
   const cart=state.cart||[];if(!cart.length)return [];
+  const asg=state.b&&state.b.assign||{};
+  /* お客様がメニューごとに担当を指定している場合は、その通りに分ける */
+  const picked=cart.filter(x=>asg[x.id]&&asg[x.id]!=='auto');
+  if(picked.length){
+    const m=new Map();
+    for(const x of cart){
+      const want=asg[x.id]&&asg[x.id]!=='auto'?asg[x.id]:null;
+      const cands=want?staffFor(x.id).filter(p=>p.id===want):staffFor(x.id);
+      if(!cands.length)return null;
+      const key=want||('auto:'+cands.map(p=>p.id).sort().join(','));
+      if(!m.has(key))m.set(key,{items:[],cands});
+      m.get(key).items.push(x);
+    }
+    return [...m.values()];
+  }
   const all=staff.filter(p=>p.id!=='s0'&&!p.hidden&&!p.inactive);
   const solo=all.filter(p=>{const sv=p.services||[];if(sv.includes('none'))return false;if(!sv.length)return true;return cart.every(x=>sv.includes(x.id));});
   if(solo.length)return [{items:cart.slice(),cands:solo}];
@@ -2167,15 +2182,22 @@ function stepStaff(){
   const realEligible=staff.filter(p=>p.id!=='s0'&&!p.inactive&&eligible(p));
   const cards=staff.filter(p=>(p.id==='s0'?realEligible.length>=2:(!p.hidden&&!p.inactive&&(p.services||[]).length>0))).sort((a,b)=>{if(a.id==='s0')return -1;if(b.id==='s0')return 1;return (eligible(b)?1:0)-(eligible(a)?1:0);}).map((p,i)=>{const ok=eligible(p);const sel=ok&&state.b.staff&&state.b.staff.id===p.id;const initial=p.id==='s0'?'?':nameInitial(p.name);const bg=p.photo?`background-image:url('${p.photo}')`:`background:${p.color}`;
     const okStyle=ok?'border:2px solid #E39A3B;background:#FFF6EA;box-shadow:0 2px 10px rgba(227,154,59,.18)':'border:2px solid #2A2E38;background:#2A2E38;filter:grayscale(1);opacity:.6';const nameCol=ok?'':'color:#cfd2da';return `<div class="staff ${sel?'sel':''}" ${ok?`data-staff="${p.id}"`:''} style="${okStyle};animation-delay:${i*.06}s"><div class="photo" style="${bg}">${p.photo?'':initial}<div class="staff-check"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div></div><div class="staff-body"><div class="staff-top"><span class="staff-name" style="${nameCol}">${p.name}</span><span class="staff-role" style="${nameCol}">${p.role}</span>${p.id==='s0'?'':(ok?'<span style="background:#E39A3B;color:#fff;border-radius:12px;padding:2px 9px;font-size:11px;font-weight:700;margin-left:6px">予約OK</span>':'<span style="background:#4a4f5c;color:#c7cad2;border-radius:12px;padding:2px 9px;font-size:11px;font-weight:700;margin-left:6px">担当不可</span>')}</div><div class="staff-intro" style="${ok?'':'color:#c7cad2'}">${ok?p.intro:'選択中のメニューは担当できません（別の担当者をお選びください）。'}</div>${ok?`<div class="staff-next">🕐 最短 ${nextAvailLabel(p.id)}</div>`:''}${(ok&&p.quals)?`<div class="quals">${p.quals.split(/[,、，\n・\/／|;；]+|\s{2,}/).map(q=>q.trim()).filter(Boolean).map(q=>`<span class="qual">🏅 ${q}</span>`).join('')}</div>`:''}${ok&&state.cart.length?`<div class="staff-intro" style="color:var(--gold);font-weight:700;margin-top:4px">この内容で ${yen(cartTotal(p.id))}</div>`:''}</div></div>`}).join('');
-  /* メニューごとに担当が分かれる場合は、自動で組み立ててそのまま進めていただく */
-  const _gs=cartGroups();
-  if(_gs&&_gs.length>1){
-    const rows=_gs.map(g=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13.5px"><span>${g.items.map(x=>esc(x.name)).join('＋')}</span><b style="white-space:nowrap">${g.cands.map(p=>esc(p.name)).join(' / ')}</b></div>`).join('');
-    state.b.staff={id:'s0',name:'担当はサロンでお決めします'};
-    app.innerHTML=stepsBar(1)+`<div class="fade"><div class="eyebrow">Step 02</div><div class="h-title">担当のご案内</div><div class="h-sub">お選びのメニューは担当が分かれるため、サロンで順番を組み立ててご案内します。</div>
-      <div class="addform" style="border:1.5px solid var(--gold)"><div class="subhead" style="margin:0 0 6px">メニューと担当</div>${rows}
-      <div class="note" style="margin:10px 0 0">続けてお受けいただけるよう、<b>空いている担当から順に</b>ご案内します（間の待ち時間はありません）。次の画面で、すべて続けてお受けいただける時間だけが表示されます。</div></div>
+  /* メニューごとに担当を選べる画面（タップは必要なときだけ・既定はおまかせ） */
+  state.b.assign=state.b.assign||{};
+  const perMenu=(state.cart||[]).map(x=>({item:x,cands:staffFor(x.id)}));
+  const needChoice=perMenu.some(p=>p.cands.length>1)||new Set(perMenu.map(p=>p.cands.map(c=>c.id).sort().join(','))).size>1;
+  if(perMenu.length&&perMenu.every(p=>p.cands.length)&&needChoice){
+    const rows=perMenu.map(p=>{
+      const cur=state.b.assign[p.item.id]||'auto';
+      if(p.cands.length===1){state.b.assign[p.item.id]=p.cands[0].id;
+        return `<div style="padding:10px 0;border-bottom:1px dashed var(--line)"><div style="font-weight:700;font-size:14px">${esc(p.item.name)}</div><div style="font-size:12.5px;color:var(--ink-soft);margin-top:3px">担当：<b style="color:var(--navy)">${esc(p.cands[0].name)}</b></div></div>`;}
+      const chips=[{id:'auto',name:'おまかせ'}].concat(p.cands).map(c=>`<button type="button" class="chip ${cur===c.id?'sel':''}" data-asg="${p.item.id}|${c.id}" style="${cur===c.id?'background:var(--navy);color:#fff;border-color:var(--navy)':''}">${esc(c.name)}</button>`).join('');
+      return `<div style="padding:10px 0;border-bottom:1px dashed var(--line)"><div style="font-weight:700;font-size:14px">${esc(p.item.name)}</div><div class="chips" style="margin-top:6px">${chips}</div></div>`;});
+    state.b.staff={id:'s0',name:'担当はメニューごと'};
+    app.innerHTML=stepsBar(1)+`<div class="fade"><div class="eyebrow">Step 02</div><div class="h-title">担当をお選びください</div><div class="h-sub">メニューごとにご指名いただけます。「おまかせ」のままでも大丈夫です（空いている担当がご対応します）。</div>
+      <div class="addform">${rows.join('')}<div class="note" style="margin:10px 0 0">担当が分かれる場合は、<b>間の待ち時間なく続けて</b>ご案内します。次の画面には、すべて続けてお受けいただける時間だけが表示されます。</div></div>
       </div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">${t('backBtn')}</button><button class="btn btn-primary" id="next">${t('nextBtn')}</button></div>`;
+    app.querySelectorAll('[data-asg]').forEach(b=>b.onclick=()=>{const[iid,sid2]=b.dataset.asg.split('|');state.b.assign[iid]=sid2;render();});
     byId('back').onclick=()=>{state.step=1;render()};byId('next').onclick=()=>{state.step=3;render()};
     return;
   }
@@ -4192,6 +4214,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-13',v:'r20260913s',items:['【TOMOMIを指名できなかった原因】SAKURAが全施術対応のため「1人で完結する」と判定され、担当を分ける仕組みが働いていませんでした→メニューを選んだ次の画面で、メニューごとに担当を選べるように変更','タップを最小限に：担当が1人しかいないメニューは自動で確定（タップ不要）。選べるメニューだけ「おまかせ／SAKURA／TOMOMI」が並びます。既定は「おまかせ」なので、そのまま次へ進めます','「担当不可」で止まることがなくなりました','設定に追加していた「予約できない原因をしらべる」診断は撤去しました']},
  {d:'2026-09-13',v:'r20260913r',items:['設定に「🔎 予約できない原因をしらべる」を追加。スタッフと日付を選ぶと、非表示設定・担当メニュー・定休日・個別休み・カレンダーのシフト・曜日の基本シフト・最終的な勤務時間・予約を受けられる時間を1つずつ表示し、原因と対処方法まで示します']},
  {d:'2026-09-13',v:'r20260913q',items:['【新機能】メニューごとに担当が違う場合でも、1回のご予約でまとめてお受けできるように（例：まつげ=SAKURA＋ハーブピーリング=TOMOMI）','順番はサロン側で自動決定。空いている担当から先にご案内し、間の待ち時間なく続けて施術します（例：11時にSAKURAが埋まっていれば、11時ピーリング→12時まつげ）','すべて続けてお受けできる時間だけが選べます。成立しない時間は最初から表示されません','その日に全部そろわない場合は「この日は◯時から◯◯のみ承れます」と、「すべて受けられる最短の日時」をご案内し、ワンタップでその時間に移動できます','内部では担当ごとの予約として記録するため、各スタッフの予定が正しく埋まり、二重予約は起きません。キャンセル・来店なしは連動して処理されます']},
  {d:'2026-09-13',v:'r20260913p',items:['【TOMOMIがピーリングで選べなかった原因】担当メニューの設定が一度しか実行されず、後から追加したメニュー（ピーリングの回数券など）がTOMOMIの担当に入っていませんでした→名前に「ピーリング」を含むメニューは自動でTOMOMIの担当に入るようにし、メニューを追加・変更しても毎回自動で正しく保たれるように修正','1人の担当では受けられないメニューの組み合わせを選んだ場合、「どの担当がどのメニューを担当できるか」と「メニューを分けて2件ご予約ください」という案内を表示するように']},
@@ -4308,7 +4331,7 @@ function bookDiagPanel(){
 function adminSettings(){
   const s=S();const tx=s.texts||{};
   const _gl=((WORK&&WORK.gcalLog)||[]).slice(0,15);const _gq=gcalQueue().length;const gcalPanel=`<div class="addform"><div class="subhead" style="margin:0 0 8px">📅 Googleカレンダー送信の記録</div><div class="note" style="margin:0 0 8px">最近の送信 ${_gl.length}件${_gq?` ・ <b style="color:var(--rose)">未送信の保留 ${_gq}件（次回開いた時に自動再送）</b>`:''}</div>${_gl.map(g=>`<div style="font-size:12px;padding:4px 0;border-top:1px dashed var(--line)">${g.ok?'✅':'⚠️'} ${g.action} ${esc(g.id||'')} <span style="color:var(--ink-soft)">${new Date(g.at).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</span>${g.err?` <span style="color:var(--rose)">${esc(g.err)}</span>`:''}</div>`).join('')||'<div class="note">まだ記録がありません</div>'}</div>`;
-  return `<button class="btn btn-ghost" id="bd-open" style="width:100%;margin:0 0 10px;border-color:var(--navy);color:var(--navy)">🔎 予約できない原因をしらべる</button>${bookDiagPanel()}${gcalPanel}${promoFormHtml()}<div class="addform"><div class="subhead" style="margin:0 0 12px">バックアップ</div>
+  return `${gcalPanel}${promoFormHtml()}<div class="addform"><div class="subhead" style="margin:0 0 12px">バックアップ</div>
     <div style="font-size:13px;color:#777;margin-bottom:8px">現在のデータ（予約・顧客・スタッフ・設定すべて）を1つのファイルとして手元に保存できます。定期的に押しておくと安心です。</div>
     <div class="field"><label>オーナー暗証番号（担当で「SAKURA」を選ぶ時に必要）</label><div style="display:flex;gap:8px"><input id="set-ownerpin" type="password" inputmode="numeric" placeholder="新しい暗証番号" style="flex:1"><button class="btn btn-ghost" id="set-ownerpin-save" style="white-space:nowrap">変更</button></div></div><button class="btn btn-ghost" id="set-backup" style="width:100%;margin-bottom:10px">💾 バックアップをダウンロード</button><div class="subhead" style="margin:0 0 8px">🛟 データ復元</div><div style="font-size:13px;color:#777;margin-bottom:8px">お客様情報などが消えてしまった場合、この端末に残っているデータや自動バックアップから復元できます（今あるデータに<b>足す</b>だけなので、押しても消えることはありません）。各スタッフの端末でも試してください。</div><button class="btn btn-ghost" id="rescue-check" style="width:100%;margin-bottom:18px">🛟 復元できるデータを探す</button><div class="subhead" style="margin:0 0 10px">📢 かんたん設定（誰でもOK）</div><div class="field"><label>臨時のお知らせ（トップに帯で表示）<span class="opt">例）年末年始休業 12/30〜1/3</span></label><input id="set-noticebar" value="${(s.noticeBar||'').replace(/"/g,'&quot;')}"></div><div class="field"><label>Instagram のURL</label><input id="set-ig" value="${(s.igUrl||'').replace(/"/g,'&quot;')}" placeholder="https://instagram.com/..."></div><div class="field"><label>お店の電話番号</label><input id="set-tel" value="${(s.tel||'').replace(/"/g,'&quot;')}" placeholder="06-...."></div><button class="btn btn-primary" id="set-easy-save" style="width:100%;margin-bottom:18px">かんたん設定を保存</button><div class="subhead" style="margin:0 0 10px">🔑 サロン管理パスワード</div><div class="note" style="margin-bottom:6px">スタッフ全員が使うログインパスワードです（現在：数字）。変更すると全員が新しいパスワードでログインします。</div><input id="set-newpw" inputmode="numeric" placeholder="新しいパスワード（4桁以上）" style="width:100%;margin-bottom:6px"><button class="btn btn-ghost" id="set-pwsave" style="width:100%;margin-bottom:16px">パスワードを変更する</button><div class="subhead" style="margin:0 0 10px">👥 スタッフの追加・編集</div><div class="note" style="margin-bottom:6px">スタッフの追加・時給・「お客様に表示しない裏方スタッフ」の設定は「スタッフ」タブで行えます。</div><button class="btn btn-ghost" id="set-gostaff" style="width:100%;margin-bottom:16px">👥 スタッフ管理を開く</button><div class="subhead" style="margin:0 0 10px">🔔 通知</div><details class="shopguide" style="margin-bottom:10px"><summary>📱 アプリの入れ方・通知の設定（スタッフ用）</summary><div class="sg-b"><b>① スマホのホーム画面に追加（アプリのように使えます）</b><br>・iPhone（Safari）：このページで下の<b>共有ボタン（□に↑）</b>→「<b>ホーム画面に追加</b>」→「追加」。ホームにVi5アイコンができます。<br>・Android（Chrome）：右上の<b>⋮</b>→「<b>ホーム画面に追加</b>」。<br><br><b>② 通知をオンにする</b><br>・<b>ホーム画面に追加したアイコンから開いて</b>、下の「🔔通知をオンにする」を押して「許可」。<br>・出ない時：iPhoneは「設定アプリ→通知→Vi5」をオン。<br><br><b>③ 毎日の流れ</b><br>出勤（店舗/在宅を選ぶ）→ 休憩（何回でもOK）→ 業務報告 → 退勤。打刻はこのアプリで行います（Squareは不要）。連絡はすべて「💬チャット」で。</div></details><button class="btn btn-ghost" id="intro-reopen" style="width:100%;margin-bottom:8px">📖 「はじめに（使い方）」をもう一度読む</button><button class="btn btn-ghost" id="ntf-on" style="width:100%;margin-bottom:8px">🔔 このスマホで通知をオンにする</button><div class="note" style="margin-bottom:18px">※iPhoneの場合：Safariで「共有→ホーム画面に追加」したアプリから開き、上のボタン→「許可」。うまくいかない時は iPhoneの設定→通知→Vi5 をオンにしてください。</div><div class="subhead" style="margin:0 0 10px">💡 アプリへの意見・要望</div><div class="note" style="margin-bottom:8px">「こういう機能が欲しい」「ここが使いにくい」など、何でもどうぞ。アプリの改善に使います（誰が書いたか記録されます）。</div><textarea id="idea-text" rows="3" placeholder="例）予約一覧を印刷できるようにしてほしい"></textarea><button class="btn btn-primary" id="idea-send" style="width:100%;margin:8px 0 10px">意見を送る</button>${(()=>{const ideas=((typeof WORK!==`undefined`&&WORK&&WORK.appIdeas)||[]).slice(0,10);if(!ideas.length)return ``;return ideas.map(x=>`<div class="pass"><span class="pl">💡 ${x.text}<br><span style="font-size:11px;color:var(--ink-soft)">${x.by}・${actAgo(x.at)}</span></span></div>`).join(``);})()}<div style="height:14px"></div>
     <div class="subhead" style="margin:0 0 12px">サイトの文言</div>
