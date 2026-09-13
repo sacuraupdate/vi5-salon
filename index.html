@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260913c';
+const APP_REV='r20260913d';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -3425,7 +3425,7 @@ function nowPanel(){const t=fmtDate(today);const nowMs=Date.now();const _del=DAT
   const late=td.filter(x=>x.status==='confirmed'&&nowMs>bkStartMs(x)+10*60000&&!inProg.includes(x)&&nowMs<bkStartMs(x)+bkDur(x)*60000+240*60000);
   const next=td.filter(x=>x.status!=='visited'&&bkStartMs(x)>nowMs).slice(0,2);
   const done=td.filter(x=>x.status==='visited').length;
-  const card=(x,label,color)=>{const c=DATA.customers[normPhone(x.phone)];return `<div style="border:2px solid ${color};border-radius:16px;padding:10px 12px;margin:0 0 10px;background:#fff"><div style="display:flex;justify-content:space-between;align-items:center"><b style="color:${color}">${label}</b><span style="font-size:12px;color:var(--ink-soft)">${x.time}〜 ・ ${stName(x.staffId)}</span></div><div style="font-size:15px;font-weight:700;margin:4px 0 2px">${c?c.name:x.phone} 様</div><div style="font-size:13px;color:var(--ink-soft)">${x.items.map(i=>i.name).join('＋')}</div>${bkCustInfo(x,c)}<div style="margin-top:8px">${(x.status==='confirmed'&&x.date<=fmtDate(today))?`<button class="btn btn-ghost" data-visit="${x.id}|${x.date}" style="width:100%;border-color:#3F5A46;color:#2C4433;font-weight:700">✓ 来店済みにする</button>`:''}</div></div>`;};
+  const card=(x,label,color)=>{const c=DATA.customers[normPhone(x.phone)];return `<div style="border:2px solid ${color};border-radius:16px;padding:10px 12px;margin:0 0 10px;background:#fff"><div style="display:flex;justify-content:space-between;align-items:center"><b style="color:${color}">${label}</b><span style="font-size:12px;color:var(--ink-soft)">${x.time}〜 ・ ${stName(x.staffId)}</span></div><div style="font-size:15px;font-weight:700;margin:4px 0 2px">${c?c.name:x.phone} 様</div><div style="font-size:13px;color:var(--ink-soft)">${x.items.map(i=>i.name).join('＋')}</div>${bkCustInfo(x,c)}<div style="margin-top:8px">${(state.visitConfirm&&state.visitConfirm.id===x.id)?visitConfirmPanel():((x.status==='confirmed'&&x.date<=fmtDate(today))?`<button class="btn btn-ghost" data-visit="${x.id}|${x.date}" style="width:100%;border-color:#3F5A46;color:#2C4433;font-weight:700">✓ 来店済みにする</button>`:'')}</div></div>`;};
   let h='';
   inProg.forEach(x=>h+=card(x,'💆 いま施術中','#3F5A46'));
   late.forEach(x=>h+=card(x,'⚠️ 未来店（'+Math.floor((nowMs-bkStartMs(x))/60000)+'分経過）','var(--rose)'));
@@ -3835,7 +3835,7 @@ function custDetail(key){
   const c=DATA.customers[key];const bal=pointBalance(c.phone);const list=DATA.bookings.filter(b=>normPhone(b.phone)===key).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));const fav=favMenus(c.phone);
   const ref=c.referredBy&&DATA.customers[c.referredBy]?DATA.customers[c.referredBy].name:null;
   const referred=Object.values(DATA.customers).filter(x=>x.referredBy===key).map(x=>x.name);
-  const rows=list.map(b=>{const st={pending:'予約中',confirmed:'予約確定',visited:'来店済み',cancelled:'キャンセル'}[b.status];const menu=b.items.map(x=>x.name).join('、');const hasMemo=b.staffComment&&b.staffComment.trim();const body=`<div class="hist-amount">${yen(bkPayment(b))}${b.pointsUsed?` ／ ${b.pointsUsed}pt利用`:''} ・ 担当 ${stName(b.staffId)}${b.status==='visited'?` ・ +${b.awardedPoints||0}pt`:''}${b.status==='visited'?` <button class="cancelbtn" style="border-color:var(--line);color:var(--navy);margin:6px 0 0;padding:5px 10px" data-editpts="${b.id}">ポイント調整</button>`:''}</div>${b.customerMemo?`<div class="msg-salon" style="border-color:var(--navy);background:#EBEDF2"><b style="color:var(--navy)">お客様メモ</b>${esc(b.customerMemo)}</div>`:''}${b.salonMessage?`<div class="msg-salon"><b>サロンより（送信済）</b>${b.salonMessage}</div>`:''}<div class="composer" style="margin-top:8px"><div class="note" style="margin:0 0 6px">📝 <b>社内メモ</b>（お客様には表示されません）</div><textarea data-sc-input="${b.id}" placeholder="施術内容・好み・申し送りなど（社内用）">${b.staffComment||''}</textarea><div class="comp-tools"><button data-sc-save="${b.id}">メモを保存</button></div></div>${b.status==='visited'?`<button class="cancelbtn" style="border-color:var(--gold-soft);color:var(--gold);margin-top:8px" data-fin="${b.id}">✉ 仕上がり・感想メッセージ</button>`:''}${state.finOpen===b.id?`<div class="composer" style="margin-top:10px"><textarea id="fin-msg" placeholder="今日の仕上がりや感想を音声でどうぞ（AIで整えられます）">${b.salonMessage||''}</textarea><div class="comp-tools"><button class="mic" id="fin-mic">🎤 音声入力</button></div><div class="field" style="margin:10px 0 8px"><label>付与ポイント（今回のご来店分・変更可）</label><input id="fin-pts" type="number" inputmode="numeric" value="${b.awardedPoints||suggestPoints(b)}"></div><div class="note" style="margin:0 0 10px">送信すると、メッセージに「今回のメニュー＋獲得ポイント」を添えて<b>お客様のマイページに「サロンより」として表示</b>され、同時にポイントが付与されます。</div><button class="btn btn-primary" id="fin-send" style="width:100%">確認して送信＋ポイント付与</button></div>`:''}`;return `<details class="histd" ${state.finOpen===b.id?'open':''}><summary><span class="hsd">${mdLabel(b.date)}</span><span class="hsm">${menu}</span><span class="hss s-${b.status}">${st}${hasMemo?' 📝':''}</span></summary><div class="histd-b">${body}</div></details>`;}).join('');
+  const rows=list.map(b=>{const st={pending:'予約中',confirmed:'予約確定',visited:'来店済み',cancelled:'キャンセル'}[b.status];const menu=b.items.map(x=>x.name).join('、');const hasMemo=b.staffComment&&b.staffComment.trim();const body=`<div class="hist-amount">${yen(bkPayment(b))}${b.pointsUsed?` ／ ${b.pointsUsed}pt利用`:''} ・ 担当 ${stName(b.staffId)}${b.status==='visited'?` ・ +${b.awardedPoints||0}pt`:''}${b.status==='visited'?` <button class="cancelbtn" style="border-color:var(--line);color:var(--navy);margin:6px 0 0;padding:5px 10px" data-editpts="${b.id}">ポイント調整</button> <button class="cancelbtn" style="border-color:var(--line);color:var(--navy);margin:6px 0 0;padding:5px 10px" data-vcedit="${b.id}|${b.date}">施術内容を直す</button>`:''}${(state.visitConfirm&&state.visitConfirm.id===b.id)?visitConfirmPanel():''}</div>${b.customerMemo?`<div class="msg-salon" style="border-color:var(--navy);background:#EBEDF2"><b style="color:var(--navy)">お客様メモ</b>${esc(b.customerMemo)}</div>`:''}${b.salonMessage?`<div class="msg-salon"><b>サロンより（送信済）</b>${b.salonMessage}</div>`:''}<div class="composer" style="margin-top:8px"><div class="note" style="margin:0 0 6px">📝 <b>社内メモ</b>（お客様には表示されません）</div><textarea data-sc-input="${b.id}" placeholder="施術内容・好み・申し送りなど（社内用）">${b.staffComment||''}</textarea><div class="comp-tools"><button data-sc-save="${b.id}">メモを保存</button></div></div>${b.status==='visited'?`<button class="cancelbtn" style="border-color:var(--gold-soft);color:var(--gold);margin-top:8px" data-fin="${b.id}">✉ 仕上がり・感想メッセージ</button>`:''}${state.finOpen===b.id?`<div class="composer" style="margin-top:10px"><textarea id="fin-msg" placeholder="今日の仕上がりや感想を音声でどうぞ（AIで整えられます）">${b.salonMessage||''}</textarea><div class="comp-tools"><button class="mic" id="fin-mic">🎤 音声入力</button></div><div class="field" style="margin:10px 0 8px"><label>付与ポイント（今回のご来店分・変更可）</label><input id="fin-pts" type="number" inputmode="numeric" value="${b.awardedPoints||suggestPoints(b)}"></div><div class="note" style="margin:0 0 10px">送信すると、メッセージに「今回のメニュー＋獲得ポイント」を添えて<b>お客様のマイページに「サロンより」として表示</b>され、同時にポイントが付与されます。</div><button class="btn btn-primary" id="fin-send" style="width:100%">確認して送信＋ポイント付与</button></div>`:''}`;return `<details class="histd" ${state.finOpen===b.id?'open':''}><summary><span class="hsd">${mdLabel(b.date)}</span><span class="hsm">${menu}</span><span class="hss s-${b.status}">${st}${hasMemo?' 📝':''}</span></summary><div class="histd-b">${body}</div></details>`;}).join('');
   const ds=['none','family','friend'].map(d=>`<button data-setdisc="${key}|${d}" class="${(c.discount||'none')===d?'on':''}">${d==='none'?'割引なし':DISC_LABEL[d]}</button>`).join('');
   const passes=(c.passes||[]).map((p,pi)=>`<div class="pass"><span class="pl">${p.label}</span><span class="pr">残り <b>${p.remaining}</b>/${p.total}</span><button class="iconbtn" data-passdec="${key}|${pi}" style="margin-left:8px" title="−1回">−</button><button class="iconbtn" data-passinc="${key}|${pi}" title="+1回">＋</button><button class="iconbtn" data-passdel="${key}|${pi}" title="削除"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button></div>`).join('');
   const ranks=[0,1,2].map(r=>`<button data-setrank="${key}|${r}" class="${(c.rank||0)===r?'on':''}">${RANK_LABEL[r]}${r?`・${Math.round(RANK_RATE[r]*100)}%OFF`:''}</button>`).join('');
@@ -3925,6 +3925,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-13',v:'r20260913d',items:['「来店済み」を押すと、すぐ確定せず確認パネルが開くように変更。実際に行った施術に直してから確定できます（メニューの追加・削除で、お会計と付与ポイントが自動で計算し直されます）','確認パネルで「お礼メッセージと口コミのお願いを送る／送らない」を選べるように','確定した後でも「施術内容を直す」から内容を修正でき、ポイントも自動で再計算されます（お礼メッセージは再送しません）','施術内容を変更した場合は、予約の履歴に「施術内容の変更」として記録されます']},
  {d:'2026-09-13',v:'r20260913c',items:['タスクを複数の日付で作成できるように。日付を選んで「＋この日も追加」を押していくと、その日ごとにタスクが作られる（自分用・依頼どちらも可）。依頼チャットには日付の一覧が入る']},
  {d:'2026-09-13',v:'r20260913b',items:['お客様が予約画面を開いたままでも、管理側のシフト変更・予約追加が20秒以内（＋画面復帰時）に自動反映されるように（更新操作は不要）','全ての保存で「✅ 保存しました／⚠ 保存できませんでした」を画面下に必ず表示','シフト「保存して完了」は、サーバーを読み直して本当に保存できたことを確認してから「更新できました（サーバーで確認済み）」と表示。確認できなければ警告','「お知らせが消えない」根本対策：消したお知らせは墓標と文面を記録し、統合でもシステム通知の再生成でも二度と戻らないように','目標設定・ショップ更新リマインドを完全撤去','管理画面に「🏠トップ」タブを追加','スタッフ状況からHARUKAを除外（非稼働）','お客様トップ：よくある質問をタップで開く形式に／公式LINE・カタログ・はじめての方へをイラスト付きの大きな案内に','効いていなかった「シフト予定の一括削除」ボタンを撤去し、Googleカレンダー側でカレンダーごと削除する確実な手順に置き換え']},
  {d:'2026-09-12',v:'r20260912x',items:['【「指名なし」で紛らわしい案内が出ていた問題を修正】指名なしの空き判定が「その施術ができないスタッフ」まで空きとして数えていたため、実際は誰も対応できない時間が選べてしまい、最後の確定で断られる形になっていた→「施術ができて、かつ空いているスタッフがいる時間」だけを最初から表示。対応できない時間は最初から選べない','指名なしで確定した時、担当が決まらないまま保存され誰の枠も塞がない（隠れた二重予約の経路）になっていた→確定時に実際に対応できる担当（SAKURA優先）を自動で割り当て、その担当の枠を確実に塞ぐ']},
@@ -4365,7 +4366,12 @@ function bindAdmin(){
   const bclear=byId('bc-clear');if(bclear)bclear.onclick=()=>{state.bcPhone='';render()};
   const bsend=byId('bc-send');if(bsend)bsend.onclick=sendTpl;
   const bcoup=byId('bc-coupon');if(bcoup)bcoup.onclick=grantCoupon;
-  app.querySelectorAll('[data-visit]').forEach(b=>b.onclick=()=>markVisited(b.dataset.visit));
+  app.querySelectorAll('[data-visit]').forEach(b=>b.onclick=()=>openVisitConfirm(b.dataset.visit));
+  app.querySelectorAll('[data-vcdel]').forEach(b=>b.onclick=()=>{const i=parseInt(b.dataset.vcdel);if(state.visitConfirm){state.visitConfirm.items.splice(i,1);render();}});
+  const _vca=byId('vc-add');if(_vca)_vca.onchange=()=>{const v=_vca.value;if(v&&state.visitConfirm){state.visitConfirm.items.push(v);render();}};
+  const _vcc=byId('vc-cancel');if(_vcc)_vcc.onclick=()=>{state.visitConfirm=null;render();};
+  const _vco=byId('vc-ok');if(_vco)_vco.onclick=visitConfirmSave;
+  app.querySelectorAll('[data-vcedit]').forEach(b=>b.onclick=()=>openVisitConfirm(b.dataset.vcedit));
   app.querySelectorAll('[data-thanks]').forEach(b=>b.onclick=()=>sendThanks(b.dataset.thanks));
   app.querySelectorAll('[data-editpts]').forEach(b=>b.onclick=()=>editPts(b.dataset.editpts));
   app.querySelectorAll('[data-fin]').forEach(b=>b.onclick=()=>{state.finOpen=state.finOpen===b.dataset.fin?null:b.dataset.fin;render()});const _ces=byId('ce-save');if(_ces)_ces.onclick=async()=>{const oldKey=state.custOpen;const c=DATA.customers[oldKey];if(!c)return;const nn=(byId('ce-name').value||'').trim();const nk=(byId('ce-kana').value||'').trim();const np=normPhone(byId('ce-phone').value||'');const nb=byId('ce-bday').value||'';if(!nn||!np){alert('お名前と電話番号は必須です。');return;}if(np!==oldKey&&DATA.customers[np]){alert('その電話番号は別のお客様で登録済みです。');return;}
@@ -4452,6 +4458,68 @@ async function saveStaff(){const name=byId('st-name').value.trim();if(!name){ale
 async function sendBc(){const c=DATA.customers[state.bcPhone];if(!c)return;const t=byId('bc-msg').value.trim();if(!t){alert('メッセージを入力してください。');return;}pushNotice(c,t);await saveData(DATA);alert(c.name+'様のマイページに送信しました。');render();}
 async function grantCoupon(){const c=DATA.customers[state.bcPhone];if(!c)return;const yenv=parseInt((byId('bc-cyen')||{}).value||'0')||0;if(!yenv){alert('金額を入力してください。');return;}const exp=addMonths(fmtDate(today),3);const msg=`クーポンをプレゼントしました🎁 次回のお会計で¥${yenv}オフをご利用いただけます（${exp.replace(/-/g,'/')}までにご利用ください）。`;if(!confirm(`${c.name}様に¥${yenv}クーポン（有効期限 ${exp.replace(/-/g,'/')}）を付与し、次の内容を送信します。よろしいですか？\n\n${msg}`))return;c.couponYen=(c.couponYen||0)+yenv;c.couponExpiry=exp;pushNotice(c,msg);await saveData(DATA);alert(`${c.name}様に¥${yenv}クーポンを付与しました（${exp.replace(/-/g,'/')}まで）。`);render();}
 async function sendTpl(){const c=DATA.customers[state.bcPhone];if(!c)return;const tp=(S().templates||[])[state.bcTpl||0];if(!tp){alert('テンプレートがありません。');return;}if(!confirm(`${c.name}様に「${tp.cat}」を送信します。よろしいですか？\n\n${tp.text}`))return;pushNotice(c,tp.text);await saveData(DATA);alert(`${c.name}様に「${tp.cat}」を配信しました。`);state.bcPhone='';render();}
+
+/* ご来店の確定パネル：実際に行った施術に直してから確定する。
+   メニューを変えると金額とポイントが自動で再計算される。 */
+function openVisitConfirm(key){
+  const p=String(key).split('|');const id=p[0],dt=p[1];
+  const bk=DATA.bookings.find(x=>x.id===id&&(!dt||x.date===dt))||DATA.bookings.find(x=>x.id===id);
+  if(!bk)return;
+  if(bk.date>fmtDate(today)){alert('この予約は '+mdLabel(bk.date)+' の未来の予約です。ご来店当日以降に操作してください。');return;}
+  state.visitConfirm={id:bk.id,date:bk.date,items:(bk.items||[]).map(it=>it.id||it),send:!bk.thanked,redo:bk.status==='visited'};
+  render();
+}
+function visitConfirmPanel(){
+  const vc=state.visitConfirm;if(!vc)return '';
+  const bk=DATA.bookings.find(x=>x.id===vc.id&&x.date===vc.date)||DATA.bookings.find(x=>x.id===vc.id);
+  if(!bk)return '';
+  const c=DATA.customers[normPhone(bk.phone)]||{};
+  const chosen=(vc.items||[]).map(svById).filter(Boolean);
+  const preview=Object.assign({},bk,{items:chosen.map(x=>({id:x.id,cat:x.cat,name:x.name,min:x.min,price:priceFor(x.id,bk.staffId)}))});
+  const total=bkTotal(preview), pay=bkPayment(preview), pts=suggestPoints(preview);
+  const origIds=(bk.items||[]).map(it=>it.id||it);
+  const changed=JSON.stringify(origIds.slice().sort())!==JSON.stringify((vc.items||[]).slice().sort());
+  const opts=services.filter(x=>x.cat!=='addon'&&x.cat!=='tfree').concat(services.filter(x=>x.cat==='addon'||x.cat==='tfree'));
+  const rows=chosen.map((x,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line)"><span style="flex:1">${esc(x.name)}<span style="color:var(--ink-soft);font-size:11px"> ・${x.min}分</span></span><b style="white-space:nowrap">¥${(priceFor(x.id,bk.staffId)||0).toLocaleString()}</b><button class="chip" data-vcdel="${i}" style="padding:2px 9px;font-size:11px;color:var(--rose);border-color:var(--rose)">外す</button></div>`).join('')||'<div class="note">施術が選ばれていません</div>';
+  return `<div class="addform" style="border:2px solid var(--gold);margin:10px 0">
+    <div class="subhead" style="margin:0 0 2px">${vc.redo?'✏️ 施術内容を直す':'✅ ご来店の確定'}（${esc(c.name||'')}様 ・ ${mdLabel(bk.date)} ${bk.time}）</div>
+    <div class="note" style="margin:0 0 10px">${vc.redo?'内容を直すと、お会計と付与ポイントが自動で計算し直されます。':'実際に行った施術に直してから確定してください。金額とポイントは自動で計算されます。'}</div>
+    <div class="subhead" style="margin:0 0 4px;font-size:13px">実際の施術内容${changed?' <span style="color:var(--gold-deep,#9c7a12)">（変更あり）</span>':''}</div>
+    ${rows}
+    <div class="field" style="margin-top:10px"><label>施術を追加する</label><select id="vc-add"><option value="">選んでください</option>${opts.map(o=>`<option value="${o.id}">${esc(o.name)}（¥${(o.price||0).toLocaleString()}）</option>`).join('')}</select></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1.5px solid var(--line);font-size:14px"><span>お会計</span><b>¥${pay.toLocaleString()}</b></div>
+    ${total!==pay?`<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-soft)"><span>（施術計 ¥${total.toLocaleString()} − 割引・ポイント利用）</span></div>`:''}
+    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px"><span>付与ポイント</span><b style="color:#2C4433">${pts.toLocaleString()}pt</b></div>
+    ${pts===0?`<div class="note" style="color:var(--gold-deep,#9c7a12)">初回のご来店のためポイントは付きません（2回目以降から付与）。</div>`:''}
+    ${bk.thanked?`<div class="note" style="margin-top:10px">お礼メッセージは送信済みです（再送しません）。</div>`:`<label class="chk-field" style="margin-top:10px"><input type="checkbox" id="vc-send" ${vc.send?'checked':''}><span>お礼メッセージと口コミのお願いを送る</span></label>`}
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-ghost" id="vc-cancel" style="flex:1">やめる</button><button class="btn btn-primary" id="vc-ok" style="flex:1">${vc.redo?'この内容に直す':'この内容で確定する'}</button></div>
+  </div>`;
+}
+async function visitConfirmSave(){
+  const vc=state.visitConfirm;if(!vc)return;
+  const bk=DATA.bookings.find(x=>x.id===vc.id&&x.date===vc.date)||DATA.bookings.find(x=>x.id===vc.id);
+  if(!bk)return;
+  const chosen=(vc.items||[]).map(svById).filter(Boolean);
+  if(!chosen.length){alert('施術を1つ以上お選びください。');return;}
+  const origIds=(bk.items||[]).map(it=>it.id||it);
+  bk.items=chosen.map(x=>({id:x.id,cat:x.cat,name:x.name,min:x.min,price:priceFor(x.id,bk.staffId)}));
+  const changed=JSON.stringify(origIds.slice().sort())!==JSON.stringify((vc.items||[]).slice().sort());
+  if(changed){bk.history=bk.history||[];bk.history.push({at:Date.now(),type:'施術内容の変更',detail:chosen.map(x=>x.name).join('・'),by:meName()||'スタッフ'});}
+  bk.status='visited';bk.updatedAt=Date.now();bk.visitedAt=Date.now();
+  bk.awardedPoints=suggestPoints(bk);
+  const c=DATA.customers[normPhone(bk.phone)];
+  const send=!!(byId('vc-send')&&byId('vc-send').checked);
+  if(send&&c&&!bk.thanked){
+    const ru=(S().reviewUrl||S().mapUrl||'https://g.page/r/CUd3JdEySI5iEAE/review');
+    const tp=(S().templates||[]).find(t=>t.cat==='ご来店のお礼');
+    const base=(tp&&tp.text)||'本日はご来店ありがとうございました😊';
+    pushNotice(c,base+'\n\nよろしければGoogleの口コミでご感想をお聞かせください🙏\n'+ru+'\n\nマイページの「ご意見箱」への投稿でも'+CONFIG.feedbackPoints+'ptプレゼント中です✨');
+    bk.reviewAsked=true;bk.thanked=true;if(!bk.salonMessage)bk.salonMessage=base;
+    logAct((c.name||'')+'様へお礼＋口コミ依頼を送信');
+  }
+  logAct((c&&c.name||'')+'様のご来店を確定（'+bk.awardedPoints+'pt付与'+(changed?'・施術内容を変更':'')+'）');
+  state.visitConfirm=null;await saveData(DATA);render();
+}
 async function markVisited(key){const p=String(key).split('|');const id=p[0],dt=p[1];const bk=DATA.bookings.find(x=>x.id===id&&(!dt||x.date===dt))||DATA.bookings.find(x=>x.id===id);if(!bk)return;if(bk.date>fmtDate(today)){alert('この予約は '+mdLabel(bk.date)+' の未来の予約です。来店済みにはできません（ご来店当日以降に操作してください）。');return;}if(bk.status==='visited')return;if(!confirm((DATA.customers[normPhone(bk.phone)]||{}).name+'様の '+mdLabel(bk.date)+' のご予約を「来店済み」にします。\nお礼メッセージと口コミのお願いがお客様に自動送信されます。よろしいですか？'))return;bk.status='visited';bk.updatedAt=Date.now();bk.visitedAt=Date.now();bk.awardedPoints=suggestPoints(bk);const _rc=DATA.customers[normPhone(bk.phone)];if(_rc&&!bk.thanked){const ru=(S().reviewUrl||S().mapUrl||'https://g.page/r/CUd3JdEySI5iEAE/review');const tp=(S().templates||[]).find(t=>t.cat==='ご来店のお礼');const base=(tp&&tp.text)||'本日はご来店ありがとうございました😊';pushNotice(_rc,base+'\n\nよろしければGoogleの口コミでご感想をお聞かせください🙏\n'+ru+'\n\nマイページの「ご意見箱」への投稿でも'+CONFIG.feedbackPoints+'ptプレゼント中です✨');bk.reviewAsked=true;bk.thanked=true;bk.updatedAt=Date.now();if(!bk.salonMessage)bk.salonMessage=base;logAct(_rc.name+'様へお礼＋口コミ依頼を送信');}await saveData(DATA);render();}
 async function sendThanks(id,silent){const bk=DATA.bookings.find(x=>x.id===id);if(!bk)return;if(bk.thanked)return;if(bk.date>fmtDate(today)){if(!silent)alert('未来の予約にはお礼メッセージを送れません。');return;}if(bk.status!=='visited'){if(!silent)alert('来店済みの予約にのみ送信できます。');return;}const c=DATA.customers[normPhone(bk.phone)];const tp=(S().templates||[]).find(t=>t.cat==='ご来店のお礼')||{text:'本日はご来店ありがとうございました😊'};if(!c)return;if(!silent&&!confirm(`${c.name}様に次の内容を送信します。よろしいですか？\n\n${tp.text}`))return;pushNotice(c,tp.text);bk.thanked=true;bk.updatedAt=Date.now();if(!bk.salonMessage)bk.salonMessage=tp.text;logAct(c.name+'様へお礼メッセージ送信');await saveData(DATA);render();}
 async function editPts(id){const bk=DATA.bookings.find(x=>x.id===id);if(!bk)return;const inp=prompt('このご来店で付与するポイント数',String(bk.awardedPoints||0));if(inp===null)return;bk.awardedPoints=parseInt(inp||'0')||0;await saveData(DATA);render();}
