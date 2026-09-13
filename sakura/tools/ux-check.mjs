@@ -6,6 +6,12 @@ import { chromium, devices } from '@playwright/test';
 
 const BASE = process.env.BASE_URL ?? 'http://localhost:3000';
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+
+/**
+ * 購入者向け画面はログインが必要になったため、確認用セッションを持たせる。
+ * （SITE_DEMO_MODE=true の開発・確認環境でのみ有効。本番では無効）
+ */
+const SESSION = { name: 'sjb_session', value: 'demo', url: BASE };
 const results = [];
 const check = (name, ok, detail = '') => results.push({ 確認項目: name, 結果: ok ? 'OK' : 'NG', 詳細: detail });
 
@@ -33,6 +39,7 @@ const check = (name, ok, detail = '') => results.push({ 確認項目: name, 結�
 // --- モバイル：マイページの「続きから学ぶ」が1クリック / 資料まで2クリック ---
 {
   const ctx = await browser.newContext(devices['iPhone 14']);
+  await ctx.addCookies([SESSION]);
   const page = await ctx.newPage();
   await page.goto(`${BASE}/ja/mypage`);
 

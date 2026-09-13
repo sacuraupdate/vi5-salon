@@ -4,7 +4,7 @@ import { Link } from '@/i18n/navigation';
 import PhotoFrame from '@/components/brand/PhotoFrame';
 import { ProgressBar } from '@/components/ui/Card';
 import { buttonClass } from '@/components/ui/Button';
-import { t } from '@/lib/format';
+import { tcText } from '@/lib/format';
 import type { Course, Enrollment } from '@/lib/data';
 
 /**
@@ -21,6 +21,7 @@ export default async function ContinueCard({
   locale: string;
 }) {
   const m = await getTranslations({ locale, namespace: 'mypage' });
+  const preparing = (await getTranslations({ locale, namespace: 'common' }))('preparing');
 
   return (
     <section className="overflow-hidden rounded-md border border-line bg-washi">
@@ -28,16 +29,16 @@ export default async function ContinueCard({
         <PhotoFrame
           kind="course"
           tone={course.tone}
-          alt={t(course.title, locale)}
+          alt={tcText(course.title, locale, preparing)}
           className="h-24 w-full rounded-sm border border-line sm:aspect-4/3 sm:h-auto"
         />
         <div className="flex flex-col gap-2.5">
           <span className="text-[11px] font-medium tracking-[0.14em] text-vermilion uppercase">
             {m('continueTitle')}
           </span>
-          <h2 className="text-lg leading-snug">{t(course.title, locale)}</h2>
+          <h2 className="text-lg leading-snug">{tcText(course.title, locale, preparing)}</h2>
           <p className="text-[13px] text-ink-muted">
-            {m('continueLesson')}：{t(enrollment.lastLessonTitle, locale)}
+            {m('continueLesson')}：{tcText(enrollment.lastLessonTitle, locale, preparing)}
           </p>
 
           <div className="flex items-center gap-3">

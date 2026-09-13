@@ -2,7 +2,7 @@ import { BadgeCheck, CheckCircle2, Download, FileText, ListChecks, MessageSquare
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { catalogRepository, learnerRepository } from '@/lib/data';
 import type { MaterialType } from '@/lib/data';
-import { t } from '@/lib/format';
+import { tcText } from '@/lib/format';
 import { Card } from '@/components/ui/Card';
 
 const icons: Record<MaterialType, typeof FileText> = {
@@ -18,6 +18,7 @@ export default async function MaterialsPage({ params }: { params: Promise<{ loca
   setRequestLocale(locale);
 
   const m = await getTranslations({ locale, namespace: 'mypage' });
+  const preparing = (await getTranslations({ locale, namespace: 'common' }))('preparing');
   const [enrollments, courses] = await Promise.all([
     learnerRepository.listEnrollments(),
     catalogRepository.listCourses(),
@@ -35,7 +36,7 @@ export default async function MaterialsPage({ params }: { params: Promise<{ loca
       <div className="flex flex-col gap-6">
         {owned.map((course) => (
           <section key={course.slug} className="flex flex-col gap-3">
-            <h2 className="border-b border-line pb-2 text-[15px] font-medium">{t(course.title, locale)}</h2>
+            <h2 className="border-b border-line pb-2 text-[15px] font-medium">{tcText(course.title, locale, preparing)}</h2>
             <div className="grid gap-2 sm:grid-cols-2">
               {course.materials.map((mat) => {
                 const Icon = icons[mat.type];
@@ -45,7 +46,7 @@ export default async function MaterialsPage({ params }: { params: Promise<{ loca
                       <Icon className="h-4.5 w-4.5" strokeWidth={1.5} />
                     </span>
                     <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="truncate text-[13px] font-medium text-ink">{t(mat.title, locale)}</span>
+                      <span className="truncate text-[13px] font-medium text-ink">{tcText(mat.title, locale, preparing)}</span>
                       <span className="text-[11px] text-ink-muted">{mat.meta}</span>
                     </span>
                     <button

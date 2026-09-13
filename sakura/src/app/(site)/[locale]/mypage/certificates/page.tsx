@@ -1,7 +1,7 @@
 import { Award } from 'lucide-react';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { catalogRepository, learnerRepository } from '@/lib/data';
-import { formatDate, t } from '@/lib/format';
+import { formatDate, tcText } from '@/lib/format';
 import { SakuraDivider, Seal } from '@/components/brand/Sakura';
 import { BrandCrest } from '@/components/brand/BrandArt';
 import { EmptyState } from '@/components/ui/Card';
@@ -14,6 +14,7 @@ export default async function CertificatesPage({ params }: { params: Promise<{ l
 
   const m = await getTranslations({ locale, namespace: 'mypage' });
   const common = await getTranslations({ locale, namespace: 'common' });
+  const preparing = common('preparing');
   const [certificates, courses] = await Promise.all([
     learnerRepository.listCertificates(),
     catalogRepository.listCourses(),
@@ -68,7 +69,7 @@ export default async function CertificatesPage({ params }: { params: Promise<{ l
 
                 <p className="font-serif text-[24px] leading-snug tracking-[0.16em] text-ink">{cert.holderName}</p>
                 <p className="mt-3 text-[13px] leading-loose text-ink-2">
-                  {course ? t(course.title, locale) : cert.courseSlug}
+                  {course ? tcText(course.title, locale, preparing) : cert.courseSlug}
                 </p>
 
                 <div className="mt-auto flex items-end justify-between gap-4 pt-8">

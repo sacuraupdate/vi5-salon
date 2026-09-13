@@ -71,9 +71,21 @@ export default async function AdminCoursesPage() {
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
+                    {/* 管理画面は日本円で確認する。価格未確定の講座はその旨を出す */}
                     <span className="font-serif text-[15px]">
-                      {course.isFree ? '無料' : formatJpy(course.price.JPY)}
+                      {course.isFree
+                        ? '無料'
+                        : course.pricing.status === 'draft'
+                          ? <span className="text-[13px] text-vermilion">価格未確定</span>
+                          : course.pricing.byMarket.jp
+                            ? formatJpy(course.pricing.byMarket.jp.launch ?? course.pricing.byMarket.jp.list)
+                            : <span className="text-[13px] text-ink-muted">日本では未販売</span>}
                     </span>
+                    {!course.isFree && course.pricing.byMarket.jp?.launch != null ? (
+                      <span className="text-[11px] text-ink-muted">
+                        通常 {formatJpy(course.pricing.byMarket.jp.list)}
+                      </span>
+                    ) : null}
                     {sale ? <span className="text-[11px] text-ink-muted">今月 {sale.orders}件</span> : null}
                   </div>
                 </div>

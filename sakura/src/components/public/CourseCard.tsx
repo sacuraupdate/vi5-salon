@@ -3,7 +3,9 @@ import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import PhotoFrame from '@/components/brand/PhotoFrame';
 import { Badge } from '@/components/ui/Card';
-import { formatPrice, isPublishedIn, publishedLocales, t } from '@/lib/format';
+import { isPublishedIn, publishedLocales, tcList, tcText } from '@/lib/format';
+import { formatMoney, priceFor } from '@/lib/market';
+import { getMarket } from '@/lib/market-server';
 import type { Category, Course } from '@/lib/data';
 
 /**
@@ -23,7 +25,13 @@ export default async function CourseCard({
 }) {
   const c = await getTranslations({ locale, namespace: 'common' });
   const cc = await getTranslations({ locale, namespace: 'courseCard' });
-  const gain = t(course.highlights, locale)[0];
+  const preparing = c('preparing');
+  // 未翻訳は日本語へ落とさず「準備中」を出す
+  const title = tcText(course.title, locale, preparing);
+  const gain = tcList(course.highlights, locale)[0];
+  // 価格は言語ではなく市場から引く。未設定の市場では金額を出さない
+  const market = await getMarket(locale);
+  const price = priceFor(course.pricing, market);
   // 1章1動画の講座は「章」で数える（講座詳細と表記を揃える）
   const chaptered = course.curriculum.length > 0 && course.curriculum.every((ch) => ch.lessons.length === 1);
   // その言語で未公開の講座は「準備中」を明示し、公開済みの言語だけを出す
@@ -46,7 +54,7 @@ export default async function CourseCard({
         className="group flex h-full flex-col border border-line bg-bg transition-colors hover:border-ink-2"
       >
         <div className="relative aspect-16/9 w-full shrink-0 border-b border-line">
-          <PhotoFrame kind="course" tone={course.tone} alt={t(course.title, locale)} className="h-full w-full" />
+          <PhotoFrame kind="course" tone={course.tone} alt={title} className="h-full w-full" />
           {course.isFree ? (
             <span className="absolute top-3 left-3">
               <Badge tone="vermilion">{c('free')}</Badge>
@@ -66,7 +74,7 @@ export default async function CourseCard({
             {category ? (
               <>
                 <span aria-hidden className="text-line">|</span>
-                <span className="text-pine">{t(category.name, locale)}</span>
+                <span className="text-pine">{tcText(category.name, locale, preparing)}</span>
               </>
             ) : null}
             <span aria-hidden className="text-line">|</span>
@@ -74,11 +82,13 @@ export default async function CourseCard({
           </div>
 
           <h3 className="font-serif text-[16px] leading-relaxed tracking-[0.06em] text-ink">
-            {t(course.title, locale)}
+            {title}
           </h3>
 
           {compact ? null : (
-            <p className="line-clamp-2 text-[12px] leading-loose text-ink-muted">{t(course.summary, locale)}</p>
+            <p className="line-clamp-2 text-[12px] leading-loose text-ink-muted">
+              {tcText(course.summary, locale, preparing)}
+            </p>
           )}
 
           {/* 誰向けか：自分向けかどうかを最初に判断できるようにする */}
@@ -101,11 +111,13 @@ export default async function CourseCard({
 
           <div className="mt-auto flex flex-col gap-3 pt-3">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-line pt-3 text-[10px] tracking-[0.08em] text-ink-muted">
-              <span className="inline-flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5" strokeWidth={1.25} />
-                {course.totalMinutes}
-                {c('minutes')}
-              </span>
+              {course.totalMinutes > 0 ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5" strokeWidth={1.25} />
+                  {course.totalMinutes}
+                  {c('minutes')}
+                </span>
+              ) : null}
               <span className="inline-flex items-center gap-1.5">
                 <PlayCircle className="h-3.5 w-3.5" strokeWidth={1.25} />
                 {chaptered ? course.curriculum.length : course.lessonCount}
@@ -132,13 +144,22 @@ export default async function CourseCard({
               ) : (
                 <span />
               )}
-              {/* 仮価格をそのまま出さない。価格未確定の講座は金額を表示しない */}
-              <span className="font-serif text-[17px] whitespace-nowrap text-ink">
-                {course.isFree
-                  ? c('free')
-                  : course.priceStatus === 'draft'
-                    ? <span className="text-[13px] text-ink-muted">{c('preparing')}</span>
-                    : formatPrice(course.price, locale)}
+              {/* 価格未確定、またはその市場で未販売の講座は金額を出さない（日本円へ落とさない） */}
+              <span className="flex flex-col items-end font-serif text-[17px] whitespace-nowrap text-ink">
+                {course.isFree ? (
+                  c('free')
+                ) : price ? (
+                  <>
+                    {price.strikethrough != null ? (
+                      <span className="text-[11px] text-ink-muted line-through">
+                        {formatMoney(price.strikethrough, price.currency, locale)}
+                      </span>
+                    ) : null}
+                    <span>{formatMoney(price.amount, price.currency, locale)}</span>
+                  </>
+                ) : (
+                  <span className="text-[13px] text-ink-muted">{preparing}</span>
+                )}
               </span>
             </div>
           </div>

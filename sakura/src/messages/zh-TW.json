@@ -33,7 +33,8 @@
     "menu": "選單",
     "close": "關閉",
     "language": "語言",
-    "gettingStarted": "初次造訪"
+    "gettingStarted": "初次造訪",
+    "contact": "聯絡我們"
   },
   "home": {
     "eyebrow": "來自日本的專業美容教育",
@@ -167,7 +168,11 @@
     "curriculumPreparing": "全 {total} 章製作中。章節內容將依各語言的公開準備進度陸續刊登。",
     "priceTbd": "價格準備中",
     "buyPreparing": "尚未開賣",
-    "buyPreparingNote": "請等待開賣。價格確定後將另行公告。"
+    "buyPreparingNote": "請等待開賣。價格確定後將另行公告。",
+    "priceNotSold": "您所在的市場尚未開賣",
+    "launchLabel": "開課價",
+    "listLabel": "原價",
+    "chaptersPlanned": "共 {total} 章"
   },
   "instructor": {
     "profile": "簡介",
@@ -202,7 +207,13 @@
     "forgot": "忘記密碼",
     "terms": "註冊即表示您同意服務條款與隱私權政策。",
     "demoNote": "此畫面為 Phase 1 設計確認用，尚未實際進行登入。",
-    "brandCopy": "把日式沙龍的標準，帶到您的現場。"
+    "brandCopy": "把日式沙龍的標準，帶到您的現場。",
+    "notReadyTitle": "目前尚無法登入",
+    "notReadyBody": "帳號與付款功能正在準備中。在此之前無法登入或購買。若希望開放時收到通知，請與我們聯絡。",
+    "demoEnter": "開始檢視用工作階段",
+    "demoEnterNote": "僅供畫面檢視，不會建立實際帳號。",
+    "termsLink": "服務條款",
+    "privacyLink": "隱私權政策"
   },
   "mypage": {
     "title": "我的頁面",
@@ -249,8 +260,10 @@
     "contact": "聯絡我們",
     "terms": "服務條款",
     "privacy": "隱私權政策",
-    "legalNote": "法務頁面於 Phase 1 尚未撰寫。",
-    "language": "顯示語言"
+    "legalNote": "各頁面為草稿，將於開始販售前定稿。",
+    "language": "顯示語言",
+    "refund": "退款政策",
+    "tokusho": "販售者資訊"
   },
   "quiz": {
     "open": "三題找出適合你的課程",
@@ -314,5 +327,88 @@
     "audManagement": "經營者與準備開業者",
     "audTechnique": "美容從業者",
     "audFemcare": "美容從業者與女性照護負責人"
+  },
+  "market": {
+    "label": "顯示的市場",
+    "note": "價格依市場個別設定，並非由日圓自動換算。",
+    "change": "變更市場"
+  },
+  "errorPage": {
+    "title": "發生問題",
+    "body": "無法載入此頁面。請稍後再試一次。若持續發生，請與我們聯絡。",
+    "retry": "重新載入",
+    "home": "回首頁",
+    "contact": "聯絡我們"
+  },
+  "notFound": {
+    "title": "找不到頁面",
+    "body": "此頁面不存在，或已移動。",
+    "home": "回首頁",
+    "courses": "查看課程"
+  },
+  "loading": {
+    "label": "載入中"
+  },
+  "legal": {
+    "nav": "法律資訊",
+    "terms": "服務條款",
+    "privacy": "隱私權政策",
+    "refund": "退款政策",
+    "tokusho": "特定商業交易法標示",
+    "tokushoShort": "販售者資訊",
+    "draftTitle": "草稿 — 尚未生效",
+    "draftBody": "本文為實作用草稿。將於開始販售前，經 SAKURA 與專業人士確認後定稿。標示［待確認］的項目尚未決定。",
+    "updated": "最後更新",
+    "contactLead": "如有不清楚之處，請於購買前與我們聯絡。",
+    "otherPages": "其他法律頁面",
+    "notTranslatedTitle": "此語言尚未提供",
+    "notTranslatedBody": "本頁尚未翻譯，請閱讀英文版。以英文版為準。",
+    "readEnglish": "閱讀英文版"
+  },
+  "contact": {
+    "title": "聯絡我們",
+    "lead": "購買前後都歡迎詢問。我們以英文回覆。",
+    "name": "姓名",
+    "email": "電子郵件",
+    "topic": "詢問內容",
+    "topicPurchase": "購買前的問題",
+    "topicPayment": "付款與收據",
+    "topicAccess": "無法開啟課程",
+    "topicOther": "其他",
+    "message": "內容",
+    "messagePlaceholder": "請告訴我們您的需求。附上所在國家有助於我們更快回覆。",
+    "submit": "送出",
+    "noPhoneNote": "我們不會要求電話號碼或地址。",
+    "privacyNote": "您填寫的內容僅用於回覆您。",
+    "responseNote": "通常於 2〜3 個工作天內回覆。",
+    "directTitle": "或直接寄信給我們",
+    "unavailableTitle": "此表單尚未連接",
+    "unavailableBody": "目前尚無法從此表單送出。請直接寄信至上方的電子郵件地址。",
+    "emailPending": "客服信箱準備中。"
+  },
+  "learn": {
+    "title": "觀看",
+    "chapter": "第 {n} 章",
+    "signInTitle": "請先登入",
+    "signInBody": "登入後即可觀看您已購買的章節。",
+    "signIn": "登入",
+    "notPurchasedTitle": "您尚未購買此課程",
+    "notPurchasedBody": "購買後即可觀看所有章節，且無觀看期限。",
+    "viewCourse": "查看課程頁面",
+    "videoPendingTitle": "本章尚未公開",
+    "videoPendingBody": "目前製作中。公開後即可在此觀看，不需額外費用。",
+    "chapterLocked": "即將公開",
+    "chapterOpen": "可觀看",
+    "captions": "字幕",
+    "captionsNone": "尚未提供您所使用語言的字幕。",
+    "backToCourses": "回到我的課程",
+    "noExtraCost": "日後新增的章節也不需額外費用。",
+    "chapterList": "章節"
+  },
+  "meta": {
+    "title": "SAKURA JAPAN BEAUTY",
+    "titleTemplate": "%s | SAKURA JAPAN BEAUTY",
+    "description": "學習日本沙龍的思維、待客與標準，並導入自己的沙龍。由日本的沙龍經營者授課的線上課程。",
+    "ogAlt": "SAKURA JAPAN BEAUTY"
   }
 }

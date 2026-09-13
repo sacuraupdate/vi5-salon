@@ -33,7 +33,8 @@
     "menu": "メニュー",
     "close": "閉じる",
     "language": "言語",
-    "gettingStarted": "初めての方へ"
+    "gettingStarted": "初めての方へ",
+    "contact": "お問い合わせ"
   },
   "home": {
     "eyebrow": "日本発・プロ向け美容教育",
@@ -167,7 +168,11 @@
     "curriculumPreparing": "全{total}章を制作中です。章の内容は、公開の準備が整った言語から順に掲載します。",
     "priceTbd": "価格は準備中",
     "buyPreparing": "公開準備中",
-    "buyPreparingNote": "販売開始までお待ちください。価格は決定しだいご案内します。"
+    "buyPreparingNote": "販売開始までお待ちください。価格は決定しだいご案内します。",
+    "priceNotSold": "お住まいの市場では販売準備中です",
+    "launchLabel": "ローンチ価格",
+    "listLabel": "通常価格",
+    "chaptersPlanned": "全{total}章"
   },
   "instructor": {
     "profile": "プロフィール",
@@ -202,7 +207,13 @@
     "forgot": "パスワードをお忘れの方",
     "terms": "登録することで、利用規約とプライバシーポリシーに同意したものとみなされます。",
     "demoNote": "この画面はPhase 1のデザイン確認用です。実際のログインはまだ行われません。",
-    "brandCopy": "日本のサロンの基準を、あなたの現場へ。"
+    "brandCopy": "日本のサロンの基準を、あなたの現場へ。",
+    "notReadyTitle": "ログインはまだご利用いただけません",
+    "notReadyBody": "アカウントと決済は現在準備中です。それまではログイン・ご購入いただけません。公開時のご案内をご希望の方はお問い合わせください。",
+    "demoEnter": "確認用セッションを開始",
+    "demoEnterNote": "画面確認用です。実際のアカウントは作成されません。",
+    "termsLink": "利用規約",
+    "privacyLink": "プライバシーポリシー"
   },
   "mypage": {
     "title": "マイページ",
@@ -249,8 +260,10 @@
     "contact": "お問い合わせ",
     "terms": "利用規約",
     "privacy": "プライバシーポリシー",
-    "legalNote": "※ 法務ページの内容はPhase 1では未作成です。",
-    "language": "表示言語"
+    "legalNote": "※ 各ページはドラフトです。販売開始前に確定します。",
+    "language": "表示言語",
+    "refund": "返金ポリシー",
+    "tokusho": "特定商取引法に基づく表示"
   },
   "quiz": {
     "open": "3問であなたに合う講座を診断",
@@ -314,5 +327,88 @@
     "audManagement": "オーナー・開業予定の方",
     "audTechnique": "美容従事者",
     "audFemcare": "美容従事者・フェムケア担当"
+  },
+  "market": {
+    "label": "表示する市場",
+    "note": "価格は市場ごとに設定しています。日本円からの自動換算ではありません。",
+    "change": "市場を変更"
+  },
+  "errorPage": {
+    "title": "問題が発生しました",
+    "body": "このページを読み込めませんでした。少し時間をおいて、もう一度お試しください。繰り返す場合はお問い合わせください。",
+    "retry": "再読み込み",
+    "home": "ホームへ戻る",
+    "contact": "お問い合わせ"
+  },
+  "notFound": {
+    "title": "ページが見つかりません",
+    "body": "このページは存在しないか、移動しました。",
+    "home": "ホームへ戻る",
+    "courses": "講座を見る"
+  },
+  "loading": {
+    "label": "読み込み中"
+  },
+  "legal": {
+    "nav": "法務",
+    "terms": "利用規約",
+    "privacy": "プライバシーポリシー",
+    "refund": "返金ポリシー",
+    "tokusho": "特定商取引法に基づく表示",
+    "tokushoShort": "販売事業者の表示",
+    "draftTitle": "ドラフト（未確定）",
+    "draftBody": "これは実装用のドラフトです。販売開始前に SAKURA および専門家の確認を経て確定します。［要確定］の箇所はまだ決まっていません。",
+    "updated": "最終更新",
+    "contactLead": "ご不明な点は、ご購入前にお問い合わせください。",
+    "otherPages": "その他の法務ページ",
+    "notTranslatedTitle": "この言語ではまだご用意がありません",
+    "notTranslatedBody": "このページは未翻訳です。英語版をご確認ください。適用されるのは英語版です。",
+    "readEnglish": "英語版を読む"
+  },
+  "contact": {
+    "title": "お問い合わせ",
+    "lead": "ご購入前でも購入後でもお気軽にどうぞ。",
+    "name": "お名前",
+    "email": "メールアドレス",
+    "topic": "ご用件",
+    "topicPurchase": "購入前の質問",
+    "topicPayment": "お支払い・領収書",
+    "topicAccess": "講座が開けない",
+    "topicOther": "その他",
+    "message": "内容",
+    "messagePlaceholder": "ご用件をご記入ください。お住まいの国を書いていただけると回答が早くなります。",
+    "submit": "送信する",
+    "noPhoneNote": "電話番号・住所はお伺いしません。",
+    "privacyNote": "ご記入いただいた内容は、ご返信のためだけに使用します。",
+    "responseNote": "通常2〜3営業日以内にご返信します。",
+    "directTitle": "メールで直接お問い合わせ",
+    "unavailableTitle": "フォームはまだ接続されていません",
+    "unavailableBody": "このフォームからの送信はまだご利用いただけません。上のメールアドレスへ直接ご連絡ください。",
+    "emailPending": "問い合わせ用アドレスを準備中です。"
+  },
+  "learn": {
+    "title": "受講",
+    "chapter": "第{n}章",
+    "signInTitle": "ログインしてください",
+    "signInBody": "ご購入いただいた章を視聴するにはログインが必要です。",
+    "signIn": "ログイン",
+    "notPurchasedTitle": "この講座は未購入です",
+    "notPurchasedBody": "ご購入いただくとすべての章を視聴できます。視聴期限はありません。",
+    "viewCourse": "講座ページを見る",
+    "videoPendingTitle": "この章はまだ公開されていません",
+    "videoPendingBody": "現在制作中です。公開されしだい、追加料金なしでこちらから視聴いただけます。",
+    "chapterLocked": "近日公開",
+    "chapterOpen": "視聴できます",
+    "captions": "字幕",
+    "captionsNone": "お使いの言語の字幕はまだご用意がありません。",
+    "backToCourses": "受講中の講座へ戻る",
+    "noExtraCost": "あとから追加される章も、追加料金なしでご覧いただけます。",
+    "chapterList": "章"
+  },
+  "meta": {
+    "title": "SAKURA JAPAN BEAUTY",
+    "titleTemplate": "%s | SAKURA JAPAN BEAUTY",
+    "description": "日本のサロンの考え方・接客・基準を学び、自分のサロンに取り入れるためのオンライン講座。日本のサロンオーナーが教えます。",
+    "ogAlt": "SAKURA JAPAN BEAUTY"
   }
 }

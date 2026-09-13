@@ -1,7 +1,7 @@
 import { SlidersHorizontal, X } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { t } from '@/lib/format';
+import { tcText } from '@/lib/format';
 import type { Category, Locale } from '@/lib/data';
 
 type Query = Record<string, string | undefined>;
@@ -66,13 +66,14 @@ export default async function CourseFilters({
 }) {
   const c = await getTranslations({ locale, namespace: 'courses' });
   const common = await getTranslations({ locale, namespace: 'common' });
+  const preparing = common('preparing');
 
   const all = { value: 'all', label: c('all') };
   const rows = [
     {
       label: c('category'),
       paramKey: 'category',
-      options: [all, ...categories.map((cat) => ({ value: cat.id, label: t(cat.name, locale) }))],
+      options: [all, ...categories.map((cat) => ({ value: cat.id, label: tcText(cat.name, locale, preparing) }))],
     },
     {
       label: c('instructor'),

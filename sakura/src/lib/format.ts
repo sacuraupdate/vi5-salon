@@ -1,5 +1,14 @@
 import { LOCALES } from './data/types';
-import type { Course, CurrencyCode, Locale, Localized, Price, TranslationMeta, TranslationStatus } from './data/types';
+import type {
+  Chapter,
+  Course,
+  Locale,
+  Localized,
+  MarketId,
+  TranslationMeta,
+  TranslationStatus,
+} from './data/types';
+import { isSoldIn } from './market';
 
 /**
  * 講座がその言語で顧客に公開されているか。
@@ -16,39 +25,55 @@ export function publishedLocales(course: Pick<Course, 'availability' | 'language
   return LOCALES.filter((l) => course.availability?.[l] === 'published');
 }
 
-/** 仮価格のまま購入されないようにする。価格未確定の講座は購入不可。 */
-export function isPurchasable(
-  course: Pick<Course, 'availability' | 'priceStatus' | 'isFree'>,
-  locale: string,
-): boolean {
-  if (course.priceStatus === 'draft') return false;
+/** 章がその言語で公開済みか。章の指定が無ければ講座の公開状況に従う。 */
+export function isChapterOpen(course: Course, chapter: Chapter, locale: string): boolean {
+  if (chapter.status === 'in-production') return false;
+  if (chapter.availability) return chapter.availability[locale as Locale] === 'published';
   return isPublishedIn(course, locale);
 }
 
-/** 多言語テキストの取り出し。翻訳が無い場合は日本語原本にフォールバックする。
- *  管理画面で原本を確認するための挙動。顧客向けの未翻訳表示には使わない。 */
+/**
+ * 購入できるか。次の3つをすべて満たしたときだけ true。
+ * 1. その言語で公開されている
+ * 2. その市場に固定価格が設定されている（価格未確定なら false）
+ * 3. 無料講座ではない
+ * 仮価格のまま購入されることを構造的に防ぐ。
+ */
+export function isPurchasable(course: Course, locale: string, market: MarketId): boolean {
+  if (course.isFree) return false;
+  if (!isPublishedIn(course, locale)) return false;
+  return isSoldIn(course.pricing, market);
+}
+
+/**
+ * 【管理画面用】多言語テキストの取り出し。翻訳が無ければ日本語原本を返す。
+ *
+ * **顧客向け画面では使わないこと。** 海外の購入者に日本語が突然出る原因になる。
+ * 顧客向けには tc / tcText / tcList を使う。
+ */
 export function t<T>(value: Localized<T>, locale: string): T {
   const key = locale as Exclude<Locale, 'ja'>;
   return (value[key] as T | undefined) ?? value.ja;
 }
 
-/** ロケールごとの既定通貨。価格は為替換算せず、市場ごとの設定値を使う。 */
-const localeCurrency: Record<Locale, CurrencyCode> = {
-  ja: 'JPY',
-  en: 'USD',
-  ko: 'KRW',
-  'zh-TW': 'TWD',
-};
+/**
+ * 【顧客向け】多言語テキストの取り出し。
+ * **翻訳が無い場合は日本語へ落とさず null を返す。** 呼び出し側が「準備中」を出す。
+ */
+export function tc<T>(value: Localized<T> | undefined, locale: string): T | null {
+  if (!value) return null;
+  if (locale === 'ja') return value.ja;
+  return (value[locale as Exclude<Locale, 'ja'>] as T | undefined) ?? null;
+}
 
-export function formatPrice(price: Price, locale: string): string {
-  const currency = localeCurrency[locale as Locale] ?? 'JPY';
-  const amount = price[currency] ?? price.JPY;
-  const used: CurrencyCode = price[currency] != null ? currency : 'JPY';
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency: used,
-    maximumFractionDigits: 0,
-  }).format(amount);
+/** 顧客向けの文字列。未翻訳なら渡された「準備中」の文言を返す。 */
+export function tcText(value: Localized | undefined, locale: string, preparing: string): string {
+  return tc(value, locale) ?? preparing;
+}
+
+/** 顧客向けの配列。未翻訳なら空配列（項目そのものを出さない）。 */
+export function tcList(value: Localized<string[]> | undefined, locale: string): string[] {
+  return tc(value, locale) ?? [];
 }
 
 /** 管理画面は常に日本円で表示する（SAKURA が理解しやすいことを優先） */
@@ -60,17 +85,27 @@ export function formatJpy(amount: number): string {
   }).format(amount);
 }
 
+/**
+ * 日付の表示。タイムゾーンを UTC に固定する。
+ * 固定しないと、実行環境のタイムゾーンによって海外ユーザーに1日ずれた日付が出る。
+ */
 export function formatDate(iso: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'long', day: 'numeric' }).format(
-    new Date(`${iso}T00:00:00`),
-  );
+  return new Intl.DateTimeFormat(locale, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${iso}T00:00:00Z`));
 }
 
-/** 管理画面用の日付表記（日本語固定） */
+/** 管理画面用の日付表記（日本語固定・日本時間） */
 export function formatDateJa(iso: string): string {
-  return new Intl.DateTimeFormat('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' }).format(
-    new Date(`${iso}T00:00:00`),
-  );
+  return new Intl.DateTimeFormat('ja-JP', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'Asia/Tokyo',
+  }).format(new Date(`${iso}T00:00:00+09:00`));
 }
 
 /**

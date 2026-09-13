@@ -1,10 +1,12 @@
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { SakuraMark } from '@/components/brand/Sakura';
+import MarketSwitcher from '@/components/public/MarketSwitcher';
 
 export default function SiteFooter() {
   const t = useTranslations('footer');
   const nav = useTranslations('nav');
+  const legal = useTranslations('legal');
 
   return (
     // 濃紺の面。ページの締めとして白との対比をつくる
@@ -38,15 +40,23 @@ export default function SiteFooter() {
           </div>
           <div>
             <h3 className="mb-4 text-[10px] tracking-[0.3em] text-on-navy-muted uppercase">{t('support')}</h3>
-            <ul className="flex flex-col gap-2.5 text-[13px] text-on-navy-muted">
-              <li>{t('contact')}</li>
-              <li>{t('terms')}</li>
-              <li>{t('privacy')}</li>
+            {/* これまでリンクではなくただのテキストだった。実際に到達できるようにする */}
+            <ul className="flex flex-col gap-2.5 text-[13px]">
+              <li><Link href="/contact" className="hover:text-sakura">{t('contact')}</Link></li>
+              <li><Link href="/legal/terms" className="hover:text-sakura">{legal('terms')}</Link></li>
+              <li><Link href="/legal/privacy" className="hover:text-sakura">{legal('privacy')}</Link></li>
+              <li><Link href="/legal/refund" className="hover:text-sakura">{legal('refund')}</Link></li>
+              <li><Link href="/legal/tokusho" className="hover:text-sakura">{legal('tokusho')}</Link></li>
             </ul>
             <p className="mt-4 text-[11px] leading-relaxed text-on-navy-muted">{t('legalNote')}</p>
           </div>
         </div>
-        <div className="mt-12 flex items-center gap-4 border-t border-white/15 pt-6">
+        {/* 販売市場（＝通貨）の切り替え。言語切り替えとは独立して置く */}
+        <div className="mt-10 max-w-sm border-t border-white/15 pt-6">
+          <MarketSwitcher />
+        </div>
+
+        <div className="mt-10 flex items-center gap-4 border-t border-white/15 pt-6">
           <span className="h-px flex-1 bg-transparent" />
           <p className="text-[11px] tracking-[0.14em] text-on-navy-muted">© 2026 SAKURA JAPAN BEAUTY</p>
           <span className="h-px flex-1 bg-transparent" />

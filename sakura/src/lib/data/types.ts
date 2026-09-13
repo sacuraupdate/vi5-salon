@@ -17,9 +17,32 @@ export type TranslationMeta = {
 
 export type TranslationStatus = 'translated' | 'outdated' | 'missing';
 
-/** 市場ごとの独立価格。為替換算では生成しない（最小通貨単位の整数）。 */
+/** 通貨。表示単位の整数で扱う（小数は使わない）。 */
 export type CurrencyCode = 'JPY' | 'USD' | 'KRW' | 'TWD';
-export type Price = { JPY: number } & Partial<Record<Exclude<CurrencyCode, 'JPY'>, number>>;
+
+/**
+ * 販売市場。**言語とは独立**して扱う。
+ * 「英語＝アメリカ＝USD」のような固定をしないため、locale ではなく market で価格を引く。
+ */
+export type MarketId = 'global-usd' | 'tw' | 'kr' | 'jp';
+
+/**
+ * 1市場ぶんの固定価格。**為替換算では生成しない。**
+ * list = 通常価格 / launch = ローンチ価格（任意）。金額は表示単位の整数。
+ */
+export type MarketPrice = { list: number; launch?: number };
+
+/**
+ * 講座の価格設定。市場ごとに独立して設定でき、未設定の市場では販売しない。
+ * status: 'draft' の間は金額を顧客に出さず、購入もできない。
+ */
+export type Pricing = {
+  status: 'draft' | 'confirmed';
+  /** 市場ごとの固定価格。ここに無い市場は「準備中」扱い（日本円へ落とさない） */
+  byMarket: Partial<Record<MarketId, MarketPrice>>;
+  /** ローンチ価格の終了日（YYYY-MM-DD）。未指定なら終了日なし */
+  launchEndsAt?: string | null;
+};
 
 export type InstructorId = 'sakura' | 'tomomi';
 export type CourseLevel = 'beginner' | 'intermediate' | 'advanced';
@@ -91,15 +114,41 @@ export type Lesson = {
   isPreview: boolean;
 };
 
+/**
+ * 動画の配信元。現在は YouTube 限定公開のみ。
+ * 将来 Mux 等へ移す際は provider を足し、参照側は `src/lib/video.ts` だけを直せばよい。
+ */
+export type VideoProvider = 'youtube';
+
+/**
+ * 章に紐づく動画。id は SAKURA が後から登録する（未登録は null）。
+ * **この値はサーバー側で購入権限を確認したあとにだけ画面へ渡す。**
+ */
+export type VideoRef = {
+  provider: VideoProvider;
+  /** YouTube の動画ID（限定公開）。null = 未登録 */
+  id: string | null;
+  /** 字幕を用意できている言語 */
+  captions: Locale[];
+};
+
 export type Chapter = {
   id: string;
   title: Localized;
+  /** 章の説明。販売ページと受講画面の両方で使う */
+  description?: Localized;
   lessons: Lesson[];
   /**
    * 'in-production' は制作中の章。「順次公開」と明示し、公開済みと混同させない。
    * 未指定は公開済み。
    */
   status?: 'published' | 'in-production';
+  /** 章の動画。未指定は動画なし */
+  video?: VideoRef;
+  /** 章に紐づく教材。未指定は講座共通の教材を使う */
+  materials?: Material[];
+  /** 章ごとの言語別公開状況。未指定は講座の availability に従う */
+  availability?: Partial<Record<Locale, CourseLocaleStatus>>;
 };
 
 /**
@@ -132,7 +181,8 @@ export type Course = {
   instructorId: InstructorId;
   categoryId: CategoryId;
   level: CourseLevel;
-  price: Price;
+  /** 価格設定。market ごとの固定価格と、通常価格／ローンチ価格を持つ */
+  pricing: Pricing;
   isFree: boolean;
   lessonCount: number;
   totalMinutes: number;
@@ -156,11 +206,6 @@ export type Course = {
    * 言語ごとに独立しているため、日本語だけ先に公開して後から英語を足せる。
    */
   availability?: Partial<Record<Locale, CourseLocaleStatus>>;
-  /**
-   * 価格の確定状態。'draft' は仮価格で、購入できない。
-   * 国別固定価格を決めたら 'confirmed' にする。
-   */
-  priceStatus?: 'draft' | 'confirmed';
   /**
    * 修了後に別途受験できる「認定サロン」の対象講座かどうか。
    * 講座単位の認定証（certificate: 'certification'）とは別物。混同させない。
@@ -291,4 +336,52 @@ export type Student = {
   progressPercent: number;
   joinedAt: string;
   instructorIds: InstructorId[];
+};
+
+/* ---------- 購入・受講権限（Phase 2 で Stripe / DB に接続する） ---------- */
+
+/**
+ * サイト側（購入者）のセッション。
+ * 認証が未実装の間、本番では常に null になる（`src/lib/session.ts`）。
+ */
+export type SiteSession = {
+  userId: string;
+  email: string;
+  /** 購入者が選んだ言語。メール送信もこの言語で行う */
+  locale: Locale;
+  /** 購入者の販売市場。価格・通貨はここから引く（言語とは独立） */
+  market: MarketId;
+};
+
+/** 決済の状態。受講権限は 'paid' になって初めて付与する */
+export type PurchaseStatus = 'pending' | 'paid' | 'refunded' | 'failed';
+
+/**
+ * 1件の購入。買い切り・サブスクではない。
+ * Stripe Webhook で 'paid' になったときにだけ entitlement を作る。
+ */
+export type Purchase = {
+  id: string;
+  userId: string;
+  courseSlug: string;
+  status: PurchaseStatus;
+  market: MarketId;
+  currency: CurrencyCode;
+  /** 実際に請求した金額（表示単位の整数）。後から価格を変えても履歴は動かさない */
+  amount: number;
+  /** Stripe の Checkout Session ID。重複付与を防ぐ照合キー */
+  externalId: string | null;
+  purchasedAt: string;
+};
+
+/**
+ * 受講権限。視聴期限なしを基本とするため expiresAt は null を既定とする。
+ * **購入完了画面では作らない。Stripe Webhook の確認後にだけ作る。**
+ */
+export type Entitlement = {
+  userId: string;
+  courseSlug: string;
+  grantedAt: string;
+  /** null = 無期限 */
+  expiresAt: string | null;
 };

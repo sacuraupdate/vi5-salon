@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { catalogRepository, learnerRepository } from '@/lib/data';
-import { t } from '@/lib/format';
+import { tcText } from '@/lib/format';
 import PhotoFrame from '@/components/brand/PhotoFrame';
 import { Badge, Card, ProgressBar, SectionHeading } from '@/components/ui/Card';
 import { Link } from '@/i18n/navigation';
@@ -10,6 +10,7 @@ export default async function MyCoursesPage({ params }: { params: Promise<{ loca
   setRequestLocale(locale);
 
   const m = await getTranslations({ locale, namespace: 'mypage' });
+  const preparing = (await getTranslations({ locale, namespace: 'common' }))('preparing');
   const [enrollments, courses] = await Promise.all([
     learnerRepository.listEnrollments(),
     catalogRepository.listCourses(),
@@ -30,11 +31,11 @@ export default async function MyCoursesPage({ params }: { params: Promise<{ loca
                   <PhotoFrame
                     kind="course"
                     tone={course.tone}
-                    alt={t(course.title, locale)}
+                    alt={tcText(course.title, locale, preparing)}
                     className="aspect-16/9 w-full rounded-sm border border-line"
                   />
                   <div className="flex flex-col gap-1.5">
-                    <h3 className="text-sm leading-snug font-medium">{t(course.title, locale)}</h3>
+                    <h3 className="text-sm leading-snug font-medium">{tcText(course.title, locale, preparing)}</h3>
                     <span className="text-[11px] tracking-wider text-ink-muted uppercase">
                       {course.instructorId === 'sakura' ? 'SAKURA' : 'TOMOMI'}
                     </span>

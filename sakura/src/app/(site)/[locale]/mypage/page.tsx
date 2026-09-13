@@ -1,7 +1,7 @@
 import { Award, BookOpen, CheckCircle2, FileText, PlayCircle } from 'lucide-react';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { catalogRepository, learnerRepository } from '@/lib/data';
-import { t } from '@/lib/format';
+import { tcText } from '@/lib/format';
 import ContinueCard from '@/components/public/ContinueCard';
 import CourseCard from '@/components/public/CourseCard';
 import PhotoFrame from '@/components/brand/PhotoFrame';
@@ -14,6 +14,7 @@ export default async function MyPage({ params }: { params: Promise<{ locale: str
   setRequestLocale(locale);
 
   const m = await getTranslations({ locale, namespace: 'mypage' });
+  const preparing = (await getTranslations({ locale, namespace: 'common' }))('preparing');
   const [profile, enrollments, certificates, cont, courses] = await Promise.all([
     learnerRepository.getProfile(),
     learnerRepository.listEnrollments(),
@@ -84,11 +85,11 @@ export default async function MyPage({ params }: { params: Promise<{ locale: str
                   <PhotoFrame
                     kind="course"
                     tone={course.tone}
-                    alt={t(course.title, locale)}
+                    alt={tcText(course.title, locale, preparing)}
                     className="aspect-16/9 w-full rounded-sm border border-line"
                   />
                   <div className="flex flex-col gap-2">
-                    <h3 className="text-sm leading-snug font-medium">{t(course.title, locale)}</h3>
+                    <h3 className="text-sm leading-snug font-medium">{tcText(course.title, locale, preparing)}</h3>
                     <div className="flex items-center gap-3">
                       <ProgressBar value={e.progressPercent} className="flex-1" />
                       <span className="text-xs text-ink-muted">{e.progressPercent}%</span>

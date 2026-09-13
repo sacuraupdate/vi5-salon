@@ -14,7 +14,7 @@ import {
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { catalogRepository } from '@/lib/data';
-import { t } from '@/lib/format';
+import { tcText } from '@/lib/format';
 import PhotoFrame from '@/components/brand/PhotoFrame';
 import { SakuraDivider, Seal } from '@/components/brand/Sakura';
 import { BrandBranch, BrandCrest, BrandPetals } from '@/components/brand/BrandArt';
@@ -33,6 +33,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const h = await getTranslations({ locale, namespace: 'home' });
   const common = await getTranslations({ locale, namespace: 'common' });
   const q = await getTranslations({ locale, namespace: 'quiz' });
+  const preparing = common('preparing');
 
   const [featured, categories, courses, instructors] = await Promise.all([
     catalogRepository.listFeaturedCourses(3),
@@ -82,7 +83,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         .filter((c): c is NonNullable<typeof c> => Boolean(c))
         .map((c) => ({
           slug: c.slug,
-          title: t(c.title, locale),
+          title: tcText(c.title, locale, preparing),
           levelLabel: common(`level.${c.level}`),
           isFree: c.isFree,
           freeLabel: common('free'),
@@ -250,7 +251,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   Japanese Salon Standard
                 </span>
                 <span className="font-serif text-[19px] tracking-[0.08em] text-white">
-                  {t(firstPick.title, locale)}
+                  {tcText(firstPick.title, locale, preparing)}
                 </span>
               </div>
               <div className="flex items-center gap-3 sm:shrink-0">
@@ -345,19 +346,19 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <span className="eyebrow">{h('sakuraTitle')}</span>
             <h2 className="font-serif text-[28px] tracking-[0.24em] text-ink">SAKURA</h2>
             <span className="h-px w-12 bg-vermilion" aria-hidden />
-            <p className="text-[12px] tracking-[0.1em] text-ink-muted">{t(sakura.role, locale)}</p>
+            <p className="text-[12px] tracking-[0.1em] text-ink-muted">{tcText(sakura.role, locale, preparing)}</p>
             <blockquote className="band-navy border-l-2 border-vermilion px-6 py-5">
               <p className="font-serif text-[17px] leading-[2] tracking-[0.06em] sm:text-[19px]">
-                {t(sakura.headline, locale)}
+                {tcText(sakura.headline, locale, preparing)}
               </p>
             </blockquote>
-            <p className="line-clamp-4 text-[13px] leading-loose text-ink-muted">{t(sakura.bio, locale)}</p>
+            <p className="line-clamp-4 text-[13px] leading-loose text-ink-muted">{tcText(sakura.bio, locale, preparing)}</p>
             {/* 未確認の実績数値は置かない。事実として言えることだけを並べる */}
             <ul className="flex flex-wrap gap-x-6 gap-y-2 border-t border-line pt-4">
               {sakura.credentials.map((c) => (
                 <li key={c.ja} className="flex items-center gap-2 text-[12px] tracking-[0.06em] text-ink-2">
                   <span className="h-px w-3 shrink-0 bg-vermilion" aria-hidden />
-                  {t(c, locale)}
+                  {tcText(c, locale, preparing)}
                 </li>
               ))}
             </ul>
@@ -383,8 +384,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <div className="flex flex-col items-start gap-3">
             <Badge tone="sakura">{h('tomomiTag')}</Badge>
             <h2 className="font-serif text-[21px] tracking-[0.22em] text-ink">TOMOMI</h2>
-            <p className="text-[11px] tracking-[0.1em] text-ink-muted">{t(tomomi.role, locale)}</p>
-            <p className="text-[13px] leading-loose text-ink-2">{t(tomomi.headline, locale)}</p>
+            <p className="text-[11px] tracking-[0.1em] text-ink-muted">{tcText(tomomi.role, locale, preparing)}</p>
+            <p className="text-[13px] leading-loose text-ink-2">{tcText(tomomi.headline, locale, preparing)}</p>
             <Link
               href="/instructors/tomomi"
               className="inline-flex items-center gap-2 text-[13px] text-vermilion hover:underline"
@@ -424,7 +425,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               <SakuraDivider className="my-5" mark={<BrandCrest className="h-5 w-5 text-gold" />} />
               <p className="font-serif text-[19px] tracking-[0.14em] text-ink">Jasmine Lim</p>
               <p className="mt-2 text-[12px] leading-loose text-ink-muted">
-                {t({ ja: '日本式サロンスタンダード 基礎', en: 'Japanese Salon Standards' }, locale)}
+                Japanese Salon Standard
               </p>
               <div className="mt-auto flex items-end justify-between gap-4 pt-6">
                 <div className="flex flex-col gap-1">

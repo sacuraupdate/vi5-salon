@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { learnerRepository } from '@/lib/data';
-import { formatDate, t } from '@/lib/format';
+import { formatDate, tcText } from '@/lib/format';
 import { Card } from '@/components/ui/Card';
 
 export default async function AccountPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -9,12 +9,13 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
 
   const m = await getTranslations({ locale, namespace: 'mypage' });
   const a = await getTranslations({ locale, namespace: 'auth' });
+  const preparing = (await getTranslations({ locale, namespace: 'common' }))('preparing');
   const profile = await learnerRepository.getProfile();
 
   const rows = [
     { label: a('name'), value: profile.name },
     { label: a('email'), value: profile.email },
-    { label: a('country'), value: t(profile.country, locale) },
+    { label: a('country'), value: tcText(profile.country, locale, preparing) },
     { label: m('memberSince'), value: formatDate(profile.memberSince, locale) },
   ];
 

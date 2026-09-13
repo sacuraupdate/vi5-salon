@@ -15,18 +15,55 @@ import {
   PlayCircle,
   Star,
 } from 'lucide-react';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { catalogRepository } from '@/lib/data';
 import { neighboursOf } from '@/lib/quiz';
 import type { MaterialType } from '@/lib/data';
-import { formatPrice, isPublishedIn, isPurchasable, publishedLocales, t } from '@/lib/format';
+import { isPublishedIn, isPurchasable, publishedLocales, tc, tcList, tcText } from '@/lib/format';
+import { alternatesFor, openGraphLocale, SITE_URL } from '@/lib/site';
+import { formatMoney, priceFor } from '@/lib/market';
+import { getMarket } from '@/lib/market-server';
 import PhotoFrame from '@/components/brand/PhotoFrame';
 import { Badge, Card, EmptyState } from '@/components/ui/Card';
 import Accordion from '@/components/ui/Accordion';
 import Tabs from '@/components/ui/Tabs';
 import { buttonClass } from '@/components/ui/Button';
 import { Link } from '@/i18n/navigation';
+
+/** 市場（＝通貨）と受講権限を実行時に見るため、この画面は静的生成しない */
+export const dynamic = 'force-dynamic';
+
+/**
+ * 講座ページの言語別メタデータ。
+ * 未翻訳の講座では日本語の説明文を出さず、サイト共通の説明にとどめる。
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; slug: string }>;
+}): Promise<Metadata> {
+  const { locale, slug } = await params;
+  const course = await catalogRepository.getCourse(slug);
+  if (!course) return {};
+  const m = await getTranslations({ locale, namespace: 'meta' });
+  const title = tc(course.title, locale);
+  const description = tc(course.summary, locale);
+
+  return {
+    title: title ?? m('title'),
+    description: description ?? m('description'),
+    alternates: alternatesFor(locale, `/courses/${slug}`),
+    openGraph: {
+      type: 'article',
+      title: title ?? m('title'),
+      description: description ?? m('description'),
+      url: `${SITE_URL}/${locale}/courses/${slug}`,
+      locale: openGraphLocale(locale).locale,
+    },
+  };
+}
 
 const materialIcon: Record<MaterialType, typeof FileText> = {
   pdf: FileText,
@@ -65,14 +102,32 @@ export default async function CourseDetailPage({
   // この言語で顧客に公開されているか。未公開の言語では中身を出さない
   // （日本語原本へフォールバックさせて、海外の画面に日本語を出さないため）
   const openHere = isPublishedIn(course, locale);
-  const canBuy = isPurchasable(course, locale);
   const openLocales = publishedLocales(course);
+  const preparing = common('preparing');
 
-  const priceLabel = course.isFree
-    ? common('free')
-    : course.priceStatus === 'draft'
-      ? d('priceTbd')
-      : formatPrice(course.price, locale);
+  // 価格は言語ではなく市場から引く。市場に価格が無ければ金額を出さず、購入もさせない
+  const market = await getMarket(locale);
+  const price = priceFor(course.pricing, market);
+  const canBuy = isPurchasable(course, locale, market);
+
+  // 金額の表示。ローンチ価格が出ているときだけ通常価格を取り消し線で添える
+  const priceNode = course.isFree ? (
+    <span className="font-serif text-2xl text-ink">{common('free')}</span>
+  ) : price ? (
+    <span className="flex items-baseline gap-2">
+      {price.strikethrough != null ? (
+        <span className="text-[13px] text-ink-muted line-through">
+          {formatMoney(price.strikethrough, price.currency, locale)}
+        </span>
+      ) : null}
+      <span className="font-serif text-2xl text-ink">{formatMoney(price.amount, price.currency, locale)}</span>
+      {price.strikethrough != null ? (
+        <span className="text-[11px] text-vermilion">{d('launchLabel')}</span>
+      ) : null}
+    </span>
+  ) : (
+    <span className="font-serif text-lg text-ink-muted">{d('priceTbd')}</span>
+  );
 
   // 1章1動画の講座は「レッスン数」ではなく「章数」で数える
   const isChaptered = course.curriculum.length > 0 && course.curriculum.every((ch) => ch.lessons.length === 1);
@@ -82,8 +137,8 @@ export default async function CourseDetailPage({
   const purchaseCard = (
     <Card className="p-5">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="font-serif text-2xl text-ink">{priceLabel}</span>
-        {course.isFree ? null : <span className="text-[11px] text-ink-muted">{common('from')}</span>}
+        {priceNode}
+        {course.isFree || !price ? null : <span className="text-[11px] text-ink-muted">{common('from')}</span>}
       </div>
 
       <dl className="mt-4 flex flex-col gap-2.5 border-t border-line pt-4 text-sm">
@@ -93,8 +148,8 @@ export default async function CourseDetailPage({
             {d('duration')}
           </dt>
           <dd>
-            {course.totalMinutes}
-            {common('minutes')} / {isChaptered ? course.curriculum.length : course.lessonCount}
+            {course.totalMinutes > 0 ? `${course.totalMinutes}${common('minutes')} / ` : ''}
+            {isChaptered ? course.curriculum.length : course.lessonCount}
             {isChaptered ? common('chapters') : common('lessons')}
           </dd>
         </div>
@@ -144,12 +199,12 @@ export default async function CourseDetailPage({
       label: d('tabOverview'),
       content: (
         <div className="flex flex-col gap-6">
-          <p className="text-sm leading-loose text-ink">{t(course.description, locale)}</p>
+          <p className="text-sm leading-loose text-ink">{tcText(course.description, locale, preparing)}</p>
           {course.audience ? (
             <div>
               <h3 className="mb-3 text-base">{d('audienceTitle')}</h3>
               <ul className="flex flex-col gap-2">
-                {t(course.audience, locale).map((a) => (
+                {tcList(course.audience, locale).map((a) => (
                   <li key={a} className="flex items-start gap-2.5 text-sm leading-relaxed text-ink-2">
                     <span className="mt-2.5 h-px w-3 shrink-0 bg-pine" aria-hidden />
                     {a}
@@ -161,7 +216,7 @@ export default async function CourseDetailPage({
           <div>
             <h3 className="mb-3 text-base">{d('highlights')}</h3>
             <ul className="flex flex-col gap-2.5">
-              {t(course.highlights, locale).map((hl) => (
+              {tcList(course.highlights, locale).map((hl) => (
                 <li key={hl} className="flex items-start gap-2.5 text-sm leading-relaxed">
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-vermilion" strokeWidth={1.5} />
                   {hl}
@@ -196,7 +251,7 @@ export default async function CourseDetailPage({
           <Accordion
             items={course.curriculum.map((ch, i) => ({
               id: ch.id,
-              title: `${String(i + 1).padStart(2, '0')}　${t(ch.title, locale)}`,
+              title: `${String(i + 1).padStart(2, '0')}　${tcText(ch.title, locale, preparing)}`,
               meta:
                 ch.status === 'in-production' ? (
                   <Badge tone="outline">{d('chapterUpcoming')}</Badge>
@@ -210,7 +265,7 @@ export default async function CourseDetailPage({
                       <li key={l.id} className="flex items-center justify-between gap-3 py-2.5">
                         <span className="flex items-center gap-2 text-ink">
                           <PlayCircle className="h-4 w-4 shrink-0 text-ink-muted" strokeWidth={1.5} />
-                          {t(l.title, locale)}
+                          {tcText(l.title, locale, preparing)}
                         </span>
                         <span className="flex shrink-0 items-center gap-2">
                           {l.isPreview ? <Badge tone="sakura">{d('preview')}</Badge> : null}
@@ -243,7 +298,7 @@ export default async function CourseDetailPage({
                     <Icon className="h-5 w-5" strokeWidth={1.5} />
                   </span>
                   <span className="flex min-w-0 flex-col gap-1">
-                    <span className="text-sm leading-snug font-medium">{t(m.title, locale)}</span>
+                    <span className="text-sm leading-snug font-medium">{tcText(m.title, locale, preparing)}</span>
                     {m.status === 'planned' ? (
                       <span className="text-[11px] text-ink-muted">{d('materialPlanned')}</span>
                     ) : m.meta ? (
@@ -356,14 +411,14 @@ export default async function CourseDetailPage({
               <Card key={r.id} className="flex flex-col gap-2 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-sm font-medium">{r.author}</span>
-                  <span className="text-[11px] text-ink-muted">{t(r.country, locale)}</span>
+                  <span className="text-[11px] text-ink-muted">{tcText(r.country, locale, preparing)}</span>
                 </div>
                 <span className="flex gap-0.5 text-vermilion">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <Star key={n} className="h-3 w-3" fill={n <= r.rating ? 'currentColor' : 'none'} strokeWidth={1.5} />
                   ))}
                 </span>
-                <p className="text-sm leading-relaxed text-ink-muted">{t(r.body, locale)}</p>
+                <p className="text-sm leading-relaxed text-ink-muted">{tcText(r.body, locale, preparing)}</p>
               </Card>
             ))}
           </div>
@@ -377,8 +432,8 @@ export default async function CourseDetailPage({
         <Accordion
           items={course.faq.map((f, i) => ({
             id: `faq${i}`,
-            title: t(f.q, locale),
-            body: t(f.a, locale),
+            title: tcText(f.q, locale, preparing),
+            body: tcText(f.a, locale, preparing),
           }))}
         />
       ),
@@ -392,7 +447,7 @@ export default async function CourseDetailPage({
           {/* 上部左：講座概要 */}
           <div className="flex min-w-0 flex-col gap-5">
             <div className="flex flex-wrap items-center gap-2">
-              {category ? <Badge tone="sakura">{t(category.name, locale)}</Badge> : null}
+              {category ? <Badge tone="sakura">{tcText(category.name, locale, preparing)}</Badge> : null}
               <Badge tone="outline">{common(`level.${course.level}`)}</Badge>
               {course.certificate ? (
                 <Badge tone="neutral">
@@ -403,8 +458,8 @@ export default async function CourseDetailPage({
               {openHere ? null : <Badge tone="outline">{common('preparing')}</Badge>}
             </div>
 
-            <h1 className="text-2xl leading-snug sm:text-[28px]">{t(course.title, locale)}</h1>
-            <p className="text-sm leading-relaxed text-ink-muted">{t(course.summary, locale)}</p>
+            <h1 className="text-2xl leading-snug sm:text-[28px]">{tcText(course.title, locale, preparing)}</h1>
+            <p className="text-sm leading-relaxed text-ink-muted">{tcText(course.summary, locale, preparing)}</p>
 
             {/* この言語でまだ公開していないことを、購入導線より先に伝える */}
             {openHere ? null : (
@@ -436,7 +491,7 @@ export default async function CourseDetailPage({
             <PhotoFrame
               kind="course"
               tone={course.tone}
-              alt={t(course.title, locale)}
+              alt={tcText(course.title, locale, preparing)}
               className="aspect-16/9 w-full rounded-md border border-line"
             />
 
@@ -467,7 +522,7 @@ export default async function CourseDetailPage({
                         {dir === 'next' ? <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.5} /> : null}
                       </span>
                       <span className="font-serif text-[15px] leading-relaxed text-ink">
-                        {t(c!.title, locale)}
+                        {tcText(c!.title, locale, preparing)}
                       </span>
                       <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] tracking-[0.08em] text-ink-muted">
                         <span className="text-pine">{common(`level.${c!.level}`)}</span>
@@ -499,11 +554,16 @@ export default async function CourseDetailPage({
       {/* モバイル：購入CTAを画面下部に固定して見失わせない */}
       <div className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg/95 px-4 pt-3 backdrop-blur lg:hidden">
         <div className="flex items-center gap-3">
-          <span className="flex flex-col leading-tight">
-            <span className="font-serif text-lg">{priceLabel}</span>
+          <span className="flex min-w-0 flex-col leading-tight">
+            <span className="truncate font-serif text-lg">
+              {course.isFree
+                ? common('free')
+                : price
+                  ? formatMoney(price.amount, price.currency, locale)
+                  : d('priceTbd')}
+            </span>
             <span className="text-[10px] text-ink-muted">
-              {course.totalMinutes}
-              {common('minutes')}
+              {isChaptered ? `${course.curriculum.length}${common('chapters')}` : `${course.lessonCount}${common('lessons')}`}
             </span>
           </span>
           <button
@@ -519,7 +579,3 @@ export default async function CourseDetailPage({
   );
 }
 
-export async function generateStaticParams() {
-  const courses = await catalogRepository.listCourses();
-  return courses.map((c) => ({ slug: c.slug }));
-}

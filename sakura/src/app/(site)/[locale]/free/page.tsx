@@ -2,7 +2,7 @@ import { ArrowRight, FileText, Newspaper, PlayCircle } from 'lucide-react';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { catalogRepository } from '@/lib/data';
 import type { FreeContentType } from '@/lib/data';
-import { t } from '@/lib/format';
+import { tcText } from '@/lib/format';
 import PhotoFrame from '@/components/brand/PhotoFrame';
 import { Badge, Card } from '@/components/ui/Card';
 import { buttonClass } from '@/components/ui/Button';
@@ -21,6 +21,7 @@ export default async function FreePage({ params }: { params: Promise<{ locale: s
   const items = await catalogRepository.listFreeContents();
   const f = await getTranslations({ locale, namespace: 'free' });
   const common = await getTranslations({ locale, namespace: 'common' });
+  const preparing = common('preparing');
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
@@ -36,7 +37,7 @@ export default async function FreePage({ params }: { params: Promise<{ locale: s
           return (
             <Card key={item.id} hover className="flex h-full flex-col overflow-hidden">
               <div className="relative aspect-16/9 w-full">
-                <PhotoFrame kind="course" tone={item.tone} alt={t(item.title, locale)} className="h-full w-full" />
+                <PhotoFrame kind="course" tone={item.tone} alt={tcText(item.title, locale, preparing)} className="h-full w-full" />
                 <span className="absolute top-3 left-3">
                   <Badge tone="vermilion">
                     <Icon className="h-3 w-3" />
@@ -48,8 +49,8 @@ export default async function FreePage({ params }: { params: Promise<{ locale: s
                 <span className="text-[11px] tracking-wider text-vermilion uppercase">
                   {item.instructorId === 'sakura' ? 'SAKURA' : 'TOMOMI'}
                 </span>
-                <h2 className="text-[15px] leading-snug font-medium">{t(item.title, locale)}</h2>
-                <p className="text-xs leading-relaxed text-ink-muted">{t(item.summary, locale)}</p>
+                <h2 className="text-[15px] leading-snug font-medium">{tcText(item.title, locale, preparing)}</h2>
+                <p className="text-xs leading-relaxed text-ink-muted">{tcText(item.summary, locale, preparing)}</p>
                 <div className="mt-auto flex items-center justify-between pt-3">
                   <span className="text-[11px] text-ink-muted">
                     {item.minutes}
