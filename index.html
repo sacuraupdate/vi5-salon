@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260913y';
+const APP_REV='r20260913z';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -975,7 +975,21 @@ const APP_REV='r20260913y';
 const SUPA_URL='https://tehcaufdztgpbrknpshk.supabase.co';
 const SUPA_KEY='sb_publishable_CnOCyO9QU69K47vbbLRkYg__cEv53CJ';
 const FUNC_URL=SUPA_URL+'/functions/v1/data';
-function fetchT(url,opts,ms){opts=opts||{};const ctl=new AbortController();const isWrite=opts.method==='POST'||opts.method==='PUT';const t=setTimeout(()=>ctl.abort(),ms||(isWrite?30000:12000));return fetch(url,Object.assign({},opts,{signal:ctl.signal})).finally(()=>clearTimeout(t));}
+function fetchOnce(url,opts,ms){opts=opts||{};const ctl=new AbortController();const isWrite=opts.method==='POST'||opts.method==='PUT';const t=setTimeout(()=>ctl.abort(),ms||(isWrite?45000:25000));return fetch(url,Object.assign({},opts,{signal:ctl.signal})).finally(()=>clearTimeout(t));}
+/* 通信は自動で最大3回まで試す。1回きりだと、少しの遅れでも「電波が悪い」と出てしまうため。
+   書き込み(POST)も、同じ内容を送り直すだけで二重登録にはならない作り（統合して保存）なので再試行する。 */
+async function fetchT(url,opts,ms){
+  let last=null;
+  for(let i=0;i<3;i++){
+    try{
+      const r=await fetchOnce(url,opts,ms);
+      if(r.ok||r.status===404||r.status===409||(r.status>=400&&r.status<500&&r.status!==408&&r.status!==429))return r;
+      last=new Error('http-'+r.status);
+    }catch(e){last=e;}
+    if(i<2)await new Promise(res=>setTimeout(res,600*(i+1)));
+  }
+  throw last||new Error('network');
+}
 async function api(payload){const r=await fetchT(FUNC_URL,{method:'POST',headers:{'Content-Type':'application/json',apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY},body:JSON.stringify(payload)});let j={};try{j=await r.json()}catch(e){}if(!r.ok)throw Object.assign(new Error(j.error||('http'+r.status)),{status:r.status,body:j});return j;}
 async function apiOp(op,payload){return api({action:'op',op:op,payload:payload||{}});}
 /* ===== ダイレクトモード（Edge Function未更新でも202207でログイン可能にする救済経路）===== */
@@ -4301,6 +4315,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-13',v:'r20260913z',items:['【「電波が悪い」と頻繁に出ていた原因】通信が1回でも失敗すると即座に諦める作りで、再試行が一度もありませんでした。データ量が多いと12秒の制限を超えることがあり、電波が良くても失敗扱いになっていました→通信を自動で最大3回まで試すように変更（間隔を空けて再試行）','読み込みの待ち時間を12秒→25秒、保存を30秒→45秒に延長','これにより、一時的な通信の乱れでサンプルデータが出たり、タスクの完了が保存されなかったりする事象の大半が解消されます']},
  {d:'2026-09-13',v:'r20260913y',items:['【架空の予約が表示された原因】サーバーからデータを読み込めなかった時に、デモ用のサンプルデータ（山本さくら様・伊藤めぐみ様など実在しないお客様）へ自動的に切り替わる作りになっていました→通信に失敗してもサンプルへは切り替えず、空のまま「⚠ データを読み込めませんでした」と大きく表示するように変更','読み込めていない状態では保存も行いません（空のデータで本物を上書きしてしまう事故を防止）']},
  {d:'2026-09-13',v:'r20260913x',items:['【タスクの完了が未完了に戻る問題】完了を押した時にサーバーの最新を読まずに保存しており、保存に失敗しても画面上は完了に見えていました→①押した時に最新を読み込む ②保存後にサーバーへ問い合わせて本当に完了になったか確認する ③確認できなければ元に戻して「保存できませんでした」と警告、に変更','完了の操作に更新時刻を記録し、古い端末が後から保存しても完了が未完了に戻らないように']},
  {d:'2026-09-13',v:'r20260913w',items:['ご予約確定前の確認画面で、メニューごとに「開始時刻＋担当」を表示するように（例：10:00〜 担当：SAKURA／11:00〜 担当：TOMOMI）。誰が何を担当するかが一目で分かります','予約完了画面でも、担当が分かれる場合は時間と担当の内訳を表示','フェイスメニュー（ピーリング・毛穴・スキンケア等）は TOMOMI を既定の担当に変更。「⭐ フェイスメニューは TOMOMI がご専門です（無料オプションもお選びいただけます）」と案内し、TOMOMIのボタンに⭐おすすめを表示']},
