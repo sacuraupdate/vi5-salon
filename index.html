@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260914a';
+const APP_REV='r20260914b';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -2987,9 +2987,16 @@ function mergeWork(local,srv){if(!srv)return local;const delT=new Set([...(local
   return local;}
 async function saveWork(){if(!WORK)return false;
   try{const srv=await fetchWorkFresh();if(srv)WORK=mergeWork(WORK,srv);
-    const r=await fetchT(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:work',value:JSON.stringify(WORK)})});
+    /* 送信サイズを確認。大きすぎると送信しきれず「Fetch is aborted」になるため、画像を自動で軽量化してから送る */
+    let payload=JSON.stringify(WORK);
+    if(payload.length>1500000){
+      try{await walkShrink(WORK);payload=JSON.stringify(WORK);}catch(_e){}
+      if(payload.length>4000000&&state.view==='admin')toast('⚠ データが大きいため保存に時間がかかります（'+Math.round(payload.length/100000)/10+'MB）','err');
+    }
+    state._workSize=payload.length;
+    const r=await fetchT(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:work',value:payload})},Math.max(45000,Math.min(120000,20000+Math.round(payload.length/1000)*20)));
     if(!r.ok)throw new Error('w-'+r.status);state._lastWorkSaveOk=Date.now();if(state.view==='admin')toast('✅ 保存しました');return true;}
-  catch(e){state._workSaveFail=(state._workSaveFail||0)+1;if(state.view==='admin')toast('⚠ 保存できませんでした（'+(e&&e.message||'通信')+'）','err');try{console.warn('saveWork failed',e);}catch(_e){}if(state.view==='admin'){const now=Date.now();if(!state._workAlertAt||now-state._workAlertAt>60000){state._workAlertAt=now;alert('業務データの保存に失敗しました（'+(e&&e.message||'通信')+'）。通信状況をご確認ください。');}}return false;}}
+  catch(e){state._workSaveFail=(state._workSaveFail||0)+1;const _sz=state._workSize?('・'+Math.round(state._workSize/100000)/10+'MB'):'';if(state.view==='admin')toast('⚠ 保存できませんでした（'+(e&&e.message||'通信')+_sz+'）','err');try{console.warn('saveWork failed',e);}catch(_e){}if(state.view==='admin'){const now=Date.now();if(!state._workAlertAt||now-state._workAlertAt>60000){state._workAlertAt=now;alert('業務データの保存に失敗しました（'+(e&&e.message||'通信')+'）。通信状況をご確認ください。');}}return false;}}
 function wkCompress(file,cb){const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{const mx=900;let w=img.width,hh=img.height;if(w>mx){hh=Math.round(hh*mx/w);w=mx;}const cv=document.createElement('canvas');cv.width=w;cv.height=hh;cv.getContext('2d').drawImage(img,0,0,w,hh);cb(cv.toDataURL('image/jpeg',0.68));};img.src=e.target.result;};r.readAsDataURL(file);}
 function chatRooms(){const me=localGet('salon:me');const reals=staff.filter(s=>s.id!=='s0');const rooms=[{id:'all',label:'全体トーク',icon:'👥',kind:'all'}];
   if(me&&me!=='owner'){reals.filter(s=>s.id!==me).forEach(s=>rooms.push({id:'dm:'+[me,s.id].sort().join('|'),label:s.name,icon:'💬',kind:'dm'}));}
@@ -3144,7 +3151,7 @@ async function taskSaveDates(title,dates){const me=localGet('salon:me');const tf
   await loadWork();WORK.tasks=WORK.tasks||[];WORK.chats=WORK.chats||{};const others=isAll?[]:assignees.filter(a=>a!==me);const gid='g'+Date.now();
   dates.forEach((due,i)=>{WORK.tasks.unshift({id:'t'+Date.now()+'_'+i,title,desc,by:me,assignee,assignees:isAll?['all']:assignees,scope:isAll?'all':'one',due,url:i===0?url:'',imgs:[],qa:[],done:false,at:Date.now()+i,group:gid});});
   for(const a of others){const rk='dm:'+[me,a].sort().join('|');WORK.chats[rk]=WORK.chats[rk]||[];WORK.chats[rk].push({id:'m'+Date.now()+Math.random().toString(36).slice(2,5),by:meName(),at:Date.now(),text:'【タスク依頼】'+title+'（'+dates.map(d=>mdLabel(d)).join('・')+'）',reads:[meName()],reacts:{}});}
-  logAct('タスク追加（'+dates.length+'日分）：'+title);state.taskForm=null;state.taskAdd=false;await saveWork();alert(dates.length+'日分のタスクを追加しました：'+dates.map(d=>mdLabel(d)).join('・'));render();}
+  logAct('タスク追加（'+dates.length+'日分）：'+title);const _ok2=await saveWork();if(!_ok2){alert('⚠ タスクを保存できませんでした。\n入力内容はそのまま残していますので、もう一度「追加する」を押してください。');render();return;}state.taskForm=null;state.taskAdd=false;alert('✅ '+dates.length+'日分のタスクを追加しました：'+dates.map(d=>mdLabel(d)).join('・'));render();}
 async function taskSaveMany(lines){const me=localGet('salon:me');const tf=state.taskForm||{};const assignees=(tf.assignees&&tf.assignees.length)?tf.assignees.slice():[me];const isAll=assignees.includes('all');const assignee=isAll?'all':assignees[0];const due=((byId('tk-due')||{}).value)||tf.due||'';const url=(((byId('tk-url')||{}).value)||tf.url||'').trim();
   await loadWork();WORK.tasks=WORK.tasks||[];WORK.chats=WORK.chats||{};const others=isAll?[]:assignees.filter(a=>a!==me);
   lines.forEach((title,i)=>{WORK.tasks.unshift({id:'t'+Date.now()+i,title,desc:'',by:me,assignee,assignees:isAll?['all']:assignees,scope:isAll?'all':'one',due,url:i===0?url:'',imgs:[],qa:[],done:false,at:Date.now()+i});});
@@ -3162,7 +3169,10 @@ function tkShiftCalHtml(){const tf=state.taskForm||{};const asg=(tf.assignees||[
   return `<div class="addform" style="margin:8px 0;padding:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><button type="button" class="chip" data-tkcalmv="-1">‹</button><b>${y}年${mo+1}月</b><button type="button" class="chip" data-tkcalmv="1">›</button></div><div class="note" style="margin:0 0 8px">🟢＝<b>${names}</b>のシフト日（色付き）。日付を選ぶと期日になります。</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center"><div style="font-size:11px;color:var(--rose)">日</div><div style="font-size:11px">月</div><div style="font-size:11px">火</div><div style="font-size:11px">水</div><div style="font-size:11px">木</div><div style="font-size:11px">金</div><div style="font-size:11px;color:var(--sky,#4a90d9)">土</div>${cells}</div></div>`;}
 function salonClosedOn(ds){const dow=new Date(ds+'T00:00:00').getDay();const ex=((DATA.settings||{}).openException||{})[ds];if(ex==='open')return false;if(ex==='closed')return true;return dow===2;}
 async function taskSave(){const me=localGet('salon:me');const tf=state.taskForm||{};const title=(((byId('tk-title')||{}).value)||tf.title||'').trim();
-  if(tf.dues&&tf.dues.length){const singleDue=((byId('tk-due')||{}).value)||'';const all=tf.dues.slice();if(singleDue&&!all.includes(singleDue))all.push(singleDue);if(!title){alert('やることをご入力ください。');return;}await taskSaveDates(title,all.sort());return;}const bulk=(((byId('tk-bulk')||{}).value)||'').split('\n').map(x=>x.trim()).filter(Boolean);if(!title&&!bulk.length){alert('やることをご入力ください。');return;}if(bulk.length){const lines=title?[title,...bulk]:bulk;await taskSaveMany(lines);return;}const assignees=(tf.assignees&&tf.assignees.length)?tf.assignees.slice():[me];const isAll=assignees.includes('all');const assignee=isAll?'all':assignees[0];const due=((byId('tk-due')||{}).value)||tf.due||'';const desc=(((byId('tk-desc')||{}).value)||tf.desc||'').trim();const url=(((byId('tk-url')||{}).value)||tf.url||'').trim();await loadWork();WORK.tasks=WORK.tasks||[];WORK.tasks.unshift({id:'t'+Date.now(),title,desc,by:me,assignee,assignees:isAll?['all']:assignees,scope:isAll?'all':'one',due,url,imgs:(state.taskImgs||[]).slice(0,5),qa:[],done:false,at:Date.now()});state.taskImgs=[];state.taskForm=null;state.taskAddOpen=false;const others=isAll?[]:assignees.filter(a=>a!==me);logAct('タスクを追加'+(others.length?'（'+others.map(a=>(stById(a)||{}).name).join('・')+'へ依頼）':''));WORK.chats=WORK.chats||{};for(const a of others){const rk='dm:'+[me,a].sort().join('|');WORK.chats[rk]=WORK.chats[rk]||[];WORK.chats[rk].push({id:'m'+Date.now()+Math.random().toString(36).slice(2,5),by:meName(),at:Date.now(),text:'【タスク依頼】'+title+(due?'（期日：'+mdLabel(due)+'）':''),reads:[meName()],reacts:{}});}await saveWork();alert('タスクを追加しました'+(due?'（期日：'+mdLabel(due)+'）':'（期日なし）'));render();}
+  if(tf.dues&&tf.dues.length){const singleDue=((byId('tk-due')||{}).value)||'';const all=tf.dues.slice();if(singleDue&&!all.includes(singleDue))all.push(singleDue);if(!title){alert('やることをご入力ください。');return;}await taskSaveDates(title,all.sort());return;}const bulk=(((byId('tk-bulk')||{}).value)||'').split('\n').map(x=>x.trim()).filter(Boolean);if(!title&&!bulk.length){alert('やることをご入力ください。');return;}if(bulk.length){const lines=title?[title,...bulk]:bulk;await taskSaveMany(lines);return;}const assignees=(tf.assignees&&tf.assignees.length)?tf.assignees.slice():[me];const isAll=assignees.includes('all');const assignee=isAll?'all':assignees[0];const due=((byId('tk-due')||{}).value)||tf.due||'';const desc=(((byId('tk-desc')||{}).value)||tf.desc||'').trim();const url=(((byId('tk-url')||{}).value)||tf.url||'').trim();await loadWork();WORK.tasks=WORK.tasks||[];WORK.tasks.unshift({id:'t'+Date.now(),title,desc,by:me,assignee,assignees:isAll?['all']:assignees,scope:isAll?'all':'one',due,url,imgs:(state.taskImgs||[]).slice(0,5),qa:[],done:false,at:Date.now()});state.taskImgs=[];state.taskForm=null;state.taskAddOpen=false;const others=isAll?[]:assignees.filter(a=>a!==me);logAct('タスクを追加'+(others.length?'（'+others.map(a=>(stById(a)||{}).name).join('・')+'へ依頼）':''));WORK.chats=WORK.chats||{};for(const a of others){const rk='dm:'+[me,a].sort().join('|');WORK.chats[rk]=WORK.chats[rk]||[];WORK.chats[rk].push({id:'m'+Date.now()+Math.random().toString(36).slice(2,5),by:meName(),at:Date.now(),text:'【タスク依頼】'+title+(due?'（期日：'+mdLabel(due)+'）':''),reads:[meName()],reacts:{}});}const _ok=await saveWork();
+  if(!_ok){alert('⚠ タスクを保存できませんでした。\n入力内容はそのまま残していますので、電波の良い場所でもう一度「追加する」を押してください。');render();return;}
+  state.taskForm=null;state.taskAdd=false;
+  alert('✅ タスクを追加しました'+(due?'（期日：'+mdLabel(due)+'）':'（期日なし）'));render();}
 async function taskToggle(id){
   await loadWork(); /* 先にサーバーの最新を読む（他の端末の変更を取り込む） */
   const t=(WORK.tasks||[]).find(x=>x.id===id);if(!t)return;
@@ -4319,6 +4329,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-14',v:'r20260914b',items:['【「Fetch is aborted」でタスクが作れない原因】保存のたびにチャットや業務報告の画像を含む全データを送信しており、データが大きいと送信しきれず時間切れになっていました→保存前にサイズを確認し、大きい場合は画像を自動で軽量化。さらにサイズに応じて待ち時間を最大2分まで自動延長','保存に失敗した時は「保存できませんでした」と表示し、入力した内容をそのまま残すように変更（作り直し不要。もう一度「追加する」を押すだけ）','これまでは失敗しても「タスクを追加しました」と出ていたため、追加できたと誤解する状態でした。成功した時だけ「✅ 追加しました」と表示します']},
  {d:'2026-09-13',v:'r20260914a',items:['【「取消」を押しても戻る原因】シフトの「保存して完了」を押すたびに、その月が自動で再登録される作りでした（取消→保存で復活の繰り返し）→購読方式では不要な仕組みのため、「Googleカレンダーに反映中の月」の表示と取消ボタンごと撤去しました','シフト画面には購読URLと、古い予定の消し方の案内だけを残しました','【毎回ログインが必要だった原因】通信が一度失敗しただけでログイン情報が消える作りでした→通信の失敗ではログアウトせず、パスワードが違う時だけ解除するように変更。スタッフもお客様も、一度ログインすれば次回から入力不要です']},
  {d:'2026-09-13',v:'r20260913z',items:['【「電波が悪い」と頻繁に出ていた原因】通信が1回でも失敗すると即座に諦める作りで、再試行が一度もありませんでした。データ量が多いと12秒の制限を超えることがあり、電波が良くても失敗扱いになっていました→通信を自動で最大3回まで試すように変更（間隔を空けて再試行）','読み込みの待ち時間を12秒→25秒、保存を30秒→45秒に延長','これにより、一時的な通信の乱れでサンプルデータが出たり、タスクの完了が保存されなかったりする事象の大半が解消されます']},
  {d:'2026-09-13',v:'r20260913y',items:['【架空の予約が表示された原因】サーバーからデータを読み込めなかった時に、デモ用のサンプルデータ（山本さくら様・伊藤めぐみ様など実在しないお客様）へ自動的に切り替わる作りになっていました→通信に失敗してもサンプルへは切り替えず、空のまま「⚠ データを読み込めませんでした」と大きく表示するように変更','読み込めていない状態では保存も行いません（空のデータで本物を上書きしてしまう事故を防止）']},
