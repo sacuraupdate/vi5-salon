@@ -10,7 +10,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 個別の指示とこのファイルが矛盾する場合は、まず矛盾を指摘し、確認を取ってから進めること。
 このファイルに書かれていない仕様を勝手に決めない。判断に迷ったら「未決定事項」（末尾）へ追記して確認する。
 
-**現在のフェーズ：Phase 1 完了（UI/UX・多言語構造・管理画面骨格）。Phase 2 は指示があるまで開始しない。**
+**現在のフェーズ：Phase 2 進行中（海外向け有料販売の接続層）。**
+Phase 1（UI/UX・多言語構造・管理画面骨格）は完了。
+Phase 2 では、決済・データベース・メールの**接続口**まで実装済み。
+実際の鍵が入るまで、それぞれの機能は自動的に無効になる（`src/lib/env.ts`）。
 
 コードは `sakura/` にあります。開発手順は `sakura/README.md`、Phase 1 の計画は `docs/phase-1-plan.md` を参照。
 
@@ -564,7 +567,36 @@ SAKURA 本人をブランドの顔として大きく見せる（写真を主役�
   本文は `src/lib/legal.ts`。「［要確定］」は SAKURA が決める項目、
   「［要専門家確認］」は法律の専門家の確認が要る項目。**Claude 側で勝手に確定しない。**
   確定するまで `robots: noindex` を外さない。
-- **決済・メール送信・DB・認証・AI API 接続は未実装**（Phase 2）。
+### 決済・データベース・メール（Phase 2 で実装済みの接続層）
+
+- **外部サービスは npm パッケージを足さず fetch で接続している。**
+  Cloudflare Workers 上で確実に動かすためと、使う機能が限られているため。
+  Stripe・Supabase・Resend いずれも SDK は入れない。
+- **秘密の鍵はコードに一切書かない。** 入口は `src/lib/env.ts` だけ。
+  未設定なら `isStripeConfigured()` などが false を返し、その機能は無効になる。
+  設定手順は `sakura/docs/env-setup.md`（SAKURA 向けに画面名まで書いてある）。
+- **受講権限を付与してよいのは `src/app/api/stripe/webhook/route.ts` だけ。**
+  決済成功画面（`/[locale]/checkout/success`）は購入記録を**読むだけ**。
+  URL を直接開かれるため、ここで付与すると未払いの人に権限が渡る。
+  `npm run commerce-check` がこの一点を自動で検査している。
+- **Webhook の冪等性は3段で担保する。** ①`webhook_events`（イベントID・処理済みなら何もしない）
+  ②`purchases.stripe_session_id` の一意制約 ③`entitlements` の主キー。
+  購入完了メールは②が「初めて記録した」ときだけ送るため、再送で二重に届かない。
+  **途中で失敗したイベントは `processed_at` が空のまま残り、Stripe の再送で処理し直される。**
+- **金額はクライアントから受け取らない。** 決済開始時に渡すのは Stripe の Price ID だけ。
+  記録する金額は Webhook が Stripe から受け取った値のみを使う。
+- **DB は service_role キーでサーバーからのみ接続する。** 全テーブルで RLS を有効にし、
+  ポリシーを1つも作っていない（公開キーが漏れても1行も読めない）。
+  スキーマは `sakura/supabase/migrations/0001_init.sql`。
+- **購入時の同意（即時提供／解約権の放棄）は実装済み、文言は未確定。**
+  実装（チェックボックス・必須判定・版の記録）は `src/lib/consent.ts` と `PurchaseForm.tsx`。
+  **文言は法律の専門家の確認を経て差し替える。差し替えたら `CONSENT_VERSION` を必ず上げる**
+  （過去の購入者がどの版に同意したか追えなくなるため）。確定したら `CONSENT_TEXT_APPROVED` を true にする。
+- **メールは購入者が選んだ言語で送る。** 未対応の言語は日本語ではなく英語に落とす
+  （`resolveMailLocale`）。管理側へ届く問い合わせ通知だけは日本語。
+- **認証は未実装。** 決済に進めるのはログイン済みの人だけだが、そのログイン自体が
+  まだ本物ではない（`getSession()` は本番で常に null）。ここが最後の未実装のP0。
+- **AI API 接続は未実装。**
 - データはすべてモック。`sakura/src/lib/data/` のリポジトリ層経由で取得しており、
   Phase 2 で Supabase 実装に差し替えても画面側の変更は不要な構造にしてある。
 - **次の指示があるまで Phase 2 を開始しない。**
@@ -586,6 +618,7 @@ SAKURA 本人をブランドの顔として大きく見せる（写真を主役�
 | `npm run ux-check` | クリック数・言語切替・管理画面の権限 |
 | `npm run launch-check` | **海外公開の事故防止**：未ログイン・未購入での到達、日本語混入、未確定価格の表示、通貨の固定、法務・問い合わせへの到達、404の言語、hreflang、スマホの横スクロール |
 | `npm run prod-guard-check` | 本番相当で購入者向け画面と管理画面が閉じていること |
+| `npm run commerce-check` | **決済の安全**：鍵がコードに無いこと、権限付与が Webhook だけであること、署名検証が偽物を弾くこと、冪等性の作り。サーバーは自分で起動するので事前準備は不要 |
 
 `ux-check` / `launch-check` は `SITE_DEMO_MODE=true npm run dev` を起動してから実行する。
 `prod-guard-check` は逆に、**フラグを設定せずに** `npm run build && npx next start -p 3100` してから実行する。

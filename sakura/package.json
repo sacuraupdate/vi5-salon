@@ -15,7 +15,8 @@
     "cf:deploy": "opennextjs-cloudflare build && wrangler deploy",
     "check:portraits": "node tools/check-portraits.mjs",
     "launch-check": "node tools/launch-check.mjs",
-    "prod-guard-check": "node tools/prod-guard-check.mjs"
+    "prod-guard-check": "node tools/prod-guard-check.mjs",
+    "commerce-check": "node tools/commerce-check.mjs"
   },
   "dependencies": {
     "lucide-react": "1.41.0",

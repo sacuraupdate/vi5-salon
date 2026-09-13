@@ -2,6 +2,9 @@ node_modules
 .next
 out
 .env*.local
+.env
+.env.production
+.env.development
 next-env.d.ts
 test-results
 .shots

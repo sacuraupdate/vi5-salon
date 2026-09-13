@@ -29,8 +29,19 @@ export type MarketId = 'global-usd' | 'tw' | 'kr' | 'jp';
 /**
  * 1市場ぶんの固定価格。**為替換算では生成しない。**
  * list = 通常価格 / launch = ローンチ価格（任意）。金額は表示単位の整数。
+ *
+ * priceId / launchPriceId は Stripe の Price ID（`price_...`）。
+ * Stripe の Price は金額が固定のため、通常価格とローンチ価格で別のIDになる。
+ * **未設定の市場では購入手続きに進めない**（金額だけあってもチェックアウトを作らない）。
  */
-export type MarketPrice = { list: number; launch?: number };
+export type MarketPrice = {
+  list: number;
+  launch?: number;
+  /** 通常価格に対応する Stripe Price ID */
+  priceId?: string;
+  /** ローンチ価格に対応する Stripe Price ID */
+  launchPriceId?: string;
+};
 
 /**
  * 講座の価格設定。市場ごとに独立して設定でき、未設定の市場では販売しない。
@@ -372,6 +383,22 @@ export type Purchase = {
   /** Stripe の Checkout Session ID。重複付与を防ぐ照合キー */
   externalId: string | null;
   purchasedAt: string;
+};
+
+/**
+ * 購入時に取得した同意の記録。
+ * EU・英国などのデジタルコンテンツ解約権に対応するため、
+ * 「即時提供に同意し、解約権が消滅することを承知した」ことを証跡として残す。
+ * 文言は確定前のため、同意した文言のバージョンを必ず一緒に保存する。
+ */
+export type Consent = {
+  userId: string;
+  purchaseId: string | null;
+  kind: 'immediate-access-waiver';
+  /** 同意した時点の文言バージョン。文言を変えたら必ず新しい版にする */
+  textVersion: string;
+  locale: Locale;
+  agreedAt: string;
 };
 
 /**

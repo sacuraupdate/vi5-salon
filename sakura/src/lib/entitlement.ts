@@ -1,19 +1,28 @@
 import type { Entitlement, SiteSession } from './data/types';
 import { learnerRepository } from './data';
+import { getCommerce } from './commerce';
+import { isSiteDemoMode } from './session';
 
 /**
  * 受講権限の判定。**画面側は必ずこの関数を通す。**
  *
  * 重要な前提：
- * - 受講権限は Stripe の Webhook で支払いを確認したあとにだけ作る。
- *   決済成功ページの表示では作らない（URL を直接開かれると偽造できるため）。
+ * - 受講権限は Stripe の Webhook で支払いを確認したあとにだけ作る
+ *   （`src/app/api/stripe/webhook/route.ts`）。
+ *   決済成功ページの表示では作らない。URL を直接開かれると偽造できるため。
  * - 視聴期限は原則なし（expiresAt: null）。
  *
- * Phase 2 では entitlements テーブルの参照に差し替える。
- * それまでは確認用に、モックの受講データを権限とみなす。
+ * データベースが接続されていればそちらが正。
+ * 未接続のときは、確認用（SITE_DEMO_MODE）に限りモックの受講データを使う。
+ * **本番でデータベースが未接続なら、誰も何も視聴できない。**
  */
 export async function listEntitlements(session: SiteSession | null): Promise<Entitlement[]> {
   if (!session) return [];
+
+  const commerce = getCommerce();
+  if (commerce) return commerce.listEntitlements(session.userId);
+
+  if (!isSiteDemoMode()) return [];
   const enrollments = await learnerRepository.listEnrollments();
   return enrollments.map((e) => ({
     userId: session.userId,

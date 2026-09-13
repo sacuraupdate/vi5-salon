@@ -173,6 +173,49 @@ const visibleText = (page) =>
   await ctx.close();
 }
 
+/* ── 8. 購入導線と決済成功画面 ── */
+{
+  const ctx = await browser.newContext(devices['iPhone 14']);
+  const page = await ctx.newPage();
+
+  // 販売中の講座：同意チェックが必ず出る（EU・英国の解約権に対応するため）
+  await page.goto(`${BASE}/en/courses/omotenashi-counselling`, { waitUntil: 'networkidle' });
+  const consent = page.locator('input[name="consent"]');
+  check('販売中の講座に即時提供への同意チェックが出る', (await consent.count()) > 0);
+  check('同意チェックが必須になっている', await consent.first().evaluate((e) => e.required).catch(() => false));
+  check(
+    'Stripe が未接続なら購入ボタンを押せない',
+    await page.locator('#purchase button[type="submit"]').first().isDisabled().catch(() => false),
+  );
+  check('スマホの固定バーから購入セクションへ行ける', (await page.locator('a[href="#purchase"]').count()) > 0);
+
+  // 価格未確定の講座では同意も出さない
+  await page.goto(`${BASE}/en/courses/japanese-salon-standard`, { waitUntil: 'networkidle' });
+  check('価格未確定の講座には同意チェックを出さない', (await page.locator('input[name="consent"]').count()) === 0);
+  await ctx.close();
+}
+
+/* ── 9. 決済成功画面では権限を付けない ── */
+{
+  const anon = await browser.newContext();
+  const ap = await anon.newPage();
+  await ap.goto(`${BASE}/en/checkout/success?session_id=cs_test_fake`, { waitUntil: 'networkidle' });
+  check('未ログインで決済成功画面を開けない', /\/login/.test(ap.url()), ap.url().replace(BASE, ''));
+  await anon.close();
+
+  const ctx = await browser.newContext();
+  await ctx.addCookies([SESSION]);
+  const page = await ctx.newPage();
+  await page.goto(`${BASE}/en/checkout/success?session_id=cs_test_fake`, { waitUntil: 'networkidle' });
+  const text = await page.locator('main').innerText();
+  check(
+    '存在しない決済IDを渡しても完了扱いにならない',
+    /Confirming your payment/i.test(text),
+    text.split('\n').find(Boolean),
+  );
+  await ctx.close();
+}
+
 await browser.close();
 console.table(results);
 const ng = results.filter((r) => r.結果 === 'NG');

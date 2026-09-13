@@ -384,7 +384,11 @@
     "directTitle": "或直接寄信給我們",
     "unavailableTitle": "此表單尚未連接",
     "unavailableBody": "目前尚無法從此表單送出。請直接寄信至上方的電子郵件地址。",
-    "emailPending": "客服信箱準備中。"
+    "emailPending": "客服信箱準備中。",
+    "sentTitle": "已送出",
+    "sentBody": "我們會寄到您填寫的電子郵件，通常於 2〜3 個工作天內回覆。",
+    "errorInvalid": "請填寫姓名、正確的電子郵件與內容。",
+    "errorFailed": "無法送出。請直接寄信到上方的電子郵件地址。"
   },
   "learn": {
     "title": "觀看",
@@ -410,5 +414,26 @@
     "titleTemplate": "%s | SAKURA JAPAN BEAUTY",
     "description": "學習日本沙龍的思維、待客與標準，並導入自己的沙龍。由日本的沙龍經營者授課的線上課程。",
     "ogAlt": "SAKURA JAPAN BEAUTY"
+  },
+  "checkout": {
+    "buy": "購買這門課程",
+    "preparing": "準備中",
+    "consentTitle": "購買前請確認",
+    "errorNotOnSale": "本課程在您所在的市場尚未開賣。",
+    "errorNoPriceId": "本課程的付款設定尚未完成，請與我們聯絡。",
+    "errorConsent": "請先勾選上方項目再繼續。",
+    "errorNotConfigured": "目前尚無法付款。若希望開放時收到通知，請與我們聯絡。",
+    "errorFailed": "無法開啟付款頁面。請再試一次，或與我們聯絡。",
+    "errorCancelled": "付款已取消，未產生任何費用。",
+    "successTitle": "感謝您的購買",
+    "successBody": "課程已可觀看。我們也寄了一封確認信給您。",
+    "startLearning": "開始觀看",
+    "pendingTitle": "正在確認您的付款",
+    "pendingBody": "通常只需要幾秒。付款確認後就會自動開通，不需要重複付款。請稍後重新整理此頁面。",
+    "reload": "重新整理",
+    "cancelledTitle": "已取消付款",
+    "cancelledBody": "未產生任何費用。您隨時可以回到課程頁面。",
+    "backToCourse": "回到課程頁面",
+    "contactUs": "聯絡我們"
   }
 }

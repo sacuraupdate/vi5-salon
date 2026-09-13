@@ -54,16 +54,21 @@ export default function AuthShell({
 
 export function Field({
   id,
+  name,
   label,
   type = 'text',
   autoComplete,
   placeholder,
+  required,
 }: {
   id: string;
+  /** 送信時の項目名。省略すると id を使う */
+  name?: string;
   label: string;
   type?: string;
   autoComplete?: string;
   placeholder?: string;
+  required?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -72,10 +77,11 @@ export function Field({
       </label>
       <input
         id={id}
-        name={id}
+        name={name ?? id}
         type={type}
         autoComplete={autoComplete}
         placeholder={placeholder}
+        required={required}
         className="min-h-12 rounded-sm border border-line bg-bg px-3 text-ink placeholder:text-ink-muted/70 focus:border-vermilion focus:outline-none"
       />
     </div>

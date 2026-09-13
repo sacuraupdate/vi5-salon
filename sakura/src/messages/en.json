@@ -384,7 +384,11 @@
     "directTitle": "Or email us directly",
     "unavailableTitle": "This form is not connected yet",
     "unavailableBody": "Sending from this form is not available yet. Please email us directly at the address above.",
-    "emailPending": "The support address is being set up. It will appear here shortly."
+    "emailPending": "The support address is being set up. It will appear here shortly.",
+    "sentTitle": "Thank you — your message is on its way",
+    "sentBody": "We will reply to the email address you gave us, usually within 2–3 business days.",
+    "errorInvalid": "Please fill in your name, a valid email address, and your message.",
+    "errorFailed": "We could not send your message. Please email us directly at the address above."
   },
   "learn": {
     "title": "Watch",
@@ -410,5 +414,26 @@
     "titleTemplate": "%s | SAKURA JAPAN BEAUTY",
     "description": "Learn how Japanese salons work — hospitality, standards and service — and bring them into your own salon. Online courses from a salon owner in Japan.",
     "ogAlt": "SAKURA JAPAN BEAUTY"
+  },
+  "checkout": {
+    "buy": "Buy this course",
+    "preparing": "Not yet on sale",
+    "consentTitle": "Before you buy",
+    "errorNotOnSale": "This course is not on sale in your market yet.",
+    "errorNoPriceId": "Checkout is not set up for this course yet. Please contact us.",
+    "errorConsent": "Please tick the box above before continuing.",
+    "errorNotConfigured": "Payment is not available yet. Please contact us and we will tell you when it opens.",
+    "errorFailed": "We could not open the payment page. Please try again, or contact us.",
+    "errorCancelled": "Your payment was cancelled. Nothing was charged.",
+    "successTitle": "Thank you for your purchase",
+    "successBody": "Your course is ready. We have also sent a confirmation to your email.",
+    "startLearning": "Start watching",
+    "pendingTitle": "Confirming your payment",
+    "pendingBody": "This usually takes a few seconds. Your access opens as soon as your bank confirms the payment — you do not need to pay again. Reload this page in a moment.",
+    "reload": "Reload",
+    "cancelledTitle": "Payment cancelled",
+    "cancelledBody": "Nothing was charged. You can go back to the course whenever you are ready.",
+    "backToCourse": "Back to the course",
+    "contactUs": "Contact us"
   }
 }

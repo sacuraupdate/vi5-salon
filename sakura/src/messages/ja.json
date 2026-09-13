@@ -384,7 +384,11 @@
     "directTitle": "メールで直接お問い合わせ",
     "unavailableTitle": "フォームはまだ接続されていません",
     "unavailableBody": "このフォームからの送信はまだご利用いただけません。上のメールアドレスへ直接ご連絡ください。",
-    "emailPending": "問い合わせ用アドレスを準備中です。"
+    "emailPending": "問い合わせ用アドレスを準備中です。",
+    "sentTitle": "送信しました",
+    "sentBody": "ご記入いただいたメールアドレスへ、通常2〜3営業日以内にご返信します。",
+    "errorInvalid": "お名前・正しいメールアドレス・内容をご記入ください。",
+    "errorFailed": "送信できませんでした。上のメールアドレスへ直接ご連絡ください。"
   },
   "learn": {
     "title": "受講",
@@ -410,5 +414,26 @@
     "titleTemplate": "%s | SAKURA JAPAN BEAUTY",
     "description": "日本のサロンの考え方・接客・基準を学び、自分のサロンに取り入れるためのオンライン講座。日本のサロンオーナーが教えます。",
     "ogAlt": "SAKURA JAPAN BEAUTY"
+  },
+  "checkout": {
+    "buy": "この講座を購入する",
+    "preparing": "公開準備中",
+    "consentTitle": "ご購入の前に",
+    "errorNotOnSale": "この講座は、お住まいの市場ではまだ販売しておりません。",
+    "errorNoPriceId": "この講座の決済設定がまだ完了していません。お問い合わせください。",
+    "errorConsent": "上のチェックを入れてからお進みください。",
+    "errorNotConfigured": "決済は現在ご利用いただけません。公開時のご案内をご希望の方はお問い合わせください。",
+    "errorFailed": "決済ページを開けませんでした。もう一度お試しいただくか、お問い合わせください。",
+    "errorCancelled": "お支払いはキャンセルされました。料金は発生していません。",
+    "successTitle": "ご購入ありがとうございます",
+    "successBody": "受講の準備が整いました。確認のメールもお送りしています。",
+    "startLearning": "受講をはじめる",
+    "pendingTitle": "お支払いを確認しています",
+    "pendingBody": "通常は数秒で完了します。決済の確認が取れ次第、自動で受講できるようになります。二重にお支払いいただく必要はありません。少し時間をおいて、このページを再読み込みしてください。",
+    "reload": "再読み込み",
+    "cancelledTitle": "お支払いをキャンセルしました",
+    "cancelledBody": "料金は発生していません。いつでも講座ページからお戻りいただけます。",
+    "backToCourse": "講座ページへ戻る",
+    "contactUs": "お問い合わせ"
   }
 }

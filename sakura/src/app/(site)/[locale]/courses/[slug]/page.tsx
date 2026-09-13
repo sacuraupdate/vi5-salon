@@ -22,6 +22,9 @@ import { catalogRepository } from '@/lib/data';
 import { neighboursOf } from '@/lib/quiz';
 import type { MaterialType } from '@/lib/data';
 import { isPublishedIn, isPurchasable, publishedLocales, tc, tcList, tcText } from '@/lib/format';
+import { isCheckoutReady } from '@/lib/market';
+import PurchaseForm from '@/components/public/PurchaseForm';
+import type { Locale } from '@/lib/data';
 import { alternatesFor, openGraphLocale, SITE_URL } from '@/lib/site';
 import { formatMoney, priceFor } from '@/lib/market';
 import { getMarket } from '@/lib/market-server';
@@ -75,10 +78,13 @@ const materialIcon: Record<MaterialType, typeof FileText> = {
 
 export default async function CourseDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; slug: string }>;
+  searchParams: Promise<{ checkout?: string }>;
 }) {
   const { locale, slug } = await params;
+  const { checkout } = await searchParams;
   setRequestLocale(locale);
 
   const course = await catalogRepository.getCourse(slug);
@@ -109,6 +115,18 @@ export default async function CourseDetailPage({
   const market = await getMarket(locale);
   const price = priceFor(course.pricing, market);
   const canBuy = isPurchasable(course, locale, market);
+  // 価格が確定していても、Stripe の Price ID が無ければ決済に進めない
+  const checkoutReady = canBuy && isCheckoutReady(course.pricing, market);
+
+  const purchaseForm = (
+    <PurchaseForm
+      slug={slug}
+      locale={locale as Locale}
+      canBuy={canBuy}
+      checkoutReady={checkoutReady}
+      error={checkout}
+    />
+  );
 
   // 金額の表示。ローンチ価格が出ているときだけ通常価格を取り消し線で添える
   const priceNode = course.isFree ? (
@@ -180,16 +198,7 @@ export default async function CourseDetailPage({
         </div>
       </dl>
 
-      <button
-        type="button"
-        disabled={!canBuy}
-        className={buttonClass('primary', 'lg', 'mt-5 w-full disabled:cursor-not-allowed disabled:opacity-45')}
-      >
-        {canBuy ? d('buy') : d('buyPreparing')}
-      </button>
-      <p className="mt-2.5 text-center text-[11px] leading-relaxed text-ink-muted">
-        {canBuy ? d('buyNote') : d('buyPreparingNote')}
-      </p>
+      <div className="mt-5">{purchaseForm}</div>
     </Card>
   );
 
@@ -549,6 +558,12 @@ export default async function CourseDetailPage({
             <div className="sticky top-20">{purchaseCard}</div>
           </aside>
         </div>
+
+        {/* スマホでは購入カードを本文の最後に置く。
+            同意のチェックを見せずに購入させないため、固定バーからここへ送る */}
+        <section id="purchase" className="mt-10 scroll-mt-20 lg:hidden">
+          {purchaseCard}
+        </section>
       </div>
 
       {/* モバイル：購入CTAを画面下部に固定して見失わせない */}
@@ -566,13 +581,20 @@ export default async function CourseDetailPage({
               {isChaptered ? `${course.curriculum.length}${common('chapters')}` : `${course.lessonCount}${common('lessons')}`}
             </span>
           </span>
-          <button
-            type="button"
-            disabled={!canBuy}
-            className={buttonClass('primary', 'lg', 'flex-1 disabled:cursor-not-allowed disabled:opacity-45')}
-          >
-            {canBuy ? d('buy') : d('buyPreparing')}
-          </button>
+          {/* 同意のチェックを飛ばせないよう、バーからは購入セクションへ送る */}
+          {canBuy ? (
+            <a href="#purchase" className={buttonClass('primary', 'lg', 'flex-1 text-center')}>
+              {d('buy')}
+            </a>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className={buttonClass('primary', 'lg', 'flex-1 disabled:cursor-not-allowed disabled:opacity-45')}
+            >
+              {d('buyPreparing')}
+            </button>
+          )}
         </div>
       </div>
     </div>

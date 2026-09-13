@@ -71,6 +71,11 @@ export type ResolvedPrice = {
   amount: number;
   /** ローンチ価格が適用されている場合の通常価格（取り消し線用）。通常時は null */
   strikethrough: number | null;
+  /**
+   * 実際に請求する Stripe Price ID。未設定なら null。
+   * **null のときは購入手続きに進めない。**金額だけでチェックアウトを作らない。
+   */
+  stripePriceId: string | null;
 };
 
 export function priceFor(pricing: Pricing, market: MarketId, today = new Date()): ResolvedPrice | null {
@@ -83,14 +88,28 @@ export function priceFor(pricing: Pricing, market: MarketId, today = new Date())
     entry.launch != null &&
     (!pricing.launchEndsAt || pricing.launchEndsAt >= today.toISOString().slice(0, 10));
 
+  const currency = marketOf(market).currency;
   return launchOpen
-    ? { currency: marketOf(market).currency, amount: entry.launch as number, strikethrough: entry.list }
-    : { currency: marketOf(market).currency, amount: entry.list, strikethrough: null };
+    ? {
+        currency,
+        amount: entry.launch as number,
+        strikethrough: entry.list,
+        stripePriceId: entry.launchPriceId ?? null,
+      }
+    : { currency, amount: entry.list, strikethrough: null, stripePriceId: entry.priceId ?? null };
 }
 
 /** その市場で販売しているか（価格が設定されているか） */
 export function isSoldIn(pricing: Pricing, market: MarketId): boolean {
   return pricing.status === 'confirmed' && pricing.byMarket[market] != null;
+}
+
+/**
+ * 実際に決済を開始できるか。
+ * 価格が確定していても、Stripe の Price ID が未登録なら決済に進めない。
+ */
+export function isCheckoutReady(pricing: Pricing, market: MarketId): boolean {
+  return priceFor(pricing, market)?.stripePriceId != null;
 }
 
 /** 金額の表示。通貨は市場から決まり、言語は書式だけに使う */
