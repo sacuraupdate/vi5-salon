@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260913u';
+const APP_REV='r20260913v';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -2134,7 +2134,21 @@ function menuItemHtml(x){const sel=inCart(x.id);const catObj=categories.find(c=>
   const open=state.menuOpen===x.id;
   const photos=(x.photos&&x.photos.length?x.photos:(x.img?[x.img]:[])).slice(0,3);
   const detail=open?`<div class="mi-detail">${photos.length?`<div class="share-photos" style="margin:0 0 10px">${photos.map(p=>`<div style="background-image:url('${p}')"></div>`).join('')}</div>`:''}<div class="mi-detail-tx">${x.detail||x.desc||'詳細はスタッフまでお気軽にお尋ねください。'}</div></div>`:'';
-  return `<div class="menu-item ${sel?'sel':''} ${open?'open':''}"><div class="mi-row" data-mpick="${x.id}"><div class="mi-thumb" style="${bg}"></div><div class="mi-body"><div class="mi-name">${svcName(x)} <span class="mi-more" data-mexp="${x.id}">${open?'閉じる':'詳細▾'}</span></div>${x.desc?`<div class="mi-desc">${x.desc}</div>`:''}<div class="mi-meta">${x.price?yen(x.price):'無料'} ・ 約${x.min}分</div></div><button class="mi-add" data-add="${x.id}"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">${sel?'<path d="M5 13l4 4L19 7"/>':'<path d="M12 5v14M5 12h14"/>'}</svg></button></div>${sel?miStaffPick(x):''}${detail}</div>`}
+  return `<div class="menu-item ${sel?'sel':''} ${open?'open':''}"><div class="mi-row" data-mpick="${x.id}"><div class="mi-thumb" style="${bg}"></div><div class="mi-body"><div class="mi-name">${svcName(x)} <span class="mi-more" data-mexp="${x.id}">${open?'閉じる':'詳細▾'}</span></div>${x.desc?`<div class="mi-desc">${x.desc}</div>`:''}<div class="mi-meta">${x.price?yen(x.price):'無料'} ・ 約${x.min}分</div></div><button class="mi-add" data-add="${x.id}"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">${sel?'<path d="M5 13l4 4L19 7"/>':'<path d="M12 5v14M5 12h14"/>'}</svg></button></div>${sel?miStaffPick(x)+miNextStep(x):''}${detail}</div>`}
+/* 選んだメニューのすぐ下に出す「次にどうするか」の案内（スクロール不要） */
+function miNextStep(x){
+  try{
+    const cart=(state.cart||[]).filter(c=>c.cat!=='addon');
+    if(!cart.length||cart[cart.length-1].id!==x.id)return ''; /* 最後に選んだメニューの下だけに出す */
+    const total=(state.cart||[]).reduce((a,c)=>a+(c.min||0),0);
+    return `<div style="margin:0 12px 12px;padding:12px;border-radius:12px;background:#fff;border:1.5px dashed var(--gold)">
+      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px">選択中 ${cart.length}点・約${total}分</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" data-fc="all" style="flex:1;padding:12px 8px;font-size:13.5px;border-color:var(--gold);color:#6b5410;font-weight:700">＋ 別のメニュー</button>
+        <button class="btn btn-primary" data-gonext="1" style="flex:1;padding:12px 8px;font-size:13.5px">日時を選ぶ →</button>
+      </div></div>`;
+  }catch(e){return '';}
+}
 /* メニュー行の中に出す担当えらび。候補が1人なら文字だけ（タップ不要）、2人以上のときだけボタンを出す */
 function miStaffPick(x){
   try{
@@ -2144,8 +2158,10 @@ function miStaffPick(x){
     if(cands.length===1){state.b.assign[x.id]=cands[0].id;
       return `<div style="padding:0 12px 10px;font-size:12px;color:var(--ink-soft)">担当：<b style="color:var(--navy)">${esc(cands[0].name)}</b></div>`;}
     const cur=state.b.assign[x.id]||'auto';
-    const chips=[{id:'auto',name:'おまかせ'}].concat(cands).map(c=>`<button type="button" class="chip" data-asg="${x.id}|${c.id}" style="padding:3px 11px;font-size:11.5px;${cur===c.id?'background:var(--navy);color:#fff;border-color:var(--navy)':''}">${esc(c.name)}</button>`).join('');
-    return `<div style="padding:0 12px 10px"><div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:4px">担当をえらぶ</div><div class="chips" style="gap:6px">${chips}</div></div>`;
+    const chips=[{id:'auto',name:'おまかせ',sub:'空いている担当'}].concat(cands.map(c=>({id:c.id,name:c.name,sub:''}))).map(c=>{
+      const on=cur===c.id;
+      return `<button type="button" data-asg="${x.id}|${c.id}" style="flex:1;min-width:90px;padding:10px 8px;border-radius:12px;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;border:2px solid ${on?'var(--navy)':'var(--line)'};background:${on?'var(--navy)':'#fff'};color:${on?'#fff':'var(--ink)'};box-shadow:${on?'0 2px 8px rgba(30,42,71,.25)':'none'}">${on?'✓ ':''}${esc(c.name)}${c.sub?`<div style="font-size:10.5px;font-weight:400;margin-top:2px;color:${on?'rgba(255,255,255,.8)':'var(--ink-soft)'}">${c.sub}</div>`:''}</button>`;}).join('');
+    return `<div style="margin:0 12px 10px;padding:10px;border-radius:12px;background:#F5F6F8"><div style="font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:7px">👤 担当をお選びください</div><div style="display:flex;gap:7px;flex-wrap:wrap">${chips}</div></div>`;
   }catch(e){return '';}
 }
 
@@ -2191,12 +2207,13 @@ function stepBrowse(){
   const chipHtml=`<div class="gfilter">${chips.map(x=>`<button data-fc="${x[0]}" class="${cur===x[0]?'active':''}">${x[1]}</button>`).join('')}</div>`;
   state.bookMode='single';const modeBar='';
   const pairBanner=state.bookMode==='pair'?`<div class="pairbanner">👥 おふたりでご予約 ・ <b>${state.pairPerson===1?'お一人目':'お二人目'}</b>のメニュー${state.pairPerson===2&&state.pairA?`<span class="pb-a">お一人目：${state.pairA.cart.map(x=>itemName(x)).join('・')||'(未選択)'} ／ ${state.pairA.staff.name}</span>`:''}</div>`:'';
-  app.innerHTML=`<div class="fade"><div class="eyebrow">Step 01</div><div class="h-title">${t('selectMenu')}</div><div class="h-sub">${t('menuSub')}</div>${modeBar}${pairBanner}<div class="menusearch"><input id="menu-q" type="search" value="${(state.menuQuery||'').replace(/"/g,'&quot;')}" placeholder="🔍 メニュー名で検索（例：まつげ、眉、ピーリング）" aria-label="メニュー検索"></div>${selChips}${fav}${listHtml}${_mq&&!/選択中/.test(listHtml)&&listHtml.indexOf('menu-item')<0?'<div class="empty">「'+_mq+'」に一致するメニューがありません</div>':''}${keepAddingHtml()}${addHtml}</div>`+cartBar(t('ctaNextStaff'),state.cart.length>0);
+  app.innerHTML=`<div class="fade"><div class="eyebrow">Step 01</div><div class="h-title">${t('selectMenu')}</div><div class="h-sub">${t('menuSub')}</div>${modeBar}${pairBanner}<div class="menusearch"><input id="menu-q" type="search" value="${(state.menuQuery||'').replace(/"/g,'&quot;')}" placeholder="🔍 メニュー名で検索（例：まつげ、眉、ピーリング）" aria-label="メニュー検索"></div>${selChips}${fav}${listHtml}${_mq&&!/選択中/.test(listHtml)&&listHtml.indexOf('menu-item')<0?'<div class="empty">「'+_mq+'」に一致するメニューがありません</div>':''}${addHtml}</div>`+cartBar(t('ctaNextStaff'),state.cart.length>0);
   app.querySelectorAll('[data-bookmode]').forEach(b=>b.onclick=()=>{const mode=b.dataset.bookmode;if(mode==='pair'){state.bookMode='pair';state.cartA=[...state.cart];state.cartB=[];state.staffA=state.b.staff;state.staffB=null;state.optA=[];state.optB=[];state.pairEditing='A';}else{state.bookMode='single';}render();window.scrollTo(0,0)});
   app.querySelectorAll('[data-fc]').forEach(b=>b.onclick=()=>{state.openCat=b.dataset.fc==='all'?null:b.dataset.fc;state.menuOpen=null;render();try{_pushHistory();}catch(_e){};window.scrollTo(0,0)});
   app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{state.cart=state.cart.filter(x=>x.id!==b.dataset.rm);render()});
   app.querySelectorAll('[data-mexp]').forEach(r=>r.onclick=e=>{e.stopPropagation();state.menuOpen=state.menuOpen===r.dataset.mexp?null:r.dataset.mexp;render()});app.querySelectorAll('[data-mpick]').forEach(r=>r.onclick=()=>{const id=r.dataset.mpick;const _mqe=byId('menu-q');if(_mqe)_mqe.oninput=e=>{state.menuQuery=e.target.value;render();const el=byId('menu-q');if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length);}catch(_){}}};inCart(id)?state.cart=state.cart.filter(x=>x.id!==id):state.cart.push(svById(id));render()});app.querySelectorAll('[data-cattg]').forEach(el=>el.onclick=()=>{state.catOpen=state.catOpen||{};state.catOpen[el.dataset.cattg]=!state.catOpen[el.dataset.cattg];render()});
   app.querySelectorAll('[data-asg]').forEach(b=>b.onclick=e=>{e.stopPropagation();const p=b.dataset.asg.split('|');state.b=state.b||{};state.b.assign=state.b.assign||{};state.b.assign[p[0]]=p[1];render();});
+  app.querySelectorAll('[data-gonext]').forEach(b=>b.onclick=e=>{e.stopPropagation();if(!(state.cart||[]).length)return;state.step=2;render();window.scrollTo(0,0);});
   app.querySelectorAll('[data-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();const id=b.dataset.add;const sv=svById(id);if(sv&&!inCart(id)&&!menuRankOK(sv)){alert(rankUpHint(sv).replace(/<[^>]+>/g,''));return;}if(sv&&sv.cat==='addon'&&!inCart(id)&&!cartHasMain()){alert('オプションメニューは、先に施術メニューをお選びいただいてから追加できます。');return;}if(sv&&sv.cat==='tfree'&&!inCart(id)){const st=state.b&&state.b.staff;const peel=(state.cart||[]).some(x=>x.id==='pe1'||x.id==='pe2'||x.cat==='peel');if(!peel){alert('この無料オプションは、先にハーブピーリングまたはニードルピーリングをお選びいただくと選択できます（TOMOMI指名）。');return;}}inCart(id)?state.cart=state.cart.filter(x=>x.id!==id):state.cart.push(sv);if(!cartHasMain())state.cart=state.cart.filter(x=>x.cat!=='addon');render()});
   const n=byId('next');if(n)n.onclick=()=>{state.step=1;render()};
 }
@@ -2378,6 +2395,7 @@ function stepBrowsePair(){
   const mut=id=>{const arr=state.pairEditing==='A'?state.cartA:state.cartB;const i=arr.findIndex(x=>x.id===id);if(i>=0)arr.splice(i,1);else arr.push(svById(id));render()};
   app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>mut(b.dataset.rm));
   app.querySelectorAll('[data-asg]').forEach(b=>b.onclick=e=>{e.stopPropagation();const p=b.dataset.asg.split('|');state.b=state.b||{};state.b.assign=state.b.assign||{};state.b.assign[p[0]]=p[1];render();});
+  app.querySelectorAll('[data-gonext]').forEach(b=>b.onclick=e=>{e.stopPropagation();if(!(state.cart||[]).length)return;state.step=2;render();window.scrollTo(0,0);});
   app.querySelectorAll('[data-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();mut(b.dataset.add)});
   const n=byId('next');if(n)n.onclick=()=>{state.step=1;render();window.scrollTo(0,0)};
   const tb=byId('to-b');if(tb)tb.onclick=()=>{state.pairEditing='B';state.openCat=null;render();window.scrollTo(0,0)};
@@ -4248,6 +4266,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-13',v:'r20260913v',items:['「別のメニューも選ぶ」の案内を、一覧の一番下から「いま選んだメニューのすぐ下」へ移動。スクロールしなくても次にできることが分かります','選んだメニューの直下に「＋ 別のメニュー」と「日時を選ぶ →」の2つのボタンを並べ、その場でどちらにも進めるように','担当えらびを見やすく改善：「👤 担当をお選びください」の見出しを付け、枠で囲んで表示。選択中は濃紺＋✓で一目で分かるように、未選択は白地の大きなボタンに']},
  {d:'2026-09-13',v:'r20260913u',items:['メニューを1つ選んだ直後に「✅ 選択中：◯◯（約◯分）」と「＋ 別のメニューも選ぶ」を大きく表示。戻り方が分からず迷うことがなくなります','「同じご来店で別のメニューも続けてお受けいただけます。担当が違うメニューでも自動で組み立てます」と明記','担当を選ぶ画面が無くなったため、下部のボタンを「次へ：スタッフを選ぶ」から「次へ：日時を選ぶ」に変更']},
  {d:'2026-09-13',v:'r20260913t',items:['【工程を大幅に短縮】担当を選ぶ専用画面を廃止し、メニュー一覧の各メニューの中で担当を選べるように変更。メニューを選んだら、そのまま日時選択へ進みます','担当が1人しかいないメニューは「担当：SAKURA」と表示されるだけでタップ不要。複数いるメニューだけ「おまかせ／SAKURA／TOMOMI」が出ます','既定は「おまかせ」なので、こだわりがなければ一度もタップせずに進めます','眉→担当→日時→戻ってピーリング→担当…という行き来がなくなり、メニューを続けて選ぶだけで完了します']},
  {d:'2026-09-13',v:'r20260913s',items:['【TOMOMIを指名できなかった原因】SAKURAが全施術対応のため「1人で完結する」と判定され、担当を分ける仕組みが働いていませんでした→メニューを選んだ次の画面で、メニューごとに担当を選べるように変更','タップを最小限に：担当が1人しかいないメニューは自動で確定（タップ不要）。選べるメニューだけ「おまかせ／SAKURA／TOMOMI」が並びます。既定は「おまかせ」なので、そのまま次へ進めます','「担当不可」で止まることがなくなりました','設定に追加していた「予約できない原因をしらべる」診断は撤去しました']},
