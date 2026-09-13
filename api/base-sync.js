@@ -1,10 +1,11 @@
-const L=require('./_lib');
 // BASE→自前ショップ 全自動同期 v3  /api/base-sync
 // sitemap.xml から全商品IDを取得し、各商品ページから 名前/価格/画像/カテゴリ/説明 を正確に読む。
 // 再開可能（既取得はスキップ）・手動編集(pw/hide/desc/catManual)保持・実行結果を diag としてGitHubに記録。
 const PUB = 'https://vi5.shopselect.net';
 const SEC = 'https://vi5beauty.base.shop';
 const SECRET_PW = '5555';
+const SUPA_URL=process.env.SUPABASE_URL||'https://tehcaufdztgpbrknpshk.supabase.co';
+const SUPA_KEY=process.env.SUPABASE_KEY||'sb_publishable_CnOCyO9QU69K47vbbLRkYg__cEv53CJ';
 const UA = { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15' };
 
 function dec(s){return String(s||'').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#0?39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#\d+;/g,'');}
@@ -124,13 +125,32 @@ async function pool(arr, n, fn) {
   for (let i = 0; i < n; i++) ws.push((async () => { while (q.length) { const x = q.shift(); try { await fn(x); } catch (e) {} } })());
   await Promise.all(ws);
 }
-async function loadData() { return L.kvGet('salon:data'); }
-async function saveData(d) {
-  // eshop と 未来日来店済み修復 だけを最新データへ適用（CAS・競合時再試行）
-  await L.kvSaveWithRetry('salon:data', (cur) => { const x = cur || {}; x.eshop = d.eshop; try { const td = L.jstDateStr(); for (const b of (x.bookings || [])) { if (b && b.date > td && b.status === 'visited') { b.status = 'confirmed'; b.thanked = false; b.reviewAsked = false; b.awardedPoints = 0; b.updatedAt = Date.now(); } } } catch (e) {} return x; });
+async function loadData() {
+  const r = await fetch(SUPA_URL + '/rest/v1/kv?key=eq.salon:data&select=value', { headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY } });
+  if (!r.ok) throw new Error('load-' + r.status);
+  const j = await r.json(); if (!Array.isArray(j) || !j.length) return null;
+  let v = j[0].value;
+  for (let i = 0; i < 4; i++) { if (typeof v === 'string') { try { v = JSON.parse(v); continue; } catch (e) { break; } } if (Array.isArray(v)) { v = v[0]; continue; } break; }
+  return (v && typeof v === 'object' && !Array.isArray(v)) ? v : null;
 }
-async function writeDiag(diag) { try { await L.kvSaveWithRetry('salon:diag', () => diag, 2); } catch (e) {} }
-module.exports=async(req,res)=>{L.noStore(res);const want='Bearer '+(process.env.CRON_SECRET||'');if(!process.env.CRON_SECRET||(req.headers.authorization||'')!==want){res.status(401).json({ok:false,error:'unauth'});return;}
+async function saveData(d) {
+  const r = await fetch(SUPA_URL + '/rest/v1/kv?on_conflict=key', {
+    method: 'POST',
+    headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({ key: 'salon:data', value: JSON.stringify(d) })
+  });
+  if (!r.ok) throw new Error('save-' + r.status);
+}
+async function writeDiag(diag) {
+  try {
+    await fetch(SUPA_URL + '/rest/v1/kv?on_conflict=key', {
+      method: 'POST',
+      headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ key: 'salon:diag', value: JSON.stringify(diag) })
+    });
+  } catch (e) {}
+}
+module.exports = async (req, res) => {
   const t0 = Date.now();
   const diag = { at: new Date().toISOString() };
   try {
@@ -209,8 +229,16 @@ module.exports=async(req,res)=>{L.noStore(res);const want='Bearer '+(process.env
     }
     diag.recat = recat; diag.pubOk = pubOk;
     d.eshop.syncedAt = Date.now();
-    if (added || updated || recat || diag.futureFix) { await saveData(d); }
-    try{await L.kvSaveWithRetry('salon:eshop',()=>({products:d.eshop.products,syncedAt:Date.now()}),2);}catch(e){}
+    if (added || updated || recat || diag.futureFix) {
+      // 保存直前にサーバーの最新を読み直し、このジョブが変更した部分(eshop/未来来店修復)だけを適用（他端末の保存を消さない）
+      const fresh = await loadData();
+      if (fresh) {
+        fresh.eshop = d.eshop;
+        if (diag.futureFix) { try { const td=new Date(Date.now()+9*3600000).toISOString().slice(0,10); for (const b of (fresh.bookings||[])) { if (b && b.date>td && b.status==='visited') { b.status='confirmed'; b.thanked=false; b.reviewAsked=false; b.awardedPoints=0; } } } catch(e){} }
+        await saveData(fresh); d = fresh;
+      } else { await saveData(d); }
+    }
+    try{await fetch(SUPA_URL+'/rest/v1/kv?on_conflict=key',{method:'POST',headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:eshop',value:JSON.stringify({products:d.eshop.products,syncedAt:Date.now()})})});}catch(e){}
     diag.added = added; diag.updated = updated; diag.fetched = fetched;
     diag.total = d.eshop.products.length;
     diag.cats = [...new Set(d.eshop.products.map(p => p.cat).filter(Boolean))];
