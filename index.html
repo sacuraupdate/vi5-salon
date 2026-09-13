@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260913n';
+const APP_REV='r20260913p';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -2091,7 +2091,16 @@ function stepStaff(){
   const realEligible=staff.filter(p=>p.id!=='s0'&&!p.inactive&&eligible(p));
   const cards=staff.filter(p=>(p.id==='s0'?realEligible.length>=2:(!p.hidden&&!p.inactive&&(p.services||[]).length>0))).sort((a,b)=>{if(a.id==='s0')return -1;if(b.id==='s0')return 1;return (eligible(b)?1:0)-(eligible(a)?1:0);}).map((p,i)=>{const ok=eligible(p);const sel=ok&&state.b.staff&&state.b.staff.id===p.id;const initial=p.id==='s0'?'?':nameInitial(p.name);const bg=p.photo?`background-image:url('${p.photo}')`:`background:${p.color}`;
     const okStyle=ok?'border:2px solid #E39A3B;background:#FFF6EA;box-shadow:0 2px 10px rgba(227,154,59,.18)':'border:2px solid #2A2E38;background:#2A2E38;filter:grayscale(1);opacity:.6';const nameCol=ok?'':'color:#cfd2da';return `<div class="staff ${sel?'sel':''}" ${ok?`data-staff="${p.id}"`:''} style="${okStyle};animation-delay:${i*.06}s"><div class="photo" style="${bg}">${p.photo?'':initial}<div class="staff-check"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div></div><div class="staff-body"><div class="staff-top"><span class="staff-name" style="${nameCol}">${p.name}</span><span class="staff-role" style="${nameCol}">${p.role}</span>${p.id==='s0'?'':(ok?'<span style="background:#E39A3B;color:#fff;border-radius:12px;padding:2px 9px;font-size:11px;font-weight:700;margin-left:6px">予約OK</span>':'<span style="background:#4a4f5c;color:#c7cad2;border-radius:12px;padding:2px 9px;font-size:11px;font-weight:700;margin-left:6px">担当不可</span>')}</div><div class="staff-intro" style="${ok?'':'color:#c7cad2'}">${ok?p.intro:'選択中のメニューは担当できません（別の担当者をお選びください）。'}</div>${ok?`<div class="staff-next">🕐 最短 ${nextAvailLabel(p.id)}</div>`:''}${(ok&&p.quals)?`<div class="quals">${p.quals.split(/[,、，\n・\/／|;；]+|\s{2,}/).map(q=>q.trim()).filter(Boolean).map(q=>`<span class="qual">🏅 ${q}</span>`).join('')}</div>`:''}${ok&&state.cart.length?`<div class="staff-intro" style="color:var(--gold);font-weight:700;margin-top:4px">この内容で ${yen(cartTotal(p.id))}</div>`:''}</div></div>`}).join('');
-  app.innerHTML=stepsBar(1)+`<div class="fade"><div class="eyebrow">Step 02</div><div class="h-title">${t('selectStaff')}</div><div class="h-sub">${t('staffSub')}</div><div class="note" style="margin:0 0 10px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:#FFF6EA;border:2px solid #E39A3B;vertical-align:middle"></span> 選べる担当</span><span><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:#2A2E38;vertical-align:middle"></span> 選べない担当（暗い表示）</span></div>${cards}</div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">${t('backBtn')}</button><button class="btn btn-primary" id="next" ${state.b.staff?'':'disabled'}>${t('ctaNextDate')}</button></div>`;
+  /* 1人で全メニューを担当できない組み合わせのときは、理由と分け方をご案内する */
+  let noOne='';
+  if(!realEligible.length&&cartIds.length){
+    const per={};staff.filter(p=>p.id!=='s0'&&!p.hidden&&!p.inactive&&(p.services||[]).length).forEach(p=>{
+      const sv=p.services||[];const can=(state.cart||[]).filter(x=>!sv.length||sv.includes(x.id));
+      if(can.length)per[p.name]=can.map(x=>x.name);});
+    const lines=Object.keys(per).map(n=>`<div style="margin-top:4px">・<b>${n}</b>：${per[n].map(esc).join('、')}</div>`).join('');
+    noOne=`<div class="kalert" style="background:#FFF6E5;border-color:var(--gold);color:#6b5410;text-align:left;margin:0 0 12px">⚠ <b>お選びのメニューは、お一人の担当ではお受けできません。</b><div style="font-size:12.5px;margin-top:6px">担当できるメニューが分かれています。${lines}<div style="margin-top:8px">お手数ですが、<b>メニューを分けて2件ご予約ください</b>（例：まつげはSAKURA、ピーリングはTOMOMI）。続けてのお時間をご希望の場合は、1件目をご予約後に公式LINEでお知らせいただければ調整いたします。</div></div><button class="btn btn-ghost" id="back-menu" style="width:100%;margin-top:10px">メニューを選び直す</button></div>`;
+  }
+  app.innerHTML=stepsBar(1)+`<div class="fade"><div class="eyebrow">Step 02</div><div class="h-title">${t('selectStaff')}</div><div class="h-sub">${t('staffSub')}</div><div class="note" style="margin:0 0 10px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:#FFF6EA;border:2px solid #E39A3B;vertical-align:middle"></span> 選べる担当</span><span><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:#2A2E38;vertical-align:middle"></span> 選べない担当（暗い表示）</span></div>${noOne}${cards}</div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">${t('backBtn')}</button><button class="btn btn-primary" id="next" ${state.b.staff?'':'disabled'}>${t('ctaNextDate')}</button></div>`;
   app.querySelectorAll('[data-staff]').forEach(b=>b.onclick=()=>{state.b.staff=stById(b.dataset.staff);state.b.date=null;state.b.time=null;render()});
   byId('back').onclick=()=>{state.step=0;render()};byId('next').onclick=()=>{
     if(state.bookMode==='pair'&&state.pairPerson===1){state.pairA={cart:[...state.cart],staff:state.b.staff};state.cart=[];state.b.staff=null;state.b.date=null;state.b.time=null;state.openCat=null;state.pairPerson=2;state.step=0;render();window.scrollTo(0,0);}
@@ -3261,11 +3270,14 @@ async function staffRestoreFromBackup(){try{if(!state.adminAuthed)return false;
     const _at=(v&&v.at)||0;d.staff.forEach(bs=>{if(!bs||!bs.id)return;const cur=best[bs.id];if(!cur){best[bs.id]=bs;bs._bakAt=_at;return;}const ca=cur._bakAt||0;if(_at>ca||(_at===ca&&_rich(bs)>_rich(cur))){bs._bakAt=_at;best[bs.id]=bs;}});}catch(e){}}
   let n=0;const restored=[];targets.forEach(st=>{const b=best[st.id];if(!b)return;let c=0;FIELDS.concat(['color']).forEach(k=>{if(isEmpty(st[k])&&!isEmpty(b[k])){st[k]=b[k];n++;c++;}});if(c){st._u=Date.now();restored.push(st.name+'('+c+')');}});
   if(n){const names=restored.join('・');logAct('スタッフ情報をバックアップから自動復元（'+n+'項目：'+names+'）');state._rescueMsg='🛟 消えていたスタッフ情報（'+names+'：写真・紹介など'+n+'項目）を自動で復元しました。';try{WORK=WORK||{};WORK.ownerAlerts=WORK.ownerAlerts||[];WORK.ownerAlerts.unshift({id:'sr'+Date.now(),text:'🛟 スタッフ情報の消失を検知し、バックアップから自動復元しました（'+names+'・'+n+'項目）。念のため内容をご確認ください。',by:'システム',at:Date.now(),read:false});saveWork();}catch(_e){}await saveData(DATA);render();return true;}return false;}catch(e){return false;}}
-function staffServiceRules(){try{if(DATA._svcRules1)return false;DATA._svcRules1=true;let ch=false;
+/* TOMOMIが担当できるメニューの判定。名前に『ピーリング』を含むもの（回数券・新規追加も含む）とTOMOMI限定メニュー */
+function isTomomiMenu(sv){if(!sv)return false;if(sv.cat==='tfree')return true;const n=String(sv.name||'');return /ピーリング/.test(n);}
+function staffServiceRules(){try{let ch=false;
   const byName=n=>(staff||[]).find(x=>x.name===n);
-  const sak=byName('SAKURA');if(sak){sak.services=(services||[]).filter(sv=>sv.cat!=='tfree').map(sv=>sv.id);sak._u=Date.now();ch=true;}
-  const tom=byName('TOMOMI');if(tom){const ids=(services||[]).filter(sv=>sv.cat==='tfree'||sv.id==='pe1'||sv.id==='pe2'||/ハーブピーリング|ニードルピーリング/.test(sv.name||'')).map(sv=>sv.id);tom.services=ids.length?ids:['none'];tom._u=Date.now();ch=true;}
-  ['KANA','NODOKA'].forEach(n=>{const x=byName(n);if(x){x.services=['none'];x.hidden=true;x._u=Date.now();ch=true;}});
+  /* メニューを追加・変更しても担当が正しく保たれるよう、毎回作り直す */
+  const sak=byName('SAKURA');if(sak){const ids=(services||[]).filter(sv=>sv.cat!=='tfree').map(sv=>sv.id);if(JSON.stringify((sak.services||[]).slice().sort())!==JSON.stringify(ids.slice().sort())){sak.services=ids;sak._u=Date.now();ch=true;}}
+  const tom=byName('TOMOMI');if(tom){const ids=(services||[]).filter(isTomomiMenu).map(sv=>sv.id);const next=ids.length?ids:['none'];if(JSON.stringify((tom.services||[]).slice().sort())!==JSON.stringify(next.slice().sort())){tom.services=next;tom._u=Date.now();ch=true;}}
+  ['KANA','NODOKA'].forEach(n=>{const x=byName(n);if(x&&!(x.hidden&&(x.services||[])[0]==='none')){x.services=['none'];x.hidden=true;x._u=Date.now();ch=true;}});
   if(ch)logAct('担当メニューのルールを適用（SAKURA全メニュー／TOMOMI限定+ピーリング／KANA・NODOKAは施術なし）');return ch;}catch(e){return false;}}
 function harukaInactive(){try{if(DATA._harukaInactive1)return false;DATA._harukaInactive1=true;const h=(staff||[]).find(x=>x.name==='HARUKA');if(!h)return false;h.inactive=true;h._u=Date.now();logAct('HARUKAを非稼働（状況一覧・指示から除外）に設定');return true;}catch(e){return false;}}
 function harukaShiftZero(){try{if(DATA._harukaZero1)return false;DATA._harukaZero1=true;const h=(staff||[]).find(x=>x.name==='HARUKA');if(!h)return false;DATA.shifts=DATA.shifts||{};DATA.shiftOverrides=DATA.shiftOverrides||{};DATA.shifts[h.id]={};DATA.shiftOverrides[h.id]={};logAct('HARUKAのシフトを出勤ゼロに初期化（未提出のため）');return true;}catch(e){return false;}}
@@ -4053,6 +4065,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-13',v:'r20260913p',items:['【TOMOMIがピーリングで選べなかった原因】担当メニューの設定が一度しか実行されず、後から追加したメニュー（ピーリングの回数券など）がTOMOMIの担当に入っていませんでした→名前に「ピーリング」を含むメニューは自動でTOMOMIの担当に入るようにし、メニューを追加・変更しても毎回自動で正しく保たれるように修正','1人の担当では受けられないメニューの組み合わせを選んだ場合、「どの担当がどのメニューを担当できるか」と「メニューを分けて2件ご予約ください」という案内を表示するように']},
  {d:'2026-09-13',v:'r20260913n',items:['家族割引のお客様にはポイントを付与しないように変更（割引が特典のため）。知人割20%OFF・通常のお客様・会員ランク割引は従来どおり付与されます','来店確定の画面に「家族割のお客様のため、ポイントは付与されません」と理由を表示','予約完了画面でも家族割のお客様には「家族割引が適用されます」と表示（ポイント加算の案内は出しません）','「初回来店分でポイントが付いていないお客様」の一覧からも家族割のお客様を除外']},
  {d:'2026-09-13',v:'r20260913m',items:['【お知らせが消えない原因】他スタッフ宛の指示（「◯日は出勤でお願いします」等）がSAKURAさんの画面にも出ていました→お知らせは宛先本人にだけ表示し、「全部消す」で自分の分は確実に消えるように（他スタッフ宛は残ります）','管理トップの「こんにちは」の挨拶を撤去','「📘 このページの使い方」を各ページの一番下へ移動','管理トップ（🏠トップ）をタスク作成ページではなく、その日の状況を把握する画面に変更','「ショップの更新（週1回）をしましょう」の表示を撤去','出勤・退勤ボタンの下に「今日のひとこと」を追加。美容の豆知識・接客や仕事のコツを毎日1つ表示します（全員に同じ内容・日替わり）']},
  {d:'2026-09-13',v:'r20260913k',items:['「来店なし」（当日キャンセル・無断キャンセル）を記録できるボタン🚫を予約一覧に追加。当日以降の予約に表示されます','来店なしはポイントを付けず、お客様への通知も一切送りません（サロン内の記録のみ）','来店なしにすると予約枠が解放され、別のお客様がその時間を予約できます','来店なしの予約は「未処理のご来店」「お礼メッセージ未送信」の一覧には出ません。誰がいつ記録したかは予約の履歴に残ります']},
