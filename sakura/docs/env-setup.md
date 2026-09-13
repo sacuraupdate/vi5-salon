@@ -57,6 +57,7 @@ npx wrangler secret put STRIPE_SECRET_KEY
 | `NEXT_PUBLIC_SUPPORT_EMAIL` | 問い合わせ先メール | 自分で決める | ✅ | ✅ | ✅ |
 | `SUPABASE_URL` | データベースのURL | Supabase | ✅ | ✅ | ✅ |
 | `SUPABASE_SERVICE_ROLE_KEY` | データベースの鍵 | Supabase | ✅ | ✅ | ✅ |
+| `SUPABASE_ANON_KEY` | ログイン用の鍵 | Supabase | ✅ | ✅ | ✅ |
 | `STRIPE_SECRET_KEY` | 決済の鍵 | Stripe | テスト用 | テスト用 | **本番用** |
 | `STRIPE_WEBHOOK_SECRET` | 入金通知の鍵 | Stripe | テスト用 | テスト用 | **本番用** |
 | `RESEND_API_KEY` | メール送信の鍵 | Resend | ✅ | ✅ | ✅ |
@@ -97,6 +98,31 @@ npx wrangler secret put STRIPE_SECRET_KEY
 > ⚠️ **この鍵はデータベースの全権限を持ちます。**
 > 誰かに見せたり、チャットに貼ったり、スクリーンショットに写したりしないでください。
 > `anon` と書かれたほうの鍵ではありません。間違えないでください。
+
+### 1-4. `SUPABASE_ANON_KEY` を取得する
+
+**お客様のログイン・新規登録に使う鍵です。これが無いと誰もログインできません。**
+
+1. 同じ「API Keys」の画面で、**`anon`**（または `publishable`）と書かれた行をコピー
+
+→ これが `SUPABASE_ANON_KEY` です。`service_role` と取り違えないでください。
+
+### 1-5. ログインの設定を確認する
+
+1. 左メニューの **「Authentication」** →「Sign In / Providers」
+2. **「Email」** が有効になっていることを確認
+3. **「Confirm email」**（メール確認）の設定を決める
+   - **オン**：登録後、確認メールのリンクを開くまでログインできません（安全側）
+   - **オフ**：登録後すぐログインできます（購入までが早い）
+   - どちらでもサイト側は正しく動きます。オンなら「メールをご確認ください」と表示されます
+
+> ⚠️ Supabase が送る確認メールは既定で英語です。日本語話者にも英語で届きます。
+> 文面は Authentication →「Emails」で変更できます（販売開始前に見直してください）。
+
+### 1-6. 認証用のテーブル追加を実行する
+
+`sakura/supabase/migrations/0002_auth_link.sql` を、0001 と同じ手順で
+「SQL Editor」から実行してください。ログインしたお客様と購入データを結ぶために必要です。
 
 ---
 

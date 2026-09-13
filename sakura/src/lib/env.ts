@@ -32,10 +32,21 @@ export const supabaseEnv = {
   url: () => read('SUPABASE_URL'),
   /** service_role キー。全権限を持つ。**絶対にブラウザへ渡さない** */
   serviceRoleKey: () => read('SUPABASE_SERVICE_ROLE_KEY'),
+  /**
+   * anon キー。ログイン・新規登録（Supabase Auth）に使う。
+   * 公開しても構わない種類の鍵だが、認証はすべてサーバー側で行うため
+   * NEXT_PUBLIC_ を付けずブラウザへは渡していない。
+   */
+  anonKey: () => read('SUPABASE_ANON_KEY'),
 };
 
 export function isSupabaseConfigured(): boolean {
   return supabaseEnv.url().startsWith('https://') && supabaseEnv.serviceRoleKey().length > 20;
+}
+
+/** ログイン・新規登録が使えるか。DB と anon キーの両方が要る */
+export function isAuthConfigured(): boolean {
+  return isSupabaseConfigured() && supabaseEnv.anonKey().length > 20;
 }
 
 /* ---------- Resend（メール送信） ---------- */
@@ -72,7 +83,7 @@ export function isSiteIndexable(): boolean {
  * SAKURA が設定漏れに日本語で気づけるようにする。
  */
 export type IntegrationStatus = {
-  key: 'stripe' | 'stripeWebhook' | 'supabase' | 'email' | 'indexing';
+  key: 'stripe' | 'stripeWebhook' | 'supabase' | 'auth' | 'email' | 'indexing';
   label: string;
   ready: boolean;
   /** 未設定のときに何をすればよいか（日本語） */
@@ -92,6 +103,12 @@ export function integrationStatuses(): IntegrationStatus[] {
       label: 'データベース（Supabase）',
       ready: isSupabaseConfigured(),
       todo: 'SUPABASE_URL と SUPABASE_SERVICE_ROLE_KEY を設定してください。',
+    },
+    {
+      key: 'auth',
+      label: 'ログイン・新規登録（Supabase Auth）',
+      ready: isAuthConfigured(),
+      todo: 'SUPABASE_ANON_KEY を設定してください。これが無いとお客様はログインも購入もできません。',
     },
     {
       key: 'stripe',

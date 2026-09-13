@@ -220,7 +220,19 @@
     "demoEnter": "確認用セッションを開始",
     "demoEnterNote": "画面確認用です。実際のアカウントは作成されません。",
     "termsLink": "利用規約",
-    "privacyLink": "プライバシーポリシー"
+    "privacyLink": "プライバシーポリシー",
+    "errInvalidCredentials": "メールアドレスとパスワードが一致しません。どちらもご確認のうえ、もう一度お試しください。",
+    "errEmailTaken": "このメールアドレスのアカウントはすでにあります。ログインしてください。",
+    "errWeakPassword": "パスワードは8文字以上にしてください。",
+    "errInvalidEmail": "正しいメールアドレスをご入力ください。",
+    "errRateLimited": "試行回数が多すぎます。数分おいてから、もう一度お試しください。",
+    "errNotConfigured": "アカウントはまだご利用いただけません。公開時のご案内をご希望の方はお問い合わせください。",
+    "errUnknown": "処理できませんでした。もう一度お試しいただくか、お問い合わせください。",
+    "confirmTitle": "メールをご確認ください",
+    "confirmBody": "確認用のリンクをお送りしました。リンクを開いたあと、こちらへ戻ってログインしてください。",
+    "passwordHint": "8文字以上でご入力ください。",
+    "signOut": "ログアウト",
+    "toLoginLink": "ログイン"
   },
   "mypage": {
     "title": "マイページ",

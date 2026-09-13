@@ -220,7 +220,19 @@
     "demoEnter": "확인용 세션 시작",
     "demoEnterNote": "화면 확인용입니다. 실제 계정은 생성되지 않습니다.",
     "termsLink": "이용약관",
-    "privacyLink": "개인정보 처리방침"
+    "privacyLink": "개인정보 처리방침",
+    "errInvalidCredentials": "이메일 주소와 비밀번호가 일치하지 않습니다. 두 가지를 확인한 후 다시 시도해 주세요.",
+    "errEmailTaken": "이 이메일로 등록된 계정이 이미 있습니다. 로그인해 주세요.",
+    "errWeakPassword": "비밀번호는 8자 이상으로 입력해 주세요.",
+    "errInvalidEmail": "올바른 이메일 주소를 입력해 주세요.",
+    "errRateLimited": "시도 횟수가 너무 많습니다. 몇 분 후에 다시 시도해 주세요.",
+    "errNotConfigured": "계정은 아직 이용하실 수 없습니다. 공개 시 안내를 원하시면 문의해 주세요.",
+    "errUnknown": "처리하지 못했습니다. 다시 시도하시거나 문의해 주세요.",
+    "confirmTitle": "이메일을 확인해 주세요",
+    "confirmBody": "주소 확인용 링크를 보내 드렸습니다. 링크를 여신 후 여기로 돌아와 로그인해 주세요.",
+    "passwordHint": "8자 이상 입력해 주세요.",
+    "signOut": "로그아웃",
+    "toLoginLink": "로그인"
   },
   "mypage": {
     "title": "마이페이지",

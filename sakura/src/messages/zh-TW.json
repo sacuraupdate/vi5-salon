@@ -220,7 +220,19 @@
     "demoEnter": "開始檢視用工作階段",
     "demoEnterNote": "僅供畫面檢視，不會建立實際帳號。",
     "termsLink": "服務條款",
-    "privacyLink": "隱私權政策"
+    "privacyLink": "隱私權政策",
+    "errInvalidCredentials": "電子郵件與密碼不相符。請確認後再試一次。",
+    "errEmailTaken": "此電子郵件已有帳號，請直接登入。",
+    "errWeakPassword": "密碼請設定 8 個字元以上。",
+    "errInvalidEmail": "請輸入正確的電子郵件地址。",
+    "errRateLimited": "嘗試次數過多，請幾分鐘後再試。",
+    "errNotConfigured": "目前尚無法建立帳號。若希望開放時收到通知，請與我們聯絡。",
+    "errUnknown": "無法完成處理。請再試一次，或與我們聯絡。",
+    "confirmTitle": "請查看您的電子郵件",
+    "confirmBody": "我們已寄出確認連結。開啟連結後，請回到這裡登入。",
+    "passwordHint": "請輸入 8 個字元以上。",
+    "signOut": "登出",
+    "toLoginLink": "登入"
   },
   "mypage": {
     "title": "我的頁面",

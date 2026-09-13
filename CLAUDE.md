@@ -628,9 +628,28 @@ SAKURA 本人をブランドの顔として大きく見せる（写真を主役�
   （過去の購入者がどの版に同意したか追えなくなるため）。確定したら `CONSENT_TEXT_APPROVED` を true にする。
 - **メールは購入者が選んだ言語で送る。** 未対応の言語は日本語ではなく英語に落とす
   （`resolveMailLocale`）。管理側へ届く問い合わせ通知だけは日本語。
-- **認証は未実装。** 決済に進めるのはログイン済みの人だけだが、そのログイン自体が
-  まだ本物ではない（`getSession()` は本番で常に null）。ここが最後の未実装のP0。
 - **AI API 接続は未実装。**
+
+### 認証（Supabase Auth）
+
+- **メールアドレス＋パスワード。Supabase Auth（GoTrue）を fetch で呼ぶ**（`src/lib/auth.ts`）。
+  SDK は入れない。認証はすべてサーバー側で行い、anon キーもブラウザへ渡さない。
+- **パスワードをアプリ側のDBに保存しない。** `public.users` にパスワード列は無い。
+  パスワードは Supabase へ渡すだけで、ログにもDBにも残さない。
+- **Auth ユーザーとの紐付けは `public.users.auth_user_id` ただ1つ**
+  （`auth.users(id)` への外部キー＋一意制約。`supabase/migrations/0002_auth_link.sql`）。
+  **本人特定はトークン検証で得た auth の ID だけを使う。メールで照合しない**
+  （メールは変わりうるし、なりすましの余地を作らないため）。
+- **`getSession()`（`src/lib/session.ts`）が唯一の入口。** アクセストークンを
+  Supabase の `/auth/v1/user` に問い合わせて検証してから、購入者行を引く。
+  同一リクエスト内は React の `cache()` で1回だけ問い合わせる。
+- トークンは httpOnly Cookie（`sjb_at` / `sjb_rt`）。
+  アクセストークンの maxAge を有効期限に合わせてあるため、期限切れで Cookie が消え、
+  `src/proxy.ts` がリフレッシュして同じURLへ送り直す。
+- **Supabase Auth が設定されている環境では、確認用ログイン（`SITE_DEMO_MODE`）は
+  完全に無効になる**（`isSiteDemoMode()` が false を返す）。本物の認証に抜け道を作らない。
+- **決済とWebhookでは、ログイン済みの購入者ID（`session.userId` / metadata の `userId`）を使う。**
+  メールから購入者行を引き直さない。引き直すと Auth と紐付かない行が二重にできる。
 
 ### 公開サイトに出すもの（実商品だけ）
 
@@ -683,6 +702,7 @@ SAKURA 本人をブランドの顔として大きく見せる（写真を主役�
 | `npm run prod-guard-check` | 本番相当で購入者向け画面と管理画面が閉じていること |
 | `npm run commerce-check` | **決済の安全**：鍵がコードに無いこと、権限付与が Webhook だけであること、署名検証が偽物を弾くこと、冪等性の作り。サーバーは自分で起動するので事前準備は不要 |
 | `npm run publish-check` | **公開前**：4言語の表示、日本語混入、法務・問い合わせへの到達、購入者画面と管理画面が閉じていること、HTMLに秘密情報が無いこと、検索エンジンへの非掲載。**本番と同じビルド成果物に対して流す** |
+| `npm run auth-check` | **認証の安全**：パスワードをDBに保存していないこと、Auth との紐付けに外部キーと一意制約があること、認証を設定すると確認用ログインが消えること、**偽のトークンでは入れないこと**、4言語のログイン画面。サーバーは自分で起動する（偽の Supabase 設定を毎回その場で作る。実鍵は使わない） |
 
 `ux-check` / `launch-check` は `SITE_DEMO_MODE=true npm run dev` を起動してから実行する。
 `prod-guard-check` は逆に、**フラグを設定せずに** `npm run build && npx next start -p 3100` してから実行する。

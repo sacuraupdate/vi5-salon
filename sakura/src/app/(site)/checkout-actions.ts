@@ -52,25 +52,20 @@ export async function startCheckout(formData: FormData) {
   if (formData.get('consent') !== 'agreed') back(locale, slug, 'consent-required');
 
   if (!isStripeConfigured()) back(locale, slug, 'not-configured');
-  const commerce = getCommerce();
-  if (!commerce) back(locale, slug, 'not-configured');
+  if (!getCommerce()) back(locale, slug, 'not-configured');
 
-  const user = await commerce.findOrCreateUser({
-    email: session.email,
-    locale,
-    market,
-  });
-
+  // 購入者は getSession() が Auth トークンから特定済み。
+  // ここでメールから行を引き直すと、Auth と紐付かない行が二重にできてしまう
   let checkoutUrl: string;
   try {
     const created = await createCheckoutSession({
       priceId: price.stripePriceId,
-      customerEmail: user.email,
+      customerEmail: session.email,
       successUrl: `${SITE_URL}/${locale}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl: `${SITE_URL}/${locale}/courses/${slug}?checkout=cancelled#purchase`,
       locale,
       metadata: {
-        userId: user.id,
+        userId: session.userId,
         courseSlug: slug,
         market,
         locale,

@@ -1,11 +1,19 @@
 import { supabase } from '../supabase';
 import type { Entitlement, Purchase } from '../data/types';
-import type { AppUser, CommerceRepository, CreatePurchaseInput, CreateUserInput } from './repository';
+import type {
+  AppUser,
+  CommerceRepository,
+  CreatePurchaseInput,
+  CreateUserInput,
+  LinkAuthUserInput,
+} from './repository';
 
 /* DB の列名（snake_case）と型の対応。SQL は supabase/migrations/0001_init.sql */
 
 type UserRow = {
   id: string;
+  /** Supabase Auth の auth.users.id。ログイン後の本人特定に使う唯一の鍵 */
+  auth_user_id: string | null;
   email: string;
   name: string | null;
   country: string | null;
@@ -58,6 +66,37 @@ export const supabaseCommerce: CommerceRepository = {
   async getUserByEmail(email) {
     const rows = await supabase.select<UserRow>('users', { eq: { email: email.toLowerCase() }, limit: 1 });
     return rows[0] ? toUser(rows[0]) : null;
+  },
+
+  /**
+   * Auth ユーザーからアプリ側の行を引く。
+   * auth_user_id に一意制約があるため、同じ Auth ユーザーで行が二重に作られない。
+   * メールが変わっていたら写しを更新する（認証には使わない値なので影響はない）。
+   */
+  async findOrCreateUserByAuthId(input: LinkAuthUserInput) {
+    const found = await supabase.select<UserRow>('users', {
+      eq: { auth_user_id: input.authUserId },
+      limit: 1,
+    });
+    if (found[0]) {
+      if (input.email && found[0].email !== input.email.toLowerCase()) {
+        await supabase.update('users', { id: found[0].id }, { email: input.email.toLowerCase() });
+        return toUser({ ...found[0], email: input.email.toLowerCase() });
+      }
+      return toUser(found[0]);
+    }
+
+    const row = await supabase.upsert<UserRow>(
+      'users',
+      {
+        auth_user_id: input.authUserId,
+        email: input.email.toLowerCase(),
+        locale: input.locale,
+        market: input.market,
+      },
+      'auth_user_id',
+    );
+    return toUser(row);
   },
 
   async findOrCreateUser(input: CreateUserInput) {

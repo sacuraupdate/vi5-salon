@@ -7,7 +7,13 @@ import {
   canAccessRoute,
   isAdminDemoMode,
 } from './lib/admin-permissions';
-import { SITE_SESSION_COOKIE } from './lib/session';
+import {
+  ACCESS_TOKEN_COOKIE,
+  DEMO_SESSION_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+} from './lib/session';
+import { isAuthConfigured } from './lib/env';
+import { refresh } from './lib/auth';
 
 const intl = createMiddleware(routing);
 
@@ -22,6 +28,13 @@ function protectedLocale(pathname: string): string | null {
   return PROTECTED_SEGMENTS.includes(segment as (typeof PROTECTED_SEGMENTS)[number]) ? locale : null;
 }
 
+/** ログイン後に元のページへ戻せるようにした、ログイン画面のURL */
+function loginUrl(request: NextRequest, locale: string, pathname: string): URL {
+  const url = new URL(`/${locale}/login`, request.url);
+  url.searchParams.set('next', pathname);
+  return url;
+}
+
 /**
  * 管理画面・購入者向け画面へのアクセスは、ページの実装に関係なくここで必ず判定する。
  * ページ側のガードを書き忘れても素通りしない。
@@ -29,7 +42,7 @@ function protectedLocale(pathname: string): string | null {
  * ただしこれは1段目であって唯一の防御ではない。
  * 実際の受講権限はサーバーコンポーネント側でも必ず確認する（`src/lib/entitlement.ts`）。
  */
-export default function proxy(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname === '/admin' || pathname.startsWith('/admin/')) {
@@ -47,13 +60,44 @@ export default function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 購入者向け領域は、セッションが無ければその言語のログイン画面へ送る
+  // 購入者向け領域の1段目の判定
   const locale = protectedLocale(pathname);
-  if (locale && !request.cookies.get(SITE_SESSION_COOKIE)) {
-    const url = new URL(`/${locale}/login`, request.url);
-    // ログイン後に元のページへ戻せるようにしておく
-    url.searchParams.set('next', pathname);
-    return NextResponse.redirect(url);
+  if (locale) {
+    const accessToken = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value;
+    const refreshToken = request.cookies.get(REFRESH_TOKEN_COOKIE)?.value;
+    const demo = request.cookies.get(DEMO_SESSION_COOKIE)?.value;
+
+    // アクセストークンの期限が切れている（Cookie が消えている）が、
+    // リフレッシュトークンは残っている場合。取り直して同じURLへ送り直す。
+    // Cookie は次のリクエストから読めるようになるため、ここでリダイレクトが要る。
+    if (!accessToken && refreshToken && isAuthConfigured()) {
+      const renewed = await refresh(refreshToken);
+      const response = NextResponse.redirect(request.url);
+      const base = {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'lax' as const,
+        secure: process.env.NODE_ENV === 'production',
+      };
+      if (renewed) {
+        response.cookies.set(ACCESS_TOKEN_COOKIE, renewed.accessToken, {
+          ...base,
+          maxAge: renewed.expiresIn,
+        });
+        response.cookies.set(REFRESH_TOKEN_COOKIE, renewed.refreshToken, {
+          ...base,
+          maxAge: 60 * 60 * 24 * 30,
+        });
+        return response;
+      }
+      // 取り直せなかった＝もう有効ではない。残骸を消してログインへ送る
+      const login = NextResponse.redirect(loginUrl(request, locale, pathname));
+      login.cookies.delete(REFRESH_TOKEN_COOKIE);
+      return login;
+    }
+
+    const signedIn = Boolean(accessToken) || (!isAuthConfigured() && demo === 'demo');
+    if (!signedIn) return NextResponse.redirect(loginUrl(request, locale, pathname));
   }
 
   return intl(request);

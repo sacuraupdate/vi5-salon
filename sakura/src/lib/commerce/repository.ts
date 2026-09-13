@@ -18,6 +18,18 @@ export type CreateUserInput = {
   market: MarketId;
 };
 
+/**
+ * Supabase Auth のユーザーと結びつけて、アプリ側の購入者行を用意する。
+ * 鍵は authUserId（auth.users.id）ひとつ。メールでは照合しない
+ * （メールは変更されうるうえ、なりすましの余地を作らないため）。
+ */
+export type LinkAuthUserInput = {
+  authUserId: string;
+  email: string;
+  locale: Locale;
+  market: MarketId;
+};
+
 export type CreatePurchaseInput = {
   userId: string;
   courseSlug: string;
@@ -39,6 +51,11 @@ export type CommerceRepository = {
   getUserByEmail(email: string): Promise<AppUser | null>;
   /** 既にいればその行を返す。無ければ作る */
   findOrCreateUser(input: CreateUserInput): Promise<AppUser>;
+  /**
+   * Auth ユーザーに対応するアプリ側の行を返す。無ければ作る。
+   * **ログイン後の本人特定はこの関数だけを通す。**
+   */
+  findOrCreateUserByAuthId(input: LinkAuthUserInput): Promise<AppUser>;
 
   /**
    * Webhook の重複処理を防ぐ。

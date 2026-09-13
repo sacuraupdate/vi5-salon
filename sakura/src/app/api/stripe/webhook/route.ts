@@ -76,8 +76,12 @@ export async function POST(request: NextRequest) {
     const meta = session.metadata ?? {};
     const email = session.customer_details?.email ?? session.customer_email ?? '';
     const courseSlug = meta.courseSlug ?? '';
-    if (!email || !courseSlug) {
-      await commerce.markWebhookProcessed(event.id, 'メールまたは講座が特定できない');
+    // userId は決済を開始したときに当方のサーバーが入れた値。
+    // 購入者はログイン済みでしか決済に進めないため、ここで作り直さない
+    // （メールから引き直すと、Auth と紐付かない行が二重にできる）
+    const userId = meta.userId ?? '';
+    if (!userId || !courseSlug) {
+      await commerce.markWebhookProcessed(event.id, '購入者または講座が特定できない');
       console.error('[stripe-webhook] metadata が不足:', JSON.stringify(meta));
       return ok('必要な情報が無いため処理しない');
     }
@@ -85,17 +89,10 @@ export async function POST(request: NextRequest) {
     const locale = (meta.locale ?? 'en') as Locale;
     const market = (meta.market ?? 'global-usd') as MarketId;
 
-    const user = await commerce.findOrCreateUser({
-      email,
-      name: session.customer_details?.name ?? null,
-      locale,
-      market,
-    });
-
     // 金額は Stripe から来た値だけを使う。クライアントから渡った値は信用しない
     const currency = (session.currency ?? 'usd').toUpperCase() as CurrencyCode;
     const purchase = await commerce.createPurchase({
-      userId: user.id,
+      userId,
       courseSlug,
       status: 'paid',
       market,
@@ -106,11 +103,11 @@ export async function POST(request: NextRequest) {
     });
 
     // 権限の付与。ここは何度呼んでも同じ結果になる
-    await commerce.grantEntitlement(user.id, courseSlug, null);
+    await commerce.grantEntitlement(userId, courseSlug, null);
 
     if (meta.consentVersion) {
       await commerce.recordConsent({
-        userId: user.id,
+        userId,
         purchaseId: purchase?.id ?? null,
         kind: 'immediate-access-waiver',
         textVersion: meta.consentVersion,
@@ -119,7 +116,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 初めて記録できたときだけメールを送る（再送で二重に届かないようにする）
-    if (purchase) {
+    // メールの宛先は Stripe が受け取った購入者のアドレス
+    if (purchase && email) {
       const course = await catalogRepository.getCourseAny(courseSlug);
       const title = (course ? tc(course.title, locale) : null) ?? courseSlug;
       const mail = await sendMail(

@@ -220,7 +220,19 @@
     "demoEnter": "Open a review session",
     "demoEnterNote": "For design review only. No real account is created.",
     "termsLink": "Terms of Service",
-    "privacyLink": "Privacy Policy"
+    "privacyLink": "Privacy Policy",
+    "errInvalidCredentials": "That email address and password do not match. Please check both and try again.",
+    "errEmailTaken": "An account with this email already exists. Please log in instead.",
+    "errWeakPassword": "Please use a password of at least 8 characters.",
+    "errInvalidEmail": "Please enter a valid email address.",
+    "errRateLimited": "Too many attempts. Please wait a few minutes and try again.",
+    "errNotConfigured": "Accounts are not available yet. Please contact us and we will tell you when they open.",
+    "errUnknown": "We could not complete that. Please try again, or contact us.",
+    "confirmTitle": "Check your email",
+    "confirmBody": "We sent you a link to confirm your address. Open it, then come back and log in.",
+    "passwordHint": "At least 8 characters.",
+    "signOut": "Log out",
+    "toLoginLink": "Log in"
   },
   "mypage": {
     "title": "My page",
