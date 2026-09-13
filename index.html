@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260913w';
+const APP_REV='r20260913x';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -2927,7 +2927,7 @@ function mergeWork(local,srv){if(!srv)return local;const delT=new Set([...(local
   /* チャット: 部屋ごとにメッセージをID結合（既読・リアクションは多い方を採用） */
   local.chats=local.chats||{};for(const room in (srv.chats||{})){const L=local.chats[room]||[];const map={};L.forEach(m=>{map[m.id]=m;});(srv.chats[room]||[]).forEach(m=>{if(!map[m.id]){L.push(m);map[m.id]=m;}else{const lm=map[m.id];lm.reads=[...new Set([...(lm.reads||[]),...(m.reads||[])])];lm.reacts=lm.reacts||{};for(const e in (m.reacts||{})){lm.reacts[e]=[...new Set([...(lm.reacts[e]||[]),...(m.reacts[e]||[])])];}}});L.sort((a,b)=>(a.at||0)-(b.at||0));local.chats[room]=L.slice(-300);}
   function mergeById(a,b,key,dead,newer){const map={};(a||[]).forEach(x=>{if(x&&!(dead&&dead.has(x[key])))map[x[key]]=x;});(b||[]).forEach(x=>{if(!x||(dead&&dead.has(x[key])))return;const ex=map[x[key]];if(!ex){map[x[key]]=x;}else if(newer){const ta=newer(ex),tb=newer(x);if(tb>ta)map[x[key]]=x;}});return Object.values(map);}
-  const tkTime=t=>Math.max(t.doneAt||0,t.editedAt||0,t.at||0);
+  const tkTime=t=>Math.max(t.doneAt||0,t.editedAt||0,t._u||0,t.at||0);
   local.tasks=mergeById(local.tasks,srv.tasks,'id',delT,tkTime);
   local.reports=mergeById(local.reports,srv.reports,'id',delR,r=>r.at||0);
   local.orders=mergeById(local.orders,srv.orders,'id',delO,o=>Math.max(o.at||0,o.statusAt||0));const alTime=a=>Math.max(a&&a.readAt||0,a&&a._u||0,a&&a.at||0,0);
@@ -3143,7 +3143,19 @@ function tkShiftCalHtml(){const tf=state.taskForm||{};const asg=(tf.assignees||[
 function salonClosedOn(ds){const dow=new Date(ds+'T00:00:00').getDay();const ex=((DATA.settings||{}).openException||{})[ds];if(ex==='open')return false;if(ex==='closed')return true;return dow===2;}
 async function taskSave(){const me=localGet('salon:me');const tf=state.taskForm||{};const title=(((byId('tk-title')||{}).value)||tf.title||'').trim();
   if(tf.dues&&tf.dues.length){const singleDue=((byId('tk-due')||{}).value)||'';const all=tf.dues.slice();if(singleDue&&!all.includes(singleDue))all.push(singleDue);if(!title){alert('やることをご入力ください。');return;}await taskSaveDates(title,all.sort());return;}const bulk=(((byId('tk-bulk')||{}).value)||'').split('\n').map(x=>x.trim()).filter(Boolean);if(!title&&!bulk.length){alert('やることをご入力ください。');return;}if(bulk.length){const lines=title?[title,...bulk]:bulk;await taskSaveMany(lines);return;}const assignees=(tf.assignees&&tf.assignees.length)?tf.assignees.slice():[me];const isAll=assignees.includes('all');const assignee=isAll?'all':assignees[0];const due=((byId('tk-due')||{}).value)||tf.due||'';const desc=(((byId('tk-desc')||{}).value)||tf.desc||'').trim();const url=(((byId('tk-url')||{}).value)||tf.url||'').trim();await loadWork();WORK.tasks=WORK.tasks||[];WORK.tasks.unshift({id:'t'+Date.now(),title,desc,by:me,assignee,assignees:isAll?['all']:assignees,scope:isAll?'all':'one',due,url,imgs:(state.taskImgs||[]).slice(0,5),qa:[],done:false,at:Date.now()});state.taskImgs=[];state.taskForm=null;state.taskAddOpen=false;const others=isAll?[]:assignees.filter(a=>a!==me);logAct('タスクを追加'+(others.length?'（'+others.map(a=>(stById(a)||{}).name).join('・')+'へ依頼）':''));WORK.chats=WORK.chats||{};for(const a of others){const rk='dm:'+[me,a].sort().join('|');WORK.chats[rk]=WORK.chats[rk]||[];WORK.chats[rk].push({id:'m'+Date.now()+Math.random().toString(36).slice(2,5),by:meName(),at:Date.now(),text:'【タスク依頼】'+title+(due?'（期日：'+mdLabel(due)+'）':''),reads:[meName()],reacts:{}});}await saveWork();alert('タスクを追加しました'+(due?'（期日：'+mdLabel(due)+'）':'（期日なし）'));render();}
-async function taskToggle(id){const t=(WORK.tasks||[]).find(x=>x.id===id);if(!t)return;t.done=!t.done;t.doneBy=t.done?meName():'';t.doneAt=Date.now();render();logAct((t.done?'タスク完了：':'タスク未完了に戻す：')+t.title);await saveWork();render();}
+async function taskToggle(id){
+  await loadWork(); /* 先にサーバーの最新を読む（他の端末の変更を取り込む） */
+  const t=(WORK.tasks||[]).find(x=>x.id===id);if(!t)return;
+  const want=!t.done;const now=Date.now();
+  t.done=want;t.doneBy=want?meName():'';t.doneAt=now;t._u=now;
+  render();logAct((want?'タスク完了：':'タスク未完了に戻す：')+t.title);
+  const ok=await saveWork();
+  /* 本当に保存できたかサーバーで確認する（できていなければ知らせる） */
+  let verified=false;
+  try{const srv=await fetchWorkFresh();const st=srv&&(srv.tasks||[]).find(x=>x.id===id);verified=!!(st&&!!st.done===want);}catch(e){}
+  if(!verified){const t2=(WORK.tasks||[]).find(x=>x.id===id);if(t2){t2.done=!want;t2.doneBy=!want?meName():'';}
+    alert('⚠ 保存できませんでした。'+(want?'完了':'未完了')+'にした内容がサーバーに反映されていません。\n電波の良い場所で、もう一度お試しください。');render();return;}
+  toast(want?'✅ 完了にしました':'未完了に戻しました');render();}
 async function taskQ(id){const v=(byId('tk-q').value||'').trim();if(!v)return;await loadWork();const t=(WORK.tasks||[]).find(x=>x.id===id);t.qa=t.qa||[];t.qa.push({by:meName()||'不明',text:v,at:Date.now()});await saveWork();render();}
 async function taskDel(id){if(!confirm('このタスクを削除しますか？'))return;const btn=byId('tk-del');if(btn){btn.disabled=true;btn.textContent='削除中…';}try{await loadWork();WORK.tasks=(WORK.tasks||[]).filter(x=>x.id!==id);WORK.delTasks=WORK.delTasks||[];if(!WORK.delTasks.includes(id))WORK.delTasks.push(id);await saveWork();}catch(e){alert('削除に失敗しました。通信をご確認ください。');if(btn){btn.disabled=false;btn.textContent='このタスクを削除';}return;}state.taskOpen=null;state.taskEdit=false;logAct('タスクを削除');render();}
 
@@ -4287,6 +4299,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-13',v:'r20260913x',items:['【タスクの完了が未完了に戻る問題】完了を押した時にサーバーの最新を読まずに保存しており、保存に失敗しても画面上は完了に見えていました→①押した時に最新を読み込む ②保存後にサーバーへ問い合わせて本当に完了になったか確認する ③確認できなければ元に戻して「保存できませんでした」と警告、に変更','完了の操作に更新時刻を記録し、古い端末が後から保存しても完了が未完了に戻らないように']},
  {d:'2026-09-13',v:'r20260913w',items:['ご予約確定前の確認画面で、メニューごとに「開始時刻＋担当」を表示するように（例：10:00〜 担当：SAKURA／11:00〜 担当：TOMOMI）。誰が何を担当するかが一目で分かります','予約完了画面でも、担当が分かれる場合は時間と担当の内訳を表示','フェイスメニュー（ピーリング・毛穴・スキンケア等）は TOMOMI を既定の担当に変更。「⭐ フェイスメニューは TOMOMI がご専門です（無料オプションもお選びいただけます）」と案内し、TOMOMIのボタンに⭐おすすめを表示']},
  {d:'2026-09-13',v:'r20260913v',items:['「別のメニューも選ぶ」の案内を、一覧の一番下から「いま選んだメニューのすぐ下」へ移動。スクロールしなくても次にできることが分かります','選んだメニューの直下に「＋ 別のメニュー」と「日時を選ぶ →」の2つのボタンを並べ、その場でどちらにも進めるように','担当えらびを見やすく改善：「👤 担当をお選びください」の見出しを付け、枠で囲んで表示。選択中は濃紺＋✓で一目で分かるように、未選択は白地の大きなボタンに']},
  {d:'2026-09-13',v:'r20260913u',items:['メニューを1つ選んだ直後に「✅ 選択中：◯◯（約◯分）」と「＋ 別のメニューも選ぶ」を大きく表示。戻り方が分からず迷うことがなくなります','「同じご来店で別のメニューも続けてお受けいただけます。担当が違うメニューでも自動で組み立てます」と明記','担当を選ぶ画面が無くなったため、下部のボタンを「次へ：スタッフを選ぶ」から「次へ：日時を選ぶ」に変更']},
