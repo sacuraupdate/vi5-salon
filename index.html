@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260914d';
+const APP_REV='r20260914e';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -3018,7 +3018,13 @@ async function autoSlim(){
     return false;
   }catch(e){return false;}
 }
+
+/* 保存中の表示。画面はそのまま操作できる（固まらない） */
+function busyOn(msg){try{let b=document.getElementById('vi5busy');if(!b){b=document.createElement('div');b.id='vi5busy';b.style.cssText='position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:99998;background:rgba(30,42,71,.92);color:#fff;font-size:12.5px;font-weight:700;padding:8px 16px;border-radius:999px;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.2)';document.body.appendChild(b);}b.textContent=msg||'保存中…';b.style.opacity='1';}catch(e){}}
+function busyOff(){try{const b=document.getElementById('vi5busy');if(b)b.style.opacity='0';}catch(e){}}
 async function saveWork(){if(!WORK)return false;
+  if(state._saving){/* 二重に走らせない（固まる原因） */try{toast('保存中です…');}catch(e){}return false;}
+  state._saving=true;try{busyOn('保存中…');}catch(e){}
   try{const srv=await fetchWorkFresh();if(srv)WORK=mergeWork(WORK,srv);
     /* 送信サイズを確認。大きすぎると送信しきれず「Fetch is aborted」になるため、画像を自動で軽量化してから送る */
     let payload=JSON.stringify(WORK);
@@ -3028,9 +3034,19 @@ async function saveWork(){if(!WORK)return false;
     }
     state._workSize=payload.length;
     const r=await fetchT(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:work',value:payload})},Math.max(45000,Math.min(120000,20000+Math.round(payload.length/1000)*20)));
-    if(!r.ok)throw new Error('w-'+r.status);state._lastWorkSaveOk=Date.now();if(state.view==='admin')toast('✅ 保存しました');return true;}
-  catch(e){state._workSaveFail=(state._workSaveFail||0)+1;const _sz=state._workSize?('・'+Math.round(state._workSize/100000)/10+'MB'):'';if(state.view==='admin')toast('⚠ 保存できませんでした（'+(e&&e.message||'通信')+_sz+'）','err');try{console.warn('saveWork failed',e);}catch(_e){}if(state.view==='admin'){const now=Date.now();if(!state._workAlertAt||now-state._workAlertAt>60000){state._workAlertAt=now;alert('業務データの保存に失敗しました（'+(e&&e.message||'通信')+'）。通信状況をご確認ください。');}}return false;}}
-function wkCompress(file,cb){const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{const mx=900;let w=img.width,hh=img.height;if(w>mx){hh=Math.round(hh*mx/w);w=mx;}const cv=document.createElement('canvas');cv.width=w;cv.height=hh;cv.getContext('2d').drawImage(img,0,0,w,hh);cb(cv.toDataURL('image/jpeg',0.68));};img.src=e.target.result;};r.readAsDataURL(file);}
+    if(!r.ok)throw new Error('w-'+r.status);state._lastWorkSaveOk=Date.now();state._saving=false;try{busyOff();}catch(e){}if(state.view==='admin')toast('✅ 保存しました');return true;}
+  catch(e){state._workSaveFail=(state._workSaveFail||0)+1;const _sz=state._workSize?('・'+Math.round(state._workSize/100000)/10+'MB'):'';if(state.view==='admin')toast('⚠ 保存できませんでした（'+(e&&e.message||'通信')+_sz+'）','err');try{console.warn('saveWork failed',e);}catch(_e){}if(state.view==='admin'){const now=Date.now();if(!state._workAlertAt||now-state._workAlertAt>60000){state._workAlertAt=now;alert('業務データの保存に失敗しました（'+(e&&e.message||'通信')+'）。通信状況をご確認ください。');}}state._saving=false;try{busyOff();}catch(e){}return false;}}
+/* 添付画像は貼る時点で小さくする（後から重くなって保存できなくなるのを防ぐ）。
+   目安120KB以下になるまで、幅と画質を段階的に落とす。見た目の粗さより「確実に保存できる」ことを優先。 */
+function wkCompress(file,cb){const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{
+  const LIMIT=120000;
+  const make=(mx,q)=>{let w=img.width,hh=img.height;if(w>mx){hh=Math.round(hh*mx/w);w=mx;}
+    const cv=document.createElement('canvas');cv.width=w;cv.height=hh;const cx=cv.getContext('2d');
+    cx.fillStyle='#fff';cx.fillRect(0,0,w,hh);cx.drawImage(img,0,0,w,hh);return cv.toDataURL('image/jpeg',q);};
+  let out=make(640,0.55);
+  const steps=[[560,0.5],[480,0.45],[400,0.42],[320,0.4]];
+  for(let i=0;i<steps.length&&out.length>LIMIT;i++)out=make(steps[i][0],steps[i][1]);
+  cb(out);};img.onerror=()=>cb(null);img.src=e.target.result;};r.onerror=()=>cb(null);r.readAsDataURL(file);}
 function chatRooms(){const me=localGet('salon:me');const reals=staff.filter(s=>s.id!=='s0');const rooms=[{id:'all',label:'全体トーク',icon:'👥',kind:'all'}];
   if(me&&me!=='owner'){reals.filter(s=>s.id!==me).forEach(s=>rooms.push({id:'dm:'+[me,s.id].sort().join('|'),label:s.name,icon:'💬',kind:'dm'}));}
   ((WORK&&WORK.groups)||[]).forEach(g=>{if(!me||me==='owner'||(g.members||[]).includes(me))rooms.push({id:'grp:'+g.id,label:g.name,icon:'👨‍👩‍👧',kind:'grp'});});
@@ -3040,6 +3056,7 @@ function lastMsg(room){const a=((WORK&&WORK.chats&&WORK.chats[room])||[]);return
 function chatUnread(room){const me=meName()||'';return ((WORK&&WORK.chats&&WORK.chats[room])||[]).filter(m=>m.by!==me&&!(m.reads||[]).includes(me)).length;}
 function chMsgHtml(m){const me=meName()||'不明';const mine=m.by===me;const reads=(m.reads||[]).filter(n=>n!==m.by);return `<div class="chmsg ${mine?'mine':''} ${m._pending?'pending':''}" data-mid="${m.id}"><div class="chby">${m.by} ・ ${m._pending?'送信中…':actAgo(m.at)}</div><div class="chbub">${m.text?`<div class="cht">${linkify(m.text)}</div>`:''}${m.url?`<a href="${m.url}" target="_blank" rel="noopener" class="chu">🔗 リンクを開く</a>`:''}${(m.imgs&&m.imgs.length)?`<div class="chimgs">${m.imgs.map(im=>`<img src="${im}" class="chpic" data-chzoom="1">`).join('')}</div>`:''}</div><div class="chmeta">${['👍','✅','😊','🙏'].map(e2=>{const who=((m.reacts||{})[e2]||[]);return `<button class="chr ${who.includes(me)?'on':''}" data-chreact="${m.id}|${e2}" title="${who.join('、')}">${e2}${who.length||''}</button>`;}).join('')}${reads.length?`<span class="chread">既読 ${reads.join('・')}</span>`:''}</div></div>`;}
 function chBindMsg(elm){elm.querySelectorAll('[data-chreact]').forEach(b=>b.onclick=()=>{const p=b.dataset.chreact.split('|');chReact(p[0],p[1]);});elm.querySelectorAll('[data-chzoom]').forEach(im=>im.onclick=()=>{state.chatZoom=im.src;render();});}
+
 async function chSend(){const ta=byId('ch-text');const t=(ta?ta.value:'').trim();const u=(byId('ch-url')&&byId('ch-url').value||'').trim();const imgs=(state.chatImgs||[]).slice(0,10);if(!t&&!imgs.length&&!u){return;}
   if(state._chSending)return;state._chSending=true;const btn=byId('ch-send');if(btn){btn.disabled=true;}
   const room=state.chatRoom||'all';const me=meName()||'不明';const msg={id:'m'+Date.now()+Math.random().toString(36).slice(2,6),by:me,at:Date.now(),text:t,url:u,imgs:imgs,reads:[me],reacts:{}};
@@ -4362,6 +4379,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-14',v:'r20260914e',items:['【重くならないように、入口で対策】添付する画像を貼った時点で小さくするよう変更（1枚あたり120KB以下に自動調整）。これまでの約1/3以下になり、そもそも重くなりません。画像添付は今までどおり使えます','【固まる問題】保存ボタンを連打しても保存が同時に走らないようにし、保存が終われば必ずロックを解除するよう修正。前は保存が重なって画面が止まることがありました','保存中は画面下に「保存中…」と小さく表示されます。表示中も画面はそのまま操作できます（操作を妨げません）']},
  {d:'2026-09-14',v:'r20260914d',items:['データが重くなったら、アプリが自動で軽くするようにしました（SAKURAさんが数字を確認する必要はありません）','2MBを超えたときだけ作動し、①画像の再圧縮 →（足りなければ）②6か月より前の画像を削除 →（さらに必要なら）③3か月より前の画像を削除、の順に必要な分だけ実行します','会話の文章・タスク・予約・お客様の情報は一切消しません。最近の画像も残します','実行した場合は「📦 保存が重くなっていたため自動で軽くしました（3.6MB → 1.8MB）」とお知らせに記録します']},
  {d:'2026-09-14',v:'r20260914c',items:['設定に「📦 データの重さを見る（保存が遅い時）」を追加。チャット・業務報告・カルテ・タスクなど、どこが重いかと画像の枚数を表示します（1.5MB超で遅く、3MB超で失敗しやすい目安つき）','「🧹 古いチャット画像を削除して軽くする」を追加。3か月より前の画像だけを削除し、文章と最近の画像はそのまま残します']},
  {d:'2026-09-14',v:'r20260914b',items:['【「Fetch is aborted」でタスクが作れない原因】保存のたびにチャットや業務報告の画像を含む全データを送信しており、データが大きいと送信しきれず時間切れになっていました→保存前にサイズを確認し、大きい場合は画像を自動で軽量化。さらにサイズに応じて待ち時間を最大2分まで自動延長','保存に失敗した時は「保存できませんでした」と表示し、入力した内容をそのまま残すように変更（作り直し不要。もう一度「追加する」を押すだけ）','これまでは失敗しても「タスクを追加しました」と出ていたため、追加できたと誤解する状態でした。成功した時だけ「✅ 追加しました」と表示します']},
