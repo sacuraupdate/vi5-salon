@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260914m';
+const APP_REV='r20260914n';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1222,6 +1222,7 @@ function defaultData(){const __d=(function(){
 })();__d._seed=true;return __d;}
 async function loadData(){
   state.loadDone=false;
+  try{localDel('salon:me');}catch(e){} /* 管理画面は毎回「担当者を選んでください」から始める */
   let d=null,role='public';
   try{ if(localGet('salon:staff')&&localGet('salon:staffpw')){ const j=await api({action:'full',pw:localGet('salon:staffpw')}); d=j.data; role='staff'; } }
   catch(e){ /* 通信の失敗でログアウトさせない（電波が一時的に悪いだけでも解除されていた）。パスワードが違う時だけ解除する */
@@ -3734,6 +3735,7 @@ function todayDash(chatN,todoN){
 function renderAdmin(){
   if(!state.adminAuthed)return renderStaffLogin();
   if(!WORK)loadWork().then(()=>render());
+  if(!state.loadDone){app.innerHTML='<div class="fade" style="padding:60px 0;text-align:center;color:var(--ink-soft)">読み込んでいます…</div>';return;}
   if(!localGet('salon:me')){app.innerHTML=renderMePicker();app.querySelectorAll('[data-me]').forEach(b=>b.onclick=()=>{if(b.dataset.me==='s1'){const p=prompt('オーナー（SAKURA）として入るには暗証番号を入力してください');if(p===null)return;if(String(p).trim()!==ownerPin()){alert('暗証番号が違います。');return;}}setMe(b.dataset.me);});const _mo=byId('me-logout');if(_mo)_mo.onclick=()=>{try{localStorage.removeItem('vi5:datacache');}catch(e){}state.adminAuthed=false;localDel('salon:staff');localDel('salon:staffpw');render();};return;}
   const _idone=localGet('salon:introdone');if(!_idone&&!state.introSkip){app.innerHTML=renderIntro();const _ia=byId('intro-agree');const _iok=byId('intro-ok');if(_iok)_iok.onclick=()=>{if(!_ia||!_ia.checked){alert('「確認しました」にチェックをお願いします。');return;}localSet('salon:introdone',INTRO_VER);render();};const _il=byId('intro-later');if(_il)_il.onclick=()=>{state.introSkip=true;render();};return;}
   autoRescue();if(state.view==='admin')imageShrinkMigrate();autoEshopSync();try{if(extBlocksMigrate())saveData(DATA);}catch(_e){}try{if(state.dataFull&&demoPurge())saveData(DATA);}catch(_e){}try{if(state.dataFull&&harukaShiftZero())saveData(DATA);}catch(_e){}try{if(state.dataFull&&harukaInactive())saveData(DATA);}catch(_e){}try{if(state.dataFull&&staffServiceRules())saveData(DATA);}catch(_e){}try{if(state.dataFull&&WORK)autoSlim();}catch(_e){}try{if(state.dataFull)healCoreStaff();}catch(_e){}
@@ -4432,6 +4434,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-14',v:'r20260914n',items:['読み込みが終わる前に担当者選択が表示され、SAKURA・TOMOMIが一瞬消えて見える問題を修正。読み込みが完了するまで「読み込んでいます…」と表示し、選択画面は出さないようにしました','管理画面を開いたら毎回「担当者を選んでください」から始まるように戻しました（前回の担当を引き継がないようにしました）']},
  {d:'2026-09-14',v:'r20260914m',items:['起動時に赤い「データを読み込めませんでした」が一瞬出てから正常に戻る問題を修正。読み込みが完全に終わる前に警告を描画していたため→読み込みが終わってから、本当に失敗していた場合だけ表示するように変更','保存できなかった旨の赤い通知も、読み込み完了前には出さないようにしました']},
  {d:'2026-09-14',v:'r20260914k',items:['保存中の表示を「保存中…」から「💾 保存しています（そのまま操作できます）」に変更。待つ必要がないことが分かるようにしました']},
  {d:'2026-09-14',v:'r20260914j',items:['起動のたびに一瞬「⚠ データを読み込めませんでした」と出て、その後正常に切り替わる問題を修正。読み込みが終わる前に失敗と判断して表示していました','失敗しても少し待って自動でもう一度読み直し、それでも駄目な場合だけ警告を出すように変更','後から読み込めた場合は警告が確実に消えるようにしました']},
