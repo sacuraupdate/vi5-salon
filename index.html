@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260914j';
+const APP_REV='r20260914k';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -3030,12 +3030,12 @@ async function autoSlim(){
 }
 
 /* 保存中の表示。画面はそのまま操作できる（固まらない） */
-function busyOn(msg){try{let b=document.getElementById('vi5busy');if(!b){b=document.createElement('div');b.id='vi5busy';b.style.cssText='position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:99998;background:rgba(30,42,71,.92);color:#fff;font-size:12.5px;font-weight:700;padding:8px 16px;border-radius:999px;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.2)';document.body.appendChild(b);}b.textContent=msg||'保存中…';b.style.opacity='1';}catch(e){}}
+function busyOn(msg){try{let b=document.getElementById('vi5busy');if(!b){b=document.createElement('div');b.id='vi5busy';b.style.cssText='position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:99998;background:rgba(30,42,71,.88);color:#fff;font-size:12px;font-weight:600;padding:7px 15px;border-radius:999px;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.18);transition:opacity .25s';document.body.appendChild(b);}b.textContent=msg||'💾 保存しています（そのまま操作できます）';b.style.opacity='1';}catch(e){}}
 function busyOff(){try{const b=document.getElementById('vi5busy');if(b)b.style.opacity='0';}catch(e){}}
 async function saveWork(){
   if(!WORK){try{busyOff();}catch(e){}state._saving=false;return false;}
   if(state._saving){/* 二重に走らせない（固まる原因） */return false;}
-  state._saving=true;try{busyOn('保存中…');}catch(e){}
+  state._saving=true;try{busyOn('💾 保存しています（そのまま操作できます）');}catch(e){}
   /* 万一どこかで止まっても、20秒後には必ず表示を消す（「保存中…」が残り続けるのを防ぐ） */
   try{clearTimeout(state._busyT);}catch(e){}
   state._busyT=setTimeout(()=>{state._saving=false;try{busyOff();}catch(e){}},20000);
@@ -4430,6 +4430,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-14',v:'r20260914k',items:['保存中の表示を「保存中…」から「💾 保存しています（そのまま操作できます）」に変更。待つ必要がないことが分かるようにしました']},
  {d:'2026-09-14',v:'r20260914j',items:['起動のたびに一瞬「⚠ データを読み込めませんでした」と出て、その後正常に切り替わる問題を修正。読み込みが終わる前に失敗と判断して表示していました','失敗しても少し待って自動でもう一度読み直し、それでも駄目な場合だけ警告を出すように変更','後から読み込めた場合は警告が確実に消えるようにしました']},
  {d:'2026-09-14',v:'r20260914i',items:['【緊急修正】「データを読み込めませんでした」が続く原因は、私が追加したスタッフ復旧処理の暴走でした。読込に失敗するとスタッフが空になり、復旧処理が最大19件のバックアップを毎回取得（各3回再試行）して通信を圧迫し、さらに読込が失敗する悪循環になっていました','①読み込めていない時は復旧処理を一切動かさない ②1回だけ実行する ③確認するバックアップを直近3件に限定、の3点で悪循環を断ちました']},
  {d:'2026-09-14',v:'r20260914h',items:['「保存中…」が消えないまま残る問題を修正。保存が失敗した時やデータ未読込の時に表示が解除されない経路がありました→すべての終了経路で必ず解除し、万一止まっても20秒後には自動で消える保険も追加','SAKURAのトップに「代わりに出勤を記録」ボタンを追加。スタッフの打刻が保存されなかった時に、SAKURAが時刻（例：10:00）と店舗/在宅を指定して代理で記録できます']},
