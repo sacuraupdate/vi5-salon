@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260915c';
+const APP_REV='r20260915d';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1224,12 +1224,18 @@ async function loadData(){
   state.loadDone=false;
   try{localDel('salon:me');}catch(e){} /* 管理画面は毎回「担当者を選んでください」から始める */
   let d=null,role='public';
-  try{ if(localGet('salon:staff')&&localGet('salon:staffpw')){ const j=await api({action:'full',pw:localGet('salon:staffpw')}); d=j.data; role='staff'; } }
-  catch(e){ /* 通信の失敗でログアウトさせない（電波が一時的に悪いだけでも解除されていた）。パスワードが違う時だけ解除する */
-    const st=e&&(e.status||0);
-    if(st===401||st===403){ localDel('salon:staff'); localDel('salon:staffpw'); }
-    else { state.loginKept=true; } }
-  if(!d){ const ph=localGet('salon:session'); if(ph){ try{ const j=await api({action:'customer',phone:ph,password:localGet('salon:custpw')||''}); d=j.data; role='customer'; }catch(e){} } }
+  /* ログイン情報がある場合だけ、その通信を行う。
+     未ログインのお客様で毎回スタッフ用・会員用を試すと、失敗の再試行で読み込みが大幅に遅くなるため。 */
+  const _hasStaff=!!(localGet('salon:staff')&&localGet('salon:staffpw'));
+  const _hasCust=!!localGet('salon:session');
+  if(_hasStaff){
+    try{ const j=await api({action:'full',pw:localGet('salon:staffpw')}); d=j.data; role='staff'; }
+    catch(e){ /* 通信の失敗でログアウトさせない。パスワードが違う時だけ解除する */
+      const st=e&&(e.status||0);
+      if(st===401||st===403){ localDel('salon:staff'); localDel('salon:staffpw'); }
+      else { state.loginKept=true; } }
+  }
+  if(!d&&_hasCust){ const ph=localGet('salon:session'); try{ const j=await api({action:'customer',phone:ph,password:localGet('salon:custpw')||''}); d=j.data; role='customer'; }catch(e){} }
   if(!d){ try{ const j=await api({action:'public'}); d=j.data; }catch(e){} }
   if(!d){ /* すぐに諦めず、少し待ってもう一度だけ読み直す（起動直後の一時的な失敗で警告を出さないため） */
     await new Promise(r=>setTimeout(r,1200));
@@ -4459,6 +4465,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-15',v:'r20260915d',items:['メニューの読み込みが遅い問題を改善しました。お客様が開くたびに、スタッフ用・会員用のデータ取得を必ず試しており（未ログインでは必ず失敗）、その再試行で時間がかかっていました→ログイン情報がある場合だけその取得を行い、未ログインのお客様は公開データだけを取得するようにしました','スタッフのログイン・会員のお客様のマイページは従来どおりご利用いただけます']},
  {d:'2026-09-15',v:'r20260915c',items:['ご予約カレンダーの空き表示を、小さな黄色い点から「空き」の文字に変更しました。予約できる日が一目で分かります','凡例も「「空き」＝ご予約いただけます／グレー＝ご予約を承れない日（定休・お休み・満席）」に変更しました']},
  {d:'2026-09-15',v:'r20260915b',items:['ご予約カレンダーの🟡印を、実際にご予約いただける日だけに表示するようにしました。担当者が全員お休みの日（9/16など）には印が付かず、押せないグレー表示になります','原因は、空き状況を「指名なし」で調べていたことでした。「指名なし」は実在する担当者ではないため正しく判定できず、以前この修正で全日が選択できなくなる不具合を起こしていました→実在する担当者で判定するように修正しました','反映前に、予約が最後まで通ること（メニュー→日時→確認→確定→管理画面）と、各日の表示が実際の空き状況と一致することを確認しています']},
  {d:'2026-09-14',v:'r20260915a',items:['【重要】日時を選んでいないのに「1月1日(木) null」で確認画面へ進んでしまう不具合を修正しました。担当を自動で決める処理が、画面番号を「日時選択」ではなく「確認画面」に設定していたためです→日時を選ぶまで確認画面へ進まないようにしました']},
