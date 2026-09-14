@@ -97,6 +97,10 @@ module.exports = async (req, res) => {
         const d = new Date(start.getTime() + i * 86400000);
         const ds = fmtDate(d), dow = d.getDay();
         if (salonClosed(DATA, ds, dow) || isDayOff(DATA, s, ds)) continue;
+        // 実際にその日のシフトを入力した日だけ配信する。
+        // 曜日ごとの基本シフトによる自動繰り返しは配信しない（入力していない先の月まで出てしまうため）
+        const ov = DATA.shiftOverrides && DATA.shiftOverrides[s] && DATA.shiftOverrides[s][ds];
+        if (!ov) continue;
         const sh = effectiveShift(DATA, s, ds, dow);
         if (!sh.on || !sh.ranges || !sh.ranges.length) continue;
         const st = Math.min.apply(null, sh.ranges.map(r => r.start));
