@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260914w';
+const APP_REV='r20260914x';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -2321,7 +2321,12 @@ function stepDate(){if(!state.b||!state.b.staff){state.step=2;return typeof step
         else if(staffSlotOpen30(sid,ds,m)){hasSlot=true;break;}
       }
     }
-    const avail=hasSlot?'avail':'';const sel=state.b.date===ds?'sel':'';cells+=`<button type="button" class="cal-day ${dis} ${avail} ${sel}" ${dis?'disabled aria-disabled="true"':`data-date="${ds}"`} aria-label="${mdLabel(ds)}${dis?' 予約不可':' 予約可能'}" ${sel?'aria-pressed="true"':''}>${d}</button>`}
+    /* 空きがない日は定休日と同じく押せないようにする（押してから「空きがありません」と出る手間をなくす） */
+    const noSlot=(!dis&&!hasSlot);
+    const cls=dis||(noSlot?'closed':'');
+    const off=dis||noSlot;
+    const avail=hasSlot?'avail':'';const sel=state.b.date===ds?'sel':'';
+    cells+=`<button type="button" class="cal-day ${cls} ${avail} ${sel}" ${off?'disabled aria-disabled="true"':`data-date="${ds}"`} aria-label="${mdLabel(ds)}${off?' 予約不可':' 予約可能'}" ${sel?'aria-pressed="true"':''}>${d}</button>`}
   let slotHtml='';
   if(state.b.date){
     const totalMin=state.cart.reduce((s,x)=>s+(x.min||0),0);
@@ -2352,7 +2357,7 @@ function stepDate(){if(!state.b||!state.b.staff){state.step=2;return typeof step
     const slotsBlock=openCount?`<div class="slots">${opts}</div>`:`<div class="kalert" style="background:#FFF6E5;border-color:var(--gold);color:#6b5410">${shown?'この日は'+(sid!=='s0'?esc(state.b.staff.name)+'の':'')+'空きがございません。カレンダーで🟡印のある別の日をお選びください。':'この日はご予約を承れません。カレンダーで🟡印のある日をお選びください。'}</div>`;
     slotHtml=`<div class="slot-wrap"><div class="slot-label">開始時間（21:00までに終わる枠のみ・ご予約は3時間前まで）</div>${_multiNote}${slotsBlock}<div class="note" style="margin-top:8px">選択中のメニュー所要 約${totalMin}分。本日分は現在時刻の3時間後以降のみご予約いただけます。</div></div>`;
   }
-  app.innerHTML=stepsBar(2)+`<div class="fade"><div class="eyebrow">Step 03</div><div class="h-title">${t('selectDate')}</div><div class="h-sub">${state.b.staff.name} ／ 営業 9:00〜（最終受付 21:00）・火曜定休</div><div class="cal"><div class="cal-head"><button class="cal-nav" id="prev" ${canPrev?'':'disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><div class="cal-title">${y}年 ${mo+1}月</div><button class="cal-nav" id="nextm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></div>${(()=>{const sid=(state.b.staff&&state.b.staff.id)||'s0';const c3=next3Slots(sid);if(!c3.length)return '';return `<div class="quick3"><div class="q3-h">🕐 最短のご予約候補</div><div class="q3-btns">`+c3.map(x=>`<button type="button" class="q3-btn" data-q3="${x.date}|${x.time}">${x.label}〜</button>`).join('')+`</div></div>`;})()}<div class="cal-grid">${cells}</div><div class="cal-legend">🟡 空きあり／🔵 選択中／グレー＝定休・お休み</div></div>${slotHtml}</div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">${t('backBtn')}</button><button class="btn btn-primary" id="next" ${state.b.date&&state.b.time?'':'disabled'}>${t('ctaNextInfo')}</button></div>`;
+  app.innerHTML=stepsBar(2)+`<div class="fade"><div class="eyebrow">Step 03</div><div class="h-title">${t('selectDate')}</div><div class="h-sub">${state.b.staff.name} ／ 営業 9:00〜（最終受付 21:00）・火曜定休</div><div class="cal"><div class="cal-head"><button class="cal-nav" id="prev" ${canPrev?'':'disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><div class="cal-title">${y}年 ${mo+1}月</div><button class="cal-nav" id="nextm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></div>${(()=>{const sid=(state.b.staff&&state.b.staff.id)||'s0';const c3=next3Slots(sid);if(!c3.length)return '';return `<div class="quick3"><div class="q3-h">🕐 最短のご予約候補</div><div class="q3-btns">`+c3.map(x=>`<button type="button" class="q3-btn" data-q3="${x.date}|${x.time}">${x.label}〜</button>`).join('')+`</div></div>`;})()}<div class="cal-grid">${cells}</div><div class="cal-legend">🟡 空きあり／🔵 選択中／グレー＝ご予約を承れない日（定休・お休み・満席）</div></div>${slotHtml}</div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">${t('backBtn')}</button><button class="btn btn-primary" id="next" ${state.b.date&&state.b.time?'':'disabled'}>${t('ctaNextInfo')}</button></div>`;
   const pv=byId('prev');if(pv&&canPrev)pv.onclick=()=>{state.calMonth=new Date(y,mo-1,1);render()};byId('nextm').onclick=()=>{state.calMonth=new Date(y,mo+1,1);render()};
   app.querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>{state.b.date=b.dataset.date;state.b.time=null;render()});
   app.querySelectorAll('.slot[data-slot]').forEach(b=>b.onclick=()=>{state.b.time=b.dataset.slot;render()});
@@ -4449,6 +4454,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-14',v:'r20260914x',items:['ご予約カレンダーで、空きがない日を押せないようにしました。担当者が全員お休みの日や満席の日は、定休日と同じグレー表示（押せない）になります。押してから「空きがございません」と表示される手間がなくなります','凡例を「🟡 空きあり／🔵 選択中／グレー＝ご予約を承れない日（定休・お休み・満席）」に変更しました']},
  {d:'2026-09-14',v:'r20260914w',items:['ご予約カレンダーの🟡印（空きあり）が、実際には空きのない日にも付いていた問題を修正しました。担当者がお休みの日や、すでに予約で埋まっている日にも印が出ていました→実際にご予約いただける時間が1つ以上ある日だけに🟡印を付けるようにし、表示と実際の空き状況を一致させました']},
  {d:'2026-09-14',v:'r20260914v',items:['【緊急修正】SAKURAのご予約が1月からしか取れない状態になっていたのを解消しました。直前の変更で「シフト表に日付ごとに入力した日だけ出勤」としたため、曜日ごとの基本シフトで運用していたSAKURAが全日「出勤なし」となり、予約を受けられなくなっていました→曜日ごとの基本シフトを元どおり有効に戻しました']},
  {d:'2026-09-14',v:'r20260914u',items:['ポイントの付与率を、お会計1,000円ごとに50ポイント→【30ポイント】に変更しました。これから登録するご来店分に適用されます（これまでに付与済みのポイントはそのまま変わりません）','よくある質問のポイント説明を「ご来店ごとにお会計1,000円につき30ポイントが貯まります」に書き換えました','家族割のお客様への「ポイントを付与しません」という表示を削除しました（付与しない動作は変わりません）']},
