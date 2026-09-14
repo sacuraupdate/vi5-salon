@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260914z';
+const APP_REV='r20260915a';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -2279,7 +2279,8 @@ function stepStaff(){
   if(perMenu.length&&perMenu.every(p=>p.cands.length)){
     perMenu.forEach(p=>{if(p.cands.length===1)state.b.assign[p.item.id]=p.cands[0].id;});
     state.b.staff={id:'s0',name:'担当はメニューごと'};
-    state.step=3;return stepDate();
+    /* 日時選択は step=2。3にすると日時を選ばずに確認画面へ進んでしまう */
+    state.step=2;return stepDate();
   }
   if(false){
     const rows=perMenu.map(p=>{
@@ -4446,6 +4447,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-14',v:'r20260915a',items:['【重要】日時を選んでいないのに「1月1日(木) null」で確認画面へ進んでしまう不具合を修正しました。担当を自動で決める処理が、画面番号を「日時選択」ではなく「確認画面」に設定していたためです→日時を選ぶまで確認画面へ進まないようにしました']},
  {d:'2026-09-14',v:'r20260914z',items:['【緊急修正】ご予約カレンダーの全日が選択できなくなっていた状態を元に戻しました。直前に追加した空き判定が誤って全日を「予約不可」と判定していたためです。カレンダーから日付を選んでご予約いただけます']},
  {d:'2026-09-14',v:'r20260914y',items:['ご予約のメニュー選択画面で、読み込みが終わる前に「オプションメニュー」「TOMOMI無料オプション」だけが表示され、メニューがこれだけしかないように見えてしまう問題を修正しました→読み込みが終わるまで「メニューを読み込んでいます…」と表示し、途中の状態を見せないようにしました']},
  {d:'2026-09-14',v:'r20260914x',items:['ご予約カレンダーで、空きがない日を押せないようにしました。担当者が全員お休みの日や満席の日は、定休日と同じグレー表示（押せない）になります。押してから「空きがございません」と表示される手間がなくなります','凡例を「🟡 空きあり／🔵 選択中／グレー＝ご予約を承れない日（定休・お休み・満席）」に変更しました']},
