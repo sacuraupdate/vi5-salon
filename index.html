@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260914c';
+const APP_REV='r20260914d';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -2985,6 +2985,39 @@ function mergeWork(local,srv){if(!srv)return local;const delT=new Set([...(local
     });
   }catch(e){}
   return local;}
+
+/* データが重くなったら自動で軽くする（SAKURAさんが数字を見て判断しなくてよいように）。
+   段階的に：①画像の再圧縮 → ②6か月より前の画像を削除 → ③3か月より前の画像を削除。
+   文章・タスク・予約・顧客情報は一切消さない。実行したら結果だけ通知する。 */
+async function autoSlim(){
+  try{
+    if(!state.adminAuthed||!WORK||state._slimTried)return false;
+    state._slimTried=true;
+    let size=JSON.stringify(WORK).length;
+    if(size<2000000)return false; /* 2MB未満なら何もしない */
+    const before=size;let steps=[];
+    /* ① 画像の再圧縮 */
+    try{await walkShrink(WORK);size=JSON.stringify(WORK).length;steps.push('画像を軽量化');}catch(e){}
+    /* ②③ 古い画像から順に削除 */
+    const dropImages=(days)=>{const cut=Date.now()-days*86400000;let n=0;
+      Object.keys(WORK.chats||{}).forEach(rk=>{(WORK.chats[rk]||[]).forEach(m=>{if(!m||!m.at||m.at>=cut)return;
+        ['img','image','photo'].forEach(k=>{if(typeof m[k]==='string'&&m[k].indexOf('data:image')===0){delete m[k];n++;}});
+        if(Array.isArray(m.imgs)&&m.imgs.length){n+=m.imgs.length;m.imgs=[];}});});
+      (WORK.reports||[]).forEach(r=>{if(r&&r.at&&r.at<cut&&Array.isArray(r.imgs)&&r.imgs.length){n+=r.imgs.length;r.imgs=[];}});
+      return n;};
+    if(size>2500000){const n=dropImages(180);if(n){size=JSON.stringify(WORK).length;steps.push('6か月より前の画像'+n+'枚を削除');}}
+    if(size>2500000){const n=dropImages(90);if(n){size=JSON.stringify(WORK).length;steps.push('3か月より前の画像'+n+'枚を削除');}}
+    if(size>=before)return false;
+    const ok=await saveWork();
+    if(ok){
+      const msg='📦 保存が重くなっていたため自動で軽くしました（'+(Math.round(before/100000)/10)+'MB → '+(Math.round(size/100000)/10)+'MB）。'+steps.join('／')+'。文章・タスク・予約・お客様の情報は消していません。';
+      try{WORK.ownerAlerts=WORK.ownerAlerts||[];if(!alertMuted(msg)){WORK.ownerAlerts.unshift({id:'slim'+Date.now(),text:msg,by:'システム',at:Date.now(),read:false});await saveWork();}}catch(e){}
+      logAct('データを自動で軽量化（'+steps.join('／')+'）');
+      return true;
+    }
+    return false;
+  }catch(e){return false;}
+}
 async function saveWork(){if(!WORK)return false;
   try{const srv=await fetchWorkFresh();if(srv)WORK=mergeWork(WORK,srv);
     /* 送信サイズを確認。大きすぎると送信しきれず「Fetch is aborted」になるため、画像を自動で軽量化してから送る */
@@ -3634,7 +3667,7 @@ function renderAdmin(){
   if(!WORK)loadWork().then(()=>render());
   if(!localGet('salon:me')){app.innerHTML=renderMePicker();app.querySelectorAll('[data-me]').forEach(b=>b.onclick=()=>{if(b.dataset.me==='s1'){const p=prompt('オーナー（SAKURA）として入るには暗証番号を入力してください');if(p===null)return;if(String(p).trim()!==ownerPin()){alert('暗証番号が違います。');return;}}setMe(b.dataset.me);});const _mo=byId('me-logout');if(_mo)_mo.onclick=()=>{try{localStorage.removeItem('vi5:datacache');}catch(e){}state.adminAuthed=false;localDel('salon:staff');localDel('salon:staffpw');render();};return;}
   const _idone=localGet('salon:introdone');if(!_idone&&!state.introSkip){app.innerHTML=renderIntro();const _ia=byId('intro-agree');const _iok=byId('intro-ok');if(_iok)_iok.onclick=()=>{if(!_ia||!_ia.checked){alert('「確認しました」にチェックをお願いします。');return;}localSet('salon:introdone',INTRO_VER);render();};const _il=byId('intro-later');if(_il)_il.onclick=()=>{state.introSkip=true;render();};return;}
-  autoRescue();if(state.view==='admin')imageShrinkMigrate();autoEshopSync();try{if(extBlocksMigrate())saveData(DATA);}catch(_e){}try{if(state.dataFull&&demoPurge())saveData(DATA);}catch(_e){}try{if(state.dataFull&&harukaShiftZero())saveData(DATA);}catch(_e){}try{if(state.dataFull&&harukaInactive())saveData(DATA);}catch(_e){}try{if(state.dataFull&&staffServiceRules())saveData(DATA);}catch(_e){}try{if(state.dataFull)staffRestoreFromBackup();}catch(_e){}try{if(state.adminAuthed&&navigator.onLine!==false&&!state._gcalFlushed){state._gcalFlushed=true;gcalFlushQueue();}}catch(_e){}try{if(state.dataFull&&autoCancelRestore())saveData(DATA);}catch(_e){}try{if(state.dataFull&&futureVisitFix())saveData(DATA);}catch(_e){}try{if(state.dataFull&&birthdayAutoRun())saveData(DATA);}catch(_e){}try{if(state.dataFull&&WORK&&taskAssigneeSelfFix())saveWork();}catch(_e){}try{if(state.dataFull&&birthdayDupFix())saveData(DATA);}catch(_e){}try{if(state.dataFull&&birthdayDupFix2())saveData(DATA);}catch(_e){}try{if(state.dataFull&&ptLabelCleanup())saveData(DATA);}catch(_e){}try{if(state.dataFull&&WORK&&payAdjTomomiAugSeed())saveWork();}catch(_e){}try{if(state.dataFull)seedTasksMigrate();}catch(_e){}try{if(state.dataFull&&!state._gcalSwept){state._gcalSwept=true;if(gcalCancelSweep())saveData(DATA);}}catch(_e){}let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(staffNameMigrate())_clch=true;if(wageMigrate())_clch=true;if(harukaFixMigrate())_clch=true;if(staffMenuMigrate())_clch=true;if(calSetupMigrate())_clch=true;/* 自動保存は廃止：古い端末が新データを上書きする事故の元。編集操作時のみ保存 */
+  autoRescue();if(state.view==='admin')imageShrinkMigrate();autoEshopSync();try{if(extBlocksMigrate())saveData(DATA);}catch(_e){}try{if(state.dataFull&&demoPurge())saveData(DATA);}catch(_e){}try{if(state.dataFull&&harukaShiftZero())saveData(DATA);}catch(_e){}try{if(state.dataFull&&harukaInactive())saveData(DATA);}catch(_e){}try{if(state.dataFull&&staffServiceRules())saveData(DATA);}catch(_e){}try{if(state.dataFull&&WORK)autoSlim();}catch(_e){}try{if(state.dataFull)staffRestoreFromBackup();}catch(_e){}try{if(state.adminAuthed&&navigator.onLine!==false&&!state._gcalFlushed){state._gcalFlushed=true;gcalFlushQueue();}}catch(_e){}try{if(state.dataFull&&autoCancelRestore())saveData(DATA);}catch(_e){}try{if(state.dataFull&&futureVisitFix())saveData(DATA);}catch(_e){}try{if(state.dataFull&&birthdayAutoRun())saveData(DATA);}catch(_e){}try{if(state.dataFull&&WORK&&taskAssigneeSelfFix())saveWork();}catch(_e){}try{if(state.dataFull&&birthdayDupFix())saveData(DATA);}catch(_e){}try{if(state.dataFull&&birthdayDupFix2())saveData(DATA);}catch(_e){}try{if(state.dataFull&&ptLabelCleanup())saveData(DATA);}catch(_e){}try{if(state.dataFull&&WORK&&payAdjTomomiAugSeed())saveWork();}catch(_e){}try{if(state.dataFull)seedTasksMigrate();}catch(_e){}try{if(state.dataFull&&!state._gcalSwept){state._gcalSwept=true;if(gcalCancelSweep())saveData(DATA);}}catch(_e){}let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(staffNameMigrate())_clch=true;if(wageMigrate())_clch=true;if(harukaFixMigrate())_clch=true;if(staffMenuMigrate())_clch=true;if(calSetupMigrate())_clch=true;/* 自動保存は廃止：古い端末が新データを上書きする事故の元。編集操作時のみ保存 */
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
   const tabs=[['top','🏠','トップ','毎日'],['todo','✅','やること','毎日'],['chat','💬','チャット','毎日'],['bookings','📅','予約','毎日'],['schedule','⏰','シフト','毎日'],['customers','👥','顧客カルテ','お客様'],['report','📝','業務報告','毎日'],['money','💰','売上・給与','管理'],['settings','⚙️','設定','管理'],['updates','📋','更新履歴','管理']];
   const _sec=(t)=>`<div class="subhead" style="margin:26px 0 12px;padding-top:18px;border-top:2px solid var(--line)">${t}</div>`;
@@ -4329,6 +4362,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-14',v:'r20260914d',items:['データが重くなったら、アプリが自動で軽くするようにしました（SAKURAさんが数字を確認する必要はありません）','2MBを超えたときだけ作動し、①画像の再圧縮 →（足りなければ）②6か月より前の画像を削除 →（さらに必要なら）③3か月より前の画像を削除、の順に必要な分だけ実行します','会話の文章・タスク・予約・お客様の情報は一切消しません。最近の画像も残します','実行した場合は「📦 保存が重くなっていたため自動で軽くしました（3.6MB → 1.8MB）」とお知らせに記録します']},
  {d:'2026-09-14',v:'r20260914c',items:['設定に「📦 データの重さを見る（保存が遅い時）」を追加。チャット・業務報告・カルテ・タスクなど、どこが重いかと画像の枚数を表示します（1.5MB超で遅く、3MB超で失敗しやすい目安つき）','「🧹 古いチャット画像を削除して軽くする」を追加。3か月より前の画像だけを削除し、文章と最近の画像はそのまま残します']},
  {d:'2026-09-14',v:'r20260914b',items:['【「Fetch is aborted」でタスクが作れない原因】保存のたびにチャットや業務報告の画像を含む全データを送信しており、データが大きいと送信しきれず時間切れになっていました→保存前にサイズを確認し、大きい場合は画像を自動で軽量化。さらにサイズに応じて待ち時間を最大2分まで自動延長','保存に失敗した時は「保存できませんでした」と表示し、入力した内容をそのまま残すように変更（作り直し不要。もう一度「追加する」を押すだけ）','これまでは失敗しても「タスクを追加しました」と出ていたため、追加できたと誤解する状態でした。成功した時だけ「✅ 追加しました」と表示します']},
  {d:'2026-09-13',v:'r20260914a',items:['【「取消」を押しても戻る原因】シフトの「保存して完了」を押すたびに、その月が自動で再登録される作りでした（取消→保存で復活の繰り返し）→購読方式では不要な仕組みのため、「Googleカレンダーに反映中の月」の表示と取消ボタンごと撤去しました','シフト画面には購読URLと、古い予定の消し方の案内だけを残しました','【毎回ログインが必要だった原因】通信が一度失敗しただけでログイン情報が消える作りでした→通信の失敗ではログアウトせず、パスワードが違う時だけ解除するように変更。スタッフもお客様も、一度ログインすれば次回から入力不要です']},
