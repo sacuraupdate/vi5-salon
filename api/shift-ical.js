@@ -91,15 +91,16 @@ module.exports = async (req, res) => {
     } else {
       const name = NAMES[s] || s;
       lines.push('X-WR-CALNAME:Vi5 ' + name + ' シフト', 'X-WR-TIMEZONE:Asia/Tokyo', ...VTZ);
-      // 提出済みの月だけ配信。未設定なら「今月だけ」。来月以降は提出しない限り絶対に出さない
-      const curM = fmtDate(now).slice(0,7);
-      const months = Array.isArray(DATA.shiftMonths) && DATA.shiftMonths.length ? DATA.shiftMonths : [curM];
+      // アプリに登録されているシフトをそのまま配信する（過去30日〜今後120日）
       const start = new Date(now.getTime() - 30 * 86400000);
-      for (let i = 0; i < 400; i++) {
+      for (let i = 0; i < 150; i++) {
         const d = new Date(start.getTime() + i * 86400000);
         const ds = fmtDate(d), dow = d.getDay();
-        if (months.indexOf(ds.slice(0,7)) < 0) continue;
         if (salonClosed(DATA, ds, dow) || isDayOff(DATA, s, ds)) continue;
+        // 実際にその日のシフトを入力した日だけ配信する。
+        // 曜日ごとの基本シフトによる自動繰り返しは配信しない（入力していない先の月まで出てしまうため）
+        const ov = DATA.shiftOverrides && DATA.shiftOverrides[s] && DATA.shiftOverrides[s][ds];
+        if (!ov) continue;
         const sh = effectiveShift(DATA, s, ds, dow);
         if (!sh.on || !sh.ranges || !sh.ranges.length) continue;
         const st = Math.min.apply(null, sh.ranges.map(r => r.start));
