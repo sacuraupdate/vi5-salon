@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260914i';
+const APP_REV='r20260914j';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1022,7 +1022,7 @@ window.storage={
 function localGet(k){try{return localStorage.getItem('vi5:'+k)}catch(e){return null}}
 function localSet(k,v){try{localStorage.setItem('vi5:'+k,v)}catch(e){}}
 function localDel(k){try{localStorage.removeItem('vi5:'+k)}catch(e){}}
-async function refresh(){try{let j,_full=false;if(state.adminAuthed&&localGet('salon:staffpw')){_full=true;if(isDirect()){try{j=await api({action:'full',pw:localGet('salon:staffpw')});localDel('salon:direct');}catch(e){const d=await directLoad();if(d){DATA=d;services=DATA.services;staff=DATA.staff;}return;}}else{j=await api({action:'full',pw:localGet('salon:staffpw')});}}else if(state.mpPhone){j=await api({action:'customer',phone:state.mpPhone,password:localGet('salon:custpw')||''});}else{j=await api({action:'public'});}if(j&&j.data){DATA=j.data;services=DATA.services;staff=DATA.staff;if(_full)state.dataFull=true;}}catch(e){}}
+async function refresh(){try{let j,_full=false;if(state.adminAuthed&&localGet('salon:staffpw')){_full=true;if(isDirect()){try{j=await api({action:'full',pw:localGet('salon:staffpw')});localDel('salon:direct');}catch(e){const d=await directLoad();if(d){DATA=d;services=DATA.services;staff=DATA.staff;}return;}}else{j=await api({action:'full',pw:localGet('salon:staffpw')});}}else if(state.mpPhone){j=await api({action:'customer',phone:state.mpPhone,password:localGet('salon:custpw')||''});}else{j=await api({action:'public'});}if(j&&j.data){DATA=j.data;services=DATA.services;staff=DATA.staff;if(_full)state.dataFull=true;state.loadFailed=false;delete DATA._loadFailed;}}catch(e){}}
 /* ===== 設定 ===== */
 const CONFIG={pointsPer1000:50,referralBonus:1000,birthdayBonus:1000,signupBonus:500,sharePoints:10,galleryPoints:5,feedbackPoints:10,newCustomerEarnsFrom:1,discounts:{family:0.5,friend:0.2}};
 const DEFAULT_POLICY=`■当日のキャンセル/無断キャンセルは施術料金の100%を頂戴いたします
@@ -1229,9 +1229,15 @@ async function loadData(){
     else { state.loginKept=true; } }
   if(!d){ const ph=localGet('salon:session'); if(ph){ try{ const j=await api({action:'customer',phone:ph,password:localGet('salon:custpw')||''}); d=j.data; role='customer'; }catch(e){} } }
   if(!d){ try{ const j=await api({action:'public'}); d=j.data; }catch(e){} }
+  if(!d){ /* すぐに諦めず、少し待ってもう一度だけ読み直す（起動直後の一時的な失敗で警告を出さないため） */
+    await new Promise(r=>setTimeout(r,1200));
+    try{ if(localGet('salon:staff')&&localGet('salon:staffpw')){ const j2=await api({action:'full',pw:localGet('salon:staffpw')}); d=j2.data; role='staff'; } }catch(e){}
+    if(!d){ try{ const j3=await api({action:'public'}); d=j3.data; }catch(e){} }
+  }
   if(!d){ /* 通信に失敗した時にサンプルデータへ切り替えない（架空の予約が本物に見えてしまうため） */
     d={customers:{},bookings:[],blocks:[],posts:[],campaigns:[],feedback:[],services:[],staff:[],settings:defaultData().settings,nextId:1047,_loadFailed:true};
     state.loadFailed=true; }
+  if(d&&!d._loadFailed){state.loadFailed=false;}
   if(!d.customers)d.customers={};if(!d.bookings)d.bookings=[];if(!d.feedback)d.feedback=[];
   if(!d.settings)d.settings=defaultData().settings;
   ['blocks','posts','campaigns','shares'].forEach(k=>{if(!d[k])d[k]=[]});
@@ -4424,6 +4430,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-14',v:'r20260914j',items:['起動のたびに一瞬「⚠ データを読み込めませんでした」と出て、その後正常に切り替わる問題を修正。読み込みが終わる前に失敗と判断して表示していました','失敗しても少し待って自動でもう一度読み直し、それでも駄目な場合だけ警告を出すように変更','後から読み込めた場合は警告が確実に消えるようにしました']},
  {d:'2026-09-14',v:'r20260914i',items:['【緊急修正】「データを読み込めませんでした」が続く原因は、私が追加したスタッフ復旧処理の暴走でした。読込に失敗するとスタッフが空になり、復旧処理が最大19件のバックアップを毎回取得（各3回再試行）して通信を圧迫し、さらに読込が失敗する悪循環になっていました','①読み込めていない時は復旧処理を一切動かさない ②1回だけ実行する ③確認するバックアップを直近3件に限定、の3点で悪循環を断ちました']},
  {d:'2026-09-14',v:'r20260914h',items:['「保存中…」が消えないまま残る問題を修正。保存が失敗した時やデータ未読込の時に表示が解除されない経路がありました→すべての終了経路で必ず解除し、万一止まっても20秒後には自動で消える保険も追加','SAKURAのトップに「代わりに出勤を記録」ボタンを追加。スタッフの打刻が保存されなかった時に、SAKURAが時刻（例：10:00）と店舗/在宅を指定して代理で記録できます']},
  {d:'2026-09-14',v:'r20260914g',items:['【最優先修正】スタッフが消える問題を根本から解消。統合の際に「削除記録」で自動的に消す仕組みそのものを廃止しました（誤って記録に入ると全員が永久に消え続ける原因でした）','SAKURA・TOMOMI・HARUKA・KANA・NODOKA の全員を対象に、消えていればバックアップから紹介文ごと自動復旧します','復旧の点検は管理画面を開くたびに毎回実行します（一度きりではありません）','スタッフを一覧から外したい場合は、削除ではなく「非表示」でご対応ください']},
