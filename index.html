@@ -936,9 +936,9 @@ button{white-space:normal}
 .menusearch input{width:100%;font-family:inherit;font-size:15px;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff}
 .menusearch input:focus{border-color:var(--gold);outline:none}
 .staff-next{font-size:12px;font-weight:700;color:var(--gold-deep);margin-top:5px;background:var(--gold-bg);display:inline-block;padding:3px 10px;border-radius:100px}
-.cal-day.avail{position:relative}
-.cal-day.avail::after{content:'';position:absolute;bottom:5px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--gold)}
-.cal-day.sel::after{background:#fff}
+.cal-day.avail{position:relative;padding-bottom:16px}
+.cal-day.avail::after{content:'空き';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:10.5px;font-weight:700;line-height:1;color:var(--gold-deep,#9c7a12);background:var(--gold-bg,#fdf6e3);border-radius:6px;padding:2px 5px;white-space:nowrap}
+.cal-day.sel::after{color:#fff;background:rgba(255,255,255,.22)}
 .quick3{margin:4px 0 14px;background:var(--gold-bg);border:1px solid var(--gold-soft);border-radius:12px;padding:10px 12px}
 .quick3 .q3-h{font-size:12px;font-weight:800;color:var(--gold-deep);margin-bottom:8px}
 .quick3 .q3-btns{display:flex;gap:8px;flex-wrap:wrap}
@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260915b';
+const APP_REV='r20260915c';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -2362,7 +2362,7 @@ function stepDate(){if(!state.b||!state.b.staff){state.step=2;return typeof step
     const slotsBlock=openCount?`<div class="slots">${opts}</div>`:`<div class="kalert" style="background:#FFF6E5;border-color:var(--gold);color:#6b5410">${shown?'この日は'+(sid!=='s0'?esc(state.b.staff.name)+'の':'')+'空きがございません。カレンダーで🟡印のある別の日をお選びください。':'この日はご予約を承れません。カレンダーで🟡印のある日をお選びください。'}</div>`;
     slotHtml=`<div class="slot-wrap"><div class="slot-label">開始時間（21:00までに終わる枠のみ・ご予約は3時間前まで）</div>${_multiNote}${slotsBlock}<div class="note" style="margin-top:8px">選択中のメニュー所要 約${totalMin}分。本日分は現在時刻の3時間後以降のみご予約いただけます。</div></div>`;
   }
-  app.innerHTML=stepsBar(2)+`<div class="fade"><div class="eyebrow">Step 03</div><div class="h-title">${t('selectDate')}</div><div class="h-sub">${state.b.staff.name} ／ 営業 9:00〜（最終受付 21:00）・火曜定休</div><div class="cal"><div class="cal-head"><button class="cal-nav" id="prev" ${canPrev?'':'disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><div class="cal-title">${y}年 ${mo+1}月</div><button class="cal-nav" id="nextm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></div>${(()=>{const sid=(state.b.staff&&state.b.staff.id)||'s0';const c3=next3Slots(sid);if(!c3.length)return '';return `<div class="quick3"><div class="q3-h">🕐 最短のご予約候補</div><div class="q3-btns">`+c3.map(x=>`<button type="button" class="q3-btn" data-q3="${x.date}|${x.time}">${x.label}〜</button>`).join('')+`</div></div>`;})()}<div class="cal-grid">${cells}</div><div class="cal-legend">🟡 空きあり／🔵 選択中／グレー＝ご予約を承れない日（定休・お休み・満席）</div></div>${slotHtml}</div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">${t('backBtn')}</button><button class="btn btn-primary" id="next" ${state.b.date&&state.b.time?'':'disabled'}>${t('ctaNextInfo')}</button></div>`;
+  app.innerHTML=stepsBar(2)+`<div class="fade"><div class="eyebrow">Step 03</div><div class="h-title">${t('selectDate')}</div><div class="h-sub">${state.b.staff.name} ／ 営業 9:00〜（最終受付 21:00）・火曜定休</div><div class="cal"><div class="cal-head"><button class="cal-nav" id="prev" ${canPrev?'':'disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><div class="cal-title">${y}年 ${mo+1}月</div><button class="cal-nav" id="nextm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></div>${(()=>{const sid=(state.b.staff&&state.b.staff.id)||'s0';const c3=next3Slots(sid);if(!c3.length)return '';return `<div class="quick3"><div class="q3-h">🕐 最短のご予約候補</div><div class="q3-btns">`+c3.map(x=>`<button type="button" class="q3-btn" data-q3="${x.date}|${x.time}">${x.label}〜</button>`).join('')+`</div></div>`;})()}<div class="cal-grid">${cells}</div><div class="cal-legend">「空き」＝ご予約いただけます／グレー＝ご予約を承れない日（定休・お休み・満席）</div></div>${slotHtml}</div>`+`<div class="cta-bar"><button class="btn btn-ghost" id="back">${t('backBtn')}</button><button class="btn btn-primary" id="next" ${state.b.date&&state.b.time?'':'disabled'}>${t('ctaNextInfo')}</button></div>`;
   const pv=byId('prev');if(pv&&canPrev)pv.onclick=()=>{state.calMonth=new Date(y,mo-1,1);render()};byId('nextm').onclick=()=>{state.calMonth=new Date(y,mo+1,1);render()};
   app.querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>{state.b.date=b.dataset.date;state.b.time=null;render()});
   app.querySelectorAll('.slot[data-slot]').forEach(b=>b.onclick=()=>{state.b.time=b.dataset.slot;render()});
@@ -4459,6 +4459,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-15',v:'r20260915c',items:['ご予約カレンダーの空き表示を、小さな黄色い点から「空き」の文字に変更しました。予約できる日が一目で分かります','凡例も「「空き」＝ご予約いただけます／グレー＝ご予約を承れない日（定休・お休み・満席）」に変更しました']},
  {d:'2026-09-15',v:'r20260915b',items:['ご予約カレンダーの🟡印を、実際にご予約いただける日だけに表示するようにしました。担当者が全員お休みの日（9/16など）には印が付かず、押せないグレー表示になります','原因は、空き状況を「指名なし」で調べていたことでした。「指名なし」は実在する担当者ではないため正しく判定できず、以前この修正で全日が選択できなくなる不具合を起こしていました→実在する担当者で判定するように修正しました','反映前に、予約が最後まで通ること（メニュー→日時→確認→確定→管理画面）と、各日の表示が実際の空き状況と一致することを確認しています']},
  {d:'2026-09-14',v:'r20260915a',items:['【重要】日時を選んでいないのに「1月1日(木) null」で確認画面へ進んでしまう不具合を修正しました。担当を自動で決める処理が、画面番号を「日時選択」ではなく「確認画面」に設定していたためです→日時を選ぶまで確認画面へ進まないようにしました']},
  {d:'2026-09-14',v:'r20260914z',items:['【緊急修正】ご予約カレンダーの全日が選択できなくなっていた状態を元に戻しました。直前に追加した空き判定が誤って全日を「予約不可」と判定していたためです。カレンダーから日付を選んでご予約いただけます']},
