@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260914y';
+const APP_REV='r20260914z';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -2318,22 +2318,7 @@ function stepDate(){if(!state.b||!state.b.staff){state.step=2;return typeof step
   const sid=state.b.staff.id;const m=state.calMonth,y=m.getFullYear(),mo=m.getMonth();const startDow=new Date(y,mo,1).getDay(),days=new Date(y,mo+1,0).getDate();const canPrev=!(y===today.getFullYear()&&mo===today.getMonth());
   let cells='';['日','月','火','水','木','金','土'].forEach((d,i)=>cells+=`<div class="cal-dow ${i===0?'sun':''}">${d}</div>`);for(let i=0;i<startDow;i++)cells+='<div></div>';
   for(let d=1;d<=days;d++){const dd=new Date(y,mo,d);const ds=fmtDate(dd);const closedDay=salonClosed(ds)||(sid!=='s0'?!staffWorks(sid,ds):!anyStaffWorks(ds));const dis=dd<today?'dis':(closedDay?'closed':'');
-    /* 🟡印は「実際に予約できる時間が1つ以上ある日」だけに付ける（案内と実態を一致させる） */
-    let hasSlot=false;
-    if(!dis&&!closedDay){
-      const _gs=cartGroups();
-      for(let m=OPEN_HOUR*60;m<=LAST_RECEPTION*60;m+=30){
-        if(new Date(ds+'T'+minToTime(m)+':00').getTime()<Date.now()+3*3600000)continue;
-        if(_gs&&_gs.length>1){if(planAt(ds,m,_gs)){hasSlot=true;break;}}
-        else if(staffSlotOpen30(sid,ds,m)){hasSlot=true;break;}
-      }
-    }
-    /* 空きがない日は定休日と同じく押せないようにする（押してから「空きがありません」と出る手間をなくす） */
-    const noSlot=(!dis&&!hasSlot);
-    const cls=dis||(noSlot?'closed':'');
-    const off=dis||noSlot;
-    const avail=hasSlot?'avail':'';const sel=state.b.date===ds?'sel':'';
-    cells+=`<button type="button" class="cal-day ${cls} ${avail} ${sel}" ${off?'disabled aria-disabled="true"':`data-date="${ds}"`} aria-label="${mdLabel(ds)}${off?' 予約不可':' 予約可能'}" ${sel?'aria-pressed="true"':''}>${d}</button>`}
+    const avail=(!dis&&!closedDay)?'avail':'';const sel=state.b.date===ds?'sel':'';cells+=`<button type="button" class="cal-day ${dis} ${avail} ${sel}" ${dis?'disabled aria-disabled="true"':`data-date="${ds}"`} aria-label="${mdLabel(ds)}${dis?' 予約不可':' 予約可能'}" ${sel?'aria-pressed="true"':''}>${d}</button>`}
   let slotHtml='';
   if(state.b.date){
     const totalMin=state.cart.reduce((s,x)=>s+(x.min||0),0);
@@ -4461,6 +4446,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-14',v:'r20260914z',items:['【緊急修正】ご予約カレンダーの全日が選択できなくなっていた状態を元に戻しました。直前に追加した空き判定が誤って全日を「予約不可」と判定していたためです。カレンダーから日付を選んでご予約いただけます']},
  {d:'2026-09-14',v:'r20260914y',items:['ご予約のメニュー選択画面で、読み込みが終わる前に「オプションメニュー」「TOMOMI無料オプション」だけが表示され、メニューがこれだけしかないように見えてしまう問題を修正しました→読み込みが終わるまで「メニューを読み込んでいます…」と表示し、途中の状態を見せないようにしました']},
  {d:'2026-09-14',v:'r20260914x',items:['ご予約カレンダーで、空きがない日を押せないようにしました。担当者が全員お休みの日や満席の日は、定休日と同じグレー表示（押せない）になります。押してから「空きがございません」と表示される手間がなくなります','凡例を「🟡 空きあり／🔵 選択中／グレー＝ご予約を承れない日（定休・お休み・満席）」に変更しました']},
  {d:'2026-09-14',v:'r20260914w',items:['ご予約カレンダーの🟡印（空きあり）が、実際には空きのない日にも付いていた問題を修正しました。担当者がお休みの日や、すでに予約で埋まっている日にも印が出ていました→実際にご予約いただける時間が1つ以上ある日だけに🟡印を付けるようにし、表示と実際の空き状況を一致させました']},
