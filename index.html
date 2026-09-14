@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260914p';
+const APP_REV='r20260914q';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -3037,12 +3037,11 @@ function busyOn(msg){try{let b=document.getElementById('vi5busy');if(!b){b=docum
 function busyOff(){try{const b=document.getElementById('vi5busy');if(b)b.style.opacity='0';}catch(e){}}
 async function saveWork(){
   if(!WORK){try{busyOff();}catch(e){}state._saving=false;return false;}
-  /* 別の保存が進行中なら、終わるのを待ってから保存する。
-     すぐ false を返すと「保存できませんでした」と誤って表示されるため。 */
-  if(state._saving){
-    for(let i=0;i<120&&state._saving;i++){await new Promise(r=>setTimeout(r,250));}
-    if(state._saving)return false;
-  }
+  /* 保存は必ず1件ずつ順番に実行する（同時に走ると画面が固まる／誤って失敗と判定される）。
+     前の保存の完了を待ってから自分の番を始める。 */
+  const _prev=state._saveChain||Promise.resolve();
+  let _release;state._saveChain=new Promise(r=>{_release=r;});
+  try{await _prev;}catch(e){}
   state._saving=true;try{busyOn('💾 保存しています（そのまま操作できます）');}catch(e){}
   /* 万一どこかで止まっても、20秒後には必ず表示を消す（「保存中…」が残り続けるのを防ぐ） */
   try{clearTimeout(state._busyT);}catch(e){}
@@ -3056,8 +3055,8 @@ async function saveWork(){
     }
     state._workSize=payload.length;
     const r=await fetchT(KV_URL+'?on_conflict=key',{method:'POST',headers:{...KV_H,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:'salon:work',value:payload})},Math.max(45000,Math.min(120000,20000+Math.round(payload.length/1000)*20)));
-    if(!r.ok)throw new Error('w-'+r.status);state._lastWorkSaveOk=Date.now();state._saving=false;try{clearTimeout(state._busyT);busyOff();}catch(e){}if(state.view==='admin')toast('✅ 保存しました');return true;}
-  catch(e){state._workSaveFail=(state._workSaveFail||0)+1;const _sz=state._workSize?('・'+Math.round(state._workSize/100000)/10+'MB'):'';if(state.view==='admin')toast('⚠ 保存できませんでした（'+(e&&e.message||'通信')+_sz+'）','err');try{console.warn('saveWork failed',e);}catch(_e){}if(state.view==='admin'){const now=Date.now();if(!state._workAlertAt||now-state._workAlertAt>60000){state._workAlertAt=now;alert('業務データの保存に失敗しました（'+(e&&e.message||'通信')+'）。通信状況をご確認ください。');}}state._saving=false;try{clearTimeout(state._busyT);busyOff();}catch(e){}return false;}}
+    if(!r.ok)throw new Error('w-'+r.status);state._lastWorkSaveOk=Date.now();state._saving=false;try{clearTimeout(state._busyT);busyOff();}catch(e){}try{_release();}catch(e){}if(state.view==='admin')toast('✅ 保存しました');return true;}
+  catch(e){state._workSaveFail=(state._workSaveFail||0)+1;const _sz=state._workSize?('・'+Math.round(state._workSize/100000)/10+'MB'):'';if(state.view==='admin')toast('⚠ 保存できませんでした（'+(e&&e.message||'通信')+_sz+'）','err');try{console.warn('saveWork failed',e);}catch(_e){}if(state.view==='admin'){const now=Date.now();if(!state._workAlertAt||now-state._workAlertAt>60000){state._workAlertAt=now;alert('業務データの保存に失敗しました（'+(e&&e.message||'通信')+'）。通信状況をご確認ください。');}}state._saving=false;try{clearTimeout(state._busyT);busyOff();}catch(e){}try{_release();}catch(e){}return false;}}
 /* 添付画像は貼る時点で小さくする（後から重くなって保存できなくなるのを防ぐ）。
    目安120KB以下になるまで、幅と画質を段階的に落とす。見た目の粗さより「確実に保存できる」ことを優先。 */
 function wkCompress(file,cb){const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{
@@ -4439,6 +4438,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-14',v:'r20260914q',items:['保存を必ず1件ずつ順番に実行するように変更。複数の保存が同時に走って画面が固まったり、誤って「保存できませんでした」と表示される問題を解消しました','「保存しています」の表示中に操作しても、順番待ちのうえで確実に保存されます（操作が失われません）']},
  {d:'2026-09-14',v:'r20260914p',items:['「保存しています」の表示中にタスクの完了を押すと、誤って「保存できませんでした」と表示され完了が取り消される問題を修正。別の保存が進行中のときに、待たずに失敗と判断していたためです→進行中の保存が終わるのを待ってから保存するように変更しました']},
  {d:'2026-09-14',v:'r20260914n',items:['読み込みが終わる前に担当者選択が表示され、SAKURA・TOMOMIが一瞬消えて見える問題を修正。読み込みが完了するまで「読み込んでいます…」と表示し、選択画面は出さないようにしました','管理画面を開いたら毎回「担当者を選んでください」から始まるように戻しました（前回の担当を引き継がないようにしました）']},
  {d:'2026-09-14',v:'r20260914m',items:['起動時に赤い「データを読み込めませんでした」が一瞬出てから正常に戻る問題を修正。読み込みが完全に終わる前に警告を描画していたため→読み込みが終わってから、本当に失敗していた場合だけ表示するように変更','保存できなかった旨の赤い通知も、読み込み完了前には出さないようにしました']},
