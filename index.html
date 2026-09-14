@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260914e';
+const APP_REV='r20260914f';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1271,7 +1271,12 @@ function mergeProtect(d,srv){if(srv&&srv._seed)return d;if(d&&d._seed&&srv){cons
   const _rich=x=>{let n=0;['photo','thumb','intro','quals','role','img','desc','detail'].forEach(k=>{if(x&&x[k])n+=String(x[k]).length>0?1:0;});if(x&&x.photos&&x.photos.length)n+=x.photos.length;if(x&&x.prices&&Object.keys(x.prices).length)n+=1;if(x&&x.services&&x.services.length)n+=1;if(x&&x.wage)n+=1;return n;};
   const _mrg=(a,b)=>{const m={};(b||[]).forEach(x=>{if(x&&x.id)m[x.id]=x;});(a||[]).forEach(x=>{if(!x||!x.id)return;const ex=m[x.id];if(!ex){m[x.id]=x;return;}const ua=x._u||0,ub=ex._u||0;if(ua>ub){m[x.id]=x;return;}if(ub>ua)return;/* 同点: 情報が多い方、同じならサーバー(ex)を残す */if(_rich(x)>_rich(ex))m[x.id]=x;});return Object.values(m);};
   if(Array.isArray(srv.services)&&Array.isArray(d.services)){const delS=new Set([...(d.delServices||[]),...(srv.delServices||[])]);d.delServices=[...delS];d.services=_mrg(d.services,srv.services).filter(x=>!delS.has(x.id));}
-  if(Array.isArray(srv.staff)&&Array.isArray(d.staff)){const delT=new Set([...(d.delStaff||[]),...(srv.delStaff||[])]);d.delStaff=[...delT];d.staff=_mrg(d.staff,srv.staff).filter(x=>!delT.has(x.id));}
+  if(Array.isArray(srv.staff)&&Array.isArray(d.staff)){const delT=new Set([...(d.delStaff||[]),...(srv.delStaff||[])]);
+    /* 中核スタッフは誤って削除記録に入っても消さない（消えると担当者を選べなくなるため） */
+    const CORE=new Set(['s0','s1','s2']);
+    [...(d.staff||[]),...(srv.staff||[])].forEach(x=>{if(x&&(x.name==='SAKURA'||x.name==='TOMOMI'||x.name==='指名なし'))CORE.add(x.id);});
+    CORE.forEach(id=>delT.delete(id));
+    d.delStaff=[...delT];d.staff=_mrg(d.staff,srv.staff).filter(x=>!delT.has(x.id));}
   if(srv.coupons&&d.coupons){d.coupons=_mrg(d.coupons,srv.coupons);}
   /* 紹介・ブロック枠: IDで結合し、両方にあれば新しい方 */
   {const tOf=x=>Math.max((x&&x._u)||0,(x&&x.at)||0,0);
@@ -3575,6 +3580,40 @@ function demoPurge(){if(DATA._demoPurged)return false;try{const DEMO_PH=['090123
   const b0=(DATA.bookings||[]).length;DATA.bookings=(DATA.bookings||[]).filter(b=>{return !(DEMO_ID.includes(String(b&&b.id))&&DEMO_PH.includes(normPhone(b&&b.phone)));});n+=b0-DATA.bookings.length;
   DATA.delBookings=DATA.delBookings||[];DEMO_ID.forEach(id=>{if(!DATA.delBookings.includes(id))DATA.delBookings.push(id);});
   DATA._demoPurged=true;if(n){logAct('サンプルデータを除去（'+n+'件）');}return n>0;}catch(e){return false;}}
+
+/* 担当者一覧からSAKURA・TOMOMIが消えた場合の自動復旧。削除記録を解除し、バックアップ（無ければ初期値）から戻す */
+async function healCoreStaff(){
+  try{
+    if(!state.adminAuthed||state._healStaff1)return false;
+    state._healStaff1=true;
+    DATA.staff=DATA.staff||[];
+    const need=['SAKURA','TOMOMI'].filter(nm=>!DATA.staff.some(x=>x&&x.name===nm));
+    if(!need.length)return false;
+    const ids=new Set(['s1','s2']);
+    DATA.delStaff=(DATA.delStaff||[]).filter(id=>!ids.has(id));
+    const restored=[];
+    try{
+      const keys=[];for(let w=0;w<7;w++)keys.push('salon:bak:'+w);for(let m=1;m<=12;m++)keys.push('salon:bak:m'+m);
+      for(const k of keys){
+        if(!need.length)break;
+        let r;try{r=await fetchT(KV_URL+'?key=eq.'+k+'&select=value',{headers:KV_H});}catch(e){continue;}
+        if(!r||!r.ok)continue;
+        const j=await r.json();if(!Array.isArray(j)||!j.length)continue;
+        let v=j[0].value;for(let i=0;i<4;i++){if(typeof v==='string'){try{v=JSON.parse(v);continue;}catch(e){break;}}if(Array.isArray(v)){v=v[0];continue;}break;}
+        const d=(v&&v.d)||v;if(!d||!Array.isArray(d.staff))continue;
+        need.slice().forEach(nm=>{const found=d.staff.find(x=>x&&x.name===nm);
+          if(found&&!DATA.staff.some(x=>x&&x.name===nm)){DATA.staff.push(Object.assign({},found,{_u:Date.now()}));restored.push(nm);need.splice(need.indexOf(nm),1);}});
+      }
+    }catch(e){}
+    need.forEach(nm=>{const seed=(typeof SEED_STAFF!=='undefined'?SEED_STAFF:[]).find(x=>x&&x.name===nm);
+      if(seed&&!DATA.staff.some(x=>x&&x.name===nm)){DATA.staff.push(Object.assign({},JSON.parse(JSON.stringify(seed)),{_u:Date.now()}));restored.push(nm+'（初期値）');}});
+    if(!restored.length)return false;
+    staff=DATA.staff;
+    logAct('担当者一覧から消えていたスタッフを復旧：'+restored.join('・'));
+    state._rescueMsg='🛟 担当者一覧から消えていた「'+restored.join('・')+'」を復旧しました。内容をご確認ください。';
+    await saveData(DATA);render();return true;
+  }catch(e){return false;}
+}
 async function staffRestoreFromBackup(){try{if(!state.adminAuthed)return false;
   const FIELDS=['photo','thumb','intro','quals','role','wage','hourly','prices','services'];const isEmpty=(v)=>v==null||v===''||(Array.isArray(v)&&!v.length)||(typeof v==='object'&&!Array.isArray(v)&&v&&!Object.keys(v).length);const need=(st)=>FIELDS.some(k=>isEmpty(st[k]));const targets=(DATA.staff||[]).filter(st=>st.id!=='s0'&&!st.hidden&&need(st));
   if(!targets.length)return false;
@@ -3684,7 +3723,8 @@ function renderAdmin(){
   if(!WORK)loadWork().then(()=>render());
   if(!localGet('salon:me')){app.innerHTML=renderMePicker();app.querySelectorAll('[data-me]').forEach(b=>b.onclick=()=>{if(b.dataset.me==='s1'){const p=prompt('オーナー（SAKURA）として入るには暗証番号を入力してください');if(p===null)return;if(String(p).trim()!==ownerPin()){alert('暗証番号が違います。');return;}}setMe(b.dataset.me);});const _mo=byId('me-logout');if(_mo)_mo.onclick=()=>{try{localStorage.removeItem('vi5:datacache');}catch(e){}state.adminAuthed=false;localDel('salon:staff');localDel('salon:staffpw');render();};return;}
   const _idone=localGet('salon:introdone');if(!_idone&&!state.introSkip){app.innerHTML=renderIntro();const _ia=byId('intro-agree');const _iok=byId('intro-ok');if(_iok)_iok.onclick=()=>{if(!_ia||!_ia.checked){alert('「確認しました」にチェックをお願いします。');return;}localSet('salon:introdone',INTRO_VER);render();};const _il=byId('intro-later');if(_il)_il.onclick=()=>{state.introSkip=true;render();};return;}
-  autoRescue();if(state.view==='admin')imageShrinkMigrate();autoEshopSync();try{if(extBlocksMigrate())saveData(DATA);}catch(_e){}try{if(state.dataFull&&demoPurge())saveData(DATA);}catch(_e){}try{if(state.dataFull&&harukaShiftZero())saveData(DATA);}catch(_e){}try{if(state.dataFull&&harukaInactive())saveData(DATA);}catch(_e){}try{if(state.dataFull&&staffServiceRules())saveData(DATA);}catch(_e){}try{if(state.dataFull&&WORK)autoSlim();}catch(_e){}try{if(state.dataFull)staffRestoreFromBackup();}catch(_e){}try{if(state.adminAuthed&&navigator.onLine!==false&&!state._gcalFlushed){state._gcalFlushed=true;gcalFlushQueue();}}catch(_e){}try{if(state.dataFull&&autoCancelRestore())saveData(DATA);}catch(_e){}try{if(state.dataFull&&futureVisitFix())saveData(DATA);}catch(_e){}try{if(state.dataFull&&birthdayAutoRun())saveData(DATA);}catch(_e){}try{if(state.dataFull&&WORK&&taskAssigneeSelfFix())saveWork();}catch(_e){}try{if(state.dataFull&&birthdayDupFix())saveData(DATA);}catch(_e){}try{if(state.dataFull&&birthdayDupFix2())saveData(DATA);}catch(_e){}try{if(state.dataFull&&ptLabelCleanup())saveData(DATA);}catch(_e){}try{if(state.dataFull&&WORK&&payAdjTomomiAugSeed())saveWork();}catch(_e){}try{if(state.dataFull)seedTasksMigrate();}catch(_e){}try{if(state.dataFull&&!state._gcalSwept){state._gcalSwept=true;if(gcalCancelSweep())saveData(DATA);}}catch(_e){}let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(staffNameMigrate())_clch=true;if(wageMigrate())_clch=true;if(harukaFixMigrate())_clch=true;if(staffMenuMigrate())_clch=true;if(calSetupMigrate())_clch=true;/* 自動保存は廃止：古い端末が新データを上書きする事故の元。編集操作時のみ保存 */
+  autoRescue();if(state.view==='admin')imageShrinkMigrate();autoEshopSync();try{if(extBlocksMigrate())saveData(DATA);}catch(_e){}try{if(state.dataFull&&demoPurge())saveData(DATA);}catch(_e){}try{if(state.dataFull&&harukaShiftZero())saveData(DATA);}catch(_e){}try{if(state.dataFull&&harukaInactive())saveData(DATA);}catch(_e){}try{if(state.dataFull&&staffServiceRules())saveData(DATA);}catch(_e){}try{if(state.dataFull&&WORK)autoSlim();}catch(_e){}try{if(state.dataFull)healCoreStaff();}catch(_e){}
+  try{if(state.dataFull)staffRestoreFromBackup();}catch(_e){}try{if(state.adminAuthed&&navigator.onLine!==false&&!state._gcalFlushed){state._gcalFlushed=true;gcalFlushQueue();}}catch(_e){}try{if(state.dataFull&&autoCancelRestore())saveData(DATA);}catch(_e){}try{if(state.dataFull&&futureVisitFix())saveData(DATA);}catch(_e){}try{if(state.dataFull&&birthdayAutoRun())saveData(DATA);}catch(_e){}try{if(state.dataFull&&WORK&&taskAssigneeSelfFix())saveWork();}catch(_e){}try{if(state.dataFull&&birthdayDupFix())saveData(DATA);}catch(_e){}try{if(state.dataFull&&birthdayDupFix2())saveData(DATA);}catch(_e){}try{if(state.dataFull&&ptLabelCleanup())saveData(DATA);}catch(_e){}try{if(state.dataFull&&WORK&&payAdjTomomiAugSeed())saveWork();}catch(_e){}try{if(state.dataFull)seedTasksMigrate();}catch(_e){}try{if(state.dataFull&&!state._gcalSwept){state._gcalSwept=true;if(gcalCancelSweep())saveData(DATA);}}catch(_e){}let _clch=checklistRollover();if(checklistMigrate())_clch=true;if(textsMigrate())_clch=true;if(menuDescMigrate())_clch=true;if(staffPwMigrate())_clch=true;if(staffNameMigrate())_clch=true;if(wageMigrate())_clch=true;if(harukaFixMigrate())_clch=true;if(staffMenuMigrate())_clch=true;if(calSetupMigrate())_clch=true;/* 自動保存は廃止：古い端末が新データを上書きする事故の元。編集操作時のみ保存 */
   const unsent=DATA.bookings.filter(b=>b.status==='visited'&&!b.thanked).length;
   const tabs=[['top','🏠','トップ','毎日'],['todo','✅','やること','毎日'],['chat','💬','チャット','毎日'],['bookings','📅','予約','毎日'],['schedule','⏰','シフト','毎日'],['customers','👥','顧客カルテ','お客様'],['report','📝','業務報告','毎日'],['money','💰','売上・給与','管理'],['settings','⚙️','設定','管理'],['updates','📋','更新履歴','管理']];
   const _sec=(t)=>`<div class="subhead" style="margin:26px 0 12px;padding-top:18px;border-top:2px solid var(--line)">${t}</div>`;
@@ -4379,6 +4419,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-14',v:'r20260914f',items:['【担当者にSAKURA・TOMOMIが出てこない問題】スタッフの削除記録に誤って入ってしまうと、統合のたびに永久に消され続ける作りでした→SAKURA・TOMOMI・指名なしは削除記録があっても消さないように変更','すでに消えている場合は、管理画面を開いた時にバックアップから自動で復旧し、削除記録も解除します（再発しません）','復旧した場合は「🛟 担当者一覧から消えていた○○を復旧しました」と表示します']},
  {d:'2026-09-14',v:'r20260914e',items:['【重くならないように、入口で対策】添付する画像を貼った時点で小さくするよう変更（1枚あたり120KB以下に自動調整）。これまでの約1/3以下になり、そもそも重くなりません。画像添付は今までどおり使えます','【固まる問題】保存ボタンを連打しても保存が同時に走らないようにし、保存が終われば必ずロックを解除するよう修正。前は保存が重なって画面が止まることがありました','保存中は画面下に「保存中…」と小さく表示されます。表示中も画面はそのまま操作できます（操作を妨げません）']},
  {d:'2026-09-14',v:'r20260914d',items:['データが重くなったら、アプリが自動で軽くするようにしました（SAKURAさんが数字を確認する必要はありません）','2MBを超えたときだけ作動し、①画像の再圧縮 →（足りなければ）②6か月より前の画像を削除 →（さらに必要なら）③3か月より前の画像を削除、の順に必要な分だけ実行します','会話の文章・タスク・予約・お客様の情報は一切消しません。最近の画像も残します','実行した場合は「📦 保存が重くなっていたため自動で軽くしました（3.6MB → 1.8MB）」とお知らせに記録します']},
  {d:'2026-09-14',v:'r20260914c',items:['設定に「📦 データの重さを見る（保存が遅い時）」を追加。チャット・業務報告・カルテ・タスクなど、どこが重いかと画像の枚数を表示します（1.5MB超で遅く、3MB超で失敗しやすい目安つき）','「🧹 古いチャット画像を削除して軽くする」を追加。3か月より前の画像だけを削除し、文章と最近の画像はそのまま残します']},
