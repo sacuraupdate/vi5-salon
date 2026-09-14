@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260914t';
+const APP_REV='r20260914u';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1024,7 +1024,7 @@ function localSet(k,v){try{localStorage.setItem('vi5:'+k,v)}catch(e){}}
 function localDel(k){try{localStorage.removeItem('vi5:'+k)}catch(e){}}
 async function refresh(){try{let j,_full=false;if(state.adminAuthed&&localGet('salon:staffpw')){_full=true;if(isDirect()){try{j=await api({action:'full',pw:localGet('salon:staffpw')});localDel('salon:direct');}catch(e){const d=await directLoad();if(d){DATA=d;services=DATA.services;staff=DATA.staff;}return;}}else{j=await api({action:'full',pw:localGet('salon:staffpw')});}}else if(state.mpPhone){j=await api({action:'customer',phone:state.mpPhone,password:localGet('salon:custpw')||''});}else{j=await api({action:'public'});}if(j&&j.data){DATA=j.data;services=DATA.services;staff=DATA.staff;if(_full)state.dataFull=true;state.loadFailed=false;delete DATA._loadFailed;}}catch(e){}}
 /* ===== 設定 ===== */
-const CONFIG={pointsPer1000:50,referralBonus:1000,birthdayBonus:1000,signupBonus:500,sharePoints:10,galleryPoints:5,feedbackPoints:10,newCustomerEarnsFrom:1,discounts:{family:0.5,friend:0.2}};
+const CONFIG={pointsPer1000:30,referralBonus:1000,birthdayBonus:1000,signupBonus:500,sharePoints:10,galleryPoints:5,feedbackPoints:10,newCustomerEarnsFrom:1,discounts:{family:0.5,friend:0.2}};
 const DEFAULT_POLICY=`■当日のキャンセル/無断キャンセルは施術料金の100%を頂戴いたします
 ※10分以上連絡無しでご来店がなかった場合、自動的に無断キャンセル扱いとなります
 ■前日の21時までは、マイページのご予約履歴よりお客様自身でキャンセルがおこなえます。
@@ -1848,7 +1848,7 @@ function renderHome(){if(textsMigrate())saveData(DATA);loadWeather();
       <details><summary>予約はどこからできますか？</summary><div class="faq-a">画面上部のメニュー「予約」から、24時間いつでもご予約いただけます。メニュー→担当→日時を選ぶだけ。情報の入力は初回のみです。</div></details>
       <details><summary>予約の変更・キャンセルは？</summary><div class="faq-a">マイページの「次回のご予約」から、<b>前日の21時まで</b>「🕐時間を変更」「キャンセル」ができます。それ以降は公式LINEへご連絡ください。</div></details>
       <details><summary>マイページはどうやってログインしますか？</summary><div class="faq-a">電話番号とパスワードでログインできます。はじめての方は「予約」または「マイページ」の<b>新規ご登録</b>から、お名前・電話番号・生年月日・パスワードをご登録ください。パスワードをお忘れの場合は公式LINEへご連絡ください。</div></details>
-      <details><summary>ポイントはどうやって貯まりますか？</summary><div class="faq-a">ご来店ごと、お誕生日、お友達のご紹介などで貯まります。ポイントは<b>ご来店時に店頭でお申し付けいただくと、施術料金のお支払いに</b>ご利用いただけます（1pt=¥1）。商品との交換・現金へのお引き換えはできません。なお、<b>同じ当店に通われている方へポイントをお贈りいただくこと</b>は可能です。残高はマイページでいつでも確認できます。</div></details>
+      <details><summary>ポイントはどうやって貯まりますか？</summary><div class="faq-a">ご来店ごとに<b>お会計1,000円につき30ポイント</b>が貯まります。そのほか、お誕生日やお友達のご紹介でも貯まります。ポイントは<b>ご来店時に店頭でお申し付けいただくと、施術料金のお支払いに</b>ご利用いただけます（1pt=¥1）。商品との交換・現金へのお引き換えはできません。なお、<b>同じ当店に通われている方へポイントをお贈りいただくこと</b>は可能です。残高はマイページでいつでも確認できます。</div></details>
       <details><summary>会員ランクの割引とポイントは何が違いますか？</summary><div class="faq-a"><b>ランク割引</b>は毎回のお会計が自動で5%・10%OFFになる特典で、何度使っても減りません。<b>ポイント</b>は貯めて使う「1pt＝1円」で、お支払いから差し引くと使った分は減ります。ランク割引後の金額に、さらにポイントを併用することもできます。</div></details>
       <details><summary>会員ランクとは？</summary><div class="faq-a">通常会員／シルバー会員（毎回5%OFF）／ゴールド会員（毎回10%OFF）があります。ランクはマイページに表示されます。</div></details>
       <details><summary>お問い合わせはどこへ？</summary><div class="faq-a">施術中はお電話に出られないため、<b>公式LINE</b>へお願いいたします。${s.lineUrl?`<a href="${s.lineUrl}" target="_blank" style="color:var(--gold);font-weight:700"> 公式LINEを開く</a>`:''}</div></details>
@@ -2649,7 +2649,7 @@ function stepDone(){if(!state.lastBooking){go('home');return '';}
     <div class="kalert" style="background:#E8F6EC;border-color:#3F5A46;color:#2C4433;margin:10px 0;text-align:left">✅ <b>この画面が表示された時点で、ご予約は確定しています。</b><br><span style="font-size:12.5px">予約確定メールは送信されません。ご予約の確認・変更・キャンセルは、下の「マイページ」からいつでもご確認いただけます。</span></div>
     <button class="btn btn-primary" id="done-mypage" style="width:100%;margin:6px 0 10px">👤 マイページでご予約を確認する</button>
     <div class="kalert" style="background:#FFF8E6;border-color:var(--gold);color:#6b5410;margin:8px 0;text-align:left">🕐 <b>ご変更・キャンセルは前日の21時まで</b>にマイページからお願いいたします（それ以降はお電話でご連絡ください）</div><div class="code">${bk.id}</div>
-    <div class="ptgain">${loggedIn?`${earned>0?`今回の獲得予定 <b>+${earned.toLocaleString()}pt</b><br>`:`<span style="color:var(--ink-soft)">${noEarnCust(c)?'家族割引が適用されます。':'ポイントはご来店時に加算されます。'}</span><br>`}${bk.referralPending?`ご紹介ありがとうございます🎁 サロンで確認後にご紹介ポイントを付与いたします。<br>`:''}現在の保有ポイント <b>${bal.toLocaleString()}pt</b>`:`ポイントはご来店時に加算されます。${bk.referralPending?`<br>ご紹介ありがとうございます🎁 サロンで確認後にご紹介ポイントを付与いたします。${''&&bk.referralBonus}pt</b>`:''}<br><span style="color:var(--ink-soft)">マイページにログインすると保有ポイントを確認できます。</span>`}</div>
+    <div class="ptgain">${loggedIn?`${earned>0?`今回の獲得予定 <b>+${earned.toLocaleString()}pt</b><br>`:`<span style="color:var(--ink-soft)">ポイントはご来店時に加算されます。</span><br>`}${bk.referralPending?`ご紹介ありがとうございます🎁 サロンで確認後にご紹介ポイントを付与いたします。<br>`:''}現在の保有ポイント <b>${bal.toLocaleString()}pt</b>`:`ポイントはご来店時に加算されます。${bk.referralPending?`<br>ご紹介ありがとうございます🎁 サロンで確認後にご紹介ポイントを付与いたします。${''&&bk.referralBonus}pt</b>`:''}<br><span style="color:var(--ink-soft)">マイページにログインすると保有ポイントを確認できます。</span>`}</div>
     <div class="summary" style="text-align:left"><div class="sum-row"><span class="k">メニュー</span><span class="sum-list">${bk.items.map(x=>`${itemName(x)} <span class="sub">${yen(x.price)}</span>`).join('<br>')}</span></div>${(bk.groupParts&&bk.groupParts.length>1)?`<div class="sum-row"><span class="k">担当・時間</span><span class="sum-list">${bk.groupParts.map(p=>`${p.time}〜 ${esc(p.staff)}<span class="sub"> ${p.items.map(esc).join('＋')}</span>`).join('<br>')}</span></div>`:`<div class="sum-row"><span class="k">担当</span><span class="v">${stName(bk.staffId)}</span></div><div class="sum-row"><span class="k">日時</span><span class="v">${mdLabel(bk.date)} ${bk.time}</span></div>`}${partyTxt}<div class="sum-row sum-total"><span class="k">お支払い</span><span class="v">${yen(bkPayment(bk))}</span></div></div>
     ${loggedIn?rankBox:''}${previsitNote.call?(()=>{const a=S().address||'';const mu='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(a||'vi5 北浜');return `<div class="summary" style="text-align:left"><div class="sum-row"><span class="k">📍 アクセス</span><span class="sum-list">${a}<br><a href="${mu}" target="_blank" style="color:var(--gold);font-weight:700">Googleマップで道順を見る</a></span></div></div>`;})():''}${policyBox}<button class="btn btn-primary" id="again" style="width:100%">${t('toHome')}</button></div>`;
   const _dmp=byId('done-mypage');if(_dmp)_dmp.onclick=()=>{const ph=normPhone((state.lastBooking&&state.lastBooking.phone)||'');const c=DATA.customers[ph];if(c){/* ご予約直後は本人確認済みのためそのままマイページへ */state.mpPhone=c.phone;localSet('salon:session',c.phone);}go('mypage');};
@@ -4439,6 +4439,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-14',v:'r20260914u',items:['ポイントの付与率を、お会計1,000円ごとに50ポイント→【30ポイント】に変更しました。これから登録するご来店分に適用されます（これまでに付与済みのポイントはそのまま変わりません）','よくある質問のポイント説明を「ご来店ごとにお会計1,000円につき30ポイントが貯まります」に書き換えました','家族割のお客様への「ポイントを付与しません」という表示を削除しました（付与しない動作は変わりません）']},
  {d:'2026-09-14',v:'r20260914t',items:['顧客カルテの「来店履歴・ポイントを手動追加」を作り直しました。来店日・担当・メニューを選ぶだけで登録でき、お会計と付与ポイントが自動で計算されます（電話でのご予約や過去のご来店分の登録用）','登録した内容は来店履歴・ポイント残高・会員ランクにそのまま反映されます。ポイント数は必要に応じて変更できます','家族割のお客様には、その旨を表示します']},
  {d:'2026-09-14',v:'r20260914s',items:['【重要】入力していない日が自動的に出勤扱いになり、お客様が予約できてしまう状態を修正しました。曜日ごとの基本シフト（毎週◯曜は◯時〜など）で自動的に出勤にする仕組みをやめ、シフト表に実際に入力した日だけを出勤・予約可能とします','Googleカレンダーにも、入力した日だけが配信されます（入力していない先の月は出ません）','シフト画面のGoogleカレンダー購読URLの案内を削除しました','SAKURAさんの管理画面に業務報告の催促が出ないようにしました（オーナーは打刻・業務報告の対象外）']},
  {d:'2026-09-14',v:'r20260914r',items:['TOMOMIさんのGoogleカレンダーにシフトが表示されない不具合を修正。先日「反映中の月」の仕組みを撤去した際に、配信側がその月リストを参照したままだったため、予定が1件も配信されていませんでした→登録されているシフトをそのまま配信するように変更しました']},
@@ -5168,7 +5169,7 @@ function visitConfirmPanel(){
     <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1.5px solid var(--line);font-size:14px"><span>お会計</span><b>¥${pay.toLocaleString()}</b></div>
     ${total!==pay?`<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-soft)"><span>（施術計 ¥${total.toLocaleString()} − 割引・ポイント利用）</span></div>`:''}
     <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px"><span>付与ポイント</span><b style="color:#2C4433">${pts.toLocaleString()}pt</b></div>
-    ${pts===0?`<div class="note" style="color:var(--gold-deep,#9c7a12)">${noEarnCust(c)?'家族割のお客様のため、ポイントは付与されません。':'お会計が1,000円未満のため、付与ポイントは0ptです。'}</div>`:''}
+    ${(pts===0&&!noEarnCust(c))?`<div class="note" style="color:var(--gold-deep,#9c7a12)">お会計が1,000円未満のため、付与ポイントは0ptです。</div>`:''}
     ${bk.thanked?`<div class="note" style="margin-top:10px">お礼メッセージは送信済みです（再送しません）。</div>`:`<label class="chk-field" style="margin-top:10px"><input type="checkbox" id="vc-send" ${vc.send?'checked':''}><span>お礼メッセージと口コミのお願いを送る</span></label>`}
     <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-ghost" id="vc-cancel" style="flex:1">やめる</button><button class="btn btn-primary" id="vc-ok" style="flex:1">${vc.redo?'この内容に直す':'この内容で確定する'}</button></div>
   </div>`;
@@ -5246,7 +5247,6 @@ function manualVisitPanel(){
     <div class="field" style="margin-top:8px"><label>メニューを追加</label><select id="mv-add"><option value="">選んでください</option>${opts.map(o=>`<option value="${o.id}">${esc(o.name)}（¥${(o.price||0).toLocaleString()}）</option>`).join('')}</select></div>
     <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1.5px solid var(--line);font-size:14px"><span>お会計</span><b>¥${pay.toLocaleString()}</b></div>
     <div class="field"><label>付与ポイント（自動計算・変更できます）</label><input type="number" id="mv-pts" value="${pts}"></div>
-    ${noEarnCust(c)?`<div class="note" style="color:var(--gold-deep,#9c7a12)">家族割のお客様のため、通常はポイントを付与しません。</div>`:''}
     <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-ghost" id="mv-cancel" style="flex:1">やめる</button><button class="btn btn-primary" id="mv-ok" style="flex:1">この内容で登録する</button></div>
   </div>`;
 }
