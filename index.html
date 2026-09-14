@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260915a';
+const APP_REV='r20260915b';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -2319,7 +2319,19 @@ function stepDate(){if(!state.b||!state.b.staff){state.step=2;return typeof step
   const sid=state.b.staff.id;const m=state.calMonth,y=m.getFullYear(),mo=m.getMonth();const startDow=new Date(y,mo,1).getDay(),days=new Date(y,mo+1,0).getDate();const canPrev=!(y===today.getFullYear()&&mo===today.getMonth());
   let cells='';['日','月','火','水','木','金','土'].forEach((d,i)=>cells+=`<div class="cal-dow ${i===0?'sun':''}">${d}</div>`);for(let i=0;i<startDow;i++)cells+='<div></div>';
   for(let d=1;d<=days;d++){const dd=new Date(y,mo,d);const ds=fmtDate(dd);const closedDay=salonClosed(ds)||(sid!=='s0'?!staffWorks(sid,ds):!anyStaffWorks(ds));const dis=dd<today?'dis':(closedDay?'closed':'');
-    const avail=(!dis&&!closedDay)?'avail':'';const sel=state.b.date===ds?'sel':'';cells+=`<button type="button" class="cal-day ${dis} ${avail} ${sel}" ${dis?'disabled aria-disabled="true"':`data-date="${ds}"`} aria-label="${mdLabel(ds)}${dis?' 予約不可':' 予約可能'}" ${sel?'aria-pressed="true"':''}>${d}</button>`}
+    /* 🟡印は「その施術ができて空いている担当が実際にいる日」だけに付ける。
+       ※「指名なし(s0)」は実在するスタッフではないため、s0で空きを調べてはいけない（全日が空きなしになる） */
+    let hasSlot=false;
+    if(!dis&&!closedDay){
+      const _gs=cartGroups();
+      for(let m=OPEN_HOUR*60;m<=LAST_RECEPTION*60&&!hasSlot;m+=30){
+        if(new Date(ds+'T'+minToTime(m)+':00').getTime()<Date.now()+3*3600000)continue;
+        if(_gs&&_gs.length>1){ if(planAt(ds,m,_gs))hasSlot=true; }
+        else if(sid&&sid!=='s0'){ if(staffSlotOpen30(sid,ds,m))hasSlot=true; }
+        else { if(eligibleFreeStaff(ds,m).length)hasSlot=true; }
+      }
+    }
+    const avail=hasSlot?'avail':'';const sel=state.b.date===ds?'sel':'';cells+=`<button type="button" class="cal-day ${dis} ${avail} ${sel}" ${dis?'disabled aria-disabled="true"':`data-date="${ds}"`} aria-label="${mdLabel(ds)}${dis?' 予約不可':' 予約可能'}" ${sel?'aria-pressed="true"':''}>${d}</button>`}
   let slotHtml='';
   if(state.b.date){
     const totalMin=state.cart.reduce((s,x)=>s+(x.min||0),0);
@@ -4447,6 +4459,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-15',v:'r20260915b',items:['ご予約カレンダーの🟡印を、実際にご予約いただける日だけに表示するようにしました。担当者が全員お休みの日（9/16など）には印が付かず、押せないグレー表示になります','原因は、空き状況を「指名なし」で調べていたことでした。「指名なし」は実在する担当者ではないため正しく判定できず、以前この修正で全日が選択できなくなる不具合を起こしていました→実在する担当者で判定するように修正しました','反映前に、予約が最後まで通ること（メニュー→日時→確認→確定→管理画面）と、各日の表示が実際の空き状況と一致することを確認しています']},
  {d:'2026-09-14',v:'r20260915a',items:['【重要】日時を選んでいないのに「1月1日(木) null」で確認画面へ進んでしまう不具合を修正しました。担当を自動で決める処理が、画面番号を「日時選択」ではなく「確認画面」に設定していたためです→日時を選ぶまで確認画面へ進まないようにしました']},
  {d:'2026-09-14',v:'r20260914z',items:['【緊急修正】ご予約カレンダーの全日が選択できなくなっていた状態を元に戻しました。直前に追加した空き判定が誤って全日を「予約不可」と判定していたためです。カレンダーから日付を選んでご予約いただけます']},
  {d:'2026-09-14',v:'r20260914y',items:['ご予約のメニュー選択画面で、読み込みが終わる前に「オプションメニュー」「TOMOMI無料オプション」だけが表示され、メニューがこれだけしかないように見えてしまう問題を修正しました→読み込みが終わるまで「メニューを読み込んでいます…」と表示し、途中の状態を見せないようにしました']},
