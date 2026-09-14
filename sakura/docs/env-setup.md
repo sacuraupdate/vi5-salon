@@ -53,7 +53,7 @@ npx wrangler secret put STRIPE_SECRET_KEY
 
 | 変数名 | 何の値か | どのサービスから | Development | Preview | Production |
 |---|---|---|---|---|---|
-| `NEXT_PUBLIC_SITE_URL` | サイトのURL | 自分で決める | ✅ | ✅ | ✅ |
+| `NEXT_PUBLIC_SITE_URL` | サイトのURL | 公開済みのURL | ✅ | ✅ | ✅ |
 | `NEXT_PUBLIC_SUPPORT_EMAIL` | 問い合わせ先メール | 自分で決める | ✅ | ✅ | ✅ |
 | `SUPABASE_URL` | データベースのURL | Supabase | ✅ | ✅ | ✅ |
 | `SUPABASE_SERVICE_ROLE_KEY` | データベースの鍵 | Supabase | ✅ | ✅ | ✅ |
@@ -70,15 +70,28 @@ npx wrangler secret put STRIPE_SECRET_KEY
 
 ## ① Supabase（データベース）
 
-### 1-1. まずデータベースの表を作る
+**Supabase の接続には、次の3つがすべて必要です。** どれか1つでも欠けると動きません。
+
+| 変数名 | 用途 |
+|---|---|
+| `SUPABASE_URL` | 接続先 |
+| `SUPABASE_SERVICE_ROLE_KEY` | サーバーからデータを読み書きする鍵 |
+| `SUPABASE_ANON_KEY` | **お客様のログイン・新規登録に使う鍵** |
+
+### 1-1. データベースの表を作る
+
+**0001 は実行済みです。次は 0002 を実行してください。**
 
 1. https://supabase.com を開いてログイン
-2. プロジェクトを選ぶ（無ければ「New project」で作る。**リージョンは Tokyo でなく、購入者に近い場所でも構いません**）
+2. プロジェクトを選ぶ
 3. 左のメニューから **「SQL Editor」** をクリック
 4. **「New query」** をクリック
-5. `sakura/supabase/migrations/0001_init.sql` の中身を**すべてコピーして貼り付け**
+5. `sakura/supabase/migrations/0002_auth_link.sql` の中身を**すべてコピーして貼り付け**
 6. 右下の **「Run」** をクリック
 7. 「Success. No rows returned」と出れば完了です
+
+> 0002 は、ログインしたお客様と購入データを結ぶための追加です。
+> **これを実行しないと、ログインできてもマイページで購入内容が出ません。**
 
 ### 1-2. `SUPABASE_URL` を取得する
 
@@ -216,13 +229,14 @@ SAKURA JAPAN BEAUTY <no-reply@自分のドメイン>
 
 ### `NEXT_PUBLIC_SITE_URL`
 
-サイトのURLです。最後の `/` は付けません。
+現在の公開URLです。最後の `/` は付けません。
 
 ```
-https://自分のドメイン
+https://sakura-japan-beauty.kojanto-jp.workers.dev
 ```
 
 パソコンで確認しているときは `http://localhost:3000` です。
+独自ドメインに切り替えたら、この値も忘れずに変更してください（`docs/deploy.md`）。
 
 ### `NEXT_PUBLIC_SUPPORT_EMAIL` と `CONTACT_TO_EMAIL`
 

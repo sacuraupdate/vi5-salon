@@ -194,8 +194,13 @@ export const courses: Course[] = [
       'zh-TW': '把日本沙龍視為理所當然的做法，拆解成你在自己國家也能直接執行的形式。從思維、從進店到下次預約的規則，到如何配合自己國家的文化導入，共三章。',
     },
     instructorId: 'sakura', categoryId: 'omotenashi', level: 'beginner',
-    // 暫定価格。USD / TWD / KRW の最終固定価格は未確定のため status: 'draft'。
-    // draft の間は金額を表示せず、購入もできない。確定したら byMarket に各市場を足して 'confirmed' にする。
+    // 初回販売の対象は USD / TWD / KRW の3市場（日本円は P1）。
+    // 3市場の金額と Stripe の Price ID（通常・ローンチで別IDが要る＝計6つ）が
+    // 揃ったら byMarket に足し、status を 'confirmed' にする。
+    // それまでは金額を表示せず、購入もできない。
+    //
+    // jp の金額は決定済みの暫定案だが、P1のため Price ID は用意しない。
+    // 価格IDが無い市場では購入手続きに進めない（isCheckoutReady）。
     pricing: {
       status: 'draft',
       byMarket: { jp: { list: 59800, launch: 39800 } },

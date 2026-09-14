@@ -102,13 +102,13 @@ export function integrationStatuses(): IntegrationStatus[] {
       key: 'supabase',
       label: 'データベース（Supabase）',
       ready: isSupabaseConfigured(),
-      todo: 'SUPABASE_URL と SUPABASE_SERVICE_ROLE_KEY を設定してください。',
+      todo: 'SUPABASE_URL と SUPABASE_SERVICE_ROLE_KEY を設定し、supabase/migrations/0002_auth_link.sql を実行してください。',
     },
     {
       key: 'auth',
       label: 'ログイン・新規登録（Supabase Auth）',
       ready: isAuthConfigured(),
-      todo: 'SUPABASE_ANON_KEY を設定してください。これが無いとお客様はログインも購入もできません。',
+      todo: 'SUPABASE_ANON_KEY を設定してください（Supabase の3つの値のうちの1つ）。これが無いとお客様はログインも購入もできません。',
     },
     {
       key: 'stripe',

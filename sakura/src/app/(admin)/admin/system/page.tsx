@@ -3,7 +3,7 @@ import AccessDenied from '@/components/admin/AccessDenied';
 import { ownerOnly } from '@/lib/admin-auth';
 import { integrationStatuses } from '@/lib/env';
 import { catalogRepository } from '@/lib/data';
-import { MARKETS } from '@/lib/market';
+import { LAUNCH_MARKETS, MARKETS } from '@/lib/market';
 import { formatJpy } from '@/lib/format';
 import { CONSENT_TEXT_APPROVED, CONSENT_VERSION } from '@/lib/consent';
 import { SITE_URL } from '@/lib/site';
@@ -78,6 +78,11 @@ export default async function Page() {
       {/* 販売の準備状況。何が足りないかを市場ごとに日本語で出す */}
       <div className="flex flex-col gap-3">
         <h2 className="text-sm text-ink-muted">販売の準備状況（手順は docs/stripe-setup.md）</h2>
+        <p className="-mt-1 text-[12px] leading-relaxed text-ink-muted">
+          初回販売の対象は <strong className="font-medium text-ink">米ドル・台湾ドル・韓国ウォンの3市場</strong>です。
+          必要な Stripe の価格は「3市場 × 通常価格／ローンチ価格 = 6つ」。
+          日本円はP1として、あとから追加します。
+        </p>
         {courses.map((course) => (
           <Card key={course.slug} className="flex flex-col gap-3 p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -86,6 +91,20 @@ export default async function Page() {
                 {course.pricing.status === 'confirmed' ? '価格 確定済み' : '価格 未確定（購入できません）'}
               </span>
             </div>
+
+            {/* 初回販売の対象市場だけで、いくつ揃ったかを出す */}
+            {(() => {
+              const ready = LAUNCH_MARKETS.filter((m) => {
+                const e = course.pricing.byMarket[m.id];
+                return Boolean(e?.priceId) && (e?.launch == null || Boolean(e?.launchPriceId));
+              }).length;
+              return (
+                <p className={`text-[12px] ${ready === LAUNCH_MARKETS.length ? 'text-pine' : 'text-vermilion'}`}>
+                  初回販売の対象市場：{ready} / {LAUNCH_MARKETS.length} 市場が設定済み
+                  {ready === LAUNCH_MARKETS.length ? '' : '（揃うまで購入できません）'}
+                </p>
+              );
+            })()}
 
             <ul className="flex flex-col divide-y divide-line border-t border-line">
               {MARKETS.map((market) => {
@@ -110,13 +129,18 @@ export default async function Page() {
                       <Circle className="h-3.5 w-3.5 shrink-0 text-vermilion" strokeWidth={1.5} />
                     )}
                     <span className="min-w-24 text-[13px]">{market.label.ja}</span>
+                    {market.phase === 'later' ? (
+                      <span className="text-[11px] text-ink-muted">P1（あとで追加）</span>
+                    ) : null}
                     <span className="text-[12px] text-ink-muted">
                       {entry
                         ? `${market.currency} ${entry.launch ?? entry.list}${entry.launch != null ? `（通常 ${entry.list}）` : ''}`
                         : '—'}
                     </span>
                     {ready ? null : (
-                      <span className="text-[12px] text-vermilion">{missingParts.join(' / ')}</span>
+                      <span className={`text-[12px] ${market.phase === 'launch' ? 'text-vermilion' : 'text-ink-muted'}`}>
+                        {missingParts.join(' / ')}
+                      </span>
                     )}
                   </li>
                 );

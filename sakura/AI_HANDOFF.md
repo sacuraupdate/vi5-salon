@@ -7,7 +7,7 @@
 > 実際の環境変数の値は、このファイルに一切書かないこと。
 > 環境変数の取得手順は `sakura/docs/env-setup.md` にある（値は書かれていない）。
 
-**最終更新：2026-09-14（認証は実装済み。次は Stripe 決済の設定待ち）**
+**最終更新：2026-09-14（Cloudflare 公開済み・Stripe 審査中。次は 0002 実行と Stripe 価格の登録）**
 
 ---
 
@@ -29,7 +29,8 @@ Phase 1（UI/UX・多言語構造・管理画面骨格）は完了。
 | 販売形式 | **買い切り**（サブスクではない）／視聴期限なし／原則返金不可 |
 | 動画 | **YouTube 限定公開**を購入者専用ページに埋め込む（初期費用0円） |
 | 講座構成 | **3章構成**（10章構成は廃止） |
-| 暫定価格 | 通常 **59,800円相当** / ローンチ **39,800円相当**（USD・TWD・KRW は未確定） |
+| **初回販売の対象市場** | **USD / TWD / KRW の3市場。日本円は P1（あとから追加）** |
+| 暫定価格 | 日本円で通常 **59,800** / ローンチ **39,800**（金額の目安。USD・TWD・KRW は未確定） |
 
 ### 講座（唯一の実商品）
 
@@ -41,11 +42,35 @@ Phase 1（UI/UX・多言語構造・管理画面骨格）は完了。
 
 ---
 
+## 進捗（実際の状況）
+
+| 項目 | 状態 |
+|---|---|
+| **Cloudflare 公開** | **✅ 完了** — https://sakura-japan-beauty.kojanto-jp.workers.dev |
+| **Stripe 本人確認** | **⏳ 提出済み・審査中**（待つ間もテスト環境で設定を進められる） |
+| Supabase `0001_init.sql` | ✅ 実行済み |
+| Supabase `0002_auth_link.sql` | ❌ **未実行（次にやること）** |
+| Supabase の3つの値 | ❌ 未設定（`SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_ANON_KEY` の**3つすべてが必要**） |
+| Stripe の価格（Price ID） | ❌ 未登録。**必要なのは6つ**（USD/TWD/KRW × 通常・ローンチ） |
+| Stripe の鍵 | ❌ 未設定（`STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`） |
+| `NEXT_PUBLIC_SITE_URL` | ❌ 未設定（上の公開URLを入れる） |
+| Chapter 1 の動画 | ❌ 未制作 |
+| メール（Resend） | ❌ 未設定 |
+
+> **Claude Code の実行環境からは外部サイトへ出られないため、公開URLの表示確認はできていません。**
+> SAKURA 側でブラウザから開いて確認してください。
+
+---
+
 ## 今回完了したこと
 
-**Supabase Auth による本番用の認証は実装済み（前回完了。今回再確認して 18/18 OK）。**
-**今回は、Stripe 決済へ進むために足りないものを一覧化した → `sakura/docs/stripe-setup.md`**
-あわせて管理画面の「システム状況」に、市場ごとの価格・価格IDの登録状況を表示するようにした。
+- **初回販売を USD / TWD / KRW の3市場に絞る設計にした。**
+  市場に `phase`（`launch` / `later`）を持たせ、日本円は `later`（P1）。
+  管理画面の「システム状況」は**初回販売の3市場だけ**を基準に「○ / 3 市場が設定済み」と表示する。
+  必要な Stripe の価格は **8つ → 6つ**に減った。
+- 手順書を実際の進捗に合わせて更新（公開URL記入済み・本人確認は審査中・Webhook のURLも実値に）。
+- Supabase の接続は**3つの値がすべて必要**であることを、手順書と管理画面の文言に明記した。
+- **Supabase Auth による本番用の認証は実装済み**（前回完了。今回も再確認して 18/18 OK）。
 
 - メールアドレス＋パスワードでの新規登録・ログイン・ログアウト
 - **パスワードはアプリ側のDBに保存しない。** Supabase Auth が持つ
@@ -76,14 +101,16 @@ Phase 1（UI/UX・多言語構造・管理画面骨格）は完了。
 
 | # | 項目 | 担当 |
 |---|---|---|
-| 1 | **Cloudflare への公開**（Stripe審査用URLの発行） | SAKURA |
-| 2 | **`0002_auth_link.sql` の実行と `SUPABASE_ANON_KEY` の設定** | SAKURA |
-| 3 | **Stripe の設定一式** → 手順は `docs/stripe-setup.md`（11項目） | SAKURA |
-| 4 | Chapter 1 の動画制作 | SAKURA |
-| 5 | 各市場の確定価格と Stripe Price ID をコードへ反映 | SAKURA → Claude |
-| 6 | 法務ページ・購入時同意文言の専門家確認 | 専門家 |
-| 7 | 通しテスト（登録→決済→Webhook→権限→メール→視聴） | 両方 |
-| 8 | パスワード再設定（P1でも可） | Claude |
+| 1 | **`0002_auth_link.sql` を実行する**（次にやること） | SAKURA |
+| 2 | **Supabase の3つの値を設定**（URL / service_role / anon） | SAKURA |
+| 3 | **USD / TWD / KRW の確定価格を決める** | SAKURA |
+| 4 | **Stripe で価格を6つ作り、Price ID を Claude へ渡す** | SAKURA |
+| 5 | **Stripe の鍵2つと `NEXT_PUBLIC_SITE_URL` を設定** | SAKURA |
+| 6 | 価格と Price ID をコードへ反映し `confirmed` に切り替え | Claude |
+| 7 | Chapter 1 の動画制作 | SAKURA |
+| 8 | 法務ページ・購入時同意文言の専門家確認 | 専門家 |
+| 9 | 通しテスト（登録→決済→Webhook→権限→メール→視聴） | 両方 |
+| 10 | パスワード再設定（P1でも可） | Claude |
 
 **認証も決済もコード側は実装済み。** 残るのは設定・鍵・価格と、実キーでの通しテスト。
 
@@ -91,16 +118,19 @@ Phase 1（UI/UX・多言語構造・管理画面骨格）は完了。
 
 | 足りないもの | 誰が |
 |---|---|
-| 公開URL（これが無いと Webhook の登録先が無い） | SAKURA |
-| Stripe アカウントの本人確認（審査に数日） | SAKURA |
-| USD / TWD / KRW の確定価格（JPY は 59,800 / 39,800 の暫定案あり） | SAKURA |
-| Stripe の商品と価格 **8つ**（4通貨 × 通常/ローンチ）→ `price_...` を Claude へ | SAKURA |
+| ~~公開URL~~ | ✅ 完了 |
+| ~~Stripe 本人確認~~ | ⏳ 審査中（待たずに下を進められる） |
+| USD / TWD / KRW の確定価格 | SAKURA |
+| Stripe の商品と価格 **6つ**（3市場 × 通常/ローンチ）→ `price_...` を Claude へ | SAKURA |
 | `STRIPE_SECRET_KEY` | SAKURA |
 | `STRIPE_WEBHOOK_SECRET`（**これが無いと支払っても受講できない**） | SAKURA |
-| `NEXT_PUBLIC_SITE_URL` | SAKURA |
+| `NEXT_PUBLIC_SITE_URL`（上の公開URL） | SAKURA |
 | Price ID をコードへ反映し、価格を `confirmed` に切り替え | Claude |
 | Resend（購入完了メール。決済自体は無くても動く） | SAKURA |
 | 購入時の同意文言の確定 | 専門家 |
+
+**Webhook の登録先URL：** `https://sakura-japan-beauty.kojanto-jp.workers.dev/api/stripe/webhook`
+（イベントは `checkout.session.completed` の1つだけ）
 
 **進み具合は管理画面の「システム状況」で確認できます。** 市場ごとに
 「金額が未設定」「通常価格の価格IDが未登録」などを日本語で表示します。
@@ -110,10 +140,10 @@ Phase 1（UI/UX・多言語構造・管理画面骨格）は完了。
 ## 現在のブロッカー
 
 1. **Chapter 1 の動画が1本も無い** — 売る商品の実体が無い。コードでは解決できない
-2. **Cloudflare 公開URLが未発行** — Stripe審査が始められない
-3. **Stripe 本人確認** — 審査に営業日がかかる
-4. **`SUPABASE_ANON_KEY` が未設定** — これが無いとお客様はログインできない
-5. **Stripe が未設定** — 価格も Price ID も鍵も未登録のため、購入ボタンが押せない
+2. **Supabase の3つの値と `0002` が未適用** — お客様がログインできない
+3. **Stripe が未設定** — 価格も Price ID も鍵も未登録のため、購入ボタンが押せない
+4. **Stripe 本人確認が審査中** — 本番のお金を受け取れるのは通過後
+   （テスト環境での構築・通しテストは先に進められる）
 6. Claude Code の実行環境から Cloudflare / Vercel / Netlify に到達できない
    （接続拒否・認証情報なし）。**デプロイの実行は SAKURA 側が行う必要がある**
 7. Claude Code は Supabase / Stripe の実キーを持たないため、**実際の通しテストは未実施**
@@ -128,13 +158,15 @@ Phase 1（UI/UX・多言語構造・管理画面骨格）は完了。
 1. **Cloudflare へ公開**（`sakura/docs/deploy.md`／ブラウザだけで5ステップ）
 2. Stripe アカウント開設・本人確認申請（審査に日数がかかる）
 3. ドメイン取得
-4. **`sakura/supabase/migrations/0002_auth_link.sql` を「SQL Editor」で実行**
+4. **`sakura/supabase/migrations/0002_auth_link.sql` を「SQL Editor」で実行** ← いま最優先
    （0001 は実行済み。0002 は Auth ユーザーと購入者行を結ぶために必要）
-5. **`SUPABASE_ANON_KEY` を設定**（Supabase → Project Settings → API Keys → `anon`）
+5. **Supabase の3つの値を設定**
+   `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_ANON_KEY`
+   （Project Settings → Data API と API Keys。**3つすべてが必要**）
 6. **Supabase の Authentication → Sign In / Providers で Email を有効化**し、
    「Confirm email」（メール確認）のオン／オフを決める
    ※ Supabase が送る確認メールは既定で英語。文面は Authentication →「Emails」で変更できる
-7. **`docs/stripe-setup.md` の手順で Stripe を設定**（11項目・順番どおりに）
+7. **`docs/stripe-setup.md` の手順で Stripe を設定**（3〜9。価格は6つ）
 8. Resend アカウント作成 → ドメイン登録 → DNS設定
 
 **そのあと**
@@ -161,9 +193,12 @@ Phase 1（UI/UX・多言語構造・管理画面骨格）は完了。
 
 ## 公開URL
 
-**未発行。** Cloudflare へ公開すると
-`https://sakura-japan-beauty.＜サブドメイン＞.workers.dev` が発行される。
-独自ドメインは未取得。
+**https://sakura-japan-beauty.kojanto-jp.workers.dev**（Cloudflare Workers・公開済み）
+
+- Stripe 審査用に見せるページ：`/en` と `/en/courses/japanese-salon-standard`、
+  返金は `/en/legal/refund`、事業者情報は `/en/legal/tokusho`
+- 検索エンジンには載っていない（`SITE_INDEXABLE` 未設定のため。直接URLを開く分には影響なし）
+- 独自ドメインは未取得。切り替え手順は `docs/deploy.md`
 
 ---
 
@@ -187,8 +222,8 @@ Phase 1（UI/UX・多言語構造・管理画面骨格）は完了。
 
 | | |
 |---|---|
-| 公開先（予定） | Cloudflare Workers（Worker名 `sakura-japan-beauty`） |
-| 状態 | **未公開** |
+| 公開先 | Cloudflare Workers（Worker名 `sakura-japan-beauty`） |
+| 状態 | **公開済み**（環境変数は未設定のため、ログイン・購入はまだ動かない） |
 | ビルド | `npm run cf:build` は成功する（成果物に秘密情報が無いことも確認済み） |
 | 既存 Vi5 予約サイト | Vercel。**別サービス・別名。影響しない** |
 | 検索エンジン | 既定で**非掲載**。販売開始日に `SITE_INDEXABLE=true` を設定して有効化 |
@@ -223,19 +258,16 @@ HTMLに秘密情報が無い／実商品だけを公開。
 
 ## 次に推奨する作業
 
-**1番目：Cloudflare へ公開する（SAKURA）**
-Stripe 審査を始めるために必要。`sakura/docs/deploy.md` の手順どおり。
+**1番目：`0002_auth_link.sql` の実行＋Supabase の3つの値を設定（SAKURA）**
+これでログインが実際に動く。設定できたら管理画面「システム状況」が緑になる。
 
-**2番目：`0002_auth_link.sql` の実行と `SUPABASE_ANON_KEY` の設定（SAKURA）**
-これでログインが実際に動く。設定できたら「システム状況」画面が緑になる。
+**2番目：USD / TWD / KRW の価格を決めて、Stripe で価格を6つ作る（SAKURA）**
+本人確認の審査を待たずに、テスト環境で進められる。`price_...` を Claude に渡せば反映する。
 
 **3番目：Chapter 1 の動画を撮る（SAKURA）**
 完璧でなくてよい。1本あれば受講画面を実物で仕上げられる。
 
-**4番目：Stripe の設定（SAKURA）**
-`docs/stripe-setup.md` の順に。公開URLが決まってから着手できる。
-
-**5番目：パスワード再設定（Claude）**
+**4番目：パスワード再設定（Claude）**
 上と並行して進められる。
 
 ---

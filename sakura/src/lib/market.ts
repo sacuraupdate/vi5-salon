@@ -11,6 +11,15 @@ export type Market = {
   currency: CurrencyCode;
   /** 顧客に見せる市場名 */
   label: Localized;
+  /**
+   * 初回販売の対象か。
+   * 'launch' … 最初の販売でここから売る（USD / TWD / KRW）
+   * 'later'  … あとから追加する（日本市場は P1。初回販売の対象にしない）
+   *
+   * 価格が入っていない市場は自動的に「準備中」になるため、
+   * この値は「いま揃っている必要があるか」を管理画面と手順書で示すためのもの。
+   */
+  phase: 'launch' | 'later';
 };
 
 export const MARKETS: readonly Market[] = [
@@ -18,23 +27,31 @@ export const MARKETS: readonly Market[] = [
     id: 'global-usd',
     currency: 'USD',
     label: { ja: '海外（米ドル）', en: 'International (USD)', ko: '해외 (USD)', 'zh-TW': '海外（美元）' },
+    phase: 'launch',
   },
   {
     id: 'tw',
     currency: 'TWD',
     label: { ja: '台湾（台湾ドル）', en: 'Taiwan (TWD)', ko: '대만 (TWD)', 'zh-TW': '台灣（新台幣）' },
+    phase: 'launch',
   },
   {
     id: 'kr',
     currency: 'KRW',
     label: { ja: '韓国（ウォン）', en: 'Korea (KRW)', ko: '한국 (KRW)', 'zh-TW': '韓國（韓元）' },
+    phase: 'launch',
   },
   {
     id: 'jp',
     currency: 'JPY',
     label: { ja: '日本（円）', en: 'Japan (JPY)', ko: '일본 (JPY)', 'zh-TW': '日本（日圓）' },
+    // 日本市場は初回販売の対象にしない（P1）。価格が入るまで「準備中」と表示される
+    phase: 'later',
   },
 ] as const;
+
+/** 初回販売で価格が揃っている必要がある市場 */
+export const LAUNCH_MARKETS = MARKETS.filter((m) => m.phase === 'launch');
 
 export const MARKET_COOKIE = 'sjb_market';
 export const DEFAULT_MARKET: MarketId = 'global-usd';
