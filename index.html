@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260914x';
+const APP_REV='r20260915a';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -2219,6 +2219,13 @@ function catTilesHtml(cartArr){const cart=cartArr||state.cart||[];const hasMain=
   const cps=[];const cpTile=cps.length?`<button data-fc="coupon" style="grid-column:1/-1;text-align:left;border:2px solid var(--gold);background:linear-gradient(135deg,#1E2A47,#2c3c63);color:#fff;border-radius:18px;padding:16px 14px;font-family:inherit;position:relative"><span style="position:absolute;top:-10px;right:-6px;background:var(--rose);color:#fff;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:800">${cps.length}</span><div style="font-weight:800;font-size:18px">🎁 今月のクーポン・セットメニュー</div><div style="font-size:12.5px;opacity:.9;margin-top:4px">お得なクーポン・セットはこちら。選ぶと合計が自動で変わります</div></button>`:'';
   return `<div class="note" style="margin:6px 0 8px">カテゴリをタップするとメニューが表示されます</div><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">${cpTile}${categories.filter(c=>services.some(s=>s.cat===c.id)).map(c=>{const n=services.filter(s=>s.cat===c.id).length;const sel=cart.filter(x=>x.cat===c.id).length;const isOpt=c.id==='addon';const isTf=c.id==='tfree';const tfOK=(state.b&&state.b.staff&&state.b.staff.id==='s2')&&cart.some(x=>x.id==='pe1'||x.id==='pe2'||x.cat==='peel');const locked=(isOpt&&!hasMain)||(isTf&&!tfOK);return `<button data-fc="${c.id}" style="position:relative;text-align:left;border:1.5px solid ${sel?'var(--gold)':(isOpt?'var(--gold-soft)':'var(--line)')};background:${sel?'var(--gold-bg,#fdf6e3)':(isOpt?'#fffdf7':'#fff')};border-radius:16px;padding:14px 12px;font-family:inherit;opacity:${locked?'.6':'1'}">${sel?`<span style="position:absolute;top:-8px;right:-6px;background:var(--gold);color:#fff;border-radius:20px;min-width:26px;height:26px;padding:0 8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.18)">${sel}</span>`:''}<div style="font-weight:700;font-size:15px;color:var(--navy)">${c.label}</div><div style="font-size:11px;color:var(--ink-soft);margin-top:4px">${n}メニュー${sel?` ・ <b style="color:var(--gold)">${sel}つ選択中</b>`:''}${locked?'<br><b style="color:var(--rose);font-size:12px">⚠ 先に施術メニューをお選びください</b>':''}${isOpt&&!locked?'<br><b style="color:#2C4433">何個でも追加OK</b>':''}${isTf?(tfOK?'<br><b style="color:var(--rose)">🎁 今なら無料</b>':'<br><b style="color:var(--rose);font-size:12px">⚠ TOMOMI指名でハーブ/ニードルピーリングを選ぶと無料</b>'):''}</div></button>`;}).join('')}</div>`;}
 function stepBrowse(){
+  /* メニューの読み込みが終わるまでは、一部だけ表示して誤解を与えないよう「読み込み中」を出す */
+  const _mainCats=['perm','lash','wlash','brow','peel','makeup','inkmakeup','ticket'];
+  if(!state.loadDone||!(services||[]).some(s=>_mainCats.indexOf(s.cat)>=0)){
+    app.innerHTML=stepsBar(0)+`<div class="fade"><div class="eyebrow">Step 01</div><div class="h-title">${t('selectMenu')}</div><div style="padding:40px 0;text-align:center;color:var(--ink-soft)">メニューを読み込んでいます…</div></div>`;
+    if(!state._menuRetry){state._menuRetry=1;setTimeout(()=>{state._menuRetry=0;render();},1200);}
+    return;
+  }
   const chips=[['all','すべて'],['mens','メンズにおすすめ'],...categories.filter(c=>services.some(s=>s.cat===c.id)).map(c=>[c.id,c.label])];
   const cur=state.openCat||'all';
   let fav='';
@@ -2272,7 +2279,8 @@ function stepStaff(){
   if(perMenu.length&&perMenu.every(p=>p.cands.length)){
     perMenu.forEach(p=>{if(p.cands.length===1)state.b.assign[p.item.id]=p.cands[0].id;});
     state.b.staff={id:'s0',name:'担当はメニューごと'};
-    state.step=3;return stepDate();
+    /* 日時選択は step=2。3にすると日時を選ばずに確認画面へ進んでしまう */
+    state.step=2;return stepDate();
   }
   if(false){
     const rows=perMenu.map(p=>{
@@ -2311,22 +2319,7 @@ function stepDate(){if(!state.b||!state.b.staff){state.step=2;return typeof step
   const sid=state.b.staff.id;const m=state.calMonth,y=m.getFullYear(),mo=m.getMonth();const startDow=new Date(y,mo,1).getDay(),days=new Date(y,mo+1,0).getDate();const canPrev=!(y===today.getFullYear()&&mo===today.getMonth());
   let cells='';['日','月','火','水','木','金','土'].forEach((d,i)=>cells+=`<div class="cal-dow ${i===0?'sun':''}">${d}</div>`);for(let i=0;i<startDow;i++)cells+='<div></div>';
   for(let d=1;d<=days;d++){const dd=new Date(y,mo,d);const ds=fmtDate(dd);const closedDay=salonClosed(ds)||(sid!=='s0'?!staffWorks(sid,ds):!anyStaffWorks(ds));const dis=dd<today?'dis':(closedDay?'closed':'');
-    /* 🟡印は「実際に予約できる時間が1つ以上ある日」だけに付ける（案内と実態を一致させる） */
-    let hasSlot=false;
-    if(!dis&&!closedDay){
-      const _gs=cartGroups();
-      for(let m=OPEN_HOUR*60;m<=LAST_RECEPTION*60;m+=30){
-        if(new Date(ds+'T'+minToTime(m)+':00').getTime()<Date.now()+3*3600000)continue;
-        if(_gs&&_gs.length>1){if(planAt(ds,m,_gs)){hasSlot=true;break;}}
-        else if(staffSlotOpen30(sid,ds,m)){hasSlot=true;break;}
-      }
-    }
-    /* 空きがない日は定休日と同じく押せないようにする（押してから「空きがありません」と出る手間をなくす） */
-    const noSlot=(!dis&&!hasSlot);
-    const cls=dis||(noSlot?'closed':'');
-    const off=dis||noSlot;
-    const avail=hasSlot?'avail':'';const sel=state.b.date===ds?'sel':'';
-    cells+=`<button type="button" class="cal-day ${cls} ${avail} ${sel}" ${off?'disabled aria-disabled="true"':`data-date="${ds}"`} aria-label="${mdLabel(ds)}${off?' 予約不可':' 予約可能'}" ${sel?'aria-pressed="true"':''}>${d}</button>`}
+    const avail=(!dis&&!closedDay)?'avail':'';const sel=state.b.date===ds?'sel':'';cells+=`<button type="button" class="cal-day ${dis} ${avail} ${sel}" ${dis?'disabled aria-disabled="true"':`data-date="${ds}"`} aria-label="${mdLabel(ds)}${dis?' 予約不可':' 予約可能'}" ${sel?'aria-pressed="true"':''}>${d}</button>`}
   let slotHtml='';
   if(state.b.date){
     const totalMin=state.cart.reduce((s,x)=>s+(x.min||0),0);
@@ -4454,6 +4447,9 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-14',v:'r20260915a',items:['【重要】日時を選んでいないのに「1月1日(木) null」で確認画面へ進んでしまう不具合を修正しました。担当を自動で決める処理が、画面番号を「日時選択」ではなく「確認画面」に設定していたためです→日時を選ぶまで確認画面へ進まないようにしました']},
+ {d:'2026-09-14',v:'r20260914z',items:['【緊急修正】ご予約カレンダーの全日が選択できなくなっていた状態を元に戻しました。直前に追加した空き判定が誤って全日を「予約不可」と判定していたためです。カレンダーから日付を選んでご予約いただけます']},
+ {d:'2026-09-14',v:'r20260914y',items:['ご予約のメニュー選択画面で、読み込みが終わる前に「オプションメニュー」「TOMOMI無料オプション」だけが表示され、メニューがこれだけしかないように見えてしまう問題を修正しました→読み込みが終わるまで「メニューを読み込んでいます…」と表示し、途中の状態を見せないようにしました']},
  {d:'2026-09-14',v:'r20260914x',items:['ご予約カレンダーで、空きがない日を押せないようにしました。担当者が全員お休みの日や満席の日は、定休日と同じグレー表示（押せない）になります。押してから「空きがございません」と表示される手間がなくなります','凡例を「🟡 空きあり／🔵 選択中／グレー＝ご予約を承れない日（定休・お休み・満席）」に変更しました']},
  {d:'2026-09-14',v:'r20260914w',items:['ご予約カレンダーの🟡印（空きあり）が、実際には空きのない日にも付いていた問題を修正しました。担当者がお休みの日や、すでに予約で埋まっている日にも印が出ていました→実際にご予約いただける時間が1つ以上ある日だけに🟡印を付けるようにし、表示と実際の空き状況を一致させました']},
  {d:'2026-09-14',v:'r20260914v',items:['【緊急修正】SAKURAのご予約が1月からしか取れない状態になっていたのを解消しました。直前の変更で「シフト表に日付ごとに入力した日だけ出勤」としたため、曜日ごとの基本シフトで運用していたSAKURAが全日「出勤なし」となり、予約を受けられなくなっていました→曜日ごとの基本シフトを元どおり有効に戻しました']},
