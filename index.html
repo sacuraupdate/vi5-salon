@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260914f';
+const APP_REV='r20260914g';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1271,12 +1271,10 @@ function mergeProtect(d,srv){if(srv&&srv._seed)return d;if(d&&d._seed&&srv){cons
   const _rich=x=>{let n=0;['photo','thumb','intro','quals','role','img','desc','detail'].forEach(k=>{if(x&&x[k])n+=String(x[k]).length>0?1:0;});if(x&&x.photos&&x.photos.length)n+=x.photos.length;if(x&&x.prices&&Object.keys(x.prices).length)n+=1;if(x&&x.services&&x.services.length)n+=1;if(x&&x.wage)n+=1;return n;};
   const _mrg=(a,b)=>{const m={};(b||[]).forEach(x=>{if(x&&x.id)m[x.id]=x;});(a||[]).forEach(x=>{if(!x||!x.id)return;const ex=m[x.id];if(!ex){m[x.id]=x;return;}const ua=x._u||0,ub=ex._u||0;if(ua>ub){m[x.id]=x;return;}if(ub>ua)return;/* 同点: 情報が多い方、同じならサーバー(ex)を残す */if(_rich(x)>_rich(ex))m[x.id]=x;});return Object.values(m);};
   if(Array.isArray(srv.services)&&Array.isArray(d.services)){const delS=new Set([...(d.delServices||[]),...(srv.delServices||[])]);d.delServices=[...delS];d.services=_mrg(d.services,srv.services).filter(x=>!delS.has(x.id));}
-  if(Array.isArray(srv.staff)&&Array.isArray(d.staff)){const delT=new Set([...(d.delStaff||[]),...(srv.delStaff||[])]);
-    /* 中核スタッフは誤って削除記録に入っても消さない（消えると担当者を選べなくなるため） */
-    const CORE=new Set(['s0','s1','s2']);
-    [...(d.staff||[]),...(srv.staff||[])].forEach(x=>{if(x&&(x.name==='SAKURA'||x.name==='TOMOMI'||x.name==='指名なし'))CORE.add(x.id);});
-    CORE.forEach(id=>delT.delete(id));
-    d.delStaff=[...delT];d.staff=_mrg(d.staff,srv.staff).filter(x=>!delT.has(x.id));}
+  if(Array.isArray(srv.staff)&&Array.isArray(d.staff)){
+    /* スタッフは統合では絶対に消さない。過去に誤って入った削除記録で全員が消える事故があったため、
+       削除記録そのものを使わない（スタッフを本当に外す時は「非表示」で運用する）。 */
+    d.delStaff=[];d.staff=_mrg(d.staff,srv.staff);}
   if(srv.coupons&&d.coupons){d.coupons=_mrg(d.coupons,srv.coupons);}
   /* 紹介・ブロック枠: IDで結合し、両方にあれば新しい方 */
   {const tOf=x=>Math.max((x&&x._u)||0,(x&&x.at)||0,0);
@@ -3584,13 +3582,11 @@ function demoPurge(){if(DATA._demoPurged)return false;try{const DEMO_PH=['090123
 /* 担当者一覧からSAKURA・TOMOMIが消えた場合の自動復旧。削除記録を解除し、バックアップ（無ければ初期値）から戻す */
 async function healCoreStaff(){
   try{
-    if(!state.adminAuthed||state._healStaff1)return false;
-    state._healStaff1=true;
+    if(!state.adminAuthed)return false;
     DATA.staff=DATA.staff||[];
-    const need=['SAKURA','TOMOMI'].filter(nm=>!DATA.staff.some(x=>x&&x.name===nm));
+    const need=['SAKURA','TOMOMI','HARUKA','KANA','NODOKA'].filter(nm=>!DATA.staff.some(x=>x&&x.name===nm));
     if(!need.length)return false;
-    const ids=new Set(['s1','s2']);
-    DATA.delStaff=(DATA.delStaff||[]).filter(id=>!ids.has(id));
+    DATA.delStaff=[]; /* 削除記録は使わない（再発防止） */
     const restored=[];
     try{
       const keys=[];for(let w=0;w<7;w++)keys.push('salon:bak:'+w);for(let m=1;m<=12;m++)keys.push('salon:bak:m'+m);
@@ -4419,6 +4415,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-14',v:'r20260914g',items:['【最優先修正】スタッフが消える問題を根本から解消。統合の際に「削除記録」で自動的に消す仕組みそのものを廃止しました（誤って記録に入ると全員が永久に消え続ける原因でした）','SAKURA・TOMOMI・HARUKA・KANA・NODOKA の全員を対象に、消えていればバックアップから紹介文ごと自動復旧します','復旧の点検は管理画面を開くたびに毎回実行します（一度きりではありません）','スタッフを一覧から外したい場合は、削除ではなく「非表示」でご対応ください']},
  {d:'2026-09-14',v:'r20260914f',items:['【担当者にSAKURA・TOMOMIが出てこない問題】スタッフの削除記録に誤って入ってしまうと、統合のたびに永久に消され続ける作りでした→SAKURA・TOMOMI・指名なしは削除記録があっても消さないように変更','すでに消えている場合は、管理画面を開いた時にバックアップから自動で復旧し、削除記録も解除します（再発しません）','復旧した場合は「🛟 担当者一覧から消えていた○○を復旧しました」と表示します']},
  {d:'2026-09-14',v:'r20260914e',items:['【重くならないように、入口で対策】添付する画像を貼った時点で小さくするよう変更（1枚あたり120KB以下に自動調整）。これまでの約1/3以下になり、そもそも重くなりません。画像添付は今までどおり使えます','【固まる問題】保存ボタンを連打しても保存が同時に走らないようにし、保存が終われば必ずロックを解除するよう修正。前は保存が重なって画面が止まることがありました','保存中は画面下に「保存中…」と小さく表示されます。表示中も画面はそのまま操作できます（操作を妨げません）']},
  {d:'2026-09-14',v:'r20260914d',items:['データが重くなったら、アプリが自動で軽くするようにしました（SAKURAさんが数字を確認する必要はありません）','2MBを超えたときだけ作動し、①画像の再圧縮 →（足りなければ）②6か月より前の画像を削除 →（さらに必要なら）③3か月より前の画像を削除、の順に必要な分だけ実行します','会話の文章・タスク・予約・お客様の情報は一切消しません。最近の画像も残します','実行した場合は「📦 保存が重くなっていたため自動で軽くしました（3.6MB → 1.8MB）」とお知らせに記録します']},
