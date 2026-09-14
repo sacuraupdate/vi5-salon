@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260914s';
+const APP_REV='r20260914t';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -4378,7 +4378,7 @@ function custDetail(key){
     <div class="subhead">ログイン情報・画面確認（社内用）</div><div class="addform" style="margin-bottom:0"><div class="note" style="margin:0 0 10px">電話番号：<b>${c.phone}</b>　／　暗証番号（パスワード）：<b>${c.password||'（未設定）'}</b><br>この暗証番号でお客様はマイページにログインできます。わからなくなったお客様には、これをお伝えするか「暗証番号を変更」で新しく設定してください。</div><div class="field" style="margin-bottom:8px"><label>お誕生日（未登録なら入力して保存）</label><div style="display:flex;gap:8px"><input id="cust-bday" type="date" value="${c.birthday||''}" style="flex:1"><button class="btn btn-ghost" data-bdaysave="${key}" style="flex:0 0 auto">保存</button></div></div><div class="export" style="margin:0"><button data-preview="${key}">📱 このお客様のマイページ画面を見る</button><button data-pw="${key}">暗証番号を変更</button></div></div>
     ${fav.length?`<div class="note">よく選ばれるメニュー：${fav.join('、')}</div>`:''}<div class="export"><button data-quick="${key}">前回のメニューで新規予約</button><button data-addvisit="${key}">来店履歴・ポイントを手動追加</button></div>
     <div class="note" style="margin:6px 0 0">「来店履歴・ポイントを手動追加」＝予約システムを通さず来店されたお客様や、過去の来店分を、来店日・内容・金額・付与ポイントを入力して登録できます（登録した分は履歴とポイントに反映されます）。</div>
-    <div class="subhead">来店履歴</div>${list.length?rows:'<div class="empty">履歴はありません</div>'}`;
+    ${state.mvKey===key?manualVisitPanel():''}<div class="subhead">来店履歴</div>${list.length?rows:'<div class="empty">履歴はありません</div>'}`;
 }
 function adminSales(){
   const periods=[['today','本日'],['month','今月'],['all','全期間']];const inP=ds=>{const d=new Date(ds);if(state.salesPeriod==='today')return ds===fmtDate(today);if(state.salesPeriod==='month')return d.getFullYear()===today.getFullYear()&&d.getMonth()===today.getMonth();return true};
@@ -4439,6 +4439,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-14',v:'r20260914t',items:['顧客カルテの「来店履歴・ポイントを手動追加」を作り直しました。来店日・担当・メニューを選ぶだけで登録でき、お会計と付与ポイントが自動で計算されます（電話でのご予約や過去のご来店分の登録用）','登録した内容は来店履歴・ポイント残高・会員ランクにそのまま反映されます。ポイント数は必要に応じて変更できます','家族割のお客様には、その旨を表示します']},
  {d:'2026-09-14',v:'r20260914s',items:['【重要】入力していない日が自動的に出勤扱いになり、お客様が予約できてしまう状態を修正しました。曜日ごとの基本シフト（毎週◯曜は◯時〜など）で自動的に出勤にする仕組みをやめ、シフト表に実際に入力した日だけを出勤・予約可能とします','Googleカレンダーにも、入力した日だけが配信されます（入力していない先の月は出ません）','シフト画面のGoogleカレンダー購読URLの案内を削除しました','SAKURAさんの管理画面に業務報告の催促が出ないようにしました（オーナーは打刻・業務報告の対象外）']},
  {d:'2026-09-14',v:'r20260914r',items:['TOMOMIさんのGoogleカレンダーにシフトが表示されない不具合を修正。先日「反映中の月」の仕組みを撤去した際に、配信側がその月リストを参照したままだったため、予定が1件も配信されていませんでした→登録されているシフトをそのまま配信するように変更しました']},
  {d:'2026-09-14',v:'r20260914q',items:['保存を必ず1件ずつ順番に実行するように変更。複数の保存が同時に走って画面が固まったり、誤って「保存できませんでした」と表示される問題を解消しました','「保存しています」の表示中に操作しても、順番待ちのうえで確実に保存されます（操作が失われません）']},
@@ -5052,6 +5053,13 @@ function bindAdmin(){
   app.querySelectorAll('[data-msgsave]').forEach(b=>b.onclick=async()=>{const[key,id,ni]=b.dataset.msgsave.split('|');const c=DATA.customers[key];if(!c)return;const box=byId('msg-edit-box');const tx=box?box.value.trim():'';if(!tx){alert('本文を入力してください。');return;}const list=custNotices(c);const target=list[parseInt(ni)];const real=(c.notices||[]).find(x=>x===target);if(real){real.text=tx;real.editedAt=Date.now();logAct(c.name+'様への配信メッセージを編集');}state.msgEdit=null;await saveData(DATA);render();});
   app.querySelectorAll('[data-msgdel]').forEach(b=>b.onclick=async()=>{const[key,id,ni]=b.dataset.msgdel.split('|');const c=DATA.customers[key];if(!c)return;if(!confirm('このメッセージを削除します。お客様の画面からも消えます。よろしいですか？'))return;const list=custNotices(c);const target=list[parseInt(ni)];c.notices=(c.notices||[]).filter(x=>x!==target);logAct(c.name+'様への配信メッセージを削除');await saveData(DATA);render();});
   app.querySelectorAll('[data-addvisit]').forEach(b=>b.onclick=()=>addManualVisit(b.dataset.addvisit));
+  app.querySelectorAll('[data-mvdel]').forEach(b=>b.onclick=()=>{const i=parseInt(b.dataset.mvdel);state.mvItems.splice(i,1);state.mvPts=null;render();});
+  {const a=byId('mv-add');if(a)a.onchange=()=>{if(a.value){state.mvItems.push(a.value);state.mvPts=null;render();}};}
+  {const d=byId('mv-date');if(d)d.onchange=()=>{state.mvDate=d.value;render();};}
+  {const st=byId('mv-staff');if(st)st.onchange=()=>{state.mvStaff=st.value;state.mvPts=null;render();};}
+  {const p=byId('mv-pts');if(p)p.oninput=()=>{state.mvPts=parseInt(p.value,10)||0;};}
+  {const cx=byId('mv-cancel');if(cx)cx.onclick=()=>{state.mvKey=null;state.mvItems=[];state.mvPts=null;render();};}
+  {const ok=byId('mv-ok');if(ok)ok.onclick=manualVisitSave;}
 }
 let adminTimer=null;
 function adminSoft(after){clearTimeout(adminTimer);adminTimer=setTimeout(()=>{render();if(after)after()},300)}
@@ -5212,17 +5220,60 @@ function ptPanelHtml(key){const c=DATA.customers[key];if(!c)return '';const bal=
     <div class="subhead" style="margin:16px 0 6px;font-size:13px">📒 ポイント履歴</div>${H.length?H.slice(0,30).map(e=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line);font-size:12.5px"><span><span style="color:var(--ink-soft);font-size:11px">${e.date?e.date.replace(/-/g,'/'):''}</span> ${esc(e.reason)}</span><b style="color:${e.pts>=0?'#2C4433':'var(--rose)'};white-space:nowrap">${e.pts>=0?'+':''}${Number(e.pts).toLocaleString()}pt</b></div>`).join(''):'<div class="note">まだ履歴はありません</div>'}</div>`;}
 async function adjPts(key){const c=DATA.customers[key];const inp=prompt('ポイントを手動で増減します（例：500 または -200）','0');if(inp===null)return;const n=parseInt(String(inp).replace('+',''))||0;addPoints(c,n,n>0?'サロンからのポイント付与':'サロンでのポイント調整');await saveData(DATA);alert('ポイントを調整しました。');render();}
 async function addManualVisit(key){
-  const c=DATA.customers[key];if(!c)return;
-  const label=prompt('施術内容・メモ（例：まつげパーマ）。空欄でもOK','');if(label===null)return;
-  const date=prompt('来店日を入力してください（例：2025-06-01）',fmtDate(today));if(!date)return;
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){alert('日付は 2025-06-01 の形式で入力してください。');return;}
-  const amt=parseInt(String(prompt('お支払い金額（円）。不要なら0','0')||'0').replace(/[^0-9]/g,''))||0;
-  const pts=parseInt(String(prompt('付与するポイント。不要なら0','0')||'0').replace(/[^0-9-]/g,''))||0;
-  const sid=(DATA.staff.find(s=>s.id!=='s0')||DATA.staff[0]).id;
-  const bk={id:'m'+Date.now(),phone:c.phone,name:c.name,items:[{name:label||'手動追加',price:amt,cat:'manual',min:0}],staffId:sid,date,time:'--:--',companions:[],party:[],pointsUsed:0,couponUsed:0,discountRate:0,haste:null,salonMessage:'',customerMemo:'',status:'visited',awardedPoints:pts,thanked:true,manual:true};
-  DATA.bookings.push(bk);
-  await saveData(DATA);alert('来店履歴を追加しました。');render();
+  /* カルテから来店を手動で登録する（電話予約・過去の来店分など）。
+     メニューを選ぶとお会計とポイントが自動計算され、ランクにも反映される。 */
+  state.mvKey=key;state.mvItems=[];state.mvDate=fmtDate(today);state.mvStaff='';state.mvPts=null;
+  render();
 }
+function manualVisitPanel(){
+  const key=state.mvKey;if(!key)return '';
+  const c=DATA.customers[key];if(!c)return '';
+  const items=(state.mvItems||[]).map(svById).filter(Boolean);
+  const staffList=(staff||[]).filter(x=>x.id!=='s0'&&!x.hidden);
+  const sid=state.mvStaff||((staffList[0]||{}).id||'');
+  const preview={phone:c.phone,staffId:sid,date:state.mvDate,items:items.map(x=>({id:x.id,cat:x.cat,name:x.name,min:x.min,price:priceFor(x.id,sid)})),pointsUsed:0,couponUsed:0,discountRate:0,status:'visited'};
+  const pay=bkPayment(preview);
+  const autoPts=suggestPoints(preview);
+  const pts=(state.mvPts===null||state.mvPts===undefined)?autoPts:state.mvPts;
+  const opts=(services||[]).filter(x=>x.cat!=='tfree');
+  const rows=items.length?items.map((x,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:13px"><span style="flex:1">${esc(x.name)}</span><b style="white-space:nowrap">¥${(priceFor(x.id,sid)||0).toLocaleString()}</b><button class="chip" data-mvdel="${i}" style="padding:2px 9px;font-size:11px;color:var(--rose);border-color:var(--rose)">外す</button></div>`).join(''):'<div class="note">メニューを選んでください</div>';
+  return `<div class="addform" style="border:2px solid var(--navy);margin:10px 0">
+    <div class="subhead" style="margin:0 0 4px">📝 来店を手動で登録（${esc(c.name||'')}様）</div>
+    <div class="note" style="margin:0 0 10px">電話でのご予約や、過去のご来店分を登録できます。ポイントとランクは自動で反映されます。</div>
+    <div class="field two"><div><label>来店日</label><input type="date" id="mv-date" value="${state.mvDate}"></div><div><label>担当</label><select id="mv-staff">${staffList.map(x=>`<option value="${x.id}" ${x.id===sid?'selected':''}>${esc(x.name)}</option>`).join('')}</select></div></div>
+    <div class="subhead" style="margin:10px 0 4px;font-size:13px">施術内容</div>
+    ${rows}
+    <div class="field" style="margin-top:8px"><label>メニューを追加</label><select id="mv-add"><option value="">選んでください</option>${opts.map(o=>`<option value="${o.id}">${esc(o.name)}（¥${(o.price||0).toLocaleString()}）</option>`).join('')}</select></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1.5px solid var(--line);font-size:14px"><span>お会計</span><b>¥${pay.toLocaleString()}</b></div>
+    <div class="field"><label>付与ポイント（自動計算・変更できます）</label><input type="number" id="mv-pts" value="${pts}"></div>
+    ${noEarnCust(c)?`<div class="note" style="color:var(--gold-deep,#9c7a12)">家族割のお客様のため、通常はポイントを付与しません。</div>`:''}
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-ghost" id="mv-cancel" style="flex:1">やめる</button><button class="btn btn-primary" id="mv-ok" style="flex:1">この内容で登録する</button></div>
+  </div>`;
+}
+async function manualVisitSave(){
+  const key=state.mvKey;const c=DATA.customers[key];if(!c)return;
+  const items=(state.mvItems||[]).map(svById).filter(Boolean);
+  if(!items.length){alert('メニューを1つ以上お選びください。');return;}
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(state.mvDate||'')){alert('来店日をお選びください。');return;}
+  const staffList=(staff||[]).filter(x=>x.id!=='s0'&&!x.hidden);
+  const sid=state.mvStaff||((staffList[0]||{}).id||'');
+
+  const bk={id:'m'+Date.now().toString(36).toUpperCase(),phone:c.phone,name:c.name,
+    items:items.map(x=>({id:x.id,cat:x.cat,name:x.name,min:x.min,price:priceFor(x.id,sid)})),
+    staffId:sid,date:state.mvDate,time:'--:--',companions:[],party:[],pointsUsed:0,couponUsed:0,discountRate:0,
+    haste:null,salonMessage:'',customerMemo:'',status:'visited',thanked:true,manual:true,
+    history:[{at:Date.now(),type:'手動で登録',detail:items.map(x=>x.name).join('・'),by:'スタッフ：'+(meName()||'不明')}]};
+  /* 画面で変更されていればその値、そうでなければ自動計算した値を使う */
+  const _el=byId('mv-pts');const _v=_el&&String(_el.value||'').trim();
+  bk.awardedPoints=(_v!==''&&_v!==null&&_v!==undefined)?(parseInt(_v,10)||0)
+    :((state.mvPts===null||state.mvPts===undefined)?suggestPoints(bk):state.mvPts);
+  DATA.bookings.push(bk);
+  logAct((c.name||'')+'様のご来店を手動で登録（'+state.mvDate+'・'+bk.awardedPoints+'pt）');
+  state.mvKey=null;state.mvItems=[];state.mvPts=null;
+  await saveData(DATA);
+  toast('✅ 来店履歴を登録しました');render();
+}
+
 async function shiftFillAll(sid){if(!confirm('このスタッフの営業日（火曜以外）すべてを 9:00〜21:00 の出勤に設定します。よろしいですか？'))return;DATA.shifts[sid]=DATA.shifts[sid]||{};for(let d=0;d<7;d++){if(d===CLOSED_DOW){DATA.shifts[sid][d]={on:false,start:OPEN_HOUR,end:LAST_RECEPTION};}else{DATA.shifts[sid][d]={on:true,start:OPEN_HOUR,end:LAST_RECEPTION};}}await saveData(DATA);render();}
 async function shiftToggle(key){const[sid,d]=key.split('|');DATA.shifts[sid]=DATA.shifts[sid]||{};const sh=DATA.shifts[sid][d]||{on:false,start:9,end:21};sh.on=!sh.on;DATA.shifts[sid][d]=sh;await saveData(DATA);render();}
 async function shiftSet(key,field,val){const[sid,d]=key.split('|');const sh=DATA.shifts[sid][d];sh[field]=parseInt(val);if(sh.start>=sh.end)sh.end=Math.min(LAST_RECEPTION,sh.start+1);await saveData(DATA);render();}
