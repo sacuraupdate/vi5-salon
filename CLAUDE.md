@@ -609,6 +609,8 @@ SAKURA 本人をブランドの顔として大きく見せる（写真を主役�
 - **秘密の鍵はコードに一切書かない。** 入口は `src/lib/env.ts` だけ。
   未設定なら `isStripeConfigured()` などが false を返し、その機能は無効になる。
   設定手順は `sakura/docs/env-setup.md`（SAKURA 向けに画面名まで書いてある）。
+  **決済を始めるために足りないものの一覧は `sakura/docs/stripe-setup.md`。**
+  進み具合は管理画面の「システム状況」に出る（市場ごとの金額・価格IDの登録状況を含む）。
 - **受講権限を付与してよいのは `src/app/api/stripe/webhook/route.ts` だけ。**
   決済成功画面（`/[locale]/checkout/success`）は購入記録を**読むだけ**。
   URL を直接開かれるため、ここで付与すると未払いの人に権限が渡る。
