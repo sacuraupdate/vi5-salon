@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260915e';
+const APP_REV='r20260915f';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -980,13 +980,13 @@ function fetchOnce(url,opts,ms){opts=opts||{};const ctl=new AbortController();co
    書き込み(POST)も、同じ内容を送り直すだけで二重登録にはならない作り（統合して保存）なので再試行する。 */
 async function fetchT(url,opts,ms){
   let last=null;
-  for(let i=0;i<3;i++){
+  for(let i=0;i<2;i++){
     try{
       const r=await fetchOnce(url,opts,ms);
       if(r.ok||r.status===404||r.status===409||(r.status>=400&&r.status<500&&r.status!==408&&r.status!==429))return r;
       last=new Error('http-'+r.status);
     }catch(e){last=e;}
-    if(i<2)await new Promise(res=>setTimeout(res,600*(i+1)));
+    if(i<1)await new Promise(res=>setTimeout(res,600));
   }
   throw last||new Error('network');
 }
@@ -3272,7 +3272,7 @@ async function taskSave(){const me=localGet('salon:me');const tf=state.taskForm|
   state.taskForm=null;state.taskAdd=false;
   alert('✅ タスクを追加しました'+(due?'（期日：'+mdLabel(due)+'）':'（期日なし）'));render();}
 async function taskToggle(id){
-  await loadWork(); /* 先にサーバーの最新を読む（他の端末の変更を取り込む） */
+  /* サーバーの最新は saveWork が保存直前に読み込むため、ここでの読み込みは省く（通信量の削減） */
   const t=(WORK.tasks||[]).find(x=>x.id===id);if(!t)return;
   const want=!t.done;const now=Date.now();
   t.done=want;t.doneBy=want?meName():'';t.doneAt=now;t._u=now;
@@ -4465,6 +4465,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-15',v:'r20260915f',items:['データベースの通信量を減らしました。無料枠（月5GB）を超過して速度制限がかかっていたためです','通信失敗時の再試行を3回から2回に変更（失敗のたびに全データを送り直していました）','タスクの完了時に、サーバーから全データを3回読み込んでいたのを2回に削減しました']},
  {d:'2026-09-15',v:'r20260915e',items:['シフトを保存できているのに「⚠ 更新できていません」と表示される問題を修正しました。保存後の照合を文字列の完全一致で行っていたため、他の端末との統合で並び順が変わるだけで不一致と判定されていました→シフトの内容そのものを比較するように変更し、本当に保存できていない時だけ警告を出します','編集中のスタッフの分を正しく照合するようにしました（以前はSAKURAの分だけを比較していたため、他のスタッフのシフト編集では正しく確認できませんでした）']},
  {d:'2026-09-15',v:'r20260915d',items:['メニューの読み込みが遅い問題を改善しました。お客様が開くたびに、スタッフ用・会員用のデータ取得を必ず試しており（未ログインでは必ず失敗）、その再試行で時間がかかっていました→ログイン情報がある場合だけその取得を行い、未ログインのお客様は公開データだけを取得するようにしました','スタッフのログイン・会員のお客様のマイページは従来どおりご利用いただけます']},
  {d:'2026-09-15',v:'r20260915c',items:['ご予約カレンダーの空き表示を、小さな黄色い点から「空き」の文字に変更しました。予約できる日が一目で分かります','凡例も「「空き」＝ご予約いただけます／グレー＝ご予約を承れない日（定休・お休み・満席）」に変更しました']},
