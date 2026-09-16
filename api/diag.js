@@ -10,8 +10,33 @@ function imgStat(o){const acc={n:0,bytes:0};const seen=new Set();
     const vals=Array.isArray(x)?x:Object.keys(x).map(k=>x[k]);
     vals.forEach(v=>{if(typeof v==='string'){if(v.indexOf('data:image')===0){acc.n++;acc.bytes+=v.length;}}else go(v,d+1);});})(o,0);
   return acc;}
+
+/* 速度と地域の確認（表示のみ・データは一切変更しない）  /api/diag?mode=speed */
+async function speedCheck(){
+  const out={};
+  out.server_region = process.env.VERCEL_REGION || '（不明）';
+  out.db_url = SUPA_URL.replace('https://','');
+  const times=[];
+  for(let i=0;i<3;i++){
+    const t0=Date.now();
+    try{ await fetch(SUPA_URL+'/rest/v1/kv?key=eq.salon:data&select=key', {headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}}); }catch(e){}
+    times.push(Date.now()-t0);
+  }
+  times.sort((a,b)=>a-b);
+  out.db_roundtrip_ms = times[1];
+  out.db_roundtrip_all = times;
+  out.judge = times[1] <= 40 ? '近い（おそらく東京）'
+            : times[1] <= 120 ? 'やや遠い（アジア圏か回線の影響）'
+            : '遠い（海外の可能性が高い）';
+  return out;
+}
 module.exports=async(req,res)=>{
   try{
+    if((req.query&&req.query.mode)==='speed'){
+      const r=await speedCheck();
+      res.setHeader('Cache-Control','no-store');
+      res.status(200).json(r);return;
+    }
     if((req.query&&req.query.mode)==='size'){
       const W=(await kv('salon:work'))||{}; const D=(await kv('salon:data'))||{};
       const chats=W.chats||{}; let chatMsgs=0; Object.keys(chats).forEach(k=>chatMsgs+=(chats[k]||[]).length);
