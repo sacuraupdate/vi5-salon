@@ -52,8 +52,5 @@
     "api/base-sync.js": {
       "maxDuration": 60
     }
-  },
-  "regions": [
-    "hnd1"
-  ]
+  }
 }
