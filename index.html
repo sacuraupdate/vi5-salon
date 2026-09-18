@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260918c';
+const APP_REV='r20260918d';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -2338,8 +2338,12 @@ function stepDate(){if(!state.b||!state.b.staff){state.step=2;return typeof step
       for(let m=OPEN_HOUR*60;m<=LAST_RECEPTION*60&&!hasSlot;m+=30){
         if(new Date(ds+'T'+minToTime(m)+':00').getTime()<Date.now()+3*3600000)continue;
         if(_gs&&_gs.length>1){ if(planAt(ds,m,_gs))hasSlot=true; }
-        else if(sid&&sid!=='s0'){ if(staffSlotOpen30(sid,ds,m))hasSlot=true; }
-        else { if(eligibleFreeStaff(ds,m).length)hasSlot=true; }
+        else {
+          const _one=(function(){try{const g=cartGroups();return (g&&g.length===1&&g[0].cands&&g[0].cands.length===1)?g[0].cands[0].id:null;}catch(e){return null;}})();
+          const _sid=(sid&&sid!=='s0')?sid:(_one||'s0');
+          if(_sid!=='s0'){ if(staffSlotOpen30(_sid,ds,m))hasSlot=true; }
+          else { if(eligibleFreeStaff(ds,m).length)hasSlot=true; }
+        }
       }
     }
     const avail=hasSlot?'avail':'';const sel=state.b.date===ds?'sel':'';cells+=`<button type="button" class="cal-day ${dis} ${avail} ${sel}" ${dis?'disabled aria-disabled="true"':`data-date="${ds}"`} aria-label="${mdLabel(ds)}${dis?' 予約不可':' 予約可能'}" ${sel?'aria-pressed="true"':''}>${d}</button>`}
@@ -2354,7 +2358,11 @@ function stepDate(){if(!state.b||!state.b.staff){state.step=2;return typeof step
       if(mm+totalMin>closeMin)continue; // 営業終了(21:00)までに終わらない枠は出さない
       const slotTime=new Date(state.b.date+'T'+t+':00').getTime();
       const inTime=slotTime>=cutoff;
-      const staffOpen=sid!=='s0'?staffSlotOpen30(sid,state.b.date,mm):anyStaffSlot30(state.b.date,mm);
+      /* メニューごとに担当を指名している場合は、その担当の出勤時間で判定する。
+         以前は「担当できる誰か」で判定していたため、TOMOMI指名でもSAKURAの時間が出ていた。 */
+      const _one=(function(){try{const g=cartGroups();return (g&&g.length===1&&g[0].cands&&g[0].cands.length===1)?g[0].cands[0].id:null;}catch(e){return null;}})();
+      const _sid=(sid!=='s0')?sid:(_one||'s0');
+      const staffOpen=_sid!=='s0'?staffSlotOpen30(_sid,state.b.date,mm):anyStaffSlot30(state.b.date,mm);
       const open=staffOpen&&inTime;const full=!open;const sel=state.b.time===t?'sel':'';
       opts+=`<button type="button" class="slot ${full?'full':''} ${sel}" ${full?'disabled aria-disabled="true"':`data-slot="${t}"`} aria-label="${t}${full?' 予約不可':' 予約可能'}" ${sel?'aria-pressed="true"':''}>${t}</button>`;shown++;
       if(open)openCount++;
@@ -4470,6 +4478,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-18',v:'r20260918d',items:['【重要】担当を指名しても、時間の候補が「担当できる誰か」の出勤時間で表示されていた問題を修正しました。TOMOMIを指名しても、SAKURAの受付時間（9:00〜21:00）が表示されていました','指名した担当者の出勤時間だけを表示するよう修正しました（TOMOMI指名なら10:00〜16:00など、ご本人の提出時間のみ）','カレンダーの「空き」表示も同じ基準に合わせました。SAKURAの予約可能時間はこれまでどおりです（検証済み）']},
  {d:'2026-09-18',v:'r20260918c',items:['【重要】シフトを提出していない担当者でも予約を受け付けてしまう問題を修正しました。TOMOMIの受付時間がSAKURAと同じ9:00-21:00になり、未提出の10月以降も受け付けていました','原因は、時間が入っていない曜日シフトを「9:00〜21:00で出勤」とみなす処理でした→時間が入っていないシフトは「出勤なし」として扱うよう修正しました','これにより、TOMOMIは提出した日・提出した時間のみ受付となります。SAKURAの予約可能日はこれまでどおりです（検証済み）']},
  {d:'2026-09-18',v:'r20260918b',items:['設定に「🖼 画像を軽くする（保存を速くする）」を追加しました。保存データに含まれるメニュー写真・スタッフ写真などの大きさを表示し、ボタンを押すと一度だけ圧縮します','保存のたびにこれらの画像をすべて送信しているため、軽くすると保存の失敗が減り、通信量も下がります','自動では動きません。押した時だけ実行され、予約・お客様・シフトのデータには一切触れません']},
  {d:'2026-09-18',v:'r20260918a',items:['シフトの保存が「Fetch is aborted・1.4MB」で失敗する問題に対応しました。保存時の待ち時間を45秒から2分30秒に延長し、通信が遅い状況でも送りきれるようにしました','※1.4MBの大半はメニュー画像とスタッフ写真です。保存のたびに毎回送っているため、画像を軽くする対応を別途ご相談します']},
