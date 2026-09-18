@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260918b';
+const APP_REV='r20260918c';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -1506,7 +1506,12 @@ function pushGCal(bk,action){try{if(!bk||!bk.id)return;
 function gcalUrl(bk){const start=new Date(bk.date+'T'+bk.time+':00');const dur=bk.items.reduce((a,i)=>a+(i.min||0),0)||60;const end=new Date(start.getTime()+dur*60000);const f=d=>d.getFullYear()+gpad(d.getMonth()+1)+gpad(d.getDate())+'T'+gpad(d.getHours())+gpad(d.getMinutes())+'00';const text=encodeURIComponent('Vi5 ご予約：'+bk.items.map(i=>i.name).join('＋'));const det=encodeURIComponent('担当：'+stName(bk.staffId)+' / '+bk.id);const loc=encodeURIComponent((DATA.settings&&DATA.settings.address)||'');return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${f(start)}/${f(end)}&details=${det}&location=${loc}&ctz=Asia/Tokyo`}
 function gcalShiftUrl(sid,ds,sh){if(!sh.on||!sh.ranges.length)return '';const rs=sh.ranges;const st=Math.min(...rs.map(r=>r.start)),en=Math.max(...rs.map(r=>r.end));const start=new Date(ds+'T'+gpad(st)+':00:00');const end=new Date(ds+'T'+gpad(en)+':00:00');const f=d=>d.getFullYear()+gpad(d.getMonth()+1)+gpad(d.getDate())+'T'+gpad(d.getHours())+gpad(d.getMinutes())+'00';const text=encodeURIComponent('出勤：'+stName(sid));const det=encodeURIComponent('受付 '+rs.map(r=>r.start+':00〜'+r.end+':00').join('、'));return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${f(start)}/${f(end)}&details=${det}&ctz=Asia/Tokyo`}
 function shiftFor(sid,dow){return (DATA.shifts&&DATA.shifts[sid]&&DATA.shifts[sid][dow])||null}
-function normalizeShift(sh){if(!sh)return{on:false,ranges:[]};if(sh.ranges)return{on:sh.on!==false,ranges:sh.ranges};if(sh.start!==undefined)return{on:sh.on!==false,ranges:[{start:sh.start,end:sh.end}]};return{on:sh.on!==false,ranges:[{start:9,end:21}]}}
+function normalizeShift(sh){if(!sh)return{on:false,ranges:[]};
+  if(sh.ranges)return{on:sh.on!==false&&sh.ranges.length>0,ranges:sh.ranges||[]};
+  if(sh.start!==undefined&&sh.end!==undefined)return{on:sh.on!==false,ranges:[{start:sh.start,end:sh.end}]};
+  /* 時間が入っていないシフトを「9時〜21時出勤」とみなさない。
+     これが、シフト未提出の担当まで予約を受け付けてしまう原因だった。 */
+  return{on:false,ranges:[]};}
 function staffAddMigrate(){DATA.staff=DATA.staff||[];let ch=false;const add=(id,name)=>{if(!DATA.staff.some(x=>x.id===id||x.name===name)){DATA.staff.push({_new:true,id:id,name:name,role:'',intro:'',quals:'',hourly:0,hidden:true,services:[],prices:{},color:'#8b90a0'});ch=true;}};add('s4','KANA');add('s5','NODOKA');if(ch)staff=DATA.staff;return ch;}
 function extBlocksMigrate(){DATA.blocks=DATA.blocks||[];if(DATA._extBlk1)return false;
   const EXT=[['s1','2026-09-27','13:30','14:30','田原 ゆう様'],['s1','2026-09-21','19:45','20:45','吉田 珠理様'],['s2','2026-09-11','11:00','12:00','アヤネ サン様'],['s1','2026-09-05','10:15','11:15','小村崎 真実様'],['s1','2026-09-03','13:00','13:45','伊藤 七海様'],['s1','2026-09-02','10:00','11:15','大城 咲織様']];
@@ -4465,6 +4470,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-18',v:'r20260918c',items:['【重要】シフトを提出していない担当者でも予約を受け付けてしまう問題を修正しました。TOMOMIの受付時間がSAKURAと同じ9:00-21:00になり、未提出の10月以降も受け付けていました','原因は、時間が入っていない曜日シフトを「9:00〜21:00で出勤」とみなす処理でした→時間が入っていないシフトは「出勤なし」として扱うよう修正しました','これにより、TOMOMIは提出した日・提出した時間のみ受付となります。SAKURAの予約可能日はこれまでどおりです（検証済み）']},
  {d:'2026-09-18',v:'r20260918b',items:['設定に「🖼 画像を軽くする（保存を速くする）」を追加しました。保存データに含まれるメニュー写真・スタッフ写真などの大きさを表示し、ボタンを押すと一度だけ圧縮します','保存のたびにこれらの画像をすべて送信しているため、軽くすると保存の失敗が減り、通信量も下がります','自動では動きません。押した時だけ実行され、予約・お客様・シフトのデータには一切触れません']},
  {d:'2026-09-18',v:'r20260918a',items:['シフトの保存が「Fetch is aborted・1.4MB」で失敗する問題に対応しました。保存時の待ち時間を45秒から2分30秒に延長し、通信が遅い状況でも送りきれるようにしました','※1.4MBの大半はメニュー画像とスタッフ写真です。保存のたびに毎回送っているため、画像を軽くする対応を別途ご相談します']},
  {d:'2026-09-15',v:'r20260915f',items:['データベースの通信量を減らしました。無料枠（月5GB）を超過して速度制限がかかっていたためです','通信失敗時の再試行を3回から2回に変更（失敗のたびに全データを送り直していました）','タスクの完了時に、サーバーから全データを3回読み込んでいたのを2回に削減しました']},
