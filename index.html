@@ -962,7 +962,7 @@ button{white-space:normal}
 </div>
 <script>
 /* ===== データ保存（Supabase Edge Function 経由）===== */
-const APP_REV='r20260915f';
+const APP_REV='r20260918a';
 (function(){try{
   var k='vi5:rev';var cur=APP_REV;var old=localStorage.getItem(k);
   localStorage.setItem(k,cur);
@@ -975,7 +975,7 @@ const APP_REV='r20260915f';
 const SUPA_URL='https://tehcaufdztgpbrknpshk.supabase.co';
 const SUPA_KEY='sb_publishable_CnOCyO9QU69K47vbbLRkYg__cEv53CJ';
 const FUNC_URL=SUPA_URL+'/functions/v1/data';
-function fetchOnce(url,opts,ms){opts=opts||{};const ctl=new AbortController();const isWrite=opts.method==='POST'||opts.method==='PUT';const t=setTimeout(()=>ctl.abort(),ms||(isWrite?45000:25000));return fetch(url,Object.assign({},opts,{signal:ctl.signal})).finally(()=>clearTimeout(t));}
+function fetchOnce(url,opts,ms){opts=opts||{};const ctl=new AbortController();const isWrite=opts.method==='POST'||opts.method==='PUT';const t=setTimeout(()=>ctl.abort(),ms||(isWrite?150000:25000));/* 保存は最大2分30秒まで待つ（通信制限中に1.4MBを送りきれず失敗していたため） */return fetch(url,Object.assign({},opts,{signal:ctl.signal})).finally(()=>clearTimeout(t));}
 /* 通信は自動で最大3回まで試す。1回きりだと、少しの遅れでも「電波が悪い」と出てしまうため。
    書き込み(POST)も、同じ内容を送り直すだけで二重登録にはならない作り（統合して保存）なので再試行する。 */
 async function fetchT(url,opts,ms){
@@ -4465,6 +4465,7 @@ async function gcalShiftSweep(){/* 1件ずつ送る旧方式で作られた全�
     if(i%20===0)await new Promise(r=>setTimeout(r,50));}
   alert('削除リクエストを送信しました（'+n+'件）。Googleカレンダーの反映まで数分かかることがあります。');}
 const UPDATE_LOG=[
+ {d:'2026-09-18',v:'r20260918a',items:['シフトの保存が「Fetch is aborted・1.4MB」で失敗する問題に対応しました。保存時の待ち時間を45秒から2分30秒に延長し、通信が遅い状況でも送りきれるようにしました','※1.4MBの大半はメニュー画像とスタッフ写真です。保存のたびに毎回送っているため、画像を軽くする対応を別途ご相談します']},
  {d:'2026-09-15',v:'r20260915f',items:['データベースの通信量を減らしました。無料枠（月5GB）を超過して速度制限がかかっていたためです','通信失敗時の再試行を3回から2回に変更（失敗のたびに全データを送り直していました）','タスクの完了時に、サーバーから全データを3回読み込んでいたのを2回に削減しました']},
  {d:'2026-09-15',v:'r20260915e',items:['シフトを保存できているのに「⚠ 更新できていません」と表示される問題を修正しました。保存後の照合を文字列の完全一致で行っていたため、他の端末との統合で並び順が変わるだけで不一致と判定されていました→シフトの内容そのものを比較するように変更し、本当に保存できていない時だけ警告を出します','編集中のスタッフの分を正しく照合するようにしました（以前はSAKURAの分だけを比較していたため、他のスタッフのシフト編集では正しく確認できませんでした）']},
  {d:'2026-09-15',v:'r20260915d',items:['メニューの読み込みが遅い問題を改善しました。お客様が開くたびに、スタッフ用・会員用のデータ取得を必ず試しており（未ログインでは必ず失敗）、その再試行で時間がかかっていました→ログイン情報がある場合だけその取得を行い、未ログインのお客様は公開データだけを取得するようにしました','スタッフのログイン・会員のお客様のマイページは従来どおりご利用いただけます']},
