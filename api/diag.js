@@ -75,10 +75,38 @@ async function fixTomomi(){
   return{removed:removed,message:'TOMOMIの10月以降のシフトを削除しました',
     残り:{TOMOMI:Object.keys(ov).length, SAKURA:Object.keys((v.shiftOverrides&&v.shiftOverrides.s1)||{}).length}};
 }
+
+/* Googleカレンダーへの送信状況を確認する（表示のみ）  /api/diag?mode=gcal */
+async function gcalStatus(){
+  const q=await kv('salon:gcalq')||[];
+  const lg=await kv('salon:gcallog')||[];
+  const d=await kv('salon:data')||{};
+  const queue=Array.isArray(q)?q:[];
+  const log=Array.isArray(lg)?lg:[];
+  const recent=log.slice(0,10).map(function(x){
+    return {日時:x.at?new Date(x.at).toLocaleString('ja-JP'):'', 操作:x.action||x.op||'', 結果:x.ok===false?'失敗':'成功', 内容:x.title||x.id||''};
+  });
+  /* 直近の予約が何件あるか */
+  const today=new Date().toISOString().slice(0,10);
+  const future=(d.bookings||[]).filter(function(b){return b.date>=today&&b.status!=='cancelled';});
+  return {
+    送信待ち件数: queue.length,
+    送信待ちの中身: queue.slice(0,5).map(function(x){return (x.action||'')+' '+(x.date||'')+' '+(x.time||'');}),
+    直近の送信記録: recent,
+    今後の予約件数: future.length,
+    判定: queue.length===0 ? 'Googleカレンダーへの送信は滞っていません'
+        : ('⚠ '+queue.length+'件が送信できずに溜まっています')
+  };
+}
 module.exports=async(req,res)=>{
   try{
     if((req.query&&req.query.mode)==='fixtomomi'&&(req.query.confirm)==='yes'){
       const r=await fixTomomi();
+      res.setHeader('Cache-Control','no-store');
+      res.status(200).json(r);return;
+    }
+    if((req.query&&req.query.mode)==='gcal'){
+      const r=await gcalStatus();
       res.setHeader('Cache-Control','no-store');
       res.status(200).json(r);return;
     }
