@@ -54,8 +54,34 @@ async function shiftCheck(){
   });
   return out;
 }
+
+/* TOMOMIの10月以降の誤ったシフトだけを削除する（1回だけ・他のデータには触れない）
+   /api/diag?mode=fixtomomi&confirm=yes */
+async function fixTomomi(){
+  const r=await fetch(SUPA_URL+'/rest/v1/kv?key=eq.salon:data&select=value',{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}});
+  if(!r.ok)return{error:'読み込めませんでした'};
+  const j=await r.json();
+  if(!Array.isArray(j)||!j.length)return{error:'データがありません'};
+  let v=j[0].value;
+  for(let i=0;i<4;i++){if(typeof v==='string'){try{v=JSON.parse(v);continue}catch(e){break}}if(Array.isArray(v)){v=v[0];continue}break}
+  if(!v||typeof v!=='object')return{error:'形式が違います'};
+  const ov=(v.shiftOverrides&&v.shiftOverrides.s2)||{};
+  const removed=[];
+  Object.keys(ov).forEach(function(ds){ if(ds>='2026-10-01'){ removed.push(ds+' '+JSON.stringify(ov[ds])); delete ov[ds]; } });
+  if(!removed.length)return{removed:[],message:'10月以降のシフトはありませんでした'};
+  const body=JSON.stringify({key:'salon:data',value:JSON.stringify(v)});
+  const w=await fetch(SUPA_URL+'/rest/v1/kv?on_conflict=key',{method:'POST',headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:body});
+  if(!w.ok)return{error:'保存できませんでした('+w.status+')',removed:removed};
+  return{removed:removed,message:'TOMOMIの10月以降のシフトを削除しました',
+    残り:{TOMOMI:Object.keys(ov).length, SAKURA:Object.keys((v.shiftOverrides&&v.shiftOverrides.s1)||{}).length}};
+}
 module.exports=async(req,res)=>{
   try{
+    if((req.query&&req.query.mode)==='fixtomomi'&&(req.query.confirm)==='yes'){
+      const r=await fixTomomi();
+      res.setHeader('Cache-Control','no-store');
+      res.status(200).json(r);return;
+    }
     if((req.query&&req.query.mode)==='shift'){
       const r=await shiftCheck();
       res.setHeader('Cache-Control','no-store');
