@@ -30,8 +30,37 @@ async function speedCheck(){
             : '遠い（海外の可能性が高い）';
   return out;
 }
+
+/* シフトの提出状況を確認する（表示のみ）  /api/diag?mode=shift */
+async function shiftCheck(){
+  const d=await kv('salon:data')||{};
+  const ov=(d.shiftOverrides)||{};
+  const names={s1:'SAKURA',s2:'TOMOMI',s3:'HARUKA'};
+  const out={updatedAt:d.updatedAt?new Date(d.updatedAt).toLocaleString('ja-JP'):'不明',staff:{}};
+  Object.keys(names).forEach(function(sid){
+    const days=Object.keys(ov[sid]||{}).sort();
+    const byMonth={};
+    days.forEach(function(ds){
+      const m=ds.slice(0,7);byMonth[m]=byMonth[m]||{出勤:0,休み:0,例:[]};
+      const v=ov[sid][ds]||{};
+      if(v.off)byMonth[m]['休み']++;
+      else{byMonth[m]['出勤']++;
+        if(byMonth[m]['例'].length<3){
+          const rs=(v.ranges?v.ranges:[{start:v.start,end:v.end}]).filter(function(r){return r&&r.start!=null;})
+            .map(function(r){return r.start+':00-'+r.end+':00';}).join(',');
+          byMonth[m]['例'].push(ds+' '+rs);}}
+    });
+    out.staff[names[sid]]={登録日数:days.length,月別:byMonth};
+  });
+  return out;
+}
 module.exports=async(req,res)=>{
   try{
+    if((req.query&&req.query.mode)==='shift'){
+      const r=await shiftCheck();
+      res.setHeader('Cache-Control','no-store');
+      res.status(200).json(r);return;
+    }
     if((req.query&&req.query.mode)==='speed'){
       const r=await speedCheck();
       res.setHeader('Cache-Control','no-store');
